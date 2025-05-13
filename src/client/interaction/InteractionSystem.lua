@@ -5,47 +5,14 @@ local UserInputService = game:GetService("UserInputService")
 -- Add debug print to confirm module is loading
 print("InteractionSystem module loading...")
 
+-- Use our new LazyLoadModules helper
+local LazyLoadModules = require(ReplicatedStorage.shared.core.LazyLoadModules)
 local Constants = require(ReplicatedStorage.shared.core.Constants)
 
--- BREAKING THE CIRCULAR DEPENDENCY: Use lazy loading instead of direct requires
--- We'll load these modules when they're needed, not at the top level
-local PurchaseDialog, InventoryUI, PlacedItemDialog
-
--- Helper to safely require a module
-local function safeRequire(path)
-    local success, result = pcall(function()
-        return require(path)
-    end)
-    
-    if success then
-        return result
-    else
-        warn("Failed to require module at path: ", path)
-        warn("Error: ", result)
-        return {}
-    end
-end
-
--- Lazy-loading function for UI modules
-local function getUIModules()
-    if not PurchaseDialog then
-        PurchaseDialog = safeRequire(ReplicatedStorage.shared.core.ui.PurchaseDialog)
-    end
-    
-    if not InventoryUI then
-        InventoryUI = safeRequire(ReplicatedStorage.shared.core.ui.InventoryUI)
-    end
-    
-    if not PlacedItemDialog then
-        PlacedItemDialog = safeRequire(ReplicatedStorage.shared.core.ui.PlacedItemDialog)
-    end
-    
-    return {
-        PurchaseDialog = PurchaseDialog,
-        InventoryUI = InventoryUI,
-        PlacedItemDialog = PlacedItemDialog
-    }
-end
+-- Register UI modules for lazy loading
+LazyLoadModules.register("PurchaseDialog", ReplicatedStorage.shared.core.ui.PurchaseDialog)
+LazyLoadModules.register("InventoryUI", ReplicatedStorage.shared.core.ui.InventoryUI)
+LazyLoadModules.register("PlacedItemDialog", ReplicatedStorage.shared.core.ui.PlacedItemDialog)
 
 local InteractionSystem = {}
 InteractionSystem.__index = InteractionSystem
@@ -81,8 +48,7 @@ function InteractionSystem:Initialize()
 end
 
 function InteractionSystem:CreateUI()
-    -- Remove old tooltip UI creation
-    -- Instead, prepare BillboardGui template for proximity popup
+    -- Prepare BillboardGui template for proximity popup
     self.billboardTemplate = Instance.new("BillboardGui")
     self.billboardTemplate.Name = "ProximityInteractUI"
     self.billboardTemplate.Size = UDim2.new(0, 200, 0, 50)
@@ -176,7 +142,6 @@ function InteractionSystem:GetPlacedItemFromPart(part)
 end
 
 function InteractionSystem:ShowInteractionUI(placedItem)
-    -- Remove old tooltip logic
     -- Attach BillboardGui to the item model's PrimaryPart
     if not placedItem.model.PrimaryPart then
         placedItem.model.PrimaryPart = placedItem.model:FindFirstChildWhichIsA("BasePart")
@@ -221,17 +186,26 @@ end
 
 function InteractionSystem:GetAvailableInteractions(placedItem)
     -- Request available interactions from server
-    return ReplicatedStorage.Remotes.GetAvailableInteractions:InvokeServer(placedItem)
+    local result = self.remoteEvents.GetAvailableInteractions:InvokeServer(placedItem)
+    return result or {"examine"}
 end
 
 function InteractionSystem:PerformInteraction(placedItem, interactionType)
     -- Send interaction request to server
-    ReplicatedStorage.Remotes.InteractWithItem:FireServer(placedItem, interactionType)
+    self.remoteEvents.InteractWithItem:FireServer(placedItem, interactionType)
 end
 
 function InteractionSystem:ShowInteractionMenu(interactions)
-    -- Use the same UI as ShowInteractionUI
-    self:ShowInteractionUI(self.currentTarget)
+    -- Use the lazily loaded PlacedItemDialog to show interaction options
+    -- The module will only be required when this function is called
+    if LazyLoadModules.PlacedItemDialog.ShowInteractionOptions then
+        LazyLoadModules.PlacedItemDialog.ShowInteractionOptions(self.currentTarget, interactions, function(interaction)
+            self:PerformInteraction(self.currentTarget, interaction)
+        end)
+    else
+        -- Fallback: just use the first interaction
+        self:PerformInteraction(self.currentTarget, interactions[1])
+    end
 end
 
 function InteractionSystem:SetupEventHandlers()
@@ -280,13 +254,18 @@ end
 
 function InteractionSystem:OpenInventory()
     -- Fetch inventory from server
-    local inventory = ReplicatedStorage.Remotes.GetInventory:InvokeServer()
-    if not inventory or not inventory.success or not inventory.inventory or next(inventory.inventory) == nil then
-        InventoryUI.ShowError("Your inventory is empty.")
+    local inventory = self.remoteEvents.GetInventory:InvokeServer()
+    if not inventory or not inventory.success then
+        self:ShowNotification("Could not load inventory")
         return
     end
-    InventoryUI.Show()
-    -- Add logic to update inventory display if needed
+    
+    -- Use the lazily loaded InventoryUI module to display inventory
+    if LazyLoadModules.InventoryUI.Show then
+        LazyLoadModules.InventoryUI.Show(inventory.inventory, inventory.currency)
+    else
+        self:ShowNotification("Inventory system is not available")
+    end
 end
 
 return InteractionSystem

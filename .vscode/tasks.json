@@ -2,12 +2,12 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Build with Fixed Modules",
-			"type": "shell",
-			"command": "cp src\\shared\\init_fixed.lua src\\shared\\init.lua && cp src\\client\\init_fixed.client.lua src\\client\\init.client.lua && cp src\\client\\interaction\\InteractionSystem_fixed.lua src\\client\\interaction\\InteractionSystem.lua && rojo build second.project.json -o ForeverBuild_fixed.rbxm",
+			"command": "copy src\\shared\\core\\ui\\CurrencyUI_fixed.lua src\\shared\\core\\ui\\CurrencyUI.lua && rojo build second.project.json -o ForeverBuild_fixed2.rbxm",
 			"group": "build",
+			"isBackground": false,
+			"label": "Fix CurrencyUI Reference",
 			"problemMatcher": [],
-			"isBackground": false
+			"type": "shell"
 		}
 	]
 }

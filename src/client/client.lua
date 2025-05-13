@@ -3,60 +3,96 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
+-- Safe initialization of variables
+local player = nil
+local character = nil
+local SharedModule = nil
+local GameManagerModule = nil
+local Constants = nil
+local GameManager = nil
+local PurchaseDialogModule = nil
+local InventoryUIModule = nil
+local PlacedItemDialogModule = nil
+local Remotes = nil
+local BuyItemEvent = nil
+local GetInventoryFunc = nil
+local PlaceItemEvent = nil
+local InteractWithItemEvent = nil
+local purchaseDialog = nil
+local inventoryUI = nil
+local placedItemDialog = nil
 
--- Core modules
-local SharedModule = require(ReplicatedStorage.shared)
-local GameManagerModule = SharedModule.GameManager
-local Constants = SharedModule.Constants
-
--- Initialize GameManager for client-side use
-local GameManager = GameManagerModule.new()
-
--- UI Modules
-local PurchaseDialogModule = SharedModule.UI.PurchaseDialog
-local InventoryUIModule = SharedModule.UI.InventoryUI
-local PlacedItemDialogModule = SharedModule.UI.PlacedItemDialog
-
--- Remote events/functions
-local Remotes = ReplicatedStorage:WaitForChild("Remotes")
-local BuyItemEvent = Remotes:WaitForChild("BuyItem")
-local GetInventoryFunc = Remotes:WaitForChild("GetInventory")
-local PlaceItemEvent = Remotes:WaitForChild("PlaceItem")
-local InteractWithItemEvent = Remotes:WaitForChild("InteractWithItem")
-
--- State
+-- State variables
 local currentInventory = {}
 local currentCurrency = 0
 local isPlacingItem = false
 local selectedItem = nil
 local placementPreview = nil
 local lastError = nil
-local purchaseDialog = nil
-local inventoryUI = nil
-local placedItemDialog = nil
 
--- Helper to safely call RemoteFunctions
+-- Safe initialization function
+local function initializeClient()
+    if Players then
+        player = Players.LocalPlayer
+        if player then
+            character = player.Character or player.CharacterAdded:Wait()
+        end
+    end
+
+    if ReplicatedStorage then
+        SharedModule = require(ReplicatedStorage.shared)
+        if SharedModule then
+            GameManagerModule = SharedModule.GameManager
+            Constants = SharedModule.Constants
+
+            if GameManagerModule then
+                GameManager = GameManagerModule.new()
+            end
+
+            if SharedModule.UI then
+                PurchaseDialogModule = SharedModule.UI.PurchaseDialog
+                InventoryUIModule = SharedModule.UI.InventoryUI
+                PlacedItemDialogModule = SharedModule.UI.PlacedItemDialog
+            end
+        end
+
+        Remotes = ReplicatedStorage:WaitForChild("Remotes", 10)
+        if Remotes then
+            BuyItemEvent = Remotes:WaitForChild("BuyItem", 5)
+            GetInventoryFunc = Remotes:WaitForChild("GetInventory", 5)
+            PlaceItemEvent = Remotes:WaitForChild("PlaceItem", 5)
+            InteractWithItemEvent = Remotes:WaitForChild("InteractWithItem", 5)
+        end
+    end
+end
+
+-- Safe helper function to call remote functions
 local function safeInvoke(remote, ...)
+    if not remote then return { success = false, message = "Remote function not found" } end
+    
     local ok, result = pcall(function(...)
         return remote:InvokeServer(...)
     end, ...)
+    
     if not ok then
         lastError = "A network error occurred. Please try again."
         warn("RemoteFunction error:", result)
         return { success = false, message = lastError }
     end
+    
     if not result or not result.success then
         lastError = (result and result.message) or "Unknown error."
         return { success = false, message = lastError }
     end
+    
     lastError = nil
     return result
 end
 
--- Create inventory button
+-- Create inventory button with proper error handling
 local function createInventoryButton(parent)
+    if not parent then return nil end
+    
     local button = Instance.new("TextButton")
     button.Name = "InventoryButton"
     button.Size = UDim2.new(0, 120, 0, 40)
@@ -68,34 +104,21 @@ local function createInventoryButton(parent)
     button.TextColor3 = Color3.new(1, 1, 1)
     button.Parent = parent
     
-    -- Add corner radius
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 4)
     corner.Parent = button
     
-    -- Add hover effect
-    button.MouseEnter:Connect(function()
-        game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        }):Play()
-    end)
-    
-    button.MouseLeave:Connect(function()
-        game:GetService("TweenService"):Create(button, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-        }):Play()
-    end)
-    
-    -- Set up click handler
     button.MouseButton1Click:Connect(function()
-        if lastError then
-            warn("Error showing inventory:", lastError)
+        if not GetInventoryFunc then
+            warn("GetInventoryFunc not initialized")
             return
         end
+        
         local result = safeInvoke(GetInventoryFunc)
         if result.success then
-            currentInventory = result.inventory
-            currentCurrency = result.currency
+            currentInventory = result.inventory or {}
+            currentCurrency = result.currency or 0
+            
             if inventoryUI then
                 inventoryUI:UpdateInventory(currentInventory, currentCurrency)
                 inventoryUI:Show()
@@ -110,182 +133,71 @@ local function createInventoryButton(parent)
     return button
 end
 
--- Initialize UI
+-- Initialize UI components
 local function initializeUI()
-    -- Create main UI container
+    if not player then
+        warn("Cannot initialize UI: player not found")
+        return
+    end
+    
     local uiContainer = Instance.new("ScreenGui")
     uiContainer.Name = "ItemSystemUI"
     uiContainer.ResetOnSpawn = false
-    uiContainer.Parent = player.PlayerGui
     
-    -- Create inventory button
-    createInventoryButton(uiContainer)
-    
-    -- Initialize UI modules
-    purchaseDialog = PurchaseDialogModule.new()
-    purchaseDialog:Initialize(uiContainer)
-
-    inventoryUI = InventoryUIModule.new()
-    inventoryUI:Initialize(uiContainer)
-
-    placedItemDialog = PlacedItemDialogModule.new()
-    placedItemDialog:Initialize(uiContainer)
-    
-    -- Set up item selection
-    inventoryUI.OnItemSelected = function(itemName)
-        if lastError then
-            warn("Error selecting item:", lastError)
-            return
-        end
-        if not currentInventory[itemName] or currentInventory[itemName] <= 0 then
-            warn("You do not own this item.")
-            return
-        end
-        -- Start placement mode
-        isPlacingItem = true
-        selectedItem = itemName
-        inventoryUI:Hide()
-        -- Create placement preview
-        if placementPreview then
-            placementPreview:Destroy()
-        end
-        -- Simple preview model
-        placementPreview = Instance.new("Part")
-        placementPreview.Name = "PlacementPreview"
-        placementPreview.Anchored = true
-        placementPreview.CanCollide = false
-        placementPreview.Transparency = 0.5
-        placementPreview.Size = Vector3.new(4, 4, 4)
-        placementPreview.BrickColor = BrickColor.new("Bright blue")
-        placementPreview.Parent = workspace
-    end
-    
-    -- Set up placed item interaction
-    placedItemDialog.OnActionSelected = function(itemId, action)
-        InteractWithItemEvent:FireServer(itemId, action)
-    end
-end
-
--- Handle proximity prompts
-local function setupProximityPrompts()
-    -- Find all items with proximity prompts
-    local function onItemFound(item)
-        if item:GetAttribute("item") then
-            local prompt = item:FindFirstChild("ProximityPrompt")
-            if not prompt then
-                prompt = Instance.new("ProximityPrompt")
-                prompt.Name = "ItemPrompt"
-                prompt.ActionText = "Purchase"
-                prompt.ObjectText = item:GetAttribute("item")
-                prompt.HoldDuration = 0
-                prompt.MaxActivationDistance = 10
-                prompt.Parent = item
-            end
-            
-            prompt.Triggered:Connect(function()
-                if lastError then
-                    warn("Error purchasing item:", lastError)
-                    return
-                end
-                local itemName = item:GetAttribute("item")
-                if itemName and purchaseDialog then
-                    purchaseDialog:Show(itemName, function(quantity)
-                        BuyItemEvent:FireServer(itemName, quantity)
-                    end)
-                end
-            end)
-        end
-    end
-    
-    -- Set up existing items
-    for _, item in ipairs(workspace:GetDescendants()) do
-        onItemFound(item)
-    end
-    
-    -- Watch for new items
-    workspace.DescendantAdded:Connect(onItemFound)
-end
-
--- Handle item placement
-local function setupPlacement()
-    local mouse = player:GetMouse()
-    
-    -- Handle mouse movement
-    RunService.RenderStepped:Connect(function()
-        if not isPlacingItem or not selectedItem or not placementPreview then return end
-        
-        -- Update preview position
-        local hit, position, normal = workspace:FindPartOnRay(
-            Ray.new(mouse.UnitRay.Origin, mouse.UnitRay.Direction * 100),
-            placementPreview
-        )
-        
-        if hit then
-            placementPreview.CFrame = CFrame.new(position) * CFrame.new(0, placementPreview.Size.Y/2, 0)
-        end
+    local success, result = pcall(function()
+        uiContainer.Parent = player.PlayerGui
+        return createInventoryButton(uiContainer)
     end)
     
-    -- Handle mouse clicks
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            if isPlacingItem and selectedItem and placementPreview then
-                -- Place item
-                local position = placementPreview.Position
-                local rotation = placementPreview.Orientation
-                PlaceItemEvent:FireServer(selectedItem, position, rotation)
-                
-                -- Reset placement mode
-                isPlacingItem = false
-                selectedItem = nil
-                placementPreview:Destroy()
-                placementPreview = nil
-            end
-        elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
-            if isPlacingItem then
-                -- Cancel placement
-                isPlacingItem = false
-                selectedItem = nil
-                if placementPreview then
-                    placementPreview:Destroy()
-                    placementPreview = nil
-                end
-            end
+    if not success then
+        warn("Failed to create UI:", result)
+        return
+    end
+
+    if PurchaseDialogModule and PurchaseDialogModule.new then
+        purchaseDialog = PurchaseDialogModule.new()
+        if purchaseDialog.Initialize then
+            purchaseDialog:Initialize(uiContainer)
         end
-    end)
+    end
+
+    if InventoryUIModule and InventoryUIModule.new then
+        inventoryUI = InventoryUIModule.new()
+        if inventoryUI.Initialize then
+            inventoryUI:Initialize(uiContainer)
+        end
+    end
+
+    if PlacedItemDialogModule and PlacedItemDialogModule.new then
+        placedItemDialog = PlacedItemDialogModule.new()
+        if placedItemDialog.Initialize then
+            placedItemDialog:Initialize(uiContainer)
+        end
+    end
 end
 
--- Initialize
-print("Client script starting...")
-initializeUI()
-setupProximityPrompts()
-setupPlacement()
+-- Run initialization with error handling
+local success, error = pcall(initializeClient)
+if not success then
+    warn("Failed to initialize client:", error)
+end
 
--- Handle character respawning
-player.CharacterAdded:Connect(function(newCharacter)
-    character = newCharacter
-    -- Reset placement mode if active
-    if isPlacingItem and placementPreview then
-        isPlacingItem = false
-        selectedItem = nil
-        placementPreview:Destroy()
-        placementPreview = nil
+-- Safe initialization of UI
+if player then
+    local uiSuccess, uiError = pcall(initializeUI)
+    if not uiSuccess then
+        warn("Failed to initialize UI:", uiError)
     end
-end)
+end
 
--- Initial inventory load
-if GetInventoryFunc then
-    local result = safeInvoke(GetInventoryFunc)
-    if result and result.success then
-        currentInventory = result.inventory or {}
-        currentCurrency = result.currency or 0
+-- Return API for other scripts
+return {
+    GetGameManager = function() return GameManager end,
+    ShowInventory = function()
         if inventoryUI then
-            inventoryUI:UpdateInventory(currentInventory, currentCurrency)
+            inventoryUI:Show()
+        else
+            warn("InventoryUI not initialized")
         end
-    else
-        warn("Failed to load initial inventory")
     end
-else
-    warn("GetInventory RemoteFunction not found")
-end
+}

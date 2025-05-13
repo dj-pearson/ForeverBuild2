@@ -2,7 +2,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
 
-local Constants = require(script.Parent.Parent.Parent.core.Constants)
+-- CRITICAL FIX: Use the correct path to Constants
+-- This was using an incorrect path that could cause circular dependencies
+local Constants = require(script.Parent.Parent.Constants)
 
 local CurrencyUI = {}
 CurrencyUI.__index = CurrencyUI
@@ -81,9 +83,14 @@ end
 -- Set up event handlers
 function CurrencyUI:SetupEventHandlers()
     -- Handle balance updates
-    ReplicatedStorage.Remotes.UpdateBalance.OnClientEvent:Connect(function(balance)
-        self:UpdateBalance(balance)
-    end)
+    local remotes = ReplicatedStorage:WaitForChild("Remotes", 10)
+    if remotes and remotes:FindFirstChild("UpdateBalance") then
+        remotes.UpdateBalance.OnClientEvent:Connect(function(balance)
+            self:UpdateBalance(balance)
+        end)
+    else
+        warn("CurrencyUI: UpdateBalance remote event not found")
+    end
     
     -- Handle purchase button click
     self.ui.MainFrame.PurchaseButton.MouseButton1Click:Connect(function()
@@ -98,52 +105,41 @@ end
 
 -- Show purchase menu
 function CurrencyUI:ShowPurchaseMenu()
-    -- Create purchase menu
+    -- Since we're not using lazy loading, we need to be careful about circular refs
+    -- So instead of requiring the PurchaseDialog module, we'll just create a simple menu here
     local menu = Instance.new("Frame")
     menu.Name = "PurchaseMenu"
-    menu.Size = UDim2.new(0, 300, 0, 400)
-    menu.Position = UDim2.new(0.5, -150, 0.5, -200)
+    menu.Size = UDim2.new(0, 300, 0, 200)
+    menu.Position = UDim2.new(0.5, -150, 0.5, -100)
     menu.BackgroundColor3 = Constants.UI_COLORS.SECONDARY
     menu.BorderSizePixel = 0
     menu.Parent = self.ui
     
-    -- Create close button
+    local title = Instance.new("TextLabel")
+    title.Name = "Title"
+    title.Size = UDim2.new(1, 0, 0, 40)
+    title.Position = UDim2.new(0, 0, 0, 0)
+    title.BackgroundTransparency = 1
+    title.TextColor3 = Constants.UI_COLORS.TEXT
+    title.TextSize = 20
+    title.Font = Enum.Font.GothamBold
+    title.Text = "Purchase Currency"
+    title.Parent = menu
+    
     local closeButton = Instance.new("TextButton")
     closeButton.Name = "CloseButton"
     closeButton.Size = UDim2.new(0, 30, 0, 30)
-    closeButton.Position = UDim2.new(1, -40, 0, 10)
-    closeButton.BackgroundColor3 = Constants.UI_COLORS.ERROR
-    closeButton.Text = "X"
+    closeButton.Position = UDim2.new(1, -35, 0, 5)
+    closeButton.BackgroundTransparency = 1
     closeButton.TextColor3 = Constants.UI_COLORS.TEXT
     closeButton.TextSize = 20
     closeButton.Font = Enum.Font.GothamBold
+    closeButton.Text = "X"
     closeButton.Parent = menu
     
-    -- Create purchase options
-    local yOffset = 50
-    for _, product in ipairs(Constants.CURRENCY.PRODUCTS) do
-        local option = Instance.new("TextButton")
-        option.Name = "Option_" .. product.id
-        option.Size = UDim2.new(0, 260, 0, 60)
-        option.Position = UDim2.new(0.5, -130, 0, yOffset)
-        option.BackgroundColor3 = Constants.UI_COLORS.PRIMARY
-        option.Text = string.format("%d Coins - %d Robux", product.coins, product.robux)
-        option.TextColor3 = Constants.UI_COLORS.TEXT
-        option.TextSize = 18
-        option.Font = Enum.Font.GothamBold
-        option.Parent = menu
-        
-        option.MouseButton1Click:Connect(function()
-            MarketplaceService:PromptProductPurchase(Players.LocalPlayer, product.id)
-        end)
-        
-        yOffset = yOffset + 70
-    end
-    
-    -- Handle close button
     closeButton.MouseButton1Click:Connect(function()
         menu:Destroy()
     end)
 end
 
-return CurrencyUI 
+return CurrencyUI

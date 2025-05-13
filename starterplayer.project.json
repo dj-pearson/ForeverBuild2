@@ -1,9 +1,0 @@
-{
-  "name": "StarterPlayerScripts",
-  "tree": {
-    "$className": "StarterPlayerScripts",
-    "client": {
-      "$path": "src/client"
-    }
-  }
-}

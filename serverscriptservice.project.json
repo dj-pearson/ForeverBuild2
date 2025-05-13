@@ -1,9 +1,0 @@
-{
-  "name": "ServerScriptService",
-  "tree": {
-    "$className": "ServerScriptService",
-    "server": {
-      "$path": "src/server"
-    }
-  }
-}
