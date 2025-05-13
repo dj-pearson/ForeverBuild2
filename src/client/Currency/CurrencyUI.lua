@@ -39,18 +39,29 @@ function CurrencyUI:CreateUI()
     -- Create main frame
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainFrame"
-    mainFrame.Size = UDim2.new(0, 200, 0, 50)
-    mainFrame.Position = UDim2.new(1, -220, 0, 20)
-    mainFrame.BackgroundTransparency = 0.5
-    mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    mainFrame.Size = UDim2.new(0, 220, 0, 56)
+    mainFrame.Position = UDim2.new(1, -240, 0, 24) -- Top right, 24px from top/right
+    mainFrame.BackgroundTransparency = 0
+    mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     mainFrame.BorderSizePixel = 0
     mainFrame.Parent = screenGui
-    
+
+    -- Add rounded corners
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 14)
+    corner.Parent = mainFrame
+
+    -- Add outline
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 2
+    stroke.Color = Color3.fromRGB(255, 223, 70)
+    stroke.Parent = mainFrame
+
     -- Create coin icon
     local coinIcon = Instance.new("ImageLabel")
     coinIcon.Name = "CoinIcon"
     coinIcon.Size = UDim2.new(0, 40, 0, 40)
-    coinIcon.Position = UDim2.new(0, 5, 0.5, -20)
+    coinIcon.Position = UDim2.new(0, 8, 0.5, -20)
     coinIcon.BackgroundTransparency = 1
     coinIcon.Image = "rbxassetid://101567167458494" -- TODO: Replace with actual coin icon
     coinIcon.Parent = mainFrame
@@ -58,11 +69,11 @@ function CurrencyUI:CreateUI()
     -- Create balance label
     local balanceLabel = Instance.new("TextLabel")
     balanceLabel.Name = "BalanceLabel"
-    balanceLabel.Size = UDim2.new(1, -50, 1, 0)
-    balanceLabel.Position = UDim2.new(0, 50, 0, 0)
+    balanceLabel.Size = UDim2.new(0, 100, 1, 0)
+    balanceLabel.Position = UDim2.new(0, 56, 0, 0)
     balanceLabel.BackgroundTransparency = 1
-    balanceLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    balanceLabel.TextSize = 24
+    balanceLabel.TextColor3 = Color3.fromRGB(255, 223, 70)
+    balanceLabel.TextSize = 28
     balanceLabel.Font = Enum.Font.GothamBold
     balanceLabel.Text = "0"
     balanceLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -71,15 +82,18 @@ function CurrencyUI:CreateUI()
     -- Create purchase button
     local purchaseButton = Instance.new("TextButton")
     purchaseButton.Name = "PurchaseButton"
-    purchaseButton.Size = UDim2.new(0, 100, 0, 30)
-    purchaseButton.Position = UDim2.new(1, -110, 1, 10)
+    purchaseButton.Size = UDim2.new(0, 40, 0, 40)
+    purchaseButton.Position = UDim2.new(1, -48, 0.5, -20)
     purchaseButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-    purchaseButton.BorderSizePixel = 0
+    purchaseButton.Text = "+"
     purchaseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    purchaseButton.TextSize = 18
+    purchaseButton.TextSize = 24
     purchaseButton.Font = Enum.Font.GothamBold
-    purchaseButton.Text = "Buy Coins"
     purchaseButton.Parent = mainFrame
+    
+    local purchaseCorner = Instance.new("UICorner")
+    purchaseCorner.CornerRadius = UDim.new(0, 10)
+    purchaseCorner.Parent = purchaseButton
     
     -- Store UI reference
     self.ui = screenGui

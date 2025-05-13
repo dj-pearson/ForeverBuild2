@@ -45,40 +45,31 @@ function InteractionSystem:Initialize()
 end
 
 function InteractionSystem:CreateUI()
-    -- Create ScreenGui
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "InteractionUI"
-    screenGui.Parent = self.player:WaitForChild("PlayerGui")
-    
-    -- Create tooltip
-    local tooltip = Instance.new("Frame")
-    tooltip.Name = "Tooltip"
-    tooltip.Size = UDim2.new(0, 200, 0, 100)
-    tooltip.BackgroundColor3 = Constants.UI_COLORS.SECONDARY
-    tooltip.BorderSizePixel = 0
-    tooltip.Visible = false
-    tooltip.Parent = screenGui
-    
-    -- Create title
-    local title = Instance.new("TextLabel")
-    title.Name = "Title"
-    title.Size = UDim2.new(1, 0, 0, 30)
-    title.BackgroundTransparency = 1
-    title.TextColor3 = Constants.UI_COLORS.TEXT
-    title.TextSize = 18
-    title.Font = Enum.Font.GothamBold
-    title.Text = "Interact"
-    title.Parent = tooltip
-    
-    -- Create interaction list
-    local list = Instance.new("Frame")
-    list.Name = "InteractionList"
-    list.Size = UDim2.new(1, 0, 1, -30)
-    list.Position = UDim2.new(0, 0, 0, 30)
-    list.BackgroundTransparency = 1
-    list.Parent = tooltip
-    
-    self.ui = screenGui
+    -- Remove old tooltip UI creation
+    -- Instead, prepare BillboardGui template for proximity popup
+    self.billboardTemplate = Instance.new("BillboardGui")
+    self.billboardTemplate.Name = "ProximityInteractUI"
+    self.billboardTemplate.Size = UDim2.new(0, 200, 0, 50)
+    self.billboardTemplate.StudsOffset = Vector3.new(0, 3, 0)
+    self.billboardTemplate.AlwaysOnTop = true
+    self.billboardTemplate.Enabled = false
+
+    local bg = Instance.new("Frame")
+    bg.Size = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3 = Constants.UI_COLORS.SECONDARY
+    bg.BackgroundTransparency = 0.2
+    bg.BorderSizePixel = 0
+    bg.Parent = self.billboardTemplate
+
+    local label = Instance.new("TextLabel")
+    label.Name = "Title"
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Constants.UI_COLORS.TEXT
+    label.TextSize = 20
+    label.Font = Enum.Font.GothamBold
+    label.Text = "[E] Interact"
+    label.Parent = bg
 end
 
 function InteractionSystem:SetupInputHandling()
@@ -149,61 +140,30 @@ function InteractionSystem:GetPlacedItemFromPart(part)
 end
 
 function InteractionSystem:ShowInteractionUI(placedItem)
-    local tooltip = self.ui.Tooltip
-    local list = tooltip.InteractionList
-    tooltip.Visible = true -- Ensure tooltip is visible
-    -- Clear existing interactions
-    for _, child in ipairs(list:GetChildren()) do
-        child:Destroy()
+    -- Remove old tooltip logic
+    -- Attach BillboardGui to the item model's PrimaryPart
+    if not placedItem.model.PrimaryPart then
+        placedItem.model.PrimaryPart = placedItem.model:FindFirstChildWhichIsA("BasePart")
     end
+    if not placedItem.model.PrimaryPart then return end
 
-    -- Get the item model from Workspace > Items
-    local itemsFolder = workspace:FindFirstChild("Items")
-    local itemModel = nil
-    if itemsFolder then
-        for _, model in ipairs(itemsFolder:GetDescendants()) do
-            if model:IsA("Model") and model:GetAttribute("item") and model.Name == placedItem.id then
-                itemModel = model
-                break
-            end
-        end
-    end
+    -- Remove any existing BillboardGui
+    local existing = placedItem.model.PrimaryPart:FindFirstChild("ProximityInteractUI")
+    if existing then existing:Destroy() end
 
-    -- Get tier and price
-    local tier = itemModel and itemModel:GetAttribute("item") or "basic"
-    local price = Constants.ITEM_PRICING[tier] or 0
-
-    -- If this is a main item (not a placed item), show the purchase dialog
-    if not placedItem.model:GetAttribute("PlacedByPlayer") then
-        PurchaseDialog.Show(placedItem.id, function(quantity)
-            local result = ReplicatedStorage.Remotes.BuyItem:InvokeServer(placedItem.id, quantity)
-            if not result or not result.success then
-                if result and result.message then
-                    PurchaseDialog.ShowError(result.message)
-                else
-                    PurchaseDialog.ShowError("Purchase failed.")
-                end
-            end
-        end)
-        return
-    end
-
-    -- Otherwise, show the placed item dialog
-    PlacedItemDialog.Show(placedItem.id, placedItem.model:GetAttribute("item"), function(action)
-        if action == "clone" then
-            ReplicatedStorage.Remotes.CloneItem:FireServer(placedItem)
-        elseif action == "move" then
-            ReplicatedStorage.Remotes.MoveItem:FireServer(placedItem)
-        elseif action == "destroy" then
-            ReplicatedStorage.Remotes.RemoveItem:FireServer(placedItem)
-        elseif action == "rotate" then
-            ReplicatedStorage.Remotes.RotateItem:FireServer(placedItem)
-        end
-    end)
+    local bb = self.billboardTemplate:Clone()
+    bb.Enabled = true
+    bb.Parent = placedItem.model.PrimaryPart
 end
 
 function InteractionSystem:HideInteractionUI()
-    self.ui.Tooltip.Visible = false
+    -- Remove BillboardGui from all items in workspace
+    for _, model in ipairs(workspace:GetDescendants()) do
+        if model:IsA("Model") and model.PrimaryPart then
+            local bb = model.PrimaryPart:FindFirstChild("ProximityInteractUI")
+            if bb then bb:Destroy() end
+        end
+    end
 end
 
 function InteractionSystem:AttemptInteraction()
