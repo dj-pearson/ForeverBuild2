@@ -1,0 +1,134 @@
+# Codebase Deep Dive and Improvement Roadmap
+
+## Phase 1: Initial Exploration and Analysis
+
+### PRD.txt (Product Requirements Document)
+
+*   **Purpose:** Outlines the core function and description of the Roblox game.
+*   **Key Architectural Principles:** Modular, data-driven, scalable, and focused on automation.
+*   **Initial Thoughts:** This document will be crucial for understanding the intended functionality of the game and how different systems should interact. We should refer back to this as we examine the code to ensure that the implementation aligns with the product vision.
+
+### ROBLOX_STUDIO_SETUP.md
+
+*   **Purpose:** Provides instructions for setting up the Roblox Studio environment.
+*   **Status:** Up-to-date.
+*   **Initial Thoughts:** A well-maintained setup guide is essential for new developers and for ensuring a consistent development environment. We should verify that the instructions are clear and comprehensive.
+
+### RobloxOutput.txt
+
+*   **Purpose:** Contains log output from the last Roblox game iteration.
+*   **Key Information:** Includes errors from the latest game session, which are critical for diagnosing current issues.
+*   **Initial Thoughts:** This file will be a primary focus for identifying and resolving bugs. We should analyze the errors in detail and correlate them with the relevant code sections.
+
+### Structure.txt
+
+*   **Purpose:** Defines the full tree structure of items available for purchase and interaction within the game world.
+*   **Relevance:** This file is the data source for systems like `ItemManager` and `InteractionSystem`. It directly reflects the data-driven aspect of the architecture mentioned in `PRD.txt`.
+*   **Initial Thoughts:** We need to ensure that the parsing and utilization of this structure are robust. Any discrepancies between this data and the game's behavior could lead to bugs. We should also consider how this structure is maintained and updated.
+
+### ToAdd.txt
+
+*   **Purpose:** A list of functions and features planned for future implementation.
+*   **Initial Thoughts:** While not part of the active codebase, this file provides insight into the project's future direction. It might be useful to review this list periodically to see if any planned features could address current issues or improve existing systems.
+
+## Phase 2: Source Code Analysis (src directory)
+
+Now we will begin to examine the `src` directory, which contains the main codebase.
+
+### src/StarterGui/init.client.lua
+
+*   **Purpose:** Initializes the main UI for the player.
+*   **Functionality:** Creates a `MainUI` ScreenGui and sets up event handlers for showing item descriptions and notifications. References shared modules like `Constants`, `GameManager`, and `CurrencyManager`.
+*   **Observations:** 
+    *   UI elements are created programmatically.
+    *   Uses `ReplicatedStorage.Remotes` for client-server communication.
+    *   Lacks explicit error handling (e.g., `pcall`).
+    *   Self-initializes.
+*   **Improvement Suggestions:**
+    *   Consider using Roact or a similar UI library for managing complex UIs, if applicable.
+    *   Implement error handling (e.g., `pcall`) for UI creation and event handling to prevent script failures.
+
+### src/StarterGui/init.meta.json
+
+*   **Purpose:** Metadata file for `init.client.lua`.
+*   **Functionality:** Contains `"keepUnknowns": true`, which preserves unrecognized properties in Roblox Studio.
+*   **Initial Thoughts:** Standard metadata file, not critical for understanding core logic but good for project integrity in Studio.
+
+### src/client/init.client.lua
+
+*   **Purpose:** Main entry point for client-side logic.
+*   **Functionality:**
+    *   Initializes shared modules by calling `SharedModule.Init()`.
+    *   Initializes various UI components from `shared.core.ui` (InventoryUI, PurchaseDialog, CurrencyUI, PlacedItemDialog).
+    *   Initializes the `InteractionSystem`.
+*   **Observations:**
+    *   Highlights a centralized initialization pattern for shared systems via `SharedModule.Init()`.
+    *   Indicates a potential split in UI management between `StarterGui` scripts and `shared.core.ui` modules.
+    *   The comment about `StarterGui` elements being handled by Roblox Studio suggests a hybrid approach to UI creation.
+*   **Key Questions & Areas to Investigate:**
+    *   What are the specific actions performed in `SharedModule.Init()`?
+    *   What is the clear division of responsibility for UI management between `StarterGui` and `shared.core.ui`?
+    *   How does `InteractionSystem` work, and how does it use `Structure.txt`?
+*   **Improvement Suggestions:**
+    *   Clarify and document the UI management strategy to avoid confusion and potential conflicts.
+
+### src/client/client.lua
+
+*   **Purpose:** Handles core client-side game logic, including item interactions, UI management for game systems, and item placement.
+*   **Functionality:**
+    *   Manages client-side state (inventory, currency, placement status).
+    *   Sets up remote events/functions (`PurchaseItem`, `RequestInventory`, `PlaceItem`, `PlacedItemAction`).
+    *   Initializes its own UI (`ItemSystemUI`, Inventory button) and integrates UI modules from `shared.core.ui`.
+    *   Manages proximity prompts for item purchasing.
+    *   Handles the item placement system (preview, mouse input).
+    *   Includes a `safeInvoke` utility for remote function calls with basic error handling.
+*   **Observations:**
+    *   Acts as a central hub for a lot of client-side gameplay systems.
+    *   Further complicates the UI management picture, as it creates its own UI elements in addition to using shared UI modules and `StarterGui`.
+    *   The `safeInvoke` function is a good practice for handling remote calls.
+    *   Placement preview is currently a generic part (`TODO` noted in code).
+*   **Key Questions & Areas to Investigate:**
+    *   How are the remote events/functions handled on the server side?
+    *   How does this script interact with `InteractionSystem` initialized in `src/client/init.client.lua`?
+*   **Improvement Suggestions:**
+    *   Consider refactoring this script into smaller, more focused modules to improve maintainability (e.g., separate modules for placement, proximity prompts, inventory UI interaction).
+    *   Consolidate and clarify the UI management strategy across all client scripts.
+    *   Implement the TODO for creating actual item preview models.
+    *   Enhance the error handling and notification system beyond the current `lastError` approach.
+
+### src/server/init.server.lua
+
+*   **Purpose:** Main entry point for server-side logic.
+*   **Functionality:**
+    *   Loads shared modules (`SharedModule`, `GameManager`, `CurrencyManager`, `InteractionManager`).
+    *   Programmatically creates RemoteEvents and RemoteFunctions in `ReplicatedStorage.Remotes`.
+    *   Initializes manager modules (`InteractionManager`, `CurrencyManager`, `GameManager`).
+    *   Connects server-side handlers for various remote events/functions, delegating logic to manager modules.
+*   **Observations:**
+    *   Centralizes remote object creation and handling.
+    *   Delegates most complex logic to specific manager modules, promoting modularity.
+    *   `GameManager` appears to be a key module for a wide range of game logic.
+    *   Commented-out `.new()` calls for managers might indicate a shift towards OOP.
+    *   Potential mismatch or missing handler for `PlacedItemAction` from the client.
+    *   `ShowItemDescription` and `NotifyPlayer` remotes are created, with `NotifyPlayer` being used in `InteractWithItem`.
+*   **Key Questions & Areas to Investigate:**
+    *   The exact division of responsibilities between `GameManager`, `InteractionManager`, and other managers.
+    *   How `PlacedItemAction` (client) maps to server-side logic.
+    *   Where are `ShowItemDescription` and `NotifyPlayer` events typically fired *from* on the server, if not directly in this script?
+*   **Improvement Suggestions:**
+    *   Clarify the OOP strategy for manager modules if a transition is in progress.
+    *   Ensure all client-side remote calls have clear, corresponding server-side handlers.
+
+### src/shared/init.lua
+
+*   **Purpose:** Acts as a central aggregator and initializer for all shared modules located in `src/shared/core`.
+*   **Functionality:**
+    *   Requires sub-modules (`Constants`, `GameManager`, `UI`, `Interaction`, `Placement`, `Inventory`, `Economy`) and makes them accessible via the `SharedModule` table.
+    *   Provides an `Init()` function that iterates through core shared modules and calls their respective `Init` or `Initialize` functions.
+*   **Observations:**
+    *   Provides a convenient single point of access for all shared code (`require(ReplicatedStorage.shared)`).
+    *   Implements a cascading initialization pattern for shared systems.
+    *   The order of initialization in `SharedModule.Init()` might be important if inter-module dependencies exist within shared code.
+*   **Key Questions & Areas to Investigate:**
+    *   Are there any implicit dependencies in the initialization order of the submodules?
+
