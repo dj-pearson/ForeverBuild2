@@ -1,0 +1,9 @@
+{
+  "name": "ReplicatedStorage",
+  "tree": {
+    "$className": "ReplicatedStorage",
+    "shared": {
+      "$path": "src/shared"
+    }
+  }
+}

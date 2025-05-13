@@ -6,12 +6,6 @@
       "$className": "ReplicatedStorage",
       "shared": {
         "$path": "src/shared"
-      },
-      "GameData": {
-        "$className": "Folder",
-        "Structure": {
-          "$path": "Structure.txt"
-        }
       }
     },
     "ServerScriptService": {

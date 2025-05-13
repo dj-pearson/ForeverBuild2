@@ -2,10 +2,18 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local SharedModule = require(ReplicatedStorage.shared)
-local GameManager = SharedModule.GameManager
-local CurrencyManager = SharedModule.Economy.CurrencyManager
+local GameManagerModule = SharedModule.GameManager
+local CurrencyManagerModule = SharedModule.Economy.CurrencyManager
 local InteractionManagerModule = SharedModule.Interaction.Manager
+
+-- Create manager instances with consistent approach
+local gameManager = GameManagerModule.new()
+local currencyManager = CurrencyManagerModule.new()
 local interactionManager = InteractionManagerModule.new()
+
+-- Initialize all managers
+gameManager:Initialize()
+currencyManager:Initialize()
 interactionManager:Initialize()
 
 -- Create Remotes folder if it doesn't exist
@@ -56,17 +64,7 @@ for _, functionName in ipairs(functions) do
     end
 end
 
--- Initialize managers with consistent OOP approach
-local currencyManager = CurrencyManager.new()
-currencyManager:Initialize()
-
--- Fix GameManager OOP approach - create instance instead of using module directly
-local gameManager = GameManager.new()
-gameManager:Initialize()
-
--- interactionManager is already initialized above using OOP pattern
-
--- Set up event handlers with gameManager instance
+-- Setup event handlers
 remotes.BuyItem.OnServerEvent:Connect(function(player, itemId)
     gameManager:HandleBuyItem(player, itemId)
 end)

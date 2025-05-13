@@ -1,0 +1,9 @@
+{
+  "name": "StarterGui",
+  "tree": {
+    "$className": "StarterGui",
+    "StarterGui": {
+      "$path": "src/StarterGui"
+    }
+  }
+}

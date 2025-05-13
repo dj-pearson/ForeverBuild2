@@ -15,16 +15,16 @@ local Constants = SharedModule.Constants
 local GameManager = GameManagerModule.new()
 
 -- UI Modules
-local PurchaseDialogModule = SharedModule.UI.PurchaseDialog
-local InventoryUIModule = SharedModule.UI.InventoryUI
-local PlacedItemDialogModule = SharedModule.UI.PlacedItemDialog
+local PurchaseDialog = SharedModule.UI.PurchaseDialog
+local InventoryUI = SharedModule.UI.InventoryUI
+local PlacedItemDialog = SharedModule.UI.PlacedItemDialog
 
 -- Remote events/functions
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
-local BuyItemEvent = Remotes:WaitForChild("BuyItem")
-local GetInventoryFunc = Remotes:WaitForChild("GetInventory")
-local PlaceItemEvent = Remotes:WaitForChild("PlaceItem")
-local InteractWithItemEvent = Remotes:WaitForChild("InteractWithItem")
+local BuyItem = Remotes:WaitForChild("BuyItem")
+local GetInventory = Remotes:WaitForChild("GetInventory")
+local PlaceItem = Remotes:WaitForChild("PlaceItem")
+local InteractWithItem = Remotes:WaitForChild("InteractWithItem")
 
 -- State
 local currentInventory = {}
@@ -33,9 +33,6 @@ local isPlacingItem = false
 local selectedItem = nil
 local placementPreview = nil
 local lastError = nil
-local purchaseDialog = nil
-local inventoryUI = nil
-local placedItemDialog = nil
 
 -- Helper to safely call RemoteFunctions
 local function safeInvoke(remote, ...)
@@ -89,21 +86,17 @@ local function createInventoryButton(parent)
     -- Set up click handler
     button.MouseButton1Click:Connect(function()
         if lastError then
-            warn("Error showing inventory:", lastError)
+            inventoryUI:ShowError(lastError)
             return
         end
-        local result = safeInvoke(GetInventoryFunc)
+        local result = safeInvoke(RequestInventory)
         if result.success then
             currentInventory = result.inventory
             currentCurrency = result.currency
-            if inventoryUI then
-                inventoryUI:UpdateInventory(currentInventory, currentCurrency)
-                inventoryUI:Show()
-            else
-                warn("InventoryUI not initialized")
-            end
+            inventoryUI:UpdateInventory(currentInventory, currentCurrency)
+            inventoryUI:Show()
         else
-            warn("Failed to get inventory:", result.message)
+            inventoryUI:ShowError(result.message)
         end
     end)
     
@@ -122,23 +115,23 @@ local function initializeUI()
     createInventoryButton(uiContainer)
     
     -- Initialize UI modules
-    purchaseDialog = PurchaseDialogModule.new()
+    local purchaseDialog = PurchaseDialog.new()
     purchaseDialog:Initialize(uiContainer)
 
-    inventoryUI = InventoryUIModule.new()
+    local inventoryUI = InventoryUI.new()
     inventoryUI:Initialize(uiContainer)
 
-    placedItemDialog = PlacedItemDialogModule.new()
+    local placedItemDialog = PlacedItemDialog.new()
     placedItemDialog:Initialize(uiContainer)
     
     -- Set up item selection
     inventoryUI.OnItemSelected = function(itemName)
         if lastError then
-            warn("Error selecting item:", lastError)
+            inventoryUI:ShowError(lastError)
             return
         end
         if not currentInventory[itemName] or currentInventory[itemName] <= 0 then
-            warn("You do not own this item.")
+            inventoryUI:ShowError("You do not own this item.")
             return
         end
         -- Start placement mode
@@ -149,7 +142,7 @@ local function initializeUI()
         if placementPreview then
             placementPreview:Destroy()
         end
-        -- Simple preview model
+        -- TODO: Create actual preview model based on item
         placementPreview = Instance.new("Part")
         placementPreview.Name = "PlacementPreview"
         placementPreview.Anchored = true
@@ -162,7 +155,7 @@ local function initializeUI()
     
     -- Set up placed item interaction
     placedItemDialog.OnActionSelected = function(itemId, action)
-        InteractWithItemEvent:FireServer(itemId, action)
+        PlacedItemAction:FireServer(itemId, action)
     end
 end
 
@@ -184,13 +177,20 @@ local function setupProximityPrompts()
             
             prompt.Triggered:Connect(function()
                 if lastError then
-                    warn("Error purchasing item:", lastError)
+                    purchaseDialog:ShowError(lastError)
                     return
                 end
                 local itemName = item:GetAttribute("item")
-                if itemName and purchaseDialog then
+                if itemName then
                     purchaseDialog:Show(itemName, function(quantity)
-                        BuyItemEvent:FireServer(itemName, quantity)
+                        local result = safeInvoke(PurchaseItem, itemName, quantity)
+                        if result.success then
+                            currentInventory = result.newInventory
+                            currentCurrency = result.newCurrency
+                            inventoryUI:UpdateInventory(currentInventory, currentCurrency)
+                        else
+                            purchaseDialog:ShowError(result.message)
+                        end
                     end)
                 end
             end)
@@ -234,7 +234,7 @@ local function setupPlacement()
                 -- Place item
                 local position = placementPreview.Position
                 local rotation = placementPreview.Orientation
-                PlaceItemEvent:FireServer(selectedItem, position, rotation)
+                PlaceItem:FireServer(selectedItem, position, rotation)
                 
                 -- Reset placement mode
                 isPlacingItem = false
@@ -275,17 +275,11 @@ player.CharacterAdded:Connect(function(newCharacter)
 end)
 
 -- Initial inventory load
-if GetInventoryFunc then
-    local result = safeInvoke(GetInventoryFunc)
-    if result and result.success then
-        currentInventory = result.inventory or {}
-        currentCurrency = result.currency or 0
-        if inventoryUI then
-            inventoryUI:UpdateInventory(currentInventory, currentCurrency)
-        end
-    else
-        warn("Failed to load initial inventory")
-    end
+local result = safeInvoke(RequestInventory)
+if result.success then
+    currentInventory = result.inventory
+    currentCurrency = result.currency
+    inventoryUI:UpdateInventory(currentInventory, currentCurrency)
 else
-    warn("GetInventory RemoteFunction not found")
-end
+    inventoryUI:ShowError(result.message)
+end 

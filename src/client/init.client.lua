@@ -4,6 +4,15 @@ local Players = game:GetService("Players")
 -- Add debug print to confirm script is running
 print("Client script starting...")
 
+-- Wait for remotes to exist before initializing shared module
+local Remotes = ReplicatedStorage:WaitForChild("Remotes", 10)
+if not Remotes then
+    warn("Failed to find Remotes folder in ReplicatedStorage. Server may not be initialized yet.")
+    Remotes = Instance.new("Folder")
+    Remotes.Name = "Remotes"
+    Remotes.Parent = ReplicatedStorage
+end
+
 -- Load core modules
 local SharedModule = require(ReplicatedStorage.shared)
 
@@ -16,8 +25,20 @@ if not success then
 	warn("Failed to initialize SharedModule: ", errorMsg)
 end
 
--- Set up proper OOP initialization for UI components
-local UI = require(ReplicatedStorage.shared.core.ui)
+-- Set up proper OOP initialization for UI components with safe require
+local UI
+success, UI = pcall(function()
+    return require(ReplicatedStorage.shared.core.ui)
+end)
+
+if not success then
+    warn("Failed to require UI module: ", UI)
+    UI = {
+        InventoryUI = {},
+        PurchaseDialog = {},
+        CurrencyUI = {}
+    }
+end
 
 -- Create UI instances with proper error handling
 local function safeInitialize(module, name)

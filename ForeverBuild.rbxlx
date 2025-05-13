@@ -3,426 +3,7 @@
     <Properties>
       <string name="Name">ReplicatedStorage</string>
     </Properties>
-    <Item class="Folder" referent="1">
-      <Properties>
-        <string name="Name">GameData</string>
-      </Properties>
-      <Item class="StringValue" referent="2">
-        <Properties>
-          <string name="Name">Structure</string>
-          <string name="Value"><![CDATA[  # ForeverBuild2 Structure File
-# This file defines all items, their properties, and organization
-# Format: [Category] followed by item entries
-
-[Items]
-# Basic items
-brick_cube=Brick Cube,100
-wood_cube=Wood Cube,150
-stone_cube=Stone Cube,175
-grass_cube=Grass Cube,150
-fabric_cube=Fabric Cube,125
-glass_cube=Glass Cube,200
-water_cube=Water Cube,225
-fire_cube=Fire Cube,250
-
-# Glowing items
-glow_red_cube=Red Glowing Cube,300
-glow_blue_cube=Blue Glowing Cube,300
-glow_green_cube=Green Glowing Cube,300
-glow_purple_cube=Purple Glowing Cube,350
-glow_yellow_cube=Yellow Glowing Cube,325
-glow_white_cube=White Glowing Cube,400
-# Interactive items
-gear=Spinning Gear,500
-trampoline=Trampoline,750
-
-# Teleportation items
-portal_blue=Blue Portal,1000
-portal_red=Red Portal,1000
-
-[Categories]
-# Category definitions
-basic=brick_cube,wood_cube,stone_cube,grass_cube,fabric_cube,glass_cube,water_cube,fire_cube
-glow=glow_red_cube,glow_blue_cube,glow_green_cube,glow_purple_cube,glow_yellow_cube,glow_white_cube
-interactive=gear,trampoline
-teleport=portal_blue,portal_red
-
-[Properties]
-# Properties for specific items
-trampoline=bounceHeight:20,bounceCooldown:1.5
-gear=rotationSpeed:2
-portal_blue=linkedPortal:portal_red,cooldown:5
-portal_red=linkedPortal:portal_blue,cooldown:5
-glow_red_cube=glowIntensity:1.5,glowColor:255,0,0
-glow_blue_cube=glowIntensity:1.5,glowColor:0,0,255
-glow_green_cube=glowIntensity:1.5,glowColor:0,255,0
-    end
-    
-    if attrCount > 0 then
-        attrStr = attrStr .. "]"
-        info = info .. attrStr
-    end
-    
-    -- Print the current object
-    print(prefix .. connector .. icon .. " " .. info)
-    
-    -- Get children and sort them (Folders first, then alphabetically)
-    local children = object:GetChildren()
-    table.sort(children, function(a, b)
-        if a:IsA("Folder") and not b:IsA("Folder") then
-            return true
-        elseif not a:IsA("Folder") and b:IsA("Folder") then
-            return false
-        else
-            return a.Name < b.Name
-        end
-    end)
-    
-    -- Print children
-    for i, child in ipairs(children) do
-        local isLastChild = (i == #children)
-        printTree(child, depth + 1, isLastChild, nextPrefix)
-    end
-end
-
--- Add a collapsible version for large structures
-local function printTreeCollapsible(object, depth, isLast, prefix, maxDepth)
-    depth = depth or 0
-    maxDepth = maxDepth or 3  -- Default max depth
-    prefix = prefix or ""
-    
-    if depth > maxDepth then
-        return
-    end
-    
-    -- Same tree printing logic as above
-    local connector = isLast and "└─ " or "├─ "
-    local nextPrefix = prefix .. (isLast and "   " or "│  ")
-    
-    local icon = getObjectIcon(object)
-    local info = string.format("%s (%s)", object.Name, object.ClassName)
-    
-    local attributes = object:GetAttributes()
-    local attrCount = 0
-    local attrStr = ""
-    
-    for key, value in pairs(attributes) do
-        attrCount = attrCount + 1
-        if attrCount == 1 then
-            attrStr = string.format(" [%s=%s", key, tostring(value))
-        else
-            attrStr = attrStr .. string.format(", %s=%s", key, tostring(value))
-        endglow_purple_cube=glowIntensity:1.5,glowColor:125,0,255
-glow_yellow_cube=glowIntensity:1.5,glowColor:255,255,0
-glow_white_cube=glowIntensity:2.0,glowColor:255,255,255
-
-[Tiers]
-# Pricing tiers for items
-tier1=100
-tier2=200
-tier3=300
-tier4=500
-tier5=750
-tier6=1000
-
-[TierAssignments]
-# Assign items to tiers
-tier1=brick_cube,wood_cube,grass_cube,fabric_cube
-tier2=stone_cube,glass_cube,water_cube
-tier3=fire_cube,glow_red_cube,glow_blue_cube,glow_green_cube,glow_yellow_cube
-tier4=glow_purple_cube,glow_white_cube,gear
-tier5=trampoline
-tier6=portal_blue,portal_red
-
-[Interactions]
-# Define possible interactions for items
-trampoline=jump,examine,customize
-gear=spin,examine,pickup
-portal_blue=teleport,examine,configure
-portal_red=teleport,examine,configure
-    
-    for i, child in ipairs(children) do
-        local isLastChild = (i == #children)
-        printTreeCollapsible(child, depth + 1, isLastChild, nextPrefix, maxDepth)
-    end
-end
-
--- Statistics function
-local function getWorkspaceStats()
-    local stats = {
-        totalModels = 0,
-        totalParts = 0,
-        totalFolders = 0,
-        totalScripts = 0,
-        totalOthers = 0
-    }
-    
-    local function countObjects(parent)
-        for _, child in ipairs(parent:GetChildren()) do
-            if child:IsA("Model") then
-                stats.totalModels = stats.totalModels + 1
-            elseif child:IsA("BasePart") then
-                stats.totalParts = stats.totalParts + 1
-            elseif child:IsA("Folder") then
-                stats.totalFolders = stats.totalFolders + 1
-            elseif child:IsA("BaseScript") then
-                stats.totalScripts = stats.totalScripts + 1
-            else
-                stats.totalOthers = stats.totalOthers + 1
-            end
-            countObjects(child)
-        end
-    end
-    
-    countObjects(workspace)
-    return stats
-end
-
--- Main execution
-print("=== WORKSPACE STRUCTURE ===")
-print("🌎 " .. workspace.Name .. " (Workspace)")
-print("│")
-
-local children = workspace:GetChildren()
-for i, child in ipairs(children) do
-    local isLast = (i == #children)
-    printTree(child, 1, isLast, "")
-end
-
-print("\n=== WORKSPACE STATISTICS ===")
-local stats = getWorkspaceStats()
-print("📁 Folders: " .. stats.totalFolders)
-print("📋 Models: " .. stats.totalModels)
-print("🧊 Parts: " .. stats.totalParts)
-print("📝 Scripts: " .. stats.totalScripts)
-print("❓ Others: " .. stats.totalOthers)
-print("📊 Total Objects: " .. (stats.totalFolders + stats.totalModels + stats.totalParts + stats.totalScripts + stats.totalOthers))
-
--- Alternative collapsible view for large workspaces
-print("\n=== COLLAPSED VIEW (Max Depth: 3) ===")
-print("🌎 " .. workspace.Name .. " (Workspace)")
-print("│")
-
-for i, child in ipairs(children) do
-    local isLast = (i == #children)
-    printTreeCollapsible(child, 1, isLast, "", 3)
-end  -  Studio
-  15:02:32.629  === WORKSPACE STRUCTURE ===  -  Edit
-  15:02:32.629  🌎 Workspace (Workspace)  -  Edit
-  15:02:32.629  │  -  Edit
-  15:02:32.629  ├─ ❓ Terrain (Terrain)  -  Edit
-  15:02:32.629  ├─ 📷 Camera (Camera)  -  Edit
-  15:02:32.629  ├─ 📁 Items (Folder)  -  Edit
-  15:02:32.630  │  ├─ 📁 Basic (Folder)  -  Edit
-  15:02:32.630  │  │  ├─ 📁 Glow (Folder)  -  Edit
-  15:02:32.630  │  │  │  ├─ 📋 Glow_Blue_Cube (Model) [GlowColor=Blue]  -  Edit
-  15:02:32.630  │  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.630  │  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.630  │  │  │  ├─ 📋 Glow_Green_Cube (Model) [GlowColor=Green]  -  Edit
-  15:02:32.630  │  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.631  │  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.631  │  │  │  ├─ 📋 Glow_Purple_Cube (Model) [GlowColor=Purple]  -  Edit
-  15:02:32.631  │  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.631  │  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.631  │  │  │  ├─ 📋 Glow_Red_Cube (Model) [GlowColor=Red]  -  Edit
-  15:02:32.632  │  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.632  │  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.632  │  │  │  ├─ 📋 Glow_White_Cube (Model) [GlowColor=White]  -  Edit
-  15:02:32.632  │  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.632  │  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.632  │  │  │  └─ 📋 Glow_Yellow_Cube (Model) [GlowColor=Yellow]  -  Edit
-  15:02:32.633  │  │  │     └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.633  │  │  │        └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.633  │  │  ├─ 📋 Brick_Cube (Model)  -  Edit
-  15:02:32.633  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.633  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.633  │  │  ├─ 📋 Fabric_Cube (Model)  -  Edit
-  15:02:32.634  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.634  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.634  │  │  ├─ 📋 Fire_Cube (Model)  -  Edit
-  15:02:32.634  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.635  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.635  │  │  ├─ 📋 Gear (Model)  -  Edit
-  15:02:32.635  │  │  │  └─ 🔗 Gear (UnionOperation)  -  Edit
-  15:02:32.635  │  │  │     └─ 📝 Spinning Script (Script)  -  Edit
-  15:02:32.635  │  │  ├─ 📋 Glass_Cube (Model)  -  Edit
-  15:02:32.636  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.636  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.636  │  │  ├─ 📋 Grass_Cube (Model)  -  Edit
-  15:02:32.636  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.636  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.636  │  │  ├─ 📋 Stone_Cube (Model)  -  Edit
-  15:02:32.636  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.636  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.636  │  │  ├─ 📋 Water_Cube (Model)  -  Edit
-  15:02:32.637  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.637  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.637  │  │  └─ 📋 Wood_Cube (Model)  -  Edit
-  15:02:32.637  │  │     └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.637  │  │        └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.637  │  ├─ 📁 Exclusive (Folder)  -  Edit
-  15:02:32.637  │  ├─ 📁 Free_items (Folder)  -  Edit
-  15:02:32.637  │  ├─ 📁 Random_Drop (Folder)  -  Edit
-  15:02:32.637  │  ├─ 📁 Rare (Folder)  -  Edit
-  15:02:32.637  │  ├─ 📁 Secondary (Folder)  -  Edit
-  15:02:32.638  │  │  └─ 📁 Teleport Portals (Folder)  -  Edit
-  15:02:32.638  │  │     ├─ 📋 PortalBlue (Model)  -  Edit
-  15:02:32.638  │  │     │  ├─ 🧊 BlueArrive (Part)  -  Edit
-  15:02:32.638  │  │     │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.638  │  │     │  ├─ 🧊 BlueTeleport (Part)  -  Edit
-  15:02:32.639  │  │     │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.639  │  │     │  ├─ 📋 Model (Model)  -  Edit
-  15:02:32.639  │  │     │  │  ├─ 🧊 Part (Part)  -  Edit
-  15:02:32.640  │  │     │  │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.640  │  │     │  │  ├─ 🧊 Part (Part)  -  Edit
-  15:02:32.640  │  │     │  │  │  ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.640  │  │     │  │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.640  │  │     │  │  └─ 🔗 Union (UnionOperation)  -  Edit
-  15:02:32.640  │  │     │  │     └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.640  │  │     │  └─ 🧊 Part (Part)  -  Edit
-  15:02:32.640  │  │     ├─ 📋 PortalRed (Model)  -  Edit
-  15:02:32.640  │  │     │  ├─ 📋 Model (Model)  -  Edit
-  15:02:32.641  │  │     │  │  ├─ 🧊 Part (Part)  -  Edit
-  15:02:32.641  │  │     │  │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.641  │  │     │  │  ├─ 🧊 Part (Part)  -  Edit
-  15:02:32.641  │  │     │  │  │  ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.641  │  │     │  │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.641  │  │     │  │  └─ 🔗 Union (UnionOperation)  -  Edit
-  15:02:32.641  │  │     │  │     └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.642  │  │     │  ├─ 🧊 Part (Part)  -  Edit
-  15:02:32.642  │  │     │  ├─ 🧊 RedArrive (Part)  -  Edit
-  15:02:32.642  │  │     │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.642  │  │     │  └─ 🧊 RedTeleport (Part)  -  Edit
-  15:02:32.643  │  │     │     └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.643  │  │     ├─ 📝 Script (Script)  -  Edit
-  15:02:32.643  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.643  │  └─ 📁 Weapons (Folder)  -  Edit
-  15:02:32.643  ├─ 📁 World_Items (Folder)  -  Edit
-  15:02:32.643  │  ├─ 📋 Trampoline (Model)  -  Edit
-  15:02:32.643  │  │  ├─ 🔗 Trampoline (UnionOperation)  -  Edit
-  15:02:32.644  │  │  │  └─ ❓ Texture (Texture)  -  Edit
-  15:02:32.644  │  │  ├─ 🧊 TrampolineBouncyThing (Part)  -  Edit
-  15:02:32.644  │  │  │  ├─ 📝 BouncePad (Script)  -  Edit
-  15:02:32.645  │  │  │  └─ ❓ Texture (Texture)  -  Edit
-  15:02:32.645  │  │  ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.645  │  │  │  ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.645  │  │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.645  │  │  ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.645  │  │  │  ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.646  │  │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.646  │  │  ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.646  │  │  │  ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.646  │  │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.646  │  │  └─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.646  │  │     ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.646  │  │     └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.646  │  └─ 📋 Trampoline (Model)  -  Edit
-  15:02:32.647  │     ├─ 🔗 Trampoline (UnionOperation)  -  Edit
-  15:02:32.649  │     │  └─ ❓ Texture (Texture)  -  Edit
-  15:02:32.649  │     ├─ 🧊 TrampolineBouncyThing (Part)  -  Edit
-  15:02:32.650  │     │  ├─ 📝 BouncePad (Script)  -  Edit
-  15:02:32.652  │     │  └─ ❓ Texture (Texture)  -  Edit
-  15:02:32.653  │     ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.653  │     │  ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.653  │     │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.653  │     ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.654  │     │  ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.654  │     │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.654  │     ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.655  │     │  ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.655  │     │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.656  │     └─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.656  │        ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.657  │        └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.657  └─ 📁 Main (Folder)  -  Edit
-  15:02:32.657     ├─ 🧊 Baseplate (Part)  -  Edit
-  15:02:32.658     │  └─ ❓ Texture (Texture)  -  Edit
-  15:02:32.658     └─ 📋 Board (Model)  -  Edit
-  15:02:32.658        ├─ 🧊 Board (Part)  -  Edit
-  15:02:32.658        └─ 🧊 SpawnLocation (SpawnLocation)  -  Edit
-  15:02:32.659           └─ ❓ Decal (Decal)  -  Edit
-  15:02:32.659  
-=== WORKSPACE STATISTICS ===  -  Edit
-  15:02:32.659  📁 Folders: 12  -  Edit
-  15:02:32.659  📋 Models: 22  -  Edit
-  15:02:32.660  🧊 Parts: 43  -  Edit
-  15:02:32.660  📝 Scripts: 4  -  Edit
-  15:02:32.660  ❓ Others: 84  -  Edit
-  15:02:32.660  📊 Total Objects: 165  -  Edit
-  15:02:32.660  
-=== COLLAPSED VIEW (Max Depth: 3) ===  -  Edit
-  15:02:32.661  🌎 Workspace (Workspace)  -  Edit
-  15:02:32.661  │  -  Edit
-  15:02:32.661  ├─ ❓ Terrain (Terrain)  -  Edit
-  15:02:32.661  ├─ 📷 Camera (Camera)  -  Edit
-  15:02:32.662  ├─ 📁 Items (Folder)  -  Edit
-  15:02:32.662  │  ├─ 📁 Basic (Folder)  -  Edit
-  15:02:32.662  │  │  ├─ 📁 Glow (Folder)  -  Edit
-  15:02:32.662  │  │  │  └─ 📂 ... (6 more items)  -  Edit
-  15:02:32.663  │  │  ├─ 📋 Brick_Cube (Model)  -  Edit
-  15:02:32.663  │  │  │  └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.663  │  │  ├─ 📋 Fabric_Cube (Model)  -  Edit
-  15:02:32.663  │  │  │  └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.663  │  │  ├─ 📋 Fire_Cube (Model)  -  Edit
-  15:02:32.663  │  │  │  └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.663  │  │  ├─ 📋 Gear (Model)  -  Edit
-  15:02:32.664  │  │  │  └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.664  │  │  ├─ 📋 Glass_Cube (Model)  -  Edit
-  15:02:32.664  │  │  │  └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.664  │  │  ├─ 📋 Grass_Cube (Model)  -  Edit
-  15:02:32.664  │  │  │  └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.665  │  │  ├─ 📋 Stone_Cube (Model)  -  Edit
-  15:02:32.665  │  │  │  └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.665  │  │  ├─ 📋 Water_Cube (Model)  -  Edit
-  15:02:32.665  │  │  │  └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.666  │  │  └─ 📋 Wood_Cube (Model)  -  Edit
-  15:02:32.666  │  │     └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.666  │  ├─ 📁 Exclusive (Folder)  -  Edit
-  15:02:32.667  │  ├─ 📁 Free_items (Folder)  -  Edit
-  15:02:32.667  │  ├─ 📁 Random_Drop (Folder)  -  Edit
-  15:02:32.667  │  ├─ 📁 Rare (Folder)  -  Edit
-  15:02:32.668  │  ├─ 📁 Secondary (Folder)  -  Edit
-  15:02:32.668  │  │  └─ 📁 Teleport Portals (Folder)  -  Edit
-  15:02:32.668  │  │     └─ 📂 ... (4 more items)  -  Edit
-  15:02:32.668  │  └─ 📁 Weapons (Folder)  -  Edit
-  15:02:32.668  ├─ 📁 World_Items (Folder)  -  Edit
-  15:02:32.668  │  ├─ 📋 Trampoline (Model)  -  Edit
-  15:02:32.669  │  │  ├─ 🔗 Trampoline (UnionOperation)  -  Edit
-  15:02:32.669  │  │  │  └─ 📂 ... (6 more items)  -  Edit
-  15:02:32.669  │  │  ├─ 🧊 TrampolineBouncyThing (Part)  -  Edit
-  15:02:32.670  │  │  │  └─ 📂 ... (7 more items)  -  Edit
-  15:02:32.670  │  │  ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.670  │  │  │  └─ 📂 ... (2 more items)  -  Edit
-  15:02:32.670  │  │  ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.670  │  │  │  └─ 📂 ... (2 more items)  -  Edit
-  15:02:32.670  │  │  ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.670  │  │  │  └─ 📂 ... (2 more items)  -  Edit
-  15:02:32.671  │  │  └─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.671  │  │     └─ 📂 ... (2 more items)  -  Edit
-  15:02:32.671  │  └─ 📋 Trampoline (Model)  -  Edit
-  15:02:32.671  │     ├─ 🔗 Trampoline (UnionOperation)  -  Edit
-  15:02:32.672  │     │  └─ 📂 ... (6 more items)  -  Edit
-  15:02:32.672  │     ├─ 🧊 TrampolineBouncyThing (Part)  -  Edit
-  15:02:32.672  │     │  └─ 📂 ... (7 more items)  -  Edit
-  15:02:32.672  │     ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.672  │     │  └─ 📂 ... (2 more items)  -  Edit
-  15:02:32.673  │     ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.673  │     │  └─ 📂 ... (2 more items)  -  Edit
-  15:02:32.673  │     ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.673  │     │  └─ 📂 ... (2 more items)  -  Edit
-  15:02:32.673  │     └─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.673  │        └─ 📂 ... (2 more items)  -  Edit
-  15:02:32.674  └─ 📁 Main (Folder)  -  Edit
-  15:02:32.674     ├─ 🧊 Baseplate (Part)  -  Edit
-  15:02:32.674     │  └─ ❓ Texture (Texture)  -  Edit
-  15:02:32.674     └─ 📋 Board (Model)  -  Edit
-  15:02:32.674        ├─ 🧊 Board (Part)  -  Edit
-  15:02:32.675        └─ 🧊 SpawnLocation (SpawnLocation)  -  Edit
-  15:02:32.675           └─ 📂 ... (1 more items)  -  Edit]]></string>
-        </Properties>
-      </Item>
-    </Item>
-    <Item class="ModuleScript" referent="3">
+    <Item class="ModuleScript" referent="1">
       <Properties>
         <string name="Name">shared</string>
         <string name="Source"><![CDATA[--[[
@@ -464,11 +45,11 @@ end
 return SharedModule
 ]]></string>
       </Properties>
-      <Item class="Folder" referent="4">
+      <Item class="Folder" referent="2">
         <Properties>
           <string name="Name">core</string>
         </Properties>
-        <Item class="ModuleScript" referent="5">
+        <Item class="ModuleScript" referent="3">
           <Properties>
             <string name="Name">Constants</string>
             <string name="Source">local Color3 = Color3
@@ -598,7 +179,7 @@ local Constants = {
 return Constants</string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="6">
+        <Item class="ModuleScript" referent="4">
           <Properties>
             <string name="Name">GameManager</string>
             <string name="Source">local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -882,14 +463,14 @@ end
 return GameManager</string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="7">
+        <Item class="ModuleScript" referent="5">
           <Properties>
             <string name="Name">economy</string>
             <string name="Source"><![CDATA[local Economy = {}
 Economy.CurrencyManager = require(script.CurrencyManager)
 return Economy ]]></string>
           </Properties>
-          <Item class="ModuleScript" referent="8">
+          <Item class="ModuleScript" referent="6">
             <Properties>
               <string name="Name">CurrencyManager</string>
               <string name="Source"><![CDATA[local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -1163,14 +744,14 @@ return CurrencyManager ]]></string>
             </Properties>
           </Item>
         </Item>
-        <Item class="ModuleScript" referent="9">
+        <Item class="ModuleScript" referent="7">
           <Properties>
             <string name="Name">interaction</string>
             <string name="Source"><![CDATA[local Interaction = {}
 Interaction.Manager = require(script.InteractionManager)
 return Interaction ]]></string>
           </Properties>
-          <Item class="ModuleScript" referent="10">
+          <Item class="ModuleScript" referent="8">
             <Properties>
               <string name="Name">InteractionManager</string>
               <string name="Source"><![CDATA[local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -1304,7 +885,7 @@ return InteractionManager ]]></string>
             </Properties>
           </Item>
         </Item>
-        <Item class="ModuleScript" referent="11">
+        <Item class="ModuleScript" referent="9">
           <Properties>
             <string name="Name">inventory</string>
             <string name="Source"><![CDATA[local Inventory = {}
@@ -1312,7 +893,7 @@ Inventory.Manager = require(script.InventoryManager)
 Inventory.ItemManager = require(script.ItemManager)
 return Inventory ]]></string>
           </Properties>
-          <Item class="ModuleScript" referent="12">
+          <Item class="ModuleScript" referent="10">
             <Properties>
               <string name="Name">InventoryManager</string>
               <string name="Source"><![CDATA[local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -1400,7 +981,7 @@ return InventoryManager
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="13">
+          <Item class="ModuleScript" referent="11">
             <Properties>
               <string name="Name">ItemManager</string>
               <string name="Source"><![CDATA[local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -1433,73 +1014,14 @@ function ItemManager:Initialize()
 end
 
 function ItemManager:LoadItems()
-    -- Try to load items from Structure.txt in GameData
-    local success, result = pcall(function()
-        -- Look for Structure.txt in multiple possible locations
-        local structureFile
-        local structureText = ""
-        
-        -- Try in ReplicatedStorage.GameData
-        if ReplicatedStorage:FindFirstChild("GameData") and 
-           ReplicatedStorage.GameData:FindFirstChild("Structure") then
-            structureFile = ReplicatedStorage.GameData.Structure
-            structureText = structureFile.Value
-            print("Found Structure.txt in ReplicatedStorage.GameData")
-        end
-        
-        -- Try in ServerStorage.GameData if not found
-        if not structureFile and ServerStorage:FindFirstChild("GameData") and
-           ServerStorage.GameData:FindFirstChild("Structure") then
-            structureFile = ServerStorage.GameData.Structure
-            structureText = structureFile.Value
-            print("Found Structure.txt in ServerStorage.GameData")
-        end
-        
-        -- Try at workspace root
-        if not structureFile and workspace:FindFirstChild("Structure") then
-            structureFile = workspace.Structure
-            structureText = structureFile.Value
-            print("Found Structure.txt in workspace")
-        end
-        
-        if not structureText or structureText == "" then            -- If we can't find it in game, try to load from file directly
-            local scriptPath = script:GetFullName()
-            local basePath = string.match(scriptPath, "^(.*[/\\])") or ""
-            
-            -- Try direct reference
-            local structureModule = require(script.Parent.Parent.Parent.Parent.Structure)
-            if structureModule then
-                structureText = structureModule
-                print("Found Structure via module require")
-            end
-            
-            if not structureText or structureText == "" then
-                error("Structure.txt not found or empty")
-                return false
-            end
-        end
-        
-        if structureText and structureText ~= "" then
-            self:ParseStructureData(structureText)
-            return true
-        else
-            error("Structure.txt not found or empty")
-            return false
-        end
-    end)
-    
-    if not success then
-        warn("Failed to load items from Structure.txt: " .. tostring(result))
-        -- Fallback to default items
-        self:LoadDefaultItems()
-        return false
-    end
-    
+    -- We'll use hardcoded items to avoid dependency on Structure.txt
+    print("Loading default items...")
+    self:LoadDefaultItems()
     return true
 end
 
 function ItemManager:LoadDefaultItems()
-    print("Using fallback item definitions")
+    print("Using default item definitions")
     self.items = {
         {
             id = "brick_cube",
@@ -1524,138 +1046,32 @@ function ItemManager:LoadDefaultItems()
             name = "Glass Cube",
             price = 200,
             model = nil
+        },
+        {
+            id = "glow_red_cube",
+            name = "Red Glowing Cube",
+            price = 300,
+            model = nil
+        },
+        {
+            id = "trampoline",
+            name = "Trampoline",
+            price = 750,
+            model = nil
         }
     }
     
     -- Setup minimal categories
     self.categories = {
-        basic = {"brick_cube", "wood_cube", "stone_cube", "glass_cube"}
+        basic = {"brick_cube", "wood_cube", "stone_cube", "glass_cube"},
+        glow = {"glow_red_cube"},
+        interactive = {"trampoline"}
     }
-end
-
-function ItemManager:ParseStructureData(structureText)
-    local currentSection = nil
     
-    -- Reset data structures
-    self.items = {}
-    self.categories = {}
-    self.properties = {}
-    self.tiers = {}
-    self.tierAssignments = {}
-    self.interactions = {}
-    
-    -- Create a table to quickly lookup items by ID
-    local itemsById = {}
-    
-    -- Parse the structure file line by line
-    for line in string.gmatch(structureText, "[^\r\n]+") do
-        -- Skip empty lines and comments
-        if line:match("^%s*$") or line:match("^%s*#") then
-            -- Skip this line (empty or comment)
-        
-        -- Check for section headers
-        elseif line:match("^%s*%[(.+)%]%s*$") then
-            currentSection = line:match("^%s*%[(.+)%]%s*$")
-            print("Parsing section: " .. currentSection)
-            
-        -- Process items
-        elseif currentSection == "Items" then
-            local id, details = line:match("^%s*([%w_]+)%s*=%s*(.+)")
-            if id and details then
-                local name, price = details:match("^(.+),(%d+)$")
-                if name and price then
-                    local item = {
-                        id = id,
-                        name = name,
-                        price = tonumber(price),
-                        model = nil -- Will be loaded later
-                    }
-                    table.insert(self.items, item)
-                    itemsById[id] = item
-                    print("Added item: " .. id .. " = " .. name .. ", " .. price)
-                end
-            end
-            
-        -- Process categories
-        elseif currentSection == "Categories" then
-            local categoryName, items = line:match("^%s*([%w_]+)%s*=%s*(.+)")
-            if categoryName and items then
-                self.categories[categoryName] = {}
-                for itemId in string.gmatch(items, "([^,]+)") do
-                    itemId = itemId:match("^%s*(.-)%s*$") -- Trim whitespace
-                    table.insert(self.categories[categoryName], itemId)
-                end
-                print("Added category: " .. categoryName .. " with " .. #self.categories[categoryName] .. " items")
-            end
-            
-        -- Process properties
-        elseif currentSection == "Properties" then
-            local itemId, propString = line:match("^%s*([%w_]+)%s*=%s*(.+)")
-            if itemId and propString then
-                self.properties[itemId] = {}
-                for prop in string.gmatch(propString, "([^,]+)") do
-                    local key, value = prop:match("([^:]+):(.+)")
-                    if key and value then
-                        key = key:match("^%s*(.-)%s*$") -- Trim whitespace
-                        value = value:match("^%s*(.-)%s*$") -- Trim whitespace
-                        self.properties[itemId][key] = value
-                    end
-                end
-                print("Added properties for: " .. itemId)
-            end
-            
-        -- Process tiers
-        elseif currentSection == "Tiers" then
-            local tierName, price = line:match("^%s*([%w_]+)%s*=%s*(%d+)")
-            if tierName and price then
-                self.tiers[tierName] = tonumber(price)
-                print("Added tier: " .. tierName .. " = " .. price)
-            end
-            
-        -- Process tier assignments
-        elseif currentSection == "TierAssignments" then
-            local tierName, items = line:match("^%s*([%w_]+)%s*=%s*(.+)")
-            if tierName and items then
-                self.tierAssignments[tierName] = {}
-                for itemId in string.gmatch(items, "([^,]+)") do
-                    itemId = itemId:match("^%s*(.-)%s*$") -- Trim whitespace
-                    table.insert(self.tierAssignments[tierName], itemId)
-                end
-                print("Added tier assignment: " .. tierName .. " with " .. #self.tierAssignments[tierName] .. " items")
-            end
-            
-        -- Process interactions
-        elseif currentSection == "Interactions" then
-            local itemId, interactions = line:match("^%s*([%w_]+)%s*=%s*(.+)")
-            if itemId and interactions then
-                self.interactions[itemId] = {}
-                for interaction in string.gmatch(interactions, "([^,]+)") do
-                    interaction = interaction:match("^%s*(.-)%s*$") -- Trim whitespace
-                    table.insert(self.interactions[itemId], interaction)
-                end
-                print("Added interactions for: " .. itemId)
-            end
-        end
-    end
-    
-    -- Apply properties to items
-    for itemId, props in pairs(self.properties) do
-        local item = itemsById[itemId]
-        if item then
-            for key, value in pairs(props) do
-                item[key] = value
-            end
-        end
-    end
-    
-    print("Structure parsing complete")
-    print("Items: " .. #self.items)
-    
-    local categoriesCount = 0
-    for _ in pairs(self.categories) do
-        categoriesCount = categoriesCount + 1
-    end
-    print("Categories: " .. categoriesCount)
+    -- Setup some basic interactions
+    self.interactions = {
+        trampoline = {"jump", "examine"}
+    }
     
     return true
 end
@@ -1747,14 +1163,14 @@ return ItemManager
             </Properties>
           </Item>
         </Item>
-        <Item class="ModuleScript" referent="14">
+        <Item class="ModuleScript" referent="12">
           <Properties>
             <string name="Name">placement</string>
             <string name="Source"><![CDATA[local Placement = {}
 Placement.Manager = require(script.PlacementManager)
 return Placement ]]></string>
           </Properties>
-          <Item class="ModuleScript" referent="15">
+          <Item class="ModuleScript" referent="13">
             <Properties>
               <string name="Name">PlacementManager</string>
               <string name="Source"><![CDATA[local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -1946,7 +1362,7 @@ return PlacementManager
             </Properties>
           </Item>
         </Item>
-        <Item class="ModuleScript" referent="16">
+        <Item class="ModuleScript" referent="14">
           <Properties>
             <string name="Name">ui</string>
             <string name="Source"><![CDATA[local UI = {}
@@ -1956,7 +1372,7 @@ UI.CurrencyUI = require(script.CurrencyUI)
 UI.PlacedItemDialog = require(script.PlacedItemDialog)
 return UI ]]></string>
           </Properties>
-          <Item class="ModuleScript" referent="17">
+          <Item class="ModuleScript" referent="15">
             <Properties>
               <string name="Name">CurrencyUI</string>
               <string name="Source"><![CDATA[local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -2110,7 +1526,7 @@ end
 return CurrencyUI ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="18">
+          <Item class="ModuleScript" referent="16">
             <Properties>
               <string name="Name">InventoryUI</string>
               <string name="Source"><![CDATA[-- InventoryUI.lua
@@ -2385,7 +1801,7 @@ end
 return InventoryUI ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="19">
+          <Item class="ModuleScript" referent="17">
             <Properties>
               <string name="Name">PlacedItemDialog</string>
               <string name="Source"><![CDATA[-- PlacedItemDialog.lua
@@ -2578,7 +1994,7 @@ end
 return PlacedItemDialog ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="20">
+          <Item class="ModuleScript" referent="18">
             <Properties>
               <string name="Name">PurchaseDialog</string>
               <string name="Source"><![CDATA[-- PurchaseDialog.lua
@@ -2864,11 +2280,11 @@ return PurchaseDialog ]]></string>
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="21">
+  <Item class="ServerScriptService" referent="19">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Script" referent="22">
+    <Item class="Script" referent="20">
       <Properties>
         <string name="Name">server</string>
         <token name="RunContext">0</token>
@@ -2876,10 +2292,18 @@ return PurchaseDialog ]]></string>
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local SharedModule = require(ReplicatedStorage.shared)
-local GameManager = SharedModule.GameManager
-local CurrencyManager = SharedModule.Economy.CurrencyManager
+local GameManagerModule = SharedModule.GameManager
+local CurrencyManagerModule = SharedModule.Economy.CurrencyManager
 local InteractionManagerModule = SharedModule.Interaction.Manager
+
+-- Create manager instances with consistent approach
+local gameManager = GameManagerModule.new()
+local currencyManager = CurrencyManagerModule.new()
 local interactionManager = InteractionManagerModule.new()
+
+-- Initialize all managers
+gameManager:Initialize()
+currencyManager:Initialize()
 interactionManager:Initialize()
 
 -- Create Remotes folder if it doesn't exist
@@ -2930,17 +2354,7 @@ for _, functionName in ipairs(functions) do
     end
 end
 
--- Initialize managers with consistent OOP approach
-local currencyManager = CurrencyManager.new()
-currencyManager:Initialize()
-
--- Fix GameManager OOP approach - create instance instead of using module directly
-local gameManager = GameManager.new()
-gameManager:Initialize()
-
--- interactionManager is already initialized above using OOP pattern
-
--- Set up event handlers with gameManager instance
+-- Setup event handlers
 remotes.BuyItem.OnServerEvent:Connect(function(player, itemId)
     gameManager:HandleBuyItem(player, itemId)
 end)
@@ -3012,11 +2426,11 @@ end)
 
 print("Server initialized successfully")</string>
       </Properties>
-      <Item class="Folder" referent="23">
+      <Item class="Folder" referent="21">
         <Properties>
           <string name="Name">Neon</string>
         </Properties>
-        <Item class="Script" referent="24">
+        <Item class="Script" referent="22">
           <Properties>
             <string name="Name">NeonGlowManager</string>
             <token name="RunContext">0</token>
@@ -3207,11 +2621,11 @@ _G.EnhancedGlowManager = {
       </Item>
     </Item>
   </Item>
-  <Item class="StarterGui" referent="25">
+  <Item class="StarterGui" referent="23">
     <Properties>
       <string name="Name">StarterGui</string>
     </Properties>
-    <Item class="LocalScript" referent="26">
+    <Item class="LocalScript" referent="24">
       <Properties>
         <string name="Name">StarterGui</string>
         <string name="Source"><![CDATA[--[[
@@ -3386,84 +2800,24 @@ return StarterGui
       </Properties>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="27">
+  <Item class="StarterPlayer" referent="25">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="28">
+    <Item class="StarterPlayerScripts" referent="26">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="LocalScript" referent="29">
+      <Item class="ModuleScript" referent="27">
         <Properties>
           <string name="Name">client</string>
-          <string name="Source">local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
-
--- Add debug print to confirm script is running
-print("Client script starting...")
-
--- Load core modules
-local SharedModule = require(ReplicatedStorage.shared)
-
--- Initialize all shared modules with consistent error handling
-local success, errorMsg = pcall(function()
-	SharedModule.Init() -- Ensure all shared systems are initialized
-end)
-
-if not success then
-	warn("Failed to initialize SharedModule: ", errorMsg)
-end
-
--- Set up proper OOP initialization for UI components
-local UI = require(ReplicatedStorage.shared.core.ui)
-
--- Create UI instances with proper error handling
-local function safeInitialize(module, name)
-	local success, result = pcall(function()
-		if typeof(module) == "table" and module.new then
-			-- OOP style initialization
-			local instance = module.new()
-			instance:Initialize()
-			return instance
-		elseif typeof(module) == "table" and module.Initialize then
-			-- Functional style initialization
-			module.Initialize(Players.LocalPlayer.PlayerGui)
-			return module
-		else
-			warn("Module " .. name .. " doesn't have proper initialization method")
-			return nil
-		end
-	end)
-
-	if not success then
-		warn("Failed to initialize " .. name .. ": ", result)
-		return nil
-	end
-
-	return result
-end
-
--- Initialize UI components with error handling
-local inventoryUI = safeInitialize(UI.InventoryUI, "InventoryUI")
-local purchaseDialog = safeInitialize(UI.PurchaseDialog, "PurchaseDialog")
-local currencyUI = safeInitialize(UI.CurrencyUI, "CurrencyUI")
-local placedItemDialog = safeInitialize(UI.PlacedItemDialog, "PlacedItemDialog")
-
--- The interaction module is a child of this script
-local InteractionSystem = require(script.interaction.InteractionSystem)
-
--- Initialize interaction system with OOP approach
-local interactionSystem = InteractionSystem.new()
-interactionSystem:Initialize()
-
-print("Client initialized successfully")</string>
+          <string name="Source"><![CDATA[game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false) ]]></string>
         </Properties>
-        <Item class="Folder" referent="30">
+        <Item class="Folder" referent="28">
           <Properties>
             <string name="Name">Currency</string>
           </Properties>
-          <Item class="ModuleScript" referent="31">
+          <Item class="ModuleScript" referent="29">
             <Properties>
               <string name="Name">CurrencyUI</string>
               <string name="Source"><![CDATA[local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -3507,18 +2861,29 @@ function CurrencyUI:CreateUI()
     -- Create main frame
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainFrame"
-    mainFrame.Size = UDim2.new(0, 200, 0, 50)
-    mainFrame.Position = UDim2.new(1, -220, 0, 20)
-    mainFrame.BackgroundTransparency = 0.5
-    mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    mainFrame.Size = UDim2.new(0, 220, 0, 56)
+    mainFrame.Position = UDim2.new(1, -240, 0, 24) -- Top right, 24px from top/right
+    mainFrame.BackgroundTransparency = 0
+    mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     mainFrame.BorderSizePixel = 0
     mainFrame.Parent = screenGui
-    
+
+    -- Add rounded corners
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 14)
+    corner.Parent = mainFrame
+
+    -- Add outline
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 2
+    stroke.Color = Color3.fromRGB(255, 223, 70)
+    stroke.Parent = mainFrame
+
     -- Create coin icon
     local coinIcon = Instance.new("ImageLabel")
     coinIcon.Name = "CoinIcon"
     coinIcon.Size = UDim2.new(0, 40, 0, 40)
-    coinIcon.Position = UDim2.new(0, 5, 0.5, -20)
+    coinIcon.Position = UDim2.new(0, 8, 0.5, -20)
     coinIcon.BackgroundTransparency = 1
     coinIcon.Image = "rbxassetid://101567167458494" -- TODO: Replace with actual coin icon
     coinIcon.Parent = mainFrame
@@ -3526,11 +2891,11 @@ function CurrencyUI:CreateUI()
     -- Create balance label
     local balanceLabel = Instance.new("TextLabel")
     balanceLabel.Name = "BalanceLabel"
-    balanceLabel.Size = UDim2.new(1, -50, 1, 0)
-    balanceLabel.Position = UDim2.new(0, 50, 0, 0)
+    balanceLabel.Size = UDim2.new(0, 100, 1, 0)
+    balanceLabel.Position = UDim2.new(0, 56, 0, 0)
     balanceLabel.BackgroundTransparency = 1
-    balanceLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    balanceLabel.TextSize = 24
+    balanceLabel.TextColor3 = Color3.fromRGB(255, 223, 70)
+    balanceLabel.TextSize = 28
     balanceLabel.Font = Enum.Font.GothamBold
     balanceLabel.Text = "0"
     balanceLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -3539,15 +2904,18 @@ function CurrencyUI:CreateUI()
     -- Create purchase button
     local purchaseButton = Instance.new("TextButton")
     purchaseButton.Name = "PurchaseButton"
-    purchaseButton.Size = UDim2.new(0, 100, 0, 30)
-    purchaseButton.Position = UDim2.new(1, -110, 1, 10)
+    purchaseButton.Size = UDim2.new(0, 40, 0, 40)
+    purchaseButton.Position = UDim2.new(1, -48, 0.5, -20)
     purchaseButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-    purchaseButton.BorderSizePixel = 0
+    purchaseButton.Text = "+"
     purchaseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    purchaseButton.TextSize = 18
+    purchaseButton.TextSize = 24
     purchaseButton.Font = Enum.Font.GothamBold
-    purchaseButton.Text = "Buy Coins"
     purchaseButton.Parent = mainFrame
+    
+    local purchaseCorner = Instance.new("UICorner")
+    purchaseCorner.CornerRadius = UDim.new(0, 10)
+    purchaseCorner.Parent = purchaseButton
     
     -- Store UI reference
     self.ui = screenGui
@@ -3684,10 +3052,10 @@ return CurrencyUI ]]></string>
             </Properties>
           </Item>
         </Item>
-        <Item class="ModuleScript" referent="32">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">client</string>
-            <string name="Source"><![CDATA[local ReplicatedStorage = game:GetService("ReplicatedStorage")
+            <string name="Source">local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -3697,20 +3065,23 @@ local character = player.Character or player.CharacterAdded:Wait()
 
 -- Core modules
 local SharedModule = require(ReplicatedStorage.shared)
-local GameManager = SharedModule.GameManager
+local GameManagerModule = SharedModule.GameManager
 local Constants = SharedModule.Constants
 
+-- Initialize GameManager for client-side use
+local GameManager = GameManagerModule.new()
+
 -- UI Modules
-local PurchaseDialog = SharedModule.UI.PurchaseDialog
-local InventoryUI = SharedModule.UI.InventoryUI
-local PlacedItemDialog = SharedModule.UI.PlacedItemDialog
+local PurchaseDialogModule = SharedModule.UI.PurchaseDialog
+local InventoryUIModule = SharedModule.UI.InventoryUI
+local PlacedItemDialogModule = SharedModule.UI.PlacedItemDialog
 
 -- Remote events/functions
-local Remotes = GameManager.Remotes
-local PurchaseItem = Remotes:WaitForChild("PurchaseItem")
-local RequestInventory = Remotes:WaitForChild("RequestInventory")
-local PlaceItem = Remotes:WaitForChild("PlaceItem")
-local PlacedItemAction = Remotes:WaitForChild("PlacedItemAction")
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+local BuyItemEvent = Remotes:WaitForChild("BuyItem")
+local GetInventoryFunc = Remotes:WaitForChild("GetInventory")
+local PlaceItemEvent = Remotes:WaitForChild("PlaceItem")
+local InteractWithItemEvent = Remotes:WaitForChild("InteractWithItem")
 
 -- State
 local currentInventory = {}
@@ -3719,6 +3090,9 @@ local isPlacingItem = false
 local selectedItem = nil
 local placementPreview = nil
 local lastError = nil
+local purchaseDialog = nil
+local inventoryUI = nil
+local placedItemDialog = nil
 
 -- Helper to safely call RemoteFunctions
 local function safeInvoke(remote, ...)
@@ -3772,17 +3146,21 @@ local function createInventoryButton(parent)
     -- Set up click handler
     button.MouseButton1Click:Connect(function()
         if lastError then
-            inventoryUI:ShowError(lastError)
+            warn("Error showing inventory:", lastError)
             return
         end
-        local result = safeInvoke(RequestInventory)
+        local result = safeInvoke(GetInventoryFunc)
         if result.success then
             currentInventory = result.inventory
             currentCurrency = result.currency
-            inventoryUI:UpdateInventory(currentInventory, currentCurrency)
-            inventoryUI:Show()
+            if inventoryUI then
+                inventoryUI:UpdateInventory(currentInventory, currentCurrency)
+                inventoryUI:Show()
+            else
+                warn("InventoryUI not initialized")
+            end
         else
-            inventoryUI:ShowError(result.message)
+            warn("Failed to get inventory:", result.message)
         end
     end)
     
@@ -3801,23 +3179,23 @@ local function initializeUI()
     createInventoryButton(uiContainer)
     
     -- Initialize UI modules
-    local purchaseDialog = PurchaseDialog.new()
+    purchaseDialog = PurchaseDialogModule.new()
     purchaseDialog:Initialize(uiContainer)
 
-    local inventoryUI = InventoryUI.new()
+    inventoryUI = InventoryUIModule.new()
     inventoryUI:Initialize(uiContainer)
 
-    local placedItemDialog = PlacedItemDialog.new()
+    placedItemDialog = PlacedItemDialogModule.new()
     placedItemDialog:Initialize(uiContainer)
     
     -- Set up item selection
     inventoryUI.OnItemSelected = function(itemName)
         if lastError then
-            inventoryUI:ShowError(lastError)
+            warn("Error selecting item:", lastError)
             return
         end
-        if not currentInventory[itemName] or currentInventory[itemName] <= 0 then
-            inventoryUI:ShowError("You do not own this item.")
+        if not currentInventory[itemName] or currentInventory[itemName] &lt;= 0 then
+            warn("You do not own this item.")
             return
         end
         -- Start placement mode
@@ -3828,7 +3206,7 @@ local function initializeUI()
         if placementPreview then
             placementPreview:Destroy()
         end
-        -- TODO: Create actual preview model based on item
+        -- Simple preview model
         placementPreview = Instance.new("Part")
         placementPreview.Name = "PlacementPreview"
         placementPreview.Anchored = true
@@ -3841,7 +3219,7 @@ local function initializeUI()
     
     -- Set up placed item interaction
     placedItemDialog.OnActionSelected = function(itemId, action)
-        PlacedItemAction:FireServer(itemId, action)
+        InteractWithItemEvent:FireServer(itemId, action)
     end
 end
 
@@ -3863,20 +3241,13 @@ local function setupProximityPrompts()
             
             prompt.Triggered:Connect(function()
                 if lastError then
-                    purchaseDialog:ShowError(lastError)
+                    warn("Error purchasing item:", lastError)
                     return
                 end
                 local itemName = item:GetAttribute("item")
-                if itemName then
+                if itemName and purchaseDialog then
                     purchaseDialog:Show(itemName, function(quantity)
-                        local result = safeInvoke(PurchaseItem, itemName, quantity)
-                        if result.success then
-                            currentInventory = result.newInventory
-                            currentCurrency = result.newCurrency
-                            inventoryUI:UpdateInventory(currentInventory, currentCurrency)
-                        else
-                            purchaseDialog:ShowError(result.message)
-                        end
+                        BuyItemEvent:FireServer(itemName, quantity)
                     end)
                 end
             end)
@@ -3920,7 +3291,7 @@ local function setupPlacement()
                 -- Place item
                 local position = placementPreview.Position
                 local rotation = placementPreview.Orientation
-                PlaceItem:FireServer(selectedItem, position, rotation)
+                PlaceItemEvent:FireServer(selectedItem, position, rotation)
                 
                 -- Reset placement mode
                 isPlacingItem = false
@@ -3961,24 +3332,30 @@ player.CharacterAdded:Connect(function(newCharacter)
 end)
 
 -- Initial inventory load
-local result = safeInvoke(RequestInventory)
-if result.success then
-    currentInventory = result.inventory
-    currentCurrency = result.currency
-    inventoryUI:UpdateInventory(currentInventory, currentCurrency)
+if GetInventoryFunc then
+    local result = safeInvoke(GetInventoryFunc)
+    if result and result.success then
+        currentInventory = result.inventory or {}
+        currentCurrency = result.currency or 0
+        if inventoryUI then
+            inventoryUI:UpdateInventory(currentInventory, currentCurrency)
+        end
+    else
+        warn("Failed to load initial inventory")
+    end
 else
-    inventoryUI:ShowError(result.message)
-end ]]></string>
+    warn("GetInventory RemoteFunction not found")
+end</string>
           </Properties>
         </Item>
-        <Item class="Folder" referent="33">
+        <Item class="Folder" referent="31">
           <Properties>
             <string name="Name">interaction</string>
           </Properties>
-          <Item class="ModuleScript" referent="34">
+          <Item class="ModuleScript" referent="32">
             <Properties>
               <string name="Name">InteractionSystem</string>
-              <string name="Source"><![CDATA[local ReplicatedStorage = game:GetService("ReplicatedStorage")
+              <string name="Source">local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 
@@ -3986,10 +3363,46 @@ local UserInputService = game:GetService("UserInputService")
 print("InteractionSystem module loading...")
 
 local Constants = require(ReplicatedStorage.shared.core.Constants)
--- Fix path references to use ReplicatedStorage.shared.core.ui
-local PurchaseDialog = require(ReplicatedStorage.shared.core.ui.PurchaseDialog)
-local InventoryUI = require(ReplicatedStorage.shared.core.ui.InventoryUI)
-local PlacedItemDialog = require(ReplicatedStorage.shared.core.ui.PlacedItemDialog)
+
+-- BREAKING THE CIRCULAR DEPENDENCY: Use lazy loading instead of direct requires
+-- We'll load these modules when they're needed, not at the top level
+local PurchaseDialog, InventoryUI, PlacedItemDialog
+
+-- Helper to safely require a module
+local function safeRequire(path)
+    local success, result = pcall(function()
+        return require(path)
+    end)
+    
+    if success then
+        return result
+    else
+        warn("Failed to require module at path: ", path)
+        warn("Error: ", result)
+        return {}
+    end
+end
+
+-- Lazy-loading function for UI modules
+local function getUIModules()
+    if not PurchaseDialog then
+        PurchaseDialog = safeRequire(ReplicatedStorage.shared.core.ui.PurchaseDialog)
+    end
+    
+    if not InventoryUI then
+        InventoryUI = safeRequire(ReplicatedStorage.shared.core.ui.InventoryUI)
+    end
+    
+    if not PlacedItemDialog then
+        PlacedItemDialog = safeRequire(ReplicatedStorage.shared.core.ui.PlacedItemDialog)
+    end
+    
+    return {
+        PurchaseDialog = PurchaseDialog,
+        InventoryUI = InventoryUI,
+        PlacedItemDialog = PlacedItemDialog
+    }
+end
 
 local InteractionSystem = {}
 InteractionSystem.__index = InteractionSystem
@@ -4025,40 +3438,31 @@ function InteractionSystem:Initialize()
 end
 
 function InteractionSystem:CreateUI()
-    -- Create ScreenGui
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "InteractionUI"
-    screenGui.Parent = self.player:WaitForChild("PlayerGui")
-    
-    -- Create tooltip
-    local tooltip = Instance.new("Frame")
-    tooltip.Name = "Tooltip"
-    tooltip.Size = UDim2.new(0, 200, 0, 100)
-    tooltip.BackgroundColor3 = Constants.UI_COLORS.SECONDARY
-    tooltip.BorderSizePixel = 0
-    tooltip.Visible = false
-    tooltip.Parent = screenGui
-    
-    -- Create title
-    local title = Instance.new("TextLabel")
-    title.Name = "Title"
-    title.Size = UDim2.new(1, 0, 0, 30)
-    title.BackgroundTransparency = 1
-    title.TextColor3 = Constants.UI_COLORS.TEXT
-    title.TextSize = 18
-    title.Font = Enum.Font.GothamBold
-    title.Text = "Interact"
-    title.Parent = tooltip
-    
-    -- Create interaction list
-    local list = Instance.new("Frame")
-    list.Name = "InteractionList"
-    list.Size = UDim2.new(1, 0, 1, -30)
-    list.Position = UDim2.new(0, 0, 0, 30)
-    list.BackgroundTransparency = 1
-    list.Parent = tooltip
-    
-    self.ui = screenGui
+    -- Remove old tooltip UI creation
+    -- Instead, prepare BillboardGui template for proximity popup
+    self.billboardTemplate = Instance.new("BillboardGui")
+    self.billboardTemplate.Name = "ProximityInteractUI"
+    self.billboardTemplate.Size = UDim2.new(0, 200, 0, 50)
+    self.billboardTemplate.StudsOffset = Vector3.new(0, 3, 0)
+    self.billboardTemplate.AlwaysOnTop = true
+    self.billboardTemplate.Enabled = false
+
+    local bg = Instance.new("Frame")
+    bg.Size = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3 = Constants.UI_COLORS.SECONDARY
+    bg.BackgroundTransparency = 0.2
+    bg.BorderSizePixel = 0
+    bg.Parent = self.billboardTemplate
+
+    local label = Instance.new("TextLabel")
+    label.Name = "Title"
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Constants.UI_COLORS.TEXT
+    label.TextSize = 20
+    label.Font = Enum.Font.GothamBold
+    label.Text = "[E] Interact"
+    label.Parent = bg
 end
 
 function InteractionSystem:SetupInputHandling()
@@ -4129,61 +3533,30 @@ function InteractionSystem:GetPlacedItemFromPart(part)
 end
 
 function InteractionSystem:ShowInteractionUI(placedItem)
-    local tooltip = self.ui.Tooltip
-    local list = tooltip.InteractionList
-    tooltip.Visible = true -- Ensure tooltip is visible
-    -- Clear existing interactions
-    for _, child in ipairs(list:GetChildren()) do
-        child:Destroy()
+    -- Remove old tooltip logic
+    -- Attach BillboardGui to the item model's PrimaryPart
+    if not placedItem.model.PrimaryPart then
+        placedItem.model.PrimaryPart = placedItem.model:FindFirstChildWhichIsA("BasePart")
     end
+    if not placedItem.model.PrimaryPart then return end
 
-    -- Get the item model from Workspace > Items
-    local itemsFolder = workspace:FindFirstChild("Items")
-    local itemModel = nil
-    if itemsFolder then
-        for _, model in ipairs(itemsFolder:GetDescendants()) do
-            if model:IsA("Model") and model:GetAttribute("item") and model.Name == placedItem.id then
-                itemModel = model
-                break
-            end
-        end
-    end
+    -- Remove any existing BillboardGui
+    local existing = placedItem.model.PrimaryPart:FindFirstChild("ProximityInteractUI")
+    if existing then existing:Destroy() end
 
-    -- Get tier and price
-    local tier = itemModel and itemModel:GetAttribute("item") or "basic"
-    local price = Constants.ITEM_PRICING[tier] or 0
-
-    -- If this is a main item (not a placed item), show the purchase dialog
-    if not placedItem.model:GetAttribute("PlacedByPlayer") then
-        PurchaseDialog.Show(placedItem.id, function(quantity)
-            local result = ReplicatedStorage.Remotes.BuyItem:InvokeServer(placedItem.id, quantity)
-            if not result or not result.success then
-                if result and result.message then
-                    PurchaseDialog.ShowError(result.message)
-                else
-                    PurchaseDialog.ShowError("Purchase failed.")
-                end
-            end
-        end)
-        return
-    end
-
-    -- Otherwise, show the placed item dialog
-    PlacedItemDialog.Show(placedItem.id, placedItem.model:GetAttribute("item"), function(action)
-        if action == "clone" then
-            ReplicatedStorage.Remotes.CloneItem:FireServer(placedItem)
-        elseif action == "move" then
-            ReplicatedStorage.Remotes.MoveItem:FireServer(placedItem)
-        elseif action == "destroy" then
-            ReplicatedStorage.Remotes.RemoveItem:FireServer(placedItem)
-        elseif action == "rotate" then
-            ReplicatedStorage.Remotes.RotateItem:FireServer(placedItem)
-        end
-    end)
+    local bb = self.billboardTemplate:Clone()
+    bb.Enabled = true
+    bb.Parent = placedItem.model.PrimaryPart
 end
 
 function InteractionSystem:HideInteractionUI()
-    self.ui.Tooltip.Visible = false
+    -- Remove BillboardGui from all items in workspace
+    for _, model in ipairs(workspace:GetDescendants()) do
+        if model:IsA("Model") and model.PrimaryPart then
+            local bb = model.PrimaryPart:FindFirstChild("ProximityInteractUI")
+            if bb then bb:Destroy() end
+        end
+    end
 end
 
 function InteractionSystem:AttemptInteraction()
@@ -4273,7 +3646,7 @@ function InteractionSystem:OpenInventory()
     -- Add logic to update inventory display if needed
 end
 
-return InteractionSystem ]]></string>
+return InteractionSystem</string>
             </Properties>
           </Item>
         </Item>
