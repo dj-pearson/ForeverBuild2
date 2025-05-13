@@ -17,22 +17,88 @@ function ItemManager:Initialize()
 end
 
 function ItemManager:LoadItems()
-    -- TODO: Load items from a data source
-    -- For now, we'll use some example items
-    self.items = {
-        {
-            id = "cube_red",
-            name = "Red Cube",
-            price = 100,
-            model = nil -- TODO: Load model
-        },
-        {
-            id = "cube_blue",
-            name = "Blue Cube",
-            price = 150,
-            model = nil -- TODO: Load model
+    -- Try to load items from Structure.txt in GameData
+    local success, items = pcall(function()
+        -- Look for Structure.txt in multiple possible locations
+        local structureFile
+        
+        -- Try in ReplicatedStorage.GameData
+        if ReplicatedStorage:FindFirstChild("GameData") and 
+           ReplicatedStorage.GameData:FindFirstChild("Structure.txt") then
+            structureFile = ReplicatedStorage.GameData.Structure.txt
+        end
+        
+        -- Try in ServerStorage.GameData if not found
+        if not structureFile and game:GetService("ServerStorage"):FindFirstChild("GameData") and
+           game:GetService("ServerStorage").GameData:FindFirstChild("Structure.txt") then
+            structureFile = game:GetService("ServerStorage").GameData.Structure.txt
+        end
+        
+        -- Try at workspace root
+        if not structureFile and workspace:FindFirstChild("Structure.txt") then
+            structureFile = workspace.Structure.txt
+        end
+        
+        if structureFile then
+            print("Found Structure.txt, loading items...")
+            return self:ParseItemsFromStructure(structureFile.Value)
+        else
+            error("Structure.txt not found")
+        end
+    end)
+    
+    if not success then
+        print("Warning: Failed to load items from Structure.txt: " .. tostring(items))
+        print("Using fallback item definitions")
+        -- Fallback to default items
+        self.items = {
+            {
+                id = "cube_red",
+                name = "Red Cube",
+                price = 100,
+                model = nil -- TODO: Load model
+            },
+            {
+                id = "cube_blue",
+                name = "Blue Cube",
+                price = 150,
+                model = nil -- TODO: Load model
+            }
         }
-    }
+    else
+        self.items = items
+        print("Successfully loaded " .. #self.items .. " items from Structure.txt")
+    end
+end
+
+function ItemManager:ParseItemsFromStructure(structureText)
+    local items = {}
+    local inItemSection = false
+    
+    -- Simple parser to extract item information from Structure.txt
+    for line in string.gmatch(structureText, "[^\r\n]+") do
+        if string.match(line, "^%s*%[Items%]%s*$") then
+            inItemSection = true
+        elseif inItemSection and string.match(line, "^%s*%[") then
+            inItemSection = false
+        elseif inItemSection then
+            -- Parse item entry, expected format: id=name,price
+            local id, details = string.match(line, "^%s*([%w_]+)%s*=%s*(.+)")
+            if id and details then
+                local name, price = string.match(details, "^(.+),(%d+)$")
+                if name and price then
+                    table.insert(items, {
+                        id = id,
+                        name = name,
+                        price = tonumber(price),
+                        model = nil -- Will be loaded later
+                    })
+                end
+            end
+        end
+    end
+    
+    return items
 end
 
 function ItemManager:IsAdmin(player)
