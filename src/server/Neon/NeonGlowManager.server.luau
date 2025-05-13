@@ -4,8 +4,6 @@
 local TweenService = game:GetService("TweenService")
 wait(1) -- Wait for everything to load
 
-print("=== Enhanced Glow Manager Starting ===")
-
 -- Color definitions
 local GLOW_COLORS = {
 	Red = Color3.fromRGB(255, 0, 0),
@@ -82,8 +80,6 @@ end
 
 -- Enhanced glow function
 local function makePartGlow(part, color)
-	print(string.format("  Enhancing glow for %s (%s)", part.Name, part.ClassName))
-
 	-- 1. Set main part properties based on part type
 	if part:IsA("Part") then
 		part.Material = Enum.Material.ForceField  -- More translucent than Neon
@@ -136,13 +132,10 @@ local function makePartGlow(part, color)
 	partTween:Play()
 	glowTween:Play()
 	lightTween:Play()
-
-	print(string.format("  ✓ Enhanced glow applied to %s", part.Name))
 end
 
 -- Find all glow models in workspace
 local allGlowModels = findAllGlowModels(workspace)
-print(string.format("Found %d glow models", #allGlowModels))
 
 -- Process each glow model
 for _, model in ipairs(allGlowModels) do
@@ -150,8 +143,6 @@ for _, model in ipairs(allGlowModels) do
 	local color = GLOW_COLORS[colorName]
 
 	if color then
-		print(string.format("Processing: %s (Color: %s)", model.Name, colorName))
-
 		-- Apply enhanced glow to all parts in the model
 		for _, part in ipairs(model:GetChildren()) do
 			if part:IsA("BasePart") then
@@ -162,8 +153,6 @@ for _, model in ipairs(allGlowModels) do
 		warn(string.format("Unknown color: %s for model: %s", colorName, model.Name))
 	end
 end
-
-print("=== Enhanced Glow Manager Complete! ===")
 
 -- Cleanup function
 local function cleanup()
