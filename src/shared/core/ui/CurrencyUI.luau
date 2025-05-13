@@ -30,10 +30,18 @@ end
 
 -- Create UI
 function CurrencyUI:CreateUI()
-    -- Create ScreenGui
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "CurrencyUI"
-    screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+    local player = Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+    local screenGui = playerGui:FindFirstChild("Economy")
+    if not screenGui then
+        screenGui = playerGui:WaitForChild("Economy", 5)
+    end
+    if not screenGui then
+        warn("Economy ScreenGui not found after waiting! Creating fallback CurrencyUI ScreenGui.")
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "CurrencyUI"
+        screenGui.Parent = playerGui
+    end
     
     -- Create main frame
     local frame = Instance.new("Frame")

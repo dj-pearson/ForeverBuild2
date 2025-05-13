@@ -16,6 +16,18 @@ local ITEM_PADDING = 10
 
 -- Create the inventory UI
 local function createInventory(parent)
+    local player = game.Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+    local inventoryScreenGui = playerGui:FindFirstChild("Inventory")
+    if not inventoryScreenGui then
+        inventoryScreenGui = playerGui:WaitForChild("Inventory", 5)
+    end
+    if not inventoryScreenGui then
+        warn("Inventory ScreenGui not found after waiting! Creating fallback InventoryUI ScreenGui.")
+        inventoryScreenGui = Instance.new("ScreenGui")
+        inventoryScreenGui.Name = "Inventory"
+        inventoryScreenGui.Parent = playerGui
+    end
     local inventory = Instance.new("Frame")
     inventory.Name = "InventoryUI"
     inventory.Size = INVENTORY_SIZE
@@ -23,7 +35,7 @@ local function createInventory(parent)
     inventory.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     inventory.BorderSizePixel = 0
     inventory.Visible = false
-    inventory.Parent = parent
+    inventory.Parent = inventoryScreenGui
     
     -- Add corner radius
     local corner = Instance.new("UICorner")

@@ -31,7 +31,9 @@ Constants.CURRENCY = {
     MAX_REWARD_AMOUNT = 100, -- Maximum reward amount
     DAILY_BONUS = 100, -- Daily login bonus
     WEEKLY_BONUS = 500, -- Weekly login bonus
-    MONTHLY_BONUS = 2000 -- Monthly login bonus
+    MONTHLY_BONUS = 2000, -- Monthly login bonus
+    STARTING_COINS = 100, -- Added for client and most scripts
+    STARTING_CURRENCY = 100 -- Added for server/GameManager
 }
 
 -- Item Pricing Configuration
