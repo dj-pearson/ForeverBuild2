@@ -6,13 +6,13 @@ local UserInputService = game:GetService("UserInputService")
 -- Safe initialization of variables
 local player = nil
 local character = nil
-local SharedModule = nil
-local GameManagerModule = nil
-local Constants = nil
+local SharedModule = require(ReplicatedStorage.shared)
+local GameManagerModule = SharedModule.GameManager
+local Constants = SharedModule.Constants
 local GameManager = nil
-local PurchaseDialogModule = nil
-local InventoryUIModule = nil
-local PlacedItemDialogModule = nil
+local PurchaseDialogModule = SharedModule.PurchaseDialog
+local InventoryUIModule = SharedModule.InventoryUI
+local PlacedItemDialogModule = SharedModule.PlacedItemDialog
 local Remotes = nil
 local BuyItemEvent = nil
 local GetInventoryFunc = nil
@@ -21,6 +21,8 @@ local InteractWithItemEvent = nil
 local purchaseDialog = nil
 local inventoryUI = nil
 local placedItemDialog = nil
+local CurrencyUIModule = SharedModule.CurrencyUI
+local InteractionSystem = SharedModule.InteractionSystem
 
 -- State variables
 local currentInventory = {}
@@ -29,18 +31,6 @@ local isPlacingItem = false
 local selectedItem = nil
 local placementPreview = nil
 local lastError = nil
-
--- Require InteractionSystem module
-local InteractionSystem
-local success, result = pcall(function()
-    return require(ReplicatedStorage.shared.interaction.InteractionSystem)
-end)
-if success then
-    InteractionSystem = result
-else
-    warn("Failed to require InteractionSystem module:", result)
-    InteractionSystem = nil
-end
 
 -- Safe initialization function
 local function initializeClient()
@@ -52,29 +42,23 @@ local function initializeClient()
     end
 
     if ReplicatedStorage then
-        SharedModule = require(ReplicatedStorage.shared)
-        if SharedModule then
-            GameManagerModule = SharedModule.GameManager
-            Constants = SharedModule.Constants
-
-            if GameManagerModule then
-                GameManager = GameManagerModule.new()
-            end
-
-            if SharedModule.UI then
-                PurchaseDialogModule = SharedModule.UI.PurchaseDialog
-                InventoryUIModule = SharedModule.UI.InventoryUI
-                PlacedItemDialogModule = SharedModule.UI.PlacedItemDialog
-            end
+        if GameManagerModule then
+            GameManager = GameManagerModule.new()
         end
 
-        Remotes = ReplicatedStorage:WaitForChild("Remotes", 10)
-        if Remotes then
-            BuyItemEvent = Remotes:WaitForChild("BuyItem", 5)
-            GetInventoryFunc = Remotes:WaitForChild("GetInventory", 5)
-            PlaceItemEvent = Remotes:WaitForChild("PlaceItem", 5)
-            InteractWithItemEvent = Remotes:WaitForChild("InteractWithItem", 5)
+        if SharedModule.UI then
+            PurchaseDialogModule = PurchaseDialogModule.new()
+            InventoryUIModule = InventoryUIModule.new()
+            PlacedItemDialogModule = PlacedItemDialogModule.new()
         end
+    end
+
+    Remotes = ReplicatedStorage:WaitForChild("Remotes", 10)
+    if Remotes then
+        BuyItemEvent = Remotes:WaitForChild("BuyItem", 5)
+        GetInventoryFunc = Remotes:WaitForChild("GetInventory", 5)
+        PlaceItemEvent = Remotes:WaitForChild("PlaceItem", 5)
+        InteractWithItemEvent = Remotes:WaitForChild("InteractWithItem", 5)
     end
 end
 
@@ -191,15 +175,22 @@ else
     warn("InteractionSystem module is missing or invalid")
 end
 
--- Initialize PlacedItemDialog if available
+-- Initialize PlacedItemDialog if available and parent to a valid ScreenGui
 local PlacedItemDialog
 local success, result = pcall(function()
-    return require(ReplicatedStorage.shared.core.ui.PlacedItemDialog)
+    return require(ReplicatedStorage:WaitForChild("shared"):WaitForChild("core"):WaitForChild("ui"):WaitForChild("PlacedItemDialog"))
 end)
 if success then
     PlacedItemDialog = result
+    local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+    local screenGui = playerGui:FindFirstChild("PlacedItemDialogUI")
+    if not screenGui then
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "PlacedItemDialogUI"
+        screenGui.Parent = playerGui
+    end
     if PlacedItemDialog.Initialize then
-        PlacedItemDialog:Initialize()
+        PlacedItemDialog.Initialize(screenGui)
     else
         warn("PlacedItemDialog module doesn't have proper initialization method")
     end

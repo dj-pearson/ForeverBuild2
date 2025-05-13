@@ -48,7 +48,7 @@ local function safeRequire(path)
 end
 
 -- Safely initialize SharedModule
-local SharedModule = safeRequire(ReplicatedStorage.shared)
+local SharedModule = require(ReplicatedStorage.shared)
 if SharedModule.Init then
     local success, errorMsg = pcall(function()
         SharedModule.Init() -- Ensure all shared systems are initialized
@@ -94,13 +94,12 @@ local function safeInitialize(module, name)
 end
 
 -- Initialize UI components with error handling
-local inventoryUI = safeInitialize(UI.InventoryUI, "InventoryUI")
-local purchaseDialog = safeInitialize(UI.PurchaseDialog, "PurchaseDialog")
-local currencyUI = safeInitialize(script.Currency.CurrencyUI, "CurrencyUI")
-local placedItemDialog = safeInitialize(UI.PlacedItemDialog, "PlacedItemDialog")
+local inventoryUI = safeInitialize(SharedModule.InventoryUI, "InventoryUI")
+local purchaseDialog = safeInitialize(SharedModule.PurchaseDialog, "PurchaseDialog")
+local currencyUI = safeInitialize(SharedModule.CurrencyUI, "CurrencyUI")
+local placedItemDialog = safeInitialize(SharedModule.PlacedItemDialog, "PlacedItemDialog")
 
--- The interaction module is a child of this script with our fixed version
-local InteractionSystem = safeRequire(script.interaction.InteractionSystem)
+local InteractionSystem = SharedModule.InteractionSystem
 
 -- Initialize interaction system with OOP approach and error handling
 if InteractionSystem and InteractionSystem.new then

@@ -14,11 +14,10 @@ Constants.ITEM_CATEGORIES = {
 
 -- Item Actions
 Constants.ITEM_ACTIONS = {
-    BUY = "buy",
-    MOVE = "move",
-    DESTROY = "destroy",
-    ROTATE = "rotate",
-    COLOR = "color"
+    clone = { cost = 100 },
+    move = { cost = 10 },
+    rotate = { cost = 5 },
+    destroy = { cost = 20 }
 }
 
 -- Currency Configuration

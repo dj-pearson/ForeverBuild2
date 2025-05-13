@@ -32,23 +32,12 @@ local function getModule(name, path)
     end
 end
 
+local Core = require(script.core)
+
 -- Use metatables for lazy loading
 SharedModule = setmetatable(SharedModule, {
     __index = function(self, key)
-        if key == "GameManager" then
-            return getModule("GameManager", script.core.GameManager)
-        elseif key == "UI" then
-            return getModule("UI", script.core.ui)
-        elseif key == "Interaction" then
-            return getModule("Interaction", script.core.interaction)
-        elseif key == "Placement" then
-            return getModule("Placement", script.core.placement)
-        elseif key == "Inventory" then
-            return getModule("Inventory", script.core.inventory)
-        elseif key == "Economy" then
-            return getModule("Economy", script.core.economy)
-        end
-        return nil
+        return Core[key]
     end
 })
 
