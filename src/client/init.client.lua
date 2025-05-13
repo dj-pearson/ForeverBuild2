@@ -96,11 +96,11 @@ end
 -- Initialize UI components with error handling
 local inventoryUI = safeInitialize(UI.InventoryUI, "InventoryUI")
 local purchaseDialog = safeInitialize(UI.PurchaseDialog, "PurchaseDialog")
-local currencyUI = safeInitialize(UI.CurrencyUI, "CurrencyUI")
+local currencyUI = safeInitialize(script.Currency.CurrencyUI, "CurrencyUI")
 local placedItemDialog = safeInitialize(UI.PlacedItemDialog, "PlacedItemDialog")
 
 -- The interaction module is a child of this script with our fixed version
-local InteractionSystem = safeRequire(script.interaction.InteractionSystem_fixed)
+local InteractionSystem = safeRequire(script.interaction.InteractionSystem)
 
 -- Initialize interaction system with OOP approach and error handling
 if InteractionSystem and InteractionSystem.new then

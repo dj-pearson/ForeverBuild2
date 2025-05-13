@@ -2,11 +2,20 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"command": "copy src\\shared\\core\\ui\\CurrencyUI_fixed.lua src\\shared\\core\\ui\\CurrencyUI.lua && rojo build second.project.json -o ForeverBuild_fixed2.rbxm",
+			"args": [
+				"del src\\client\\Currency\\CurrencyUI_fixed.lua src\\shared\\core\\ui\\CurrencyUI_fixed.lua src\\shared\\core\\economy\\CurrencyManager_client.lua src\\client\\interaction\\InteractionSystem_fixed.lua src\\client\\init_fixed.client.lua src\\client\\client_fixed.lua"
+			],
+			"command": "powershell.exe",
 			"group": "build",
 			"isBackground": false,
-			"label": "Fix CurrencyUI Reference",
-			"problemMatcher": [],
+			"label": "Cleanup Fixed Files",
+			"type": "shell"
+		},
+		{
+			"command": "rojo build second.project.json -o ForeverBuild.rbxm",
+			"group": "build",
+			"isBackground": false,
+			"label": "Build Project",
 			"type": "shell"
 		}
 	]

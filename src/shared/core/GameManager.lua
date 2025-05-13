@@ -15,7 +15,20 @@ function GameManager.new()
     local self = setmetatable({}, GameManager)
     
     -- Shared properties for both server and client
-    self.remotes = ReplicatedStorage:WaitForChild("Remotes")
+    -- Use WaitForChild with a timeout to prevent infinite yield
+    self.remotes = ReplicatedStorage:WaitForChild("Remotes", 5)
+    if not self.remotes then
+        warn("GameManager: Failed to find Remotes folder. Creating one.")
+        if not ReplicatedStorage:FindFirstChild("Remotes") then
+            local remotes = Instance.new("Folder")
+            remotes.Name = "Remotes"
+            remotes.Parent = ReplicatedStorage
+            self.remotes = remotes
+        else
+            self.remotes = ReplicatedStorage.Remotes
+        end
+    end
+    
     self.constants = Constants
     
     if IS_SERVER then

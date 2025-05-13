@@ -1,6 +1,34 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
+-- Create Remotes folder if it doesn't exist
+if not ReplicatedStorage:FindFirstChild("Remotes") then
+    local remotes = Instance.new("Folder")
+    remotes.Name = "Remotes"
+    remotes.Parent = ReplicatedStorage
+    
+    -- Create common remote events
+    local updateBalance = Instance.new("RemoteEvent")
+    updateBalance.Name = "UpdateBalance"
+    updateBalance.Parent = remotes
+    
+    local getInventory = Instance.new("RemoteFunction")
+    getInventory.Name = "GetInventory"
+    getInventory.Parent = remotes
+    
+    local buyItem = Instance.new("RemoteEvent")
+    buyItem.Name = "BuyItem"
+    buyItem.Parent = remotes
+    
+    local placeItem = Instance.new("RemoteEvent")
+    placeItem.Name = "PlaceItem"
+    placeItem.Parent = remotes
+    
+    local interactWithItem = Instance.new("RemoteEvent")
+    interactWithItem.Name = "InteractWithItem"
+    interactWithItem.Parent = remotes
+end
+
 local SharedModule = require(ReplicatedStorage.shared)
 local GameManagerModule = SharedModule.GameManager
 local CurrencyManagerModule = SharedModule.Economy.CurrencyManager

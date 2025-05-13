@@ -2,7 +2,27 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
 
-local Constants = require(ReplicatedStorage.shared.core.Constants)
+-- Safe require function to prevent errors
+local function safeRequire(module)
+    local success, result = pcall(function()
+        return require(module)
+    end)
+    
+    if success then
+        return result
+    else
+        warn("Failed to require module:", module, "Error:", result)
+        return nil
+    end
+end
+
+-- Get Constants safely
+local SharedModule = safeRequire(ReplicatedStorage.shared)
+local Constants = SharedModule and SharedModule.Constants or {
+    CURRENCY = {
+        STARTING_COINS = 100
+    }
+}
 
 local CurrencyUI = {}
 CurrencyUI.__index = CurrencyUI
@@ -12,7 +32,7 @@ function CurrencyUI.new()
     local self = setmetatable({}, CurrencyUI)
     self.player = Players.LocalPlayer
     self.ui = nil
-    self:Initialize()
+    self.balance = 0
     return self
 end
 
@@ -25,7 +45,7 @@ function CurrencyUI:Initialize()
     self:SetupEventHandling()
     
     -- Initial balance update
-    self:UpdateBalance(self.player:GetAttribute("Coins") or 0)
+    self:UpdateBalance(Constants.CURRENCY.STARTING_COINS or 0)
 end
 
 -- Create UI
@@ -101,15 +121,35 @@ end
 
 -- Set up event handling
 function CurrencyUI:SetupEventHandling()
-    -- Handle balance updates
-    ReplicatedStorage.Remotes.UpdateBalance.OnClientEvent:Connect(function(balance)
-        self:UpdateBalance(balance)
+    -- Wait for a maximum of 5 seconds for Remotes folder
+    local success, remotes = pcall(function()
+        return ReplicatedStorage:WaitForChild("Remotes", 5)
     end)
     
-    -- Handle purchase button click
-    self.ui.MainFrame.PurchaseButton.MouseButton1Click:Connect(function()
-        self:ShowPurchaseMenu()
-    end)
+    if success and remotes and remotes:FindFirstChild("UpdateBalance") then
+        remotes.UpdateBalance.OnClientEvent:Connect(function(balance)
+            self:UpdateBalance(balance)
+        end)
+    else
+        warn("CurrencyUI: UpdateBalance remote event not found or timed out")
+        -- Try again later
+        task.delay(5, function()
+            if ReplicatedStorage:FindFirstChild("Remotes") and 
+               ReplicatedStorage.Remotes:FindFirstChild("UpdateBalance") then
+                ReplicatedStorage.Remotes.UpdateBalance.OnClientEvent:Connect(function(balance)
+                    self:UpdateBalance(balance)
+                end)
+            end
+        end)
+    end
+    
+    -- Handle purchase button click if UI was created
+    if self.ui and self.ui:FindFirstChild("MainFrame") and 
+       self.ui.MainFrame:FindFirstChild("PurchaseButton") then
+        self.ui.MainFrame.PurchaseButton.MouseButton1Click:Connect(function()
+            self:ShowPurchaseMenu()
+        end)
+    end
 end
 
 -- Update balance display
@@ -226,4 +266,4 @@ function CurrencyUI:PurchaseCoins(productId)
     MarketplaceService:PromptProductPurchase(self.player, productId)
 end
 
-return CurrencyUI 
+return CurrencyUI

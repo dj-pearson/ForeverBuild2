@@ -15,9 +15,9 @@ else
     print("✓ LazyLoadModules loaded successfully")
 end
 
--- Step 2: Load the fixed shared module
+-- Step 2: Load the shared module
 local success, SharedModule = pcall(function()
-    return require(ReplicatedStorage.shared_fixed)
+    return require(ReplicatedStorage.shared)
 end)
 
 if not success then

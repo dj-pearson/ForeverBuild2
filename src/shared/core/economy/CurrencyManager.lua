@@ -1,7 +1,10 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
-local DataStoreService = game:GetService("DataStoreService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
+
+local IS_SERVER = RunService:IsServer()
 
 local Constants = require(script.Parent.Parent.Constants)
 
@@ -11,20 +14,33 @@ CurrencyManager.__index = CurrencyManager
 -- Initialize a new CurrencyManager
 function CurrencyManager.new()
     local self = setmetatable({}, CurrencyManager)
-    self.playerBalances = {}
-    self.currencyStore = DataStoreService:GetDataStore("PlayerCurrency")
-    self.rewardTimers = {}
-    self:Initialize()
+    
+    -- Server-specific properties
+    if IS_SERVER then
+        self.playerBalances = {}
+        local DataStoreService = game:GetService("DataStoreService")
+        self.currencyStore = DataStoreService:GetDataStore("PlayerCurrency")
+        self.rewardTimers = {}
+    -- Client-specific properties
+    else
+        self.playerCurrency = Constants.CURRENCY.STARTING_COINS or 0
+    end
+    
     return self
 end
 
 -- Initialize the CurrencyManager
 function CurrencyManager:Initialize()
-    -- Set up player handling
-    self:SetupPlayerHandling()
-    
-    -- Set up marketplace handling
-    self:SetupMarketplaceHandling()
+    if IS_SERVER then
+        -- Set up player handling
+        self:SetupPlayerHandling()
+        
+        -- Set up marketplace handling
+        self:SetupMarketplaceHandling()
+    else
+        -- Client-side setup
+        self:SetupClientHandling()
+    end
 end
 
 -- Set up player handling
@@ -265,4 +281,53 @@ function CurrencyManager:GetItemPrice(itemId, useRobux)
     return nil
 end
 
-return CurrencyManager 
+-- Client-side handling
+function CurrencyManager:SetupClientHandling()
+    print("Initializing CurrencyManager client-side")
+    
+    -- Try to get remotes
+    local success, remotes = pcall(function()
+        return ReplicatedStorage:WaitForChild("Remotes", 5)
+    end)
+    
+    if success and remotes then
+        -- Listen for currency updates
+        if remotes:FindFirstChild("UpdateBalance") then
+            remotes.UpdateBalance.OnClientEvent:Connect(function(newBalance)
+                self.playerCurrency = newBalance
+                print("Currency updated:", newBalance)
+            end)
+        else
+            warn("UpdateBalance remote event not found")
+            -- Try again after a delay
+            task.delay(5, function()
+                if ReplicatedStorage:FindFirstChild("Remotes") and 
+                   ReplicatedStorage.Remotes:FindFirstChild("UpdateBalance") then
+                    ReplicatedStorage.Remotes.UpdateBalance.OnClientEvent:Connect(function(newBalance)
+                        self.playerCurrency = newBalance
+                        print("Currency updated:", newBalance)
+                    end)
+                end
+            end)
+        end
+    else
+        warn("Failed to find Remotes folder")
+    end
+    
+    print("CurrencyManager client initialized")
+end
+
+-- Get player's currency (works on both client and server)
+function CurrencyManager:GetPlayerCurrency(player)
+    if IS_SERVER then
+        -- Server implementation
+        if not player then return 0 end
+        local userId = player.UserId
+        return self.playerBalances[userId] or Constants.CURRENCY.STARTING_COINS
+    else
+        -- Client implementation
+        return self.playerCurrency
+    end
+end
+
+return CurrencyManager
