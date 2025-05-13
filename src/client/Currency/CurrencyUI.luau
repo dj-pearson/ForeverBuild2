@@ -16,18 +16,99 @@ local function safeRequire(module)
     end
 end
 
--- Get SharedModule and Constants
-local SharedModule = safeRequire(ReplicatedStorage:WaitForChild("shared", 5))
+-- Get SharedModule and Constants with multiple fallback options
+print("CurrencyUI: Starting module loading...")
 
--- Ensure we have valid Constants
+-- Define multiple paths to try for Constants
+local paths = {
+    -- 1. Load through shared module (preferred)
+    function()
+        print("CurrencyUI: Attempting to load SharedModule...")
+        local sharedModule = safeRequire(ReplicatedStorage:WaitForChild("shared", 5))
+        if sharedModule and sharedModule.Constants then
+            print("CurrencyUI: Successfully loaded Constants from SharedModule")
+            return sharedModule.Constants
+        end
+        return nil
+    end,
+    
+    -- 2. Direct path to Constants via shared
+    function() 
+        print("CurrencyUI: Attempting direct require via shared/core/Constants...")
+        local shared = ReplicatedStorage:FindFirstChild("shared")
+        if shared then
+            local core = shared:FindFirstChild("core")
+            if core then
+                local constants = core:FindFirstChild("Constants")
+                if constants then
+                    return safeRequire(constants)
+                end
+            end
+        end
+        return nil
+    end,
+    
+    -- 3. Direct path to Constants via core
+    function()
+        print("CurrencyUI: Attempting direct require via ReplicatedStorage/core/Constants...")
+        local core = ReplicatedStorage:FindFirstChild("core")
+        if core then
+            local constants = core:FindFirstChild("Constants")
+            if constants then
+                return safeRequire(constants)
+            end
+        end
+        return nil
+    end,
+    
+    -- 4. Find Constants anywhere in ReplicatedStorage
+    function()
+        print("CurrencyUI: Searching for Constants anywhere in ReplicatedStorage...")
+        local function findConstants(parent)
+            for _, child in pairs(parent:GetChildren()) do
+                if child.Name == "Constants" and child:IsA("ModuleScript") then
+                    print("CurrencyUI: Found Constants at", child:GetFullName())
+                    return safeRequire(child)
+                end
+                
+                if #child:GetChildren() > 0 then
+                    local result = findConstants(child)
+                    if result then return result end
+                end
+            end
+            return nil
+        end
+        
+        return findConstants(ReplicatedStorage)
+    end
+}
+
+-- Try each path until we find Constants
 local Constants
-if SharedModule then
-    Constants = SharedModule.Constants
-    print("CurrencyUI: Successfully loaded Constants from SharedModule")
+for i, pathFunc in ipairs(paths) do
+    print("CurrencyUI: Trying path option", i)
+    Constants = pathFunc()
+    if Constants then
+        print("CurrencyUI: Successfully loaded Constants using path option", i)
+        break
+    end
+end
+
+-- Verify the loaded Constants
+if Constants then
+    if Constants.CURRENCY then
+        print("CurrencyUI: Constants.CURRENCY found")
+        
+        if Constants.CURRENCY.PRODUCTS then
+            print("CurrencyUI: Found", #Constants.CURRENCY.PRODUCTS, "products in Constants.CURRENCY.PRODUCTS")
+        else
+            warn("CurrencyUI: Constants.CURRENCY.PRODUCTS is missing")
+        end
+    else
+        warn("CurrencyUI: Constants.CURRENCY is missing")
+    end
 else
-    warn("CurrencyUI: Failed to load SharedModule")
-    -- Try direct require as fallback
-    Constants = safeRequire(ReplicatedStorage:WaitForChild("shared", 5):WaitForChild("core", 2):WaitForChild("Constants", 2))
+    warn("CurrencyUI: All paths to load Constants failed")
 end
 
 -- Set default values if Constants couldn't be loaded
@@ -36,19 +117,33 @@ if not Constants then
     Constants = {
         CURRENCY = {
             STARTING_COINS = 100,
-            PRODUCTS = {} -- Default empty products array
+            PRODUCTS = {
+                -- Create fallback product definitions
+                {id = "coins_1000", name = "1,000 Coins", coins = 1000, robux = 75, bonusCoins = 0, assetId = 0, description = "Get started with a handy pack of 1,000 coins!"},
+                {id = "coins_5000", name = "5,500 Coins", coins = 5000, robux = 350, bonusCoins = 500, assetId = 0, description = "Great value! Grab 5,000 coins and get an extra 500 on us!"},
+                {id = "coins_10000", name = "11,500 Coins", coins = 10000, robux = 650, bonusCoins = 1500, assetId = 0, description = "Supercharge your game with 10,000 coins, plus a 1,500 coin bonus!"}
+            }
         }
     }
+    
+    warn("CurrencyUI: Created fallback product definitions")
 end
 
--- Debug: Print product information
-if Constants and Constants.CURRENCY and Constants.CURRENCY.PRODUCTS then
-    print("CurrencyUI: Found", #Constants.CURRENCY.PRODUCTS, "products")
-    for i, product in ipairs(Constants.CURRENCY.PRODUCTS) do
-        print("Product", i, ":", product.name, "AssetId:", product.assetId)
+-- Debug: Print product information specifically
+if Constants and Constants.CURRENCY then
+    if Constants.CURRENCY.PRODUCTS then
+        print("CurrencyUI: Found Constants.CURRENCY.PRODUCTS with " .. #Constants.CURRENCY.PRODUCTS .. " products")
+        for i, product in ipairs(Constants.CURRENCY.PRODUCTS) do
+            print("Product " .. i .. ":")
+            for key, value in pairs(product) do
+                print("  " .. key .. " = " .. tostring(value))
+            end
+        end
+    else
+        warn("CurrencyUI: Constants.CURRENCY exists but PRODUCTS is nil or not a table")
     end
 else
-    warn("CurrencyUI: No products found in Constants")
+    warn("CurrencyUI: No CURRENCY table found in Constants")
 end
 
 -- This module is now the primary CurrencyUI implementation
@@ -257,17 +352,22 @@ function CurrencyUI:ShowPurchaseMenu()
     end)
     
     -- Also close when clicking outside the menu
+    local UserInputService = game:GetService("UserInputService")
+    
+    -- Use a pcall in case there's an error with getting mouse position
     overlay.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            local mousePos = game:GetService("UserInputService"):GetMouseLocation()
-            local menuPos = purchaseMenu.AbsolutePosition
-            local menuSize = purchaseMenu.AbsoluteSize
-            
-            -- Check if click is outside the menu
-            if mousePos.X < menuPos.X or mousePos.X > menuPos.X + menuSize.X or
-               mousePos.Y < menuPos.Y or mousePos.Y > menuPos.Y + menuSize.Y then
-                overlay:Destroy()
-            end
+            pcall(function()
+                local mousePos = UserInputService:GetMouseLocation()
+                local menuPos = purchaseMenu.AbsolutePosition
+                local menuSize = purchaseMenu.AbsoluteSize
+                
+                -- Check if click is outside the menu
+                if mousePos.X < menuPos.X or mousePos.X > menuPos.X + menuSize.X or
+                   mousePos.Y < menuPos.Y or mousePos.Y > menuPos.Y + menuSize.Y then
+                    overlay:Destroy()
+                end
+            end)
         end
     end)
     
@@ -286,43 +386,60 @@ function CurrencyUI:ShowPurchaseMenu()
     -- Create purchase options
     local yOffset = 10
     
-        -- Add products from Constants
-    if Constants and Constants.CURRENCY and Constants.CURRENCY.PRODUCTS then
+            -- Verify Constants and add products
+    print("ShowPurchaseMenu: Creating purchase options...")
+    
+    -- First verify Constants
+    if self:VerifyConstants() then
+        -- Constants is valid, add products
         local products = Constants.CURRENCY.PRODUCTS
+        print("ShowPurchaseMenu: Adding " .. #products .. " products to menu")
         
-        if #products > 0 then
-            for i, product in ipairs(products) do
-                local option = self:CreatePurchaseOption(product, yOffset)
-                option.Position = UDim2.new(0, 0, 0, yOffset)
-                option.Parent = scrollFrame
-                yOffset = yOffset + 90 -- Spacing between product items
-            end
-            
-            -- Update the canvas size to fit all products
-            scrollFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset + 10)
-        else
-            -- No products found - display a message
-            local noProducts = Instance.new("TextLabel")
-            noProducts.Size = UDim2.new(1, -20, 0, 50)
-            noProducts.Position = UDim2.new(0, 10, 0, 10)
-            noProducts.BackgroundTransparency = 1
-            noProducts.TextColor3 = Color3.fromRGB(255, 255, 255)
-            noProducts.TextSize = 16
-            noProducts.Font = Enum.Font.Gotham
-            noProducts.Text = "Purchase options would appear here."
-            noProducts.Parent = scrollFrame
+        for i, product in ipairs(products) do
+            print("Creating UI for product " .. i .. ": " .. product.name)
+            local option = self:CreatePurchaseOption(product)
+            option.Position = UDim2.new(0, 0, 0, yOffset)
+            option.Parent = scrollFrame
+            yOffset = yOffset + 90 -- Spacing between product items
         end
+        
+        -- Update the canvas size to fit all products
+        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset + 10)
     else
-        -- Display error message
-        local errorMsg = Instance.new("TextLabel")
-        errorMsg.Size = UDim2.new(1, -20, 0, 50)
-        errorMsg.Position = UDim2.new(0, 10, 0, 10)
-        errorMsg.BackgroundTransparency = 1
-        errorMsg.TextColor3 = Color3.fromRGB(255, 100, 100)
-        errorMsg.TextSize = 16
-        errorMsg.Font = Enum.Font.Gotham
-        errorMsg.Text = "Error: Could not load currency products."
-        errorMsg.Parent = scrollFrame
+        -- Constants verification failed, use hardcoded products as fallback
+        print("ShowPurchaseMenu: Using fallback products")
+        
+        -- Create fallback products
+        local fallbackProducts = {
+            {id = "coins_1000", name = "1,000 Coins", coins = 1000, robux = 75, bonusCoins = 0, description = "Get started with a handy pack of 1,000 coins!"},
+            {id = "coins_5000", name = "5,500 Coins", coins = 5000, robux = 350, bonusCoins = 500, description = "Great value! Grab 5,000 coins and get an extra 500 on us!"},
+            {id = "coins_10000", name = "11,500 Coins", coins = 10000, robux = 650, bonusCoins = 1500, description = "Supercharge your game with 10,000 coins, plus a 1,500 coin bonus!"}
+        }
+        
+        -- Display notice message
+        local notice = Instance.new("TextLabel")
+        notice.Size = UDim2.new(1, -20, 0, 30)
+        notice.Position = UDim2.new(0, 10, 0, 0)
+        notice.BackgroundTransparency = 1
+        notice.TextColor3 = Color3.fromRGB(255, 200, 0)
+        notice.TextSize = 14
+        notice.Font = Enum.Font.GothamBold
+        notice.Text = "Using example products - AssetIds not configured"
+        notice.TextWrapped = true
+        notice.Parent = scrollFrame
+        
+        -- Add fallback products
+        yOffset = 40 -- Start below the notice
+        
+        for i, product in ipairs(fallbackProducts) do
+            local option = self:CreatePurchaseOption(product)
+            option.Position = UDim2.new(0, 0, 0, yOffset)
+            option.Parent = scrollFrame
+            yOffset = yOffset + 90 -- Spacing between product items
+        end
+        
+        -- Update the canvas size to fit all products
+        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset + 10)
     end
     
     -- Make purchaseMenu visible
@@ -330,12 +447,15 @@ function CurrencyUI:ShowPurchaseMenu()
 end
 
 -- Create a single purchase option
-function CurrencyUI:CreatePurchaseOption(product, yOffset)
+function CurrencyUI:CreatePurchaseOption(product)
+    print("CreatePurchaseOption: Starting to create product UI")
+    
     if not product then
         warn("CreatePurchaseOption: Product is nil")
         return Instance.new("Frame")
     end
     
+    -- Extract product details with defaults
     local id = product.id or "unknown_product"
     local name = product.name or "Unknown Product"
     local description = product.description or "No description available"
@@ -343,6 +463,8 @@ function CurrencyUI:CreatePurchaseOption(product, yOffset)
     local assetId = product.assetId or 0
     local bonusCoins = product.bonusCoins or 0
     local coins = product.coins or 0
+    
+    print("Creating option for: " .. name .. " (" .. id .. "), AssetId: " .. tostring(assetId))
     
     -- Create the option frame
     local optionFrame = Instance.new("Frame")
@@ -480,6 +602,37 @@ function CurrencyUI:CreatePurchaseOption(product, yOffset)
     end)
 
     return optionFrame
+end
+
+-- Helper function to check if Constants is properly loaded
+function CurrencyUI:VerifyConstants()
+    if not Constants then
+        warn("VerifyConstants: Constants is nil")
+        return false
+    end
+    
+    if not Constants.CURRENCY then
+        warn("VerifyConstants: Constants.CURRENCY is nil")
+        return false
+    end
+    
+    if not Constants.CURRENCY.PRODUCTS then
+        warn("VerifyConstants: Constants.CURRENCY.PRODUCTS is nil")
+        return false
+    end
+    
+    if type(Constants.CURRENCY.PRODUCTS) ~= "table" then
+        warn("VerifyConstants: Constants.CURRENCY.PRODUCTS is not a table")
+        return false
+    end
+    
+    if #Constants.CURRENCY.PRODUCTS == 0 then
+        warn("VerifyConstants: Constants.CURRENCY.PRODUCTS is empty")
+        return false
+    end
+    
+    print("VerifyConstants: Constants is valid with " .. #Constants.CURRENCY.PRODUCTS .. " products")
+    return true
 end
 
 -- Helper function to ensure valid icon ID is used
