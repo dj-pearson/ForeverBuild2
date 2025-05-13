@@ -15,23 +15,20 @@ local ITEMS_PER_ROW = 5
 local ITEM_PADDING = 10
 
 -- Create the inventory UI
-local function createInventory(parent)
+local function createInventory()
     local player = game.Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
-    local inventoryScreenGui = playerGui:FindFirstChild("Inventory")
+    local inventoryScreenGui = playerGui:FindFirstChild("InventoryUI")
     if not inventoryScreenGui then
-        inventoryScreenGui = playerGui:WaitForChild("Inventory", 5)
-    end
-    if not inventoryScreenGui then
-        warn("Inventory ScreenGui not found after waiting! Creating fallback InventoryUI ScreenGui.")
         inventoryScreenGui = Instance.new("ScreenGui")
-        inventoryScreenGui.Name = "Inventory"
+        inventoryScreenGui.Name = "InventoryUI"
+        inventoryScreenGui.ResetOnSpawn = false
         inventoryScreenGui.Parent = playerGui
     end
     local inventory = Instance.new("Frame")
     inventory.Name = "InventoryUI"
-    inventory.Size = INVENTORY_SIZE
-    inventory.Position = INVENTORY_POSITION
+    inventory.Size = UDim2.new(0, 600, 0, 400)
+    inventory.Position = UDim2.new(0.5, -300, 1, -420) -- Bottom center
     inventory.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     inventory.BorderSizePixel = 0
     inventory.Visible = false
@@ -196,7 +193,7 @@ end
 
 -- Initialize the inventory UI
 function InventoryUI.Initialize(parent)
-    local inventory = createInventory(parent)
+    local inventory = createInventory()
     
     -- Set up close button
     inventory.TitleBar.CloseButton.MouseButton1Click:Connect(function()

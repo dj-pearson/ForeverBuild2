@@ -32,23 +32,20 @@ end
 function CurrencyUI:CreateUI()
     local player = Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
-    local screenGui = playerGui:FindFirstChild("Economy")
+    local screenGui = playerGui:FindFirstChild("CurrencyUI")
     if not screenGui then
-        screenGui = playerGui:WaitForChild("Economy", 5)
-    end
-    if not screenGui then
-        warn("Economy ScreenGui not found after waiting! Creating fallback CurrencyUI ScreenGui.")
         screenGui = Instance.new("ScreenGui")
         screenGui.Name = "CurrencyUI"
+        screenGui.ResetOnSpawn = false
         screenGui.Parent = playerGui
     end
     
-    -- Create main frame
+    -- Create main frame at top center
     local frame = Instance.new("Frame")
     frame.Name = "MainFrame"
     frame.Size = UDim2.new(0, 200, 0, 50)
-    frame.Position = UDim2.new(1, -220, 0, 20)
-    frame.BackgroundColor3 = Constants.UI_COLORS.SECONDARY
+    frame.Position = UDim2.new(0.5, -100, 0, 20) -- Top center
+    frame.BackgroundColor3 = Constants.UI_COLORS and Constants.UI_COLORS.SECONDARY or Color3.fromRGB(40,40,40)
     frame.BorderSizePixel = 0
     frame.Parent = screenGui
     

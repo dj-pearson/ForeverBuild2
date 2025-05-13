@@ -30,6 +30,18 @@ local selectedItem = nil
 local placementPreview = nil
 local lastError = nil
 
+-- Require InteractionSystem module
+local InteractionSystem
+local success, result = pcall(function()
+    return require(ReplicatedStorage.shared.interaction.InteractionSystem)
+end)
+if success then
+    InteractionSystem = result
+else
+    warn("Failed to require InteractionSystem module:", result)
+    InteractionSystem = nil
+end
+
 -- Safe initialization function
 local function initializeClient()
     if Players then
@@ -90,47 +102,47 @@ local function safeInvoke(remote, ...)
 end
 
 -- Create inventory button with proper error handling
-local function createInventoryButton(parent)
-    if not parent then return nil end
-    
+local function createInventoryButton()
+    local playerGui = player.PlayerGui
+    local inventoryButtonGui = Instance.new("ScreenGui")
+    inventoryButtonGui.Name = "InventoryButtonUI"
+    inventoryButtonGui.ResetOnSpawn = false
+    inventoryButtonGui.Parent = playerGui
+
     local button = Instance.new("TextButton")
     button.Name = "InventoryButton"
     button.Size = UDim2.new(0, 120, 0, 40)
-    button.Position = UDim2.new(1, -140, 0, 20)
+    button.Position = UDim2.new(0.5, -60, 1, -60) -- Bottom center
     button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     button.Font = Enum.Font.GothamBold
     button.Text = "Inventory"
     button.TextSize = 18
     button.TextColor3 = Color3.new(1, 1, 1)
-    button.Parent = parent
-    
+    button.Parent = inventoryButtonGui
+
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 4)
     corner.Parent = button
-    
+
     button.MouseButton1Click:Connect(function()
         if not GetInventoryFunc then
             warn("GetInventoryFunc not initialized")
             return
         end
-        
         local result = safeInvoke(GetInventoryFunc)
         if result.success then
             currentInventory = result.inventory or {}
             currentCurrency = result.currency or 0
-            
-            if inventoryUI then
-                inventoryUI:UpdateInventory(currentInventory, currentCurrency)
-                inventoryUI:Show()
+            if InventoryUIModule and InventoryUIModule.UpdateInventory and InventoryUIModule.Show then
+                InventoryUIModule.UpdateInventory(currentInventory, currentCurrency)
+                InventoryUIModule.Show()
             else
-                warn("InventoryUI not initialized")
+                warn("InventoryUIModule not initialized")
             end
         else
             warn("Failed to get inventory:", result.message)
         end
     end)
-    
-    return button
 end
 
 -- Initialize UI components
@@ -139,39 +151,20 @@ local function initializeUI()
         warn("Cannot initialize UI: player not found")
         return
     end
-    
-    local uiContainer = Instance.new("ScreenGui")
-    uiContainer.Name = "ItemSystemUI"
-    uiContainer.ResetOnSpawn = false
-    
-    local success, result = pcall(function()
-        uiContainer.Parent = player.PlayerGui
-        return createInventoryButton(uiContainer)
-    end)
-    
-    if not success then
-        warn("Failed to create UI:", result)
-        return
-    end
-
+    createInventoryButton()
     if PurchaseDialogModule and PurchaseDialogModule.new then
         purchaseDialog = PurchaseDialogModule.new()
         if purchaseDialog.Initialize then
-            purchaseDialog:Initialize(uiContainer)
+            purchaseDialog:Initialize() -- Let module handle its own ScreenGui
         end
     end
-
-    if InventoryUIModule and InventoryUIModule.new then
-        inventoryUI = InventoryUIModule.new()
-        if inventoryUI.Initialize then
-            inventoryUI:Initialize(uiContainer)
-        end
+    if InventoryUIModule and InventoryUIModule.Initialize then
+        InventoryUIModule.Initialize()
     end
-
     if PlacedItemDialogModule and PlacedItemDialogModule.new then
         placedItemDialog = PlacedItemDialogModule.new()
         if placedItemDialog.Initialize then
-            placedItemDialog:Initialize(uiContainer)
+            placedItemDialog:Initialize() -- Let module handle its own ScreenGui
         end
     end
 end
@@ -188,6 +181,30 @@ if player then
     if not uiSuccess then
         warn("Failed to initialize UI:", uiError)
     end
+end
+
+-- Initialize InteractionSystem if available
+if InteractionSystem then
+    local interactionSystem = InteractionSystem.new()
+    interactionSystem:Initialize()
+else
+    warn("InteractionSystem module is missing or invalid")
+end
+
+-- Initialize PlacedItemDialog if available
+local PlacedItemDialog
+local success, result = pcall(function()
+    return require(ReplicatedStorage.shared.core.ui.PlacedItemDialog)
+end)
+if success then
+    PlacedItemDialog = result
+    if PlacedItemDialog.Initialize then
+        PlacedItemDialog:Initialize()
+    else
+        warn("PlacedItemDialog module doesn't have proper initialization method")
+    end
+else
+    warn("Failed to initialize PlacedItemDialog:", result)
 end
 
 -- Return API for other scripts

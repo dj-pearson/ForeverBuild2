@@ -162,4 +162,73 @@ remotes.ApplyItemEffect.OnServerEvent:Connect(function(player, itemId, placement
     gameManager:ApplyItemEffect(player, itemId, placement)
 end)
 
+-- Add PickupItem RemoteEvent
+if not remotes:FindFirstChild("PickupItem") then
+    local pickupItem = Instance.new("RemoteEvent")
+    pickupItem.Name = "PickupItem"
+    pickupItem.Parent = remotes
+end
+
+-- Handle item pickup requests
+remotes.PickupItem.OnServerEvent:Connect(function(player, itemName)
+    -- Admin check
+    local isAdmin = false
+    for _, adminId in ipairs(SharedModule.Constants.ADMIN_IDS) do
+        if player.UserId == adminId then
+            isAdmin = true
+            break
+        end
+    end
+    local itemData = SharedModule.Constants.ITEMS[itemName]
+    if not itemData then
+        remotes.NotifyPlayer:FireClient(player, "Item not found.")
+        return
+    end
+    -- Find the item in Workspace.Items
+    local itemsFolder = workspace:FindFirstChild("Items")
+    if not itemsFolder then
+        remotes.NotifyPlayer:FireClient(player, "No items folder in workspace.")
+        return
+    end
+    local itemModel = itemsFolder:FindFirstChild(itemName)
+    if not itemModel then
+        remotes.NotifyPlayer:FireClient(player, "Item not found in world.")
+        return
+    end
+    -- If not admin, check currency
+    if not isAdmin then
+        local playerData = gameManager.playerData[player.UserId]
+        local price = itemData.price and itemData.price.INGAME or 0
+        if not playerData or playerData.currency < price then
+            remotes.NotifyPlayer:FireClient(player, "Not enough currency to pick up this item.")
+            return
+        end
+        -- Deduct currency
+        playerData.currency = playerData.currency - price
+        gameManager:savePlayerData(player)
+        remotes.UpdateBalance:FireClient(player, playerData.currency)
+    end
+    -- Add to inventory
+    gameManager:AddToInventory(player, itemName)
+    -- Remove from world
+    itemModel:Destroy()
+    remotes.NotifyPlayer:FireClient(player, "Picked up " .. itemName .. "!")
+end)
+
+-- Add CloneItem RemoteEvent
+if not remotes:FindFirstChild("CloneItem") then
+    local cloneItem = Instance.new("RemoteEvent")
+    cloneItem.Name = "CloneItem"
+    cloneItem.Parent = remotes
+end
+
+-- Handle item cloning requests
+remotes.CloneItem.OnServerEvent:Connect(function(player, itemId)
+    local result = gameManager:HandleCloneItem(player, itemId)
+    remotes.NotifyPlayer:FireClient(player, result.message)
+    if result.success then
+        remotes.UpdateBalance:FireClient(player, gameManager.playerData[player.UserId].currency)
+    end
+end)
+
 print("Server initialized successfully")

@@ -85,4 +85,38 @@ Constants.ITEM_PROPERTIES = {
     MAX_COLOR_CHANGES = 5 -- Maximum number of color changes allowed
 }
 
+Constants.UI_COLORS = {
+    PRIMARY = Color3.fromRGB(0, 170, 255),
+    SECONDARY = Color3.fromRGB(40, 40, 40),
+    TEXT = Color3.fromRGB(255, 255, 255)
+}
+
+Constants.ITEMS = {
+    ["Basic"] = {
+        icon = "rbxassetid://3284930147",
+        description = "A red cube.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
+    ["Secondary"] = {
+        icon = "rbxassetid://3284930700",
+        description = "A Secodandary Item.",
+        tier = "SECONDARY",
+        price = {INGAME = 15, ROBUX = 15}
+    },
+    ["Rare"] = {
+        icon = "rbxassetid://3284930992",
+        description = "A rare Item.",
+        tier = "RARE",
+        price = {INGAME = 500, ROBUX = 500}
+    },
+    ["Exclusive"] = {
+        icon = "rbxassetid://3284931476",
+        description = "An exclusive Item.",
+        tier = "EXCLUSIVE",
+        price = {INGAME = 1000, ROBUX = 1000}
+    }
+    -- Add more items as needed
+}
+
 return Constants 

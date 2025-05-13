@@ -29,21 +29,11 @@ function InteractionSystem.new()
 end
 
 function InteractionSystem:Initialize()
-    print("InteractionSystem initialized")
-    
-    -- Create UI
+    print("[DEBUG] InteractionSystem:Initialize() called")
     self:CreateUI()
-    
-    -- Set up input handling
     self:SetupInputHandling()
-    
-    -- Set up mouse movement
     self:SetupMouseHandling()
-    
-    -- Set up event handlers
     self:SetupEventHandlers()
-    
-    -- Set up inventory key
     self:SetupInventoryKey()
 end
 
@@ -86,38 +76,51 @@ function InteractionSystem:SetupInputHandling()
 end
 
 function InteractionSystem:SetupMouseHandling()
-    -- Update current target on mouse movement
+    print("[DEBUG] SetupMouseHandling called")
     game:GetService("RunService").RenderStepped:Connect(function()
         self:UpdateCurrentTarget()
+    end)
+    -- Listen for mouse clicks on placed items
+    self.mouse.Button1Down:Connect(function()
+        local target = self.mouse.Target
+        local placedItem = self:GetPlacedItemFromPart(target)
+        if placedItem then
+            print("[DEBUG] Clicked placed item:", placedItem.id)
+            self.currentTarget = placedItem
+            local interactions = self:GetAvailableInteractions(placedItem)
+            self:ShowInteractionMenu(interactions)
+        end
     end)
 end
 
 function InteractionSystem:UpdateCurrentTarget()
+    print("[DEBUG] UpdateCurrentTarget called")
     local target = self.mouse.Target
+    print("[DEBUG] Mouse target:", target and target.Name or "nil")
     if not target then
         self:ClearCurrentTarget()
         return
     end
-    
-    -- Check if target is a placed item
+    local itemsFolder = workspace:FindFirstChild("Items")
+    if itemsFolder and target:IsDescendantOf(itemsFolder) then
+        print("[DEBUG] Target is a world item:", target.Name)
+        self.currentTarget = { id = target.Name, model = target }
+        self:ShowPriceUI(self.currentTarget)
+        return
+    end
     local placedItem = self:GetPlacedItemFromPart(target)
     if not placedItem then
         self:ClearCurrentTarget()
         return
     end
-    
-    -- Check distance
     local distance = (target.Position - self.player.Character.HumanoidRootPart.Position).Magnitude
     if distance > self.interactionDistance then
         self:ClearCurrentTarget()
         return
     end
-    
-    -- Update current target
+    print("[DEBUG] Target is a placed item:", placedItem.id)
     self.currentTarget = placedItem
-    
-    -- Show interaction UI
-    self:ShowInteractionUI(placedItem)
+    -- No proximity UI for placed items
 end
 
 function InteractionSystem:ClearCurrentTarget()
@@ -167,31 +170,83 @@ function InteractionSystem:HideInteractionUI()
     end
 end
 
+function InteractionSystem:ShowPriceUI(worldItem)
+    print("[DEBUG] ShowPriceUI for:", worldItem.id)
+    -- Remove any existing price GUIs
+    for _, model in ipairs(workspace.Items:GetChildren()) do
+        if model:IsA("Model") and model.PrimaryPart then
+            local bb = model.PrimaryPart:FindFirstChild("PriceBillboard")
+            if bb then bb:Destroy() end
+        end
+    end
+    local itemData = Constants.ITEMS[worldItem.id]
+    if not itemData then return end
+    local priceGui = Instance.new("BillboardGui")
+    priceGui.Name = "PriceBillboard"
+    priceGui.Size = UDim2.new(0, 200, 0, 60)
+    priceGui.StudsOffset = Vector3.new(0, 4, 0)
+    priceGui.AlwaysOnTop = true
+    priceGui.Parent = worldItem.model.PrimaryPart
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    frame.BackgroundTransparency = 0.2
+    frame.BorderSizePixel = 0
+    frame.Parent = priceGui
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0.5, 0)
+    label.Position = UDim2.new(0, 0, 0, 0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(255, 255, 0)
+    label.TextSize = 20
+    label.Font = Enum.Font.GothamBold
+    label.Text = "Price: " .. tostring(itemData.price and itemData.price.INGAME or "?")
+    label.Parent = frame
+    local prompt = Instance.new("TextLabel")
+    prompt.Size = UDim2.new(1, 0, 0.5, 0)
+    prompt.Position = UDim2.new(0, 0, 0.5, 0)
+    prompt.BackgroundTransparency = 1
+    prompt.TextColor3 = Color3.fromRGB(255, 255, 255)
+    prompt.TextSize = 18
+    prompt.Font = Enum.Font.Gotham
+    prompt.Text = "Press E to interact"
+    prompt.Parent = frame
+end
+
 function InteractionSystem:AttemptInteraction()
+    print("[DEBUG] AttemptInteraction called")
     if not self.currentTarget then return end
-    
-    -- Get available interactions
+    local itemsFolder = workspace:FindFirstChild("Items")
+    if itemsFolder and self.currentTarget.model and self.currentTarget.model:IsDescendantOf(itemsFolder) then
+        print("[DEBUG] Attempting to interact with world item:", self.currentTarget.id)
+        self.remoteEvents.PickupItem:FireServer(self.currentTarget.id)
+        return
+    end
+    print("[DEBUG] Attempting to interact with placed item:", self.currentTarget.id)
     local interactions = self:GetAvailableInteractions(self.currentTarget)
     if not interactions or #interactions == 0 then return end
-    
-    -- If only one interaction is available, use it
     if #interactions == 1 then
         self:PerformInteraction(self.currentTarget, interactions[1])
         return
     end
-    
-    -- Show interaction menu
     self:ShowInteractionMenu(interactions)
 end
 
 function InteractionSystem:GetAvailableInteractions(placedItem)
     -- Request available interactions from server
     local result = self.remoteEvents.GetAvailableInteractions:InvokeServer(placedItem)
-    return result or {"examine"}
+    result = result or {"examine"}
+    -- Always add 'clone' for placed items
+    table.insert(result, "clone")
+    return result
 end
 
 function InteractionSystem:PerformInteraction(placedItem, interactionType)
-    -- Send interaction request to server
+    print("[DEBUG] PerformInteraction called for", placedItem.id, interactionType)
+    if interactionType == "clone" then
+        self.remoteEvents.CloneItem:FireServer(placedItem.id)
+        return
+    end
     self.remoteEvents.InteractWithItem:FireServer(placedItem, interactionType)
 end
 

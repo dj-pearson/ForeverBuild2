@@ -56,7 +56,7 @@ if IS_SERVER then
     -- Initialize player data
     function GameManager:initializePlayerData(player)
         self.playerData[player.UserId] = {
-            currency = self.constants.GAME.STARTING_CURRENCY,
+            currency = self.constants.CURRENCY.STARTING_CURRENCY,
             inventory = {},
             placedItems = {}
         }
@@ -277,6 +277,26 @@ if IS_SERVER then
         -- Implement item effect logic here
         -- For now, just return success
         return { success = true, message = "Item effect applied!" }
+    end
+    
+    function GameManager:HandleCloneItem(player, itemId)
+        local userId = player.UserId
+        local pdata = self.playerData[userId]
+        if not pdata or not pdata.placedItems[itemId] then
+            return { success = false, message = "You cannot clone this item." }
+        end
+        local itemData = self.constants.ITEMS[pdata.placedItems[itemId].id]
+        if not itemData then
+            return { success = false, message = "Item data not found." }
+        end
+        if pdata.currency < itemData.price.INGAME then
+            return { success = false, message = "Not enough currency to clone this item." }
+        end
+        pdata.currency = pdata.currency - itemData.price.INGAME
+        pdata.inventory[itemData.id] = (pdata.inventory[itemData.id] or 0) + 1
+        self:savePlayerData(player)
+        self:updateClientUI(player)
+        return { success = true, message = "Item cloned and added to inventory!" }
     end
 end
 
