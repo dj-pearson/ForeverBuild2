@@ -9,7 +9,7 @@
       },
       "GameData": {
         "$className": "Folder",
-        "Structure.txt": {
+        "Structure": {
           "$path": "Structure.txt"
         }
       }

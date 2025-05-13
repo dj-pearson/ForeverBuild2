@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Rojo Build",
+			"type": "shell",
+			"command": "rojo build second.project.json -o ForeverBuild.rbxlx",
+			"problemMatcher": [
+				"$rojo"
+			],
+			"group": "build",
+			"isBackground": false
+		}
+	]
+}

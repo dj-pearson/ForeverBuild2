@@ -16,8 +16,16 @@ local SharedModule = require(ReplicatedStorage.shared)
 
 -- Local references to commonly used modules
 local Constants = SharedModule.Constants
-local GameManager = SharedModule.GameManager
-local CurrencyManager = SharedModule.Economy.CurrencyManager
+local GameManagerModule = SharedModule.GameManager
+local CurrencyManagerModule = SharedModule.Economy.CurrencyManager
+
+-- Create manager instances
+local gameManager = GameManagerModule.new()
+local currencyManager = CurrencyManagerModule.new()
+
+-- Initialize managers
+gameManager:Initialize()
+currencyManager:Initialize()
 
 local StarterGui = {}
 StarterGui.__index = StarterGui
@@ -25,6 +33,9 @@ StarterGui.__index = StarterGui
 function StarterGui.new()
     local self = setmetatable({}, StarterGui)
     self.remoteEvents = ReplicatedStorage.Remotes
+    self.gameManager = gameManager
+    self.currencyManager = currencyManager
+    self.player = Players.LocalPlayer
     return self
 end
 
@@ -36,13 +47,27 @@ function StarterGui:Init()
     
     -- Set up event handlers
     self:SetupEventHandlers()
+    
+    -- Set up error handling
+    self:SetupErrorHandling()
+end
+
+function StarterGui:SetupErrorHandling()
+    -- Global error handler for client-side errors
+    game:GetService("ScriptContext").Error:Connect(function(message, stackTrace, script)
+        if self.ui and self.ui.Parent then
+            self:ShowNotification("Error: " .. message)
+            warn("UI Error: " .. message .. "\n" .. stackTrace)
+        end
+    end)
 end
 
 function StarterGui:CreateMainUI()
     -- Create ScreenGui
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "MainUI"
-    screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+    screenGui.ResetOnSpawn = false -- Ensure UI persists across respawns
+    screenGui.Parent = self.player:WaitForChild("PlayerGui")
     
     -- Create main frame
     local frame = Instance.new("Frame")

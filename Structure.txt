@@ -1,54 +1,49 @@
-  15:02:32.621  > -- WorkspaceTreeViewer.lua
--- Run this in the Command Bar to see your workspace structure
+  # ForeverBuild2 Structure File
+# This file defines all items, their properties, and organization
+# Format: [Category] followed by item entries
 
-local function getObjectIcon(object)
-    if object:IsA("Folder") then
-        return "📁"
-    elseif object:IsA("Model") then
-        return "📋"
-    elseif object:IsA("Part") then
-        return "🧊"
-    elseif object:IsA("UnionOperation") then
-        return "🔗"
-    elseif object:IsA("Script") then
-        return "📝"
-    elseif object:IsA("LocalScript") then
-        return "📜"
-    elseif object:IsA("PointLight") then
-        return "💡"
-    elseif object:IsA("Camera") then
-        return "📷"
-    elseif object:IsA("SpawnLocation") then
-        return "🏁"
-    else
-        return "❓"
-    end
-end
+[Items]
+# Basic items
+brick_cube=Brick Cube,100
+wood_cube=Wood Cube,150
+stone_cube=Stone Cube,175
+grass_cube=Grass Cube,150
+fabric_cube=Fabric Cube,125
+glass_cube=Glass Cube,200
+water_cube=Water Cube,225
+fire_cube=Fire Cube,250
 
-local function printTree(object, depth, isLast, prefix)
-    depth = depth or 0
-    prefix = prefix or ""
-    
-    -- Create the tree structure
-    local connector = isLast and "└─ " or "├─ "
-    local nextPrefix = prefix .. (isLast and "   " or "│  ")
-    
-    -- Get object info
-    local icon = getObjectIcon(object)
-    local info = string.format("%s (%s)", object.Name, object.ClassName)
-    
-    -- Add attribute info if exists
-    local attributes = object:GetAttributes()
-    local attrCount = 0
-    local attrStr = ""
-    
-    for key, value in pairs(attributes) do
-        attrCount = attrCount + 1
-        if attrCount == 1 then
-            attrStr = string.format(" [%s=%s", key, tostring(value))
-        else
-            attrStr = attrStr .. string.format(", %s=%s", key, tostring(value))
-        end
+# Glowing items
+glow_red_cube=Red Glowing Cube,300
+glow_blue_cube=Blue Glowing Cube,300
+glow_green_cube=Green Glowing Cube,300
+glow_purple_cube=Purple Glowing Cube,350
+glow_yellow_cube=Yellow Glowing Cube,325
+glow_white_cube=White Glowing Cube,400
+# Interactive items
+gear=Spinning Gear,500
+trampoline=Trampoline,750
+
+# Teleportation items
+portal_blue=Blue Portal,1000
+portal_red=Red Portal,1000
+
+[Categories]
+# Category definitions
+basic=brick_cube,wood_cube,stone_cube,grass_cube,fabric_cube,glass_cube,water_cube,fire_cube
+glow=glow_red_cube,glow_blue_cube,glow_green_cube,glow_purple_cube,glow_yellow_cube,glow_white_cube
+interactive=gear,trampoline
+teleport=portal_blue,portal_red
+
+[Properties]
+# Properties for specific items
+trampoline=bounceHeight:20,bounceCooldown:1.5
+gear=rotationSpeed:2
+portal_blue=linkedPortal:portal_red,cooldown:5
+portal_red=linkedPortal:portal_blue,cooldown:5
+glow_red_cube=glowIntensity:1.5,glowColor:255,0,0
+glow_blue_cube=glowIntensity:1.5,glowColor:0,0,255
+glow_green_cube=glowIntensity:1.5,glowColor:0,255,0
     end
     
     if attrCount > 0 then
@@ -105,32 +100,34 @@ local function printTreeCollapsible(object, depth, isLast, prefix, maxDepth)
             attrStr = string.format(" [%s=%s", key, tostring(value))
         else
             attrStr = attrStr .. string.format(", %s=%s", key, tostring(value))
-        end
-    end
-    
-    if attrCount > 0 then
-        attrStr = attrStr .. "]"
-        info = info .. attrStr
-    end
-    
-    print(prefix .. connector .. icon .. " " .. info)
-    
-    local children = object:GetChildren()
-    table.sort(children, function(a, b)
-        if a:IsA("Folder") and not b:IsA("Folder") then
-            return true
-        elseif not a:IsA("Folder") and b:IsA("Folder") then
-            return false
-        else
-            return a.Name < b.Name
-        end
-    end)
-    
-    -- Show truncation if we've hit max depth and there are children
-    if depth == maxDepth and #children > 0 then
-        print(nextPrefix .. "└─ " .. "📂 ... (" .. #children .. " more items)")
-        return
-    end
+        endglow_purple_cube=glowIntensity:1.5,glowColor:125,0,255
+glow_yellow_cube=glowIntensity:1.5,glowColor:255,255,0
+glow_white_cube=glowIntensity:2.0,glowColor:255,255,255
+
+[Tiers]
+# Pricing tiers for items
+tier1=100
+tier2=200
+tier3=300
+tier4=500
+tier5=750
+tier6=1000
+
+[TierAssignments]
+# Assign items to tiers
+tier1=brick_cube,wood_cube,grass_cube,fabric_cube
+tier2=stone_cube,glass_cube,water_cube
+tier3=fire_cube,glow_red_cube,glow_blue_cube,glow_green_cube,glow_yellow_cube
+tier4=glow_purple_cube,glow_white_cube,gear
+tier5=trampoline
+tier6=portal_blue,portal_red
+
+[Interactions]
+# Define possible interactions for items
+trampoline=jump,examine,customize
+gear=spin,examine,pickup
+portal_blue=teleport,examine,configure
+portal_red=teleport,examine,configure
     
     for i, child in ipairs(children) do
         local isLastChild = (i == #children)

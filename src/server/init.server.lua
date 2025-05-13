@@ -56,68 +56,51 @@ for _, functionName in ipairs(functions) do
     end
 end
 
--- Initialize managers
+-- Initialize managers with consistent OOP approach
 local currencyManager = CurrencyManager.new()
--- If you want to use OOP, ensure the module returns a constructor
--- For now, use as modules
--- local gameManager = GameManager.new()
--- local interactionManager = InteractionManager.new()
+currencyManager:Initialize()
 
-if GameManager.Initialize then GameManager.Initialize() end
--- interactionManager is already initialized above
+-- Fix GameManager OOP approach - create instance instead of using module directly
+local gameManager = GameManager.new()
+gameManager:Initialize()
 
--- Set up event handlers
+-- interactionManager is already initialized above using OOP pattern
+
+-- Set up event handlers with gameManager instance
 remotes.BuyItem.OnServerEvent:Connect(function(player, itemId)
-    if GameManager.HandleBuyItem then
-        GameManager.HandleBuyItem(player, itemId)
-    end
+    gameManager:HandleBuyItem(player, itemId)
 end)
 
 remotes.PlaceItem.OnServerEvent:Connect(function(player, itemId, position, rotation)
-    if GameManager.HandlePlaceItem then
-        GameManager.HandlePlaceItem(player, itemId, position, rotation)
-    end
+    gameManager:HandlePlaceItem(player, itemId, position, rotation)
 end)
 
 remotes.MoveItem.OnServerEvent:Connect(function(player, itemId, newPosition)
-    if GameManager.HandleMoveItem then
-        GameManager.HandleMoveItem(player, itemId, newPosition)
-    end
+    gameManager:HandleMoveItem(player, itemId, newPosition)
 end)
 
 remotes.RotateItem.OnServerEvent:Connect(function(player, itemId, newRotation)
-    if GameManager.HandleRotateItem then
-        GameManager.HandleRotateItem(player, itemId, newRotation)
-    end
+    gameManager:HandleRotateItem(player, itemId, newRotation)
 end)
 
 remotes.ChangeColor.OnServerEvent:Connect(function(player, itemId, newColor)
-    if GameManager.HandleChangeColor then
-        GameManager.HandleChangeColor(player, itemId, newColor)
-    end
+    gameManager:HandleChangeColor(player, itemId, newColor)
 end)
 
 remotes.RemoveItem.OnServerEvent:Connect(function(player, itemId)
-    if GameManager.HandleRemoveItem then
-        GameManager.HandleRemoveItem(player, itemId)
-    end
+    gameManager:HandleRemoveItem(player, itemId)
 end)
 
 remotes.GetInventory.OnServerInvoke = function(player)
-    if GameManager.GetPlayerInventory then
-        return GameManager.GetPlayerInventory(player)
-    end
+    return gameManager:GetPlayerInventory(player)
 end
 
 remotes.GetItemData.OnServerInvoke = function(player, itemId)
-    if GameManager.GetItemData then
-        return GameManager.GetItemData(itemId)
-    end
+    return gameManager:GetItemData(itemId)
 end
 
 remotes.InteractWithItem.OnServerEvent:Connect(function(player, placedItem, interactionType)
-    if not GameManager.GetItemPlacement then return end
-    local placement = GameManager.GetItemPlacement(placedItem.id)
+    local placement = gameManager:GetItemPlacement(placedItem.id)
     if not placement then return end
     local success = interactionManager:HandleInteraction(player, placedItem.id, interactionType, placement)
     if not success and remotes.NotifyPlayer then
@@ -126,11 +109,9 @@ remotes.InteractWithItem.OnServerEvent:Connect(function(player, placedItem, inte
 end)
 
 remotes.GetAvailableInteractions.OnServerInvoke = function(player, placedItem)
-    if not GameManager.GetItemPlacement then return {} end
-    local placement = GameManager.GetItemPlacement(placedItem.id)
+    local placement = gameManager:GetItemPlacement(placedItem.id)
     if not placement then return {} end
-    if not GameManager.GetItemData then return {} end
-    local itemData = GameManager.GetItemData(placedItem.id)
+    local itemData = gameManager:GetItemData(placedItem.id)
     if not itemData then return {} end
     local interactions = {"examine"}
     if not placement.locked then
@@ -148,15 +129,11 @@ remotes.GetAvailableInteractions.OnServerInvoke = function(player, placedItem)
 end
 
 remotes.AddToInventory.OnServerEvent:Connect(function(player, itemId)
-    if GameManager.AddToInventory then
-        GameManager.AddToInventory(player, itemId)
-    end
+    gameManager:AddToInventory(player, itemId)
 end)
 
 remotes.ApplyItemEffect.OnServerEvent:Connect(function(player, itemId, placement)
-    if GameManager.ApplyItemEffect then
-        GameManager.ApplyItemEffect(player, itemId, placement)
-    end
+    gameManager:ApplyItemEffect(player, itemId, placement)
 end)
 
-print("Server initialized successfully") 
+print("Server initialized successfully")

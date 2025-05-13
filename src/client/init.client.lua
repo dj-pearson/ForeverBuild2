@@ -6,28 +6,56 @@ print("Client script starting...")
 
 -- Load core modules
 local SharedModule = require(ReplicatedStorage.shared)
-SharedModule.Init() -- Ensure all shared systems are initialized
 
+-- Initialize all shared modules with consistent error handling
+local success, errorMsg = pcall(function()
+	SharedModule.Init() -- Ensure all shared systems are initialized
+end)
+
+if not success then
+	warn("Failed to initialize SharedModule: ", errorMsg)
+end
+
+-- Set up proper OOP initialization for UI components
 local UI = require(ReplicatedStorage.shared.core.ui)
-UI.InventoryUI.Initialize(Players.LocalPlayer.PlayerGui)
-UI.PurchaseDialog.Initialize(Players.LocalPlayer.PlayerGui)
-local currencyUI = UI.CurrencyUI.new()
-currencyUI:Initialize()
-UI.PlacedItemDialog.Initialize(Players.LocalPlayer.PlayerGui)
+
+-- Create UI instances with proper error handling
+local function safeInitialize(module, name)
+	local success, result = pcall(function()
+		if typeof(module) == "table" and module.new then
+			-- OOP style initialization
+			local instance = module.new()
+			instance:Initialize()
+			return instance
+		elseif typeof(module) == "table" and module.Initialize then
+			-- Functional style initialization
+			module.Initialize(Players.LocalPlayer.PlayerGui)
+			return module
+		else
+			warn("Module " .. name .. " doesn't have proper initialization method")
+			return nil
+		end
+	end)
+
+	if not success then
+		warn("Failed to initialize " .. name .. ": ", result)
+		return nil
+	end
+
+	return result
+end
+
+-- Initialize UI components with error handling
+local inventoryUI = safeInitialize(UI.InventoryUI, "InventoryUI")
+local purchaseDialog = safeInitialize(UI.PurchaseDialog, "PurchaseDialog")
+local currencyUI = safeInitialize(UI.CurrencyUI, "CurrencyUI")
+local placedItemDialog = safeInitialize(UI.PlacedItemDialog, "PlacedItemDialog")
 
 -- The interaction module is a child of this script
 local InteractionSystem = require(script.interaction.InteractionSystem)
--- Get StarterGui service
-local StarterGui = game:GetService("StarterGui")
 
--- Initialize UI
--- StarterGui should already have UI elements from Roblox Studio
--- We don't need to explicitly initialize it here as those scripts will run automatically
-
--- Initialize interaction system
+-- Initialize interaction system with OOP approach
 local interactionSystem = InteractionSystem.new()
 interactionSystem:Initialize()
 
 print("Client initialized successfully")
-
--- ... existing code ... 
