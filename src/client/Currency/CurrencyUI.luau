@@ -20,12 +20,28 @@ end
 local SharedModule = safeRequire(ReplicatedStorage.shared)
 local Constants = SharedModule and SharedModule.Constants or {
     CURRENCY = {
-        STARTING_COINS = 100
+        STARTING_COINS = 100,
+        PRODUCTS = {} -- Default empty products array
     }
 }
 
+-- Debug: Print product information
+if Constants and Constants.CURRENCY and Constants.CURRENCY.PRODUCTS then
+    print("CurrencyUI: Found", #Constants.CURRENCY.PRODUCTS, "products")
+    for i, product in ipairs(Constants.CURRENCY.PRODUCTS) do
+        print("Product", i, ":", product.name, "AssetId:", product.assetId)
+    end
+else
+    warn("CurrencyUI: No products found in Constants")
+end
+
+-- This module is now the primary CurrencyUI implementation
+-- It replaces both the client and shared versions
 local CurrencyUI = {}
 CurrencyUI.__index = CurrencyUI
+
+-- COMPATIBILITY: Add aliases for method names used in the shared version
+CurrencyUI.SetupEventHandlers = function(self) self:SetupEventHandling() end
 
 -- Initialize a new CurrencyUI
 function CurrencyUI.new()
@@ -159,6 +175,13 @@ end
 
 -- Show purchase menu
 function CurrencyUI:ShowPurchaseMenu()
+    -- Check if purchase menu already exists and remove it
+    if self.ui:FindFirstChild("PurchaseMenu") then
+        self.ui:FindFirstChild("PurchaseMenu"):Destroy()
+    end
+
+    print("ShowPurchaseMenu: Creating purchase menu")
+    
     -- Create purchase menu
     local purchaseMenu = Instance.new("Frame")
     purchaseMenu.Name = "PurchaseMenu"
@@ -166,17 +189,25 @@ function CurrencyUI:ShowPurchaseMenu()
     purchaseMenu.Position = UDim2.new(0.5, -150, 0.5, -200)
     purchaseMenu.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     purchaseMenu.BorderSizePixel = 0
+    purchaseMenu.ZIndex = 10 -- Make sure it's on top
     purchaseMenu.Parent = self.ui
+    
+    -- Add UICorner to the purchase menu
+    local menuCorner = Instance.new("UICorner")
+    menuCorner.CornerRadius = UDim.new(0, 10)
+    menuCorner.Parent = purchaseMenu
     
     -- Create title
     local title = Instance.new("TextLabel")
     title.Name = "Title"
     title.Size = UDim2.new(1, 0, 0, 50)
+    title.Position = UDim2.new(0, 0, 0, 0)
     title.BackgroundTransparency = 1
     title.TextColor3 = Color3.fromRGB(255, 255, 255)
     title.TextSize = 24
+    title.ZIndex = 11
     title.Font = Enum.Font.GothamBold
-    title.Text = "Purchase Coins"
+    title.Text = "Purchase Currency"
     title.Parent = purchaseMenu
     
     -- Create close button
@@ -188,82 +219,178 @@ function CurrencyUI:ShowPurchaseMenu()
     closeButton.BorderSizePixel = 0
     closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     closeButton.TextSize = 20
+    closeButton.ZIndex = 11
     closeButton.Font = Enum.Font.GothamBold
     closeButton.Text = "X"
     closeButton.Parent = purchaseMenu
     
-    -- Create purchase options
-    local yOffset = 60
-    for _, product in ipairs(Constants.CURRENCY.PRODUCTS) do
-        local option = self:CreatePurchaseOption(product, yOffset)
-        option.Parent = purchaseMenu
-        yOffset = yOffset + 80
-    end
+    -- Add corner to close button
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0, 4)
+    closeCorner.Parent = closeButton
     
-    -- Handle close button
+    -- Hook close button
     closeButton.MouseButton1Click:Connect(function()
         purchaseMenu:Destroy()
     end)
+    
+    -- Create scroll frame to hold products
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Name = "ProductsFrame"
+    scrollFrame.Size = UDim2.new(1, -20, 1, -60)
+    scrollFrame.Position = UDim2.new(0, 10, 0, 50)
+    scrollFrame.BackgroundTransparency = 1
+    scrollFrame.BorderSizePixel = 0
+    scrollFrame.ScrollBarThickness = 8
+    scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(200, 200, 200)
+    scrollFrame.ZIndex = 11
+    scrollFrame.Parent = purchaseMenu
+    
+    -- Create purchase options
+    local yOffset = 10
+    
+    -- Debug: Check if products exist
+    if Constants and Constants.CURRENCY and Constants.CURRENCY.PRODUCTS then
+        print("ShowPurchaseMenu: Found", #Constants.CURRENCY.PRODUCTS, "products to display")
+        
+        for i, product in ipairs(Constants.CURRENCY.PRODUCTS) do
+            print("Creating option for product:", product.name)
+            local option = self:CreatePurchaseOption(product, yOffset)
+            option.Position = UDim2.new(0, 0, 0, yOffset)
+            option.Parent = scrollFrame
+            yOffset = yOffset + 90 -- Increased spacing for more details
+        end
+        
+        -- Update the canvas size to fit all products
+        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset + 10)
+    else
+        -- No products found - display a message
+        local noProducts = Instance.new("TextLabel")
+        noProducts.Size = UDim2.new(1, -20, 0, 50)
+        noProducts.Position = UDim2.new(0, 10, 0, 10)
+        noProducts.BackgroundTransparency = 1
+        noProducts.TextColor3 = Color3.fromRGB(255, 255, 255)
+        noProducts.TextSize = 16
+        noProducts.Font = Enum.Font.Gotham
+        noProducts.Text = "No currency products available."
+        noProducts.Parent = scrollFrame
+        
+        warn("ShowPurchaseMenu: No products found to display")
+    end
+    
+    -- Make purchaseMenu visible
+    purchaseMenu.Visible = true
 end
 
--- Create purchase option
+-- Create a single purchase option
 function CurrencyUI:CreatePurchaseOption(product, yOffset)
-    local option = Instance.new("Frame")
-    option.Name = "Option_" .. product.id
-    option.Size = UDim2.new(1, -40, 0, 70)
-    option.Position = UDim2.new(0, 20, 0, yOffset)
-    option.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    option.BorderSizePixel = 0
+    -- Debug information
+    print("CreatePurchaseOption:", product.name, "ID:", product.assetId)
     
-    -- Create coin amount
-    local coinAmount = Instance.new("TextLabel")
-    coinAmount.Name = "CoinAmount"
-    coinAmount.Size = UDim2.new(0.6, 0, 1, 0)
-    coinAmount.BackgroundTransparency = 1
-    coinAmount.TextColor3 = Color3.fromRGB(255, 255, 255)
-    coinAmount.TextSize = 20
-    coinAmount.Font = Enum.Font.GothamBold
-    coinAmount.Text = tostring(product.coins) .. " Coins"
-    coinAmount.TextXAlignment = Enum.TextXAlignment.Left
-    coinAmount.Parent = option
+    local optionFrame = Instance.new("Frame")
+    optionFrame.Name = product.id
+    optionFrame.Size = UDim2.new(1, -20, 0, 80) -- Adjusted to fill the scrollframe width
+    optionFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    optionFrame.BorderSizePixel = 1
+    optionFrame.BorderColor3 = Color3.fromRGB(80, 80, 80)
+    optionFrame.ZIndex = 12
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = optionFrame
+
+    local productName = Instance.new("TextLabel")
+    productName.Name = "ProductName"
+    productName.Size = UDim2.new(1, -100, 0, 30)
+    productName.Position = UDim2.new(0, 10, 0, 5)
+    productName.BackgroundTransparency = 1
+    productName.TextColor3 = Color3.fromRGB(255, 255, 255)
+    productName.TextSize = 18
+    productName.Font = Enum.Font.GothamBold
+    productName.Text = product.name
+    productName.TextXAlignment = Enum.TextXAlignment.Left
+    productName.ZIndex = 13
+    productName.Parent = optionFrame
+
+    local productDescription = Instance.new("TextLabel")
+    productDescription.Name = "ProductDescription"
+    productDescription.Size = UDim2.new(1, -100, 0, 40)
+    productDescription.Position = UDim2.new(0, 10, 0, 30)
+    productDescription.BackgroundTransparency = 1
+    productDescription.TextColor3 = Color3.fromRGB(200, 200, 200)
+    productDescription.TextSize = 14
+    productDescription.Font = Enum.Font.Gotham
+    productDescription.Text = product.description
+    productDescription.TextWrapped = true
+    productDescription.TextXAlignment = Enum.TextXAlignment.Left
+    productDescription.TextYAlignment = Enum.TextYAlignment.Top
+    productDescription.ZIndex = 13
+    productDescription.Parent = optionFrame
     
-    -- Create price
-    local price = Instance.new("TextLabel")
-    price.Name = "Price"
-    price.Size = UDim2.new(0.4, 0, 1, 0)
-    price.Position = UDim2.new(0.6, 0, 0, 0)
-    price.BackgroundTransparency = 1
-    price.TextColor3 = Color3.fromRGB(255, 255, 255)
-    price.TextSize = 20
-    price.Font = Enum.Font.GothamBold
-    price.Text = tostring(product.robux) .. " R$"
-    price.TextXAlignment = Enum.TextXAlignment.Right
-    price.Parent = option
+    local robuxLabel = Instance.new("TextLabel")
+    robuxLabel.Name = "RobuxLabel"
+    robuxLabel.Size = UDim2.new(0, 80, 0, 20)
+    robuxLabel.Position = UDim2.new(1, -90, 0, 10) -- Positioned to the right
+    robuxLabel.BackgroundTransparency = 1
+    robuxLabel.TextColor3 = Color3.fromRGB(0, 255, 0) -- Green for Robux
+    robuxLabel.TextSize = 16
+    robuxLabel.Font = Enum.Font.GothamBold
+    robuxLabel.Text = "R$ " .. product.robux
+    robuxLabel.TextXAlignment = Enum.TextXAlignment.Right
+    robuxLabel.ZIndex = 13
+    robuxLabel.Parent = optionFrame
+
+    if product.bonusCoins > 0 then
+        local bonusLabel = Instance.new("TextLabel")
+        bonusLabel.Name = "BonusLabel"
+        bonusLabel.Size = UDim2.new(0, 80, 0, 20)
+        bonusLabel.Position = UDim2.new(1, -90, 0, 30) -- Below Robux label
+        bonusLabel.BackgroundTransparency = 1
+        bonusLabel.TextColor3 = Color3.fromRGB(255, 223, 0) -- Gold for bonus
+        bonusLabel.TextSize = 14
+        bonusLabel.Font = Enum.Font.Gotham
+        bonusLabel.Text = "+" .. product.bonusCoins .. " Bonus!"
+        bonusLabel.TextXAlignment = Enum.TextXAlignment.Right
+        bonusLabel.ZIndex = 13
+        bonusLabel.Parent = optionFrame
+    end
+
+    local purchaseProductButton = Instance.new("TextButton")
+    purchaseProductButton.Name = "PurchaseProductButton"
+    purchaseProductButton.Size = UDim2.new(0, 80, 0, 30)
+    purchaseProductButton.Position = UDim2.new(1, -90, 1, -40) -- Bottom right
+    purchaseProductButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    purchaseProductButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    purchaseProductButton.TextSize = 16
+    purchaseProductButton.Font = Enum.Font.GothamBold
+    purchaseProductButton.Text = "Buy"
+    purchaseProductButton.ZIndex = 13
+    purchaseProductButton.Parent = optionFrame
     
-    -- Create purchase button
-    local purchaseButton = Instance.new("TextButton")
-    purchaseButton.Name = "PurchaseButton"
-    purchaseButton.Size = UDim2.new(1, 0, 0, 30)
-    purchaseButton.Position = UDim2.new(0, 0, 1, 10)
-    purchaseButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-    purchaseButton.BorderSizePixel = 0
-    purchaseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    purchaseButton.TextSize = 18
-    purchaseButton.Font = Enum.Font.GothamBold
-    purchaseButton.Text = "Purchase"
-    purchaseButton.Parent = option
-    
-    -- Handle purchase button
-    purchaseButton.MouseButton1Click:Connect(function()
-        self:PurchaseCoins(product.id)
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = purchaseProductButton
+
+    purchaseProductButton.MouseButton1Click:Connect(function()
+        print("Attempting to purchase:", product.name, "ID:", product.assetId)
+        -- Check if assetId is valid
+        if product.assetId and product.assetId > 0 then
+            local success, message = pcall(function()
+                MarketplaceService:PromptProductPurchase(self.player, product.assetId)
+            end)
+            if not success then
+                warn("Error prompting product purchase for " .. product.name .. ": " .. tostring(message))
+            end
+        else
+            warn("Invalid assetId for product:", product.name, "ID:", product.assetId)
+        end
     end)
-    
-    return option
+
+    return optionFrame
 end
 
--- Purchase coins
-function CurrencyUI:PurchaseCoins(productId)
-    MarketplaceService:PromptProductPurchase(self.player, productId)
-end
+-- COMPATIBILITY: Add aliases for method names used in the shared version
+-- This ensures this implementation works with code expecting the shared version's API
+CurrencyUI.SetupEventHandlers = function(self) self:SetupEventHandling() end
 
 return CurrencyUI

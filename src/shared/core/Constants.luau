@@ -32,7 +32,14 @@ Constants.CURRENCY = {
     WEEKLY_BONUS = 500, -- Weekly login bonus
     MONTHLY_BONUS = 2000, -- Monthly login bonus
     STARTING_COINS = 100, -- Added for client and most scripts
-    STARTING_CURRENCY = 100 -- Added for server/GameManager
+    STARTING_CURRENCY = 100, -- Added for server/GameManager
+
+    PRODUCTS = {
+        {id = "coins_1000", name = "1,000 Coins", coins = 1000, robux = 75, bonusCoins = 0, assetId = 3285357280, description = "Get started with a handy pack of 1,000 coins!"},
+        {id = "coins_5000", name = "5,500 Coins", coins = 5000, robux = 350, bonusCoins = 500, assetId = 3285387112, description = "Great value! Grab 5,000 coins and get an extra 500 on us!"},
+        {id = "coins_10000", name = "11,500 Coins", coins = 10000, robux = 650, bonusCoins = 1500, assetId = 3285387112, description = "Supercharge your game with 10,000 coins, plus a 1,500 coin bonus!"},
+        {id = "coins_20000", name = "24,000 Coins", coins = 20000, robux = 1200, bonusCoins = 4000, assetId = 3285387781, description = "The ultimate deal! Get 20,000 coins and a massive 4,000 coin bonus!"}
+    }
 }
 
 -- Item Pricing Configuration
@@ -118,4 +125,4 @@ Constants.ITEMS = {
     -- Add more items as needed
 }
 
-return Constants 
+return Constants
