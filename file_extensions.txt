@@ -1,0 +1,29 @@
+# Files that need to be renamed to .luau (ModuleScripts)
+src/shared/core/Constants.lua -> Constants.luau
+src/shared/core/GameManager.lua -> GameManager.luau
+src/shared/core/LazyLoadModules.lua -> LazyLoadModules.luau
+src/shared/core/economy/CurrencyManager.lua -> CurrencyManager.luau
+src/shared/core/economy/init.lua -> init.luau
+src/shared/core/ui/CurrencyUI.lua -> CurrencyUI.luau
+src/shared/core/ui/init.lua -> init.luau
+src/shared/core/ui/PlacedItemDialog.lua -> PlacedItemDialog.luau
+src/shared/core/ui/InventoryUI.lua -> InventoryUI.luau
+src/shared/core/ui/PurchaseDialog.lua -> PurchaseDialog.luau
+src/shared/core/interaction/InteractionManager.lua -> InteractionManager.luau
+src/shared/core/interaction/init.lua -> init.luau
+src/shared/core/inventory/ItemManager.lua -> ItemManager.luau
+src/shared/core/inventory/init.lua -> init.luau
+src/shared/core/inventory/InventoryManager.lua -> InventoryManager.luau
+src/shared/core/placement/init.lua -> init.luau
+src/shared/core/placement/PlacementManager.lua -> PlacementManager.luau
+src/shared/init.lua -> init.luau
+
+# Files that need to be renamed to .client.luau (LocalScripts)
+src/client/init.client.lua -> init.client.luau
+src/client/client.lua -> client.client.luau
+src/client/interaction/InteractionSystem.lua -> InteractionSystem.client.luau
+src/StarterGui/init.client.lua -> init.client.luau
+
+# Files that need to be renamed to .server.luau (Scripts)
+src/server/init.server.lua -> init.server.luau
+src/server/Neon/NeonGlowManager.server.luau -> NeonGlowManager.server.luau (already correct) 

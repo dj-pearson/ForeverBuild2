@@ -1,0 +1,2 @@
+Setup a first 10 minutes of joing the server for the first time to allow the basic items for free
+Setup event triggers where an admin can set the amount of time that the Basic and or Secondary can be free such as "Free Weekends", "Holiday" special events, effects
