@@ -1,49 +1,39 @@
-  14:20:49.607  Initializing GameManager...  -  Server - GameManager:109
-  14:20:49.607  GameManager initialized successfully  -  Server - GameManager:122
-  14:20:49.607  InteractionManager initialized  -  Server - InteractionManager:14
-  14:20:49.608  Server initialized successfully  -  Server - server:165
-  14:20:49.695  ReplicatedStorage.shared.core.GameManager:59: attempt to index nil with 'STARTING_CURRENCY'  -  Server - GameManager:59
-  14:20:49.695  Stack Begin  -  Studio
-  14:20:49.696  Script 'ReplicatedStorage.shared.core.GameManager', Line 59 - function initializePlayerData  -  Studio - GameManager:59
-  14:20:49.696  Script 'ReplicatedStorage.shared.core.GameManager', Line 113  -  Studio - GameManager:113
-  14:20:49.696  Stack End  -  Studio
-  14:20:49.774  DataStoreService: StudioAccessToApisNotAllowed: Studio access to APIs is not allowed. API: GetAsync, Data Store: PlayerCurrency  -  Studio
-  14:20:49.793  InteractionSystem module loading...  -  Client - InteractionSystem:6
-  14:20:49.794  Client script starting...  -  Client - client:5
-  14:20:49.795  Initializing SharedModule with deferred loading...  -  Client - shared:56
-  14:20:49.796  SharedModule initialized - other modules will load on demand  -  Client - shared:64
-  14:20:49.801  Module CurrencyUI doesn't have proper initialization method  -  Client - client:83
-  14:20:49.802  Failed to initialize PlacedItemDialog:  ReplicatedStorage.shared.core.ui.PlacedItemDialog:89: attempt to index nil with 'cost'  -  Client - client:89
-  14:20:49.802  Failed to require module at path:  InteractionSystem  -  Client - client:42
-  14:20:49.805  Error:  Attempted to call require with invalid argument(s).  -  Client - client:43
-  14:20:49.805  InteractionSystem module is missing or invalid  -  Client - client:116
-  14:20:49.805  Client initialized successfully  -  Client - client:119
-  14:20:50.644  === Enhanced Glow Manager Starting ===  -  Server - NeonGlowManager:7
-  14:20:50.645  Found 6 glow models  -  Server - NeonGlowManager:145
-  14:20:50.645  Processing: Glow_Green_Cube (Color: Green)  -  Server - NeonGlowManager:153
-  14:20:50.645    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
-  14:20:50.645    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
-  14:20:50.646  Processing: Glow_Blue_Cube (Color: Blue)  -  Server - NeonGlowManager:153
-  14:20:50.646    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
-  14:20:50.646    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
-  14:20:50.647  Processing: Glow_Yellow_Cube (Color: Yellow)  -  Server - NeonGlowManager:153
-  14:20:50.647    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
-  14:20:50.648    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
-  14:20:50.649  Processing: Glow_White_Cube (Color: White)  -  Server - NeonGlowManager:153
-  14:20:50.649    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
-  14:20:50.649    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
-  14:20:50.649  Processing: Glow_Red_Cube (Color: Red)  -  Server - NeonGlowManager:153
-  14:20:50.649    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
-  14:20:50.650    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
-  14:20:50.651  Processing: Glow_Purple_Cube (Color: Purple)  -  Server - NeonGlowManager:153
-  14:20:50.651    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
-  14:20:50.651    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
-  14:20:50.652  === Enhanced Glow Manager Complete! ===  -  Server - NeonGlowManager:166
-  14:20:50.803  StarterGui script starting...  -  Client - StarterGui:9
-  14:20:50.804  Initializing GameManager client...  -  Client - GameManager:286
-  14:20:50.804  GameManager client initialized successfully  -  Client - GameManager:288
-  14:20:50.804  Initializing CurrencyManager client-side  -  Client - CurrencyManager:286
-  14:20:50.804  CurrencyManager client initialized  -  Client - CurrencyManager:317
-  14:20:50.805  Initializing StarterGui...  -  Client - StarterGui:43
-  14:20:50.811  Currency updated: 2600  -  Client - CurrencyManager:298
-  14:20:53.831   ▶ Failed to get inventory: Player data not found. (x16)  -  Client - client:131
+  15:53:41.438  ServerScriptService.server:38: attempt to index nil with 'new'  -  Server - server:38
+  15:53:41.439  Stack Begin  -  Studio
+  15:53:41.439  Script 'ServerScriptService.server', Line 38  -  Studio - server:38
+  15:53:41.439  Stack End  -  Studio
+  15:53:41.580  InteractionSystem module loading...  -  Client - InteractionSystem:6
+  15:53:41.580  Client script starting...  -  Client - client:5
+  15:53:41.580  Initializing SharedModule with deferred loading...  -  Client - shared:45
+  15:53:41.580  SharedModule initialized - other modules will load on demand  -  Client - shared:53
+  15:53:41.581  Failed to require module at path:  ui  -  Client - client:42
+  15:53:41.582  Error:  Attempted to call require with invalid argument(s).  -  Client - client:43
+  15:53:41.583  InteractionManager initialized  -  Client - InteractionManager:14
+  15:53:41.584  Client initialized successfully  -  Client - client:118
+  15:53:42.446  === Enhanced Glow Manager Starting ===  -  Server - NeonGlowManager:7
+  15:53:42.446  Found 6 glow models  -  Server - NeonGlowManager:145
+  15:53:42.446  Processing: Glow_Green_Cube (Color: Green)  -  Server - NeonGlowManager:153
+  15:53:42.447    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
+  15:53:42.447    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
+  15:53:42.447  Processing: Glow_Blue_Cube (Color: Blue)  -  Server - NeonGlowManager:153
+  15:53:42.447    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
+  15:53:42.447    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
+  15:53:42.448  Processing: Glow_Yellow_Cube (Color: Yellow)  -  Server - NeonGlowManager:153
+  15:53:42.448    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
+  15:53:42.448    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
+  15:53:42.448  Processing: Glow_White_Cube (Color: White)  -  Server - NeonGlowManager:153
+  15:53:42.448    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
+  15:53:42.449    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
+  15:53:42.449  Processing: Glow_Red_Cube (Color: Red)  -  Server - NeonGlowManager:153
+  15:53:42.449    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
+  15:53:42.450    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
+  15:53:42.450  Processing: Glow_Purple_Cube (Color: Purple)  -  Server - NeonGlowManager:153
+  15:53:42.450    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
+  15:53:42.450    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
+  15:53:42.450  === Enhanced Glow Manager Complete! ===  -  Server - NeonGlowManager:166
+  15:53:42.547  InteractionManager initialized  -  Client - InteractionManager:14
+  15:53:42.547  StarterGui script starting...  -  Client - StarterGui:9
+  15:53:42.548  Players.Xdjpearsonx.PlayerGui.StarterGui:20: attempt to index nil with 'CurrencyManager'  -  Client - StarterGui:20
+  15:53:42.548  Stack Begin  -  Studio
+  15:53:42.548  Script 'Players.Xdjpearsonx.PlayerGui.StarterGui', Line 20  -  Studio - StarterGui:20
+  15:53:42.548  Stack End  -  Studio

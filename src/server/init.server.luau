@@ -30,9 +30,12 @@ if not ReplicatedStorage:FindFirstChild("Remotes") then
 end
 
 local SharedModule = require(ReplicatedStorage.shared)
+-- Initialize the shared module
+SharedModule.Init()
+
 local GameManagerModule = SharedModule.GameManager
-local CurrencyManagerModule = SharedModule.Economy.CurrencyManager
-local InteractionManagerModule = SharedModule.Interaction.Manager
+local CurrencyManagerModule = SharedModule.CurrencyManager
+local InteractionManagerModule = SharedModule.InteractionManager
 
 -- Create manager instances with consistent approach
 local gameManager = GameManagerModule.new()

@@ -2,7 +2,8 @@ local Core = {}
 
 -- Interaction
 Core.InteractionManager = require(script.interaction.InteractionManager)
-Core.InteractionSystem = require(script.interaction.InteractionManager)
+-- InteractionSystem is a client-side module, so we need to handle it differently
+Core.InteractionSystem = nil -- This will be set on the client side
 
 -- Inventory
 Core.InventoryManager = require(script.inventory.InventoryManager)

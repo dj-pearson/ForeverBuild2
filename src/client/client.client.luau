@@ -7,6 +7,9 @@ local UserInputService = game:GetService("UserInputService")
 local player = nil
 local character = nil
 local SharedModule = require(ReplicatedStorage.shared)
+-- Initialize the shared module
+SharedModule.Init()
+
 local GameManagerModule = SharedModule.GameManager
 local Constants = SharedModule.Constants
 local GameManager = nil

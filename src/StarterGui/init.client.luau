@@ -13,11 +13,13 @@ local Players = game:GetService("Players")
 
 -- Get shared module
 local SharedModule = require(ReplicatedStorage.shared)
+-- Initialize the shared module
+SharedModule.Init()
 
 -- Local references to commonly used modules
 local Constants = SharedModule.Constants
 local GameManagerModule = SharedModule.GameManager
-local CurrencyManagerModule = SharedModule.Economy.CurrencyManager
+local CurrencyManagerModule = SharedModule.CurrencyManager
 
 -- Create manager instances
 local gameManager = GameManagerModule.new()

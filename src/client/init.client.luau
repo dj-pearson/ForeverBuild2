@@ -60,7 +60,13 @@ if SharedModule.Init then
 end
 
 -- Set up proper OOP initialization for UI components with safe require
-local UI = safeRequire(ReplicatedStorage.shared.core.ui)
+-- Get UI modules directly from SharedModule since we've initialized it
+local UI = {
+    PurchaseDialog = SharedModule.PurchaseDialog,
+    InventoryUI = SharedModule.InventoryUI,
+    CurrencyUI = SharedModule.CurrencyUI,
+    PlacedItemDialog = SharedModule.PlacedItemDialog
+}
 
 -- Create UI instances with proper error handling
 local function safeInitialize(module, name)
@@ -99,7 +105,8 @@ local purchaseDialog = safeInitialize(SharedModule.PurchaseDialog, "PurchaseDial
 local currencyUI = safeInitialize(SharedModule.CurrencyUI, "CurrencyUI")
 local placedItemDialog = safeInitialize(SharedModule.PlacedItemDialog, "PlacedItemDialog")
 
-local InteractionSystem = SharedModule.InteractionSystem
+-- Load client-specific InteractionSystem
+local InteractionSystem = safeRequire(script.Parent.interaction.InteractionSystem)
 
 -- Initialize interaction system with OOP approach and error handling
 if InteractionSystem and InteractionSystem.new then

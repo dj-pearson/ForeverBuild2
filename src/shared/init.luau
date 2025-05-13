@@ -34,6 +34,9 @@ end
 
 local Core = require(script.core)
 
+-- Expose Core directly
+SharedModule.Core = Core
+
 -- Use metatables for lazy loading
 SharedModule = setmetatable(SharedModule, {
     __index = function(self, key)
