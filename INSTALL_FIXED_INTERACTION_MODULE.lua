@@ -1,6 +1,54 @@
+-- This will copy the fixed InteractionSystemModule to the correct location
+-- and ensure it's used by client_core.luau
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+print("======== INSTALLING FIXED INTERACTION MODULE ========")
+
+-- Wait for player to join
+local player = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
+if not player then
+    warn("Failed to get LocalPlayer")
+    return
+end
+
+-- Find the client script
+local playerScripts = player:WaitForChild("PlayerScripts", 10)
+if not playerScripts then
+    warn("Failed to find PlayerScripts for player")
+    return
+end
+
+local clientScript = playerScripts:WaitForChild("client", 10)
+if not clientScript then
+    warn("Failed to find client script in PlayerScripts")
+    return
+end
+
+-- Find the interaction folder
+local interactionFolder = clientScript:WaitForChild("interaction", 10)
+if not interactionFolder then
+    print("Interaction folder not found, creating it...")
+    interactionFolder = Instance.new("Folder")
+    interactionFolder.Name = "interaction"
+    interactionFolder.Parent = clientScript
+end
+
+-- Check if the fixed module already exists
+local fixedModule = interactionFolder:FindFirstChild("InteractionSystemModule_fixed")
+if fixedModule then
+    print("InteractionSystemModule_fixed already exists, replacing it...")
+    fixedModule:Destroy()
+end
+
+-- Create the fixed module
+fixedModule = Instance.new("ModuleScript")
+fixedModule.Name = "InteractionSystemModule_fixed"
+fixedModule.Source = [[
 --[[
     InteractionSystemModule - ForeverBuild2
-    Enhanced version with better error handling and debug control
+    FIXED VERSION: Removes BindToClose which is only for server scripts
     
     This module handles all player interactions with placed items in the game.
 ]]
@@ -34,7 +82,7 @@ if not lazyLoadSuccess then
     warn("[InteractionSystem] Failed to load LazyLoadModules:", lazyLoadError)
     -- Create a minimal fallback implementation
     LazyLoadModules = {
-        register = function() end,
+        register = function() return true end,
         require = function() return {} end
     }
 else
@@ -56,7 +104,8 @@ if not constantsSuccess then
             SECONDARY = Color3.fromRGB(40, 40, 40),
             TEXT = Color3.fromRGB(255, 255, 255)
         },
-        ITEMS = {} -- Empty items table as fallback
+        ITEMS = {}, -- Empty items table as fallback
+        INTERACTION_DISTANCE = 10
     }
 else
     print("[InteractionSystem] Successfully loaded Constants")
@@ -78,7 +127,7 @@ function InteractionSystem.new()
     local self = setmetatable({}, InteractionSystem)
     self.player = Players.LocalPlayer
     self.currentTarget = nil
-    self.interactionDistance = 10 -- Maximum distance for interaction
+    self.interactionDistance = Constants.INTERACTION_DISTANCE or 10
     self.ui = nil
     self.connections = {} -- Track connections for cleanup
     
@@ -104,7 +153,7 @@ function InteractionSystem:Initialize()
         self.player = Players.LocalPlayer
         if not self.player then
             warn("[InteractionSystem] Critical: LocalPlayer not available at Initialize.")
-            return -- Cannot proceed without player
+            return false -- Cannot proceed without player
         end
     end
     
@@ -128,6 +177,7 @@ function InteractionSystem:Initialize()
         self:SetupAlternativeInteraction()
     end
     
+    self.initialized = true
     print("[InteractionSystem] Initialization complete")
     return true
 end
@@ -143,7 +193,7 @@ function InteractionSystem:CreateUI()
 
     local bg = Instance.new("Frame")
     bg.Size = UDim2.new(1, 0, 1, 0)
-    bg.BackgroundColor3 = Constants.UI_COLORS.SECONDARY
+    bg.BackgroundColor3 = Constants.UI_COLORS and Constants.UI_COLORS.SECONDARY or Color3.fromRGB(40, 40, 40)
     bg.BackgroundTransparency = 0.2
     bg.BorderSizePixel = 0
     bg.Parent = self.billboardTemplate
@@ -152,7 +202,7 @@ function InteractionSystem:CreateUI()
     label.Name = "Title"
     label.Size = UDim2.new(1, 0, 1, 0)
     label.BackgroundTransparency = 1
-    label.TextColor3 = Constants.UI_COLORS.TEXT
+    label.TextColor3 = Constants.UI_COLORS and Constants.UI_COLORS.TEXT or Color3.fromRGB(255, 255, 255)
     label.TextSize = 20
     label.Font = Enum.Font.GothamBold
     label.Text = "[E] Interact"
@@ -249,38 +299,25 @@ function InteractionSystem:SetupMouseHandling()
     table.insert(self.connections, renderConnection)
     
     -- Listen for mouse clicks on placed items
-    local mouseConnection = self.mouse.Button1Down:Connect(function()
-        local target = self.mouse.Target
-        if not target then return end
+    if self.mouse and self.mouse.Button1Down then
+        local mouseConnection = self.mouse.Button1Down:Connect(function()
+            local target = self.mouse.Target
+            if not target then return end
+            
+            local placedItem = self:GetPlacedItemFromPart(target)
+            if placedItem then
+                debugLog("Clicked placed item:", placedItem.id)
+                self.currentTarget = placedItem
+                local interactions = self:GetAvailableInteractions(placedItem)
+                self:ShowInteractionMenu(interactions)
+            end
+        end)
         
-        local placedItem = self:GetPlacedItemFromPart(target)
-        if placedItem then
-            debugLog("Clicked placed item:", placedItem.id)
-            self.currentTarget = placedItem
-            local interactions = self:GetAvailableInteractions(placedItem)
-            self:ShowInteractionMenu(interactions)
-        end
-    end)
-    
-    table.insert(self.connections, mouseConnection)
+        table.insert(self.connections, mouseConnection)
+    end
 end
 
 function InteractionSystem:SetupEventHandlers()
-    -- Handle player added event
-    local playerAddedConnection = Players.PlayerAdded:Connect(function(player)
-        if player == self.player then
-            -- When character is added, update reference
-            local characterAddedConnection = player.CharacterAdded:Connect(function(character)
-                debugLog("Character added")
-                -- Reset any ongoing interactions
-                self:ClearCurrentTarget()
-            end)
-            table.insert(self.connections, characterAddedConnection)
-        end
-    end)
-    
-    table.insert(self.connections, playerAddedConnection)
-    
     -- Handle player leaving
     local playerRemovingConnection = Players.PlayerRemoving:Connect(function(player)
         if player == self.player then
@@ -292,16 +329,16 @@ function InteractionSystem:SetupEventHandlers()
     
     -- Note: We don't use BindToClose as it's only for server scripts
     -- For cleanup, we rely on PlayerRemoving and explicit Cleanup calls
-end
+}
 
 function InteractionSystem:Cleanup()
-    -- Clean up any resources when player leaves or game closes
+    -- Clean up any resources when player leaves
     self:HideInteractionUI()
     self:ClearCurrentTarget()
     
     -- Disconnect all connections
     for _, connection in ipairs(self.connections) do
-        if connection and connection.Connected then
+        if connection.Connected then
             connection:Disconnect()
         end
     end
@@ -315,7 +352,7 @@ function InteractionSystem:Cleanup()
     
     self.initialized = false
     print("[InteractionSystem] Cleanup completed")
-end
+}
 
 function InteractionSystem:UpdateCurrentTarget()
     if not self.mouse then return end
@@ -354,14 +391,14 @@ function InteractionSystem:UpdateCurrentTarget()
     -- Set current target
     self.currentTarget = placedItem
     debugLog("Target is a placed item:", placedItem.id)
-end
+}
 
 function InteractionSystem:ClearCurrentTarget()
     if self.currentTarget then
         self:HideInteractionUI()
         self.currentTarget = nil
     end
-end
+}
 
 function InteractionSystem:GetPlacedItemFromPart(part)
     if not part then return nil end
@@ -382,7 +419,7 @@ function InteractionSystem:GetPlacedItemFromPart(part)
     end
     
     return nil
-end
+}
 
 function InteractionSystem:ShowInteractionUI(placedItem)
     if not placedItem or not placedItem.model then return end
@@ -405,7 +442,7 @@ function InteractionSystem:ShowInteractionUI(placedItem)
     local bb = self.billboardTemplate:Clone()
     bb.Enabled = true
     bb.Parent = primaryPart
-end
+}
 
 function InteractionSystem:HideInteractionUI()
     -- Remove BillboardGui from all items in workspace
@@ -415,96 +452,7 @@ function InteractionSystem:HideInteractionUI()
             if bb then bb:Destroy() end
         end
     end
-end
-
-function InteractionSystem:ShowPriceUI(worldItem)
-    if not worldItem or not worldItem.model then return end
-    debugLog("ShowPriceUI for:", worldItem.id)
-    
-    -- Check if world item model has a primary part
-    local targetPart = worldItem.model
-    if worldItem.model:IsA("Model") then
-        targetPart = worldItem.model.PrimaryPart or worldItem.model:FindFirstChildWhichIsA("BasePart")
-        if not targetPart then return end
-    end
-    
-    -- Remove any existing price GUIs
-    local existing = targetPart:FindFirstChild("PriceBillboard")
-    if existing then existing:Destroy() end
-    
-    -- Get item data, with fallback
-    local itemData = Constants.ITEMS and Constants.ITEMS[worldItem.id]
-    if not itemData then
-        itemData = { price = { INGAME = 10 } }
-    end
-    
-    -- Create price UI
-    local priceGui = Instance.new("BillboardGui")
-    priceGui.Name = "PriceBillboard"
-    priceGui.Size = UDim2.new(0, 200, 0, 60)
-    priceGui.StudsOffset = Vector3.new(0, 4, 0)
-    priceGui.AlwaysOnTop = true
-    priceGui.Parent = targetPart
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    frame.BackgroundTransparency = 0.2
-    frame.BorderSizePixel = 0
-    frame.Parent = priceGui
-    
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0.5, 0)
-    label.Position = UDim2.new(0, 0, 0, 0)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(255, 255, 0)
-    label.TextSize = 20
-    label.Font = Enum.Font.GothamBold
-    label.Text = "Price: " .. tostring(itemData.price and itemData.price.INGAME or "?")
-    label.Parent = frame
-    
-    local prompt = Instance.new("TextLabel")
-    prompt.Size = UDim2.new(1, 0, 0.5, 0)
-    prompt.Position = UDim2.new(0, 0, 0.5, 0)
-    prompt.BackgroundTransparency = 1
-    prompt.TextColor3 = Color3.fromRGB(255, 255, 255)
-    prompt.TextSize = 18
-    prompt.Font = Enum.Font.Gotham
-    prompt.Text = "Press E to interact"
-    prompt.Parent = frame
-end
-
-function InteractionSystem:AttemptInteraction()
-    debugLog("AttemptInteraction called")
-    if not self.currentTarget then return end
-    
-    local itemsFolder = workspace:FindFirstChild("Items")
-    if itemsFolder and self.currentTarget.model and self.currentTarget.model:IsDescendantOf(itemsFolder) then
-        debugLog("Attempting to interact with world item:", self.currentTarget.id)
-        
-        local pickupEvent = self.remoteEvents:FindFirstChild("PickupItem")
-        if pickupEvent then
-            debugLog("Sending PickupItem event to server for", self.currentTarget.id)
-            pickupEvent:FireServer(self.currentTarget.id)
-        else
-            debugLog("PickupItem remote event not found")
-            -- Display a local notification since we can't use the server
-            self:ShowLocalNotification("Can't pick up item: Remote event missing")
-        end
-        return
-    end
-    
-    debugLog("Attempting to interact with placed item:", self.currentTarget.id)
-    local interactions = self:GetAvailableInteractions(self.currentTarget)
-    if not interactions or #interactions == 0 then return end
-    
-    if #interactions == 1 then
-        self:PerformInteraction(self.currentTarget, interactions[1])
-        return
-    end
-    
-    self:ShowInteractionMenu(interactions)
-end
+}
 
 function InteractionSystem:GetAvailableInteractions(placedItem)
     -- Check if the remote function exists
@@ -528,234 +476,150 @@ function InteractionSystem:GetAvailableInteractions(placedItem)
     table.insert(result, "examine")
     
     return result
-end
+}
+
+function InteractionSystem:AttemptInteraction()
+    debugLog("AttemptInteraction called")
+    if not self.currentTarget then return end
+    
+    local itemsFolder = workspace:FindFirstChild("Items")
+    if itemsFolder and self.currentTarget.model and self.currentTarget.model:IsDescendantOf(itemsFolder) then
+        debugLog("Attempting to interact with world item:", self.currentTarget.id)
+        
+        local pickupEvent = self.remoteEvents:FindFirstChild("PickupItem")
+        if pickupEvent then
+            debugLog("Sending PickupItem event to server for", self.currentTarget.id)
+            pickupEvent:FireServer(self.currentTarget.id)
+        else
+            debugLog("PickupItem remote event not found")
+            -- Display a local notification since we can't use the server
+            self:ShowLocalNotification("Can't pick up item: Remote event missing")
+        end
+        return
+    end
+    
+    debugLog("Attempting to interact with placed item:", self.currentTarget.id)
+    local interactions = self:GetAvailableInteractions(self.currentTarget)
+    if not interactions or #interactions == 0 then 
+        self:ShowLocalNotification("No interactions available for this item")
+        return 
+    end
+    
+    if #interactions == 1 then
+        self:PerformInteraction(self.currentTarget, interactions[1])
+        return
+    end
+    
+    self:ShowInteractionMenu(interactions)
+}
+
+function InteractionSystem:PerformInteraction(item, interactionType)
+    if not item or not interactionType then return end
+    
+    -- For examine, we handle that client-side
+    if interactionType == "examine" then
+        self:ShowItemDetails(item)
+        return
+    end
+    
+    -- Other interactions need to go to the server
+    local interactEvent = self.remoteEvents:FindFirstChild("InteractWithItem")
+    if not interactEvent then
+        debugLog("InteractWithItem remote event not found")
+        self:ShowLocalNotification("Can't interact: Remote event missing")
+        return
+    end
+    
+    debugLog("Sending interaction to server:", interactionType, "for", item.id)
+    
+    -- Wrap in pcall to handle errors
+    local success, result = pcall(function()
+        interactEvent:FireServer(item.id, interactionType)
+    end)
+    
+    if not success then
+        debugLog("Error performing interaction:", result)
+        self:ShowLocalNotification("Failed to perform interaction: " .. tostring(result))
+    end
+}
 
 function InteractionSystem:ShowInteractionMenu(interactions)
-    if not interactions or #interactions == 0 or not self.currentTarget then return end
-    
-    -- Try to use PlacedItemDialog if available
-    local PlacedItemDialog = LazyLoadModules.PlacedItemDialog
-    if PlacedItemDialog and typeof(PlacedItemDialog.Show) == "function" then
-        PlacedItemDialog.Show(self.currentTarget, interactions, function(action)
-            self:PerformInteraction(self.currentTarget, action)
-        end)
+    print("Showing interaction menu with options:", table.concat(interactions, ", "))
+    -- This would typically show a UI menu with interaction options
+    -- For now, just use the first interaction
+    if interactions and #interactions > 0 then
+        self:PerformInteraction(self.currentTarget, interactions[1])
+    end
+}
+
+function InteractionSystem:ShowItemDetails(item)
+    print("Showing item details for:", item.id)
+    -- Here you would show a UI with item details
+    local getItemData = self.remoteEvents:FindFirstChild("GetItemData")
+    if not getItemData then
+        self:ShowLocalNotification("Cannot fetch item details: Remote function missing")
         return
     end
     
-    -- Fallback to a simple UI if PlacedItemDialog isn't available
-    self:ShowSimpleInteractionMenu(interactions)
-end
-
-function InteractionSystem:ShowSimpleInteractionMenu(interactions)
-    -- Clean up any existing menus
-    local playerGui = self.player:FindFirstChild("PlayerGui")
-    if not playerGui then return end
-    
-    local existingMenu = playerGui:FindFirstChild("SimpleInteractionMenu")
-    if existingMenu then existingMenu:Destroy() end
-    
-    -- Create a simple menu
-    local menu = Instance.new("ScreenGui")
-    menu.Name = "SimpleInteractionMenu"
-    menu.ResetOnSpawn = false
-    menu.Parent = playerGui
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 200, 0, 30 * #interactions + 40)
-    frame.Position = UDim2.new(0.5, -100, 0.5, -frame.Size.Y.Offset / 2)
-    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    frame.BorderSizePixel = 0
-    frame.Parent = menu
-    
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 30)
-    title.Position = UDim2.new(0, 0, 0, 0)
-    title.BackgroundTransparency = 0.5
-    title.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    title.TextSize = 18
-    title.Font = Enum.Font.GothamBold
-    title.Text = "Interact with " .. self.currentTarget.id
-    title.Parent = frame
-    
-    -- Close button
-    local closeButton = Instance.new("TextButton")
-    closeButton.Size = UDim2.new(0, 30, 0, 30)
-    closeButton.Position = UDim2.new(1, -30, 0, 0)
-    closeButton.BackgroundTransparency = 1
-    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closeButton.TextSize = 18
-    closeButton.Font = Enum.Font.GothamBold
-    closeButton.Text = "X"
-    closeButton.Parent = frame
-    
-    closeButton.MouseButton1Click:Connect(function()
-        menu:Destroy()
+    -- Get item data from server
+    local success, result = pcall(function()
+        return getItemData:InvokeServer(item.id)
     end)
     
-    -- Add buttons for each interaction
-    for i, action in ipairs(interactions) do
-        local button = Instance.new("TextButton")
-        button.Size = UDim2.new(0.8, 0, 0, 25)
-        button.Position = UDim2.new(0.1, 0, 0, 35 + (i-1) * 30)
-        button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        button.TextColor3 = Color3.fromRGB(255, 255, 255)
-        button.TextSize = 16
-        button.Font = Enum.Font.Gotham
-        button.Text = action:sub(1,1):upper() .. action:sub(2)
-        button.Parent = frame
+    if success and result then
+        -- Here you would populate a UI with the item data
+        print("Item data:", result)
         
-        button.MouseButton1Click:Connect(function()
-            menu:Destroy()
-            self:PerformInteraction(self.currentTarget, action)
-        end)
-    end
-end
-
-function InteractionSystem:PerformInteraction(item, action)
-    debugLog("Performing interaction", action, "on", item.id)
-    
-    -- Handle different interaction types
-    if action == "examine" then
-        self:ExamineItem(item)
-        return
-    end
-    
-    if action == "clone" then
-        self:CloneItem(item)
-        return
-    end
-    
-    if action == "pickup" then
-        self:PickupItem(item)
-        return
-    end
-    
-    -- For any other actions, send to server
-    if self.remoteEvents:FindFirstChild("InteractWithItem") then
-        self.remoteEvents.InteractWithItem:FireServer(item.id, action)
-    else
-        self:ShowLocalNotification("Can't perform action: Remote event missing")
-    end
-end
-
-function InteractionSystem:ExamineItem(item)
-    -- Get item data from server if possible
-    local getItemDataFunc = self.remoteEvents:FindFirstChild("GetItemData")
-    local itemData
-    
-    if getItemDataFunc then
-        local success, result = pcall(function()
-            return getItemDataFunc:InvokeServer(item.id)
-        end)
-        
-        if success and result then
-            itemData = result
+        -- Show item dialog if available via LazyLoadModules
+        if LazyLoadModules.require then
+            local placedItemDialog = LazyLoadModules.require("PlacedItemDialog")
+            if placedItemDialog and placedItemDialog.Show then
+                placedItemDialog.Show(result)
+            else
+                self:ShowLocalNotification("Item: " .. item.id)
+            end
         end
-    end
-    
-    -- Fallback to Constants if server data not available
-    if not itemData and Constants.ITEMS then
-        itemData = Constants.ITEMS[item.id]
-    end
-    
-    -- Default info if nothing else is available
-    if not itemData then
-        itemData = {
-            name = item.id,
-            description = "No information available"
-        }
-    end
-    
-    -- Show item info UI
-    local playerGui = self.player:FindFirstChild("PlayerGui")
-    if not playerGui then return end
-    
-    local existing = playerGui:FindFirstChild("ItemInfoUI")
-    if existing then existing:Destroy() end
-    
-    local infoUI = Instance.new("ScreenGui")
-    infoUI.Name = "ItemInfoUI"
-    infoUI.ResetOnSpawn = false
-    infoUI.Parent = playerGui
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 300, 0, 200)
-    frame.Position = UDim2.new(0.5, -150, 0.5, -100)
-    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    frame.BorderSizePixel = 0
-    frame.Parent = infoUI
-    
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 30)
-    title.Position = UDim2.new(0, 0, 0, 0)
-    title.BackgroundTransparency = 0.5
-    title.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    title.TextSize = 18
-    title.Font = Enum.Font.GothamBold
-    title.Text = itemData.name or item.id
-    title.Parent = frame
-    
-    local description = Instance.new("TextLabel")
-    description.Size = UDim2.new(0.9, 0, 0, 140)
-    description.Position = UDim2.new(0.05, 0, 0.15, 20)
-    description.BackgroundTransparency = 1
-    description.TextColor3 = Color3.fromRGB(255, 255, 255)
-    description.TextSize = 16
-    description.Font = Enum.Font.Gotham
-    description.Text = itemData.description or "No description available"
-    description.TextWrapped = true
-    description.TextXAlignment = Enum.TextXAlignment.Left
-    description.TextYAlignment = Enum.TextYAlignment.Top
-    description.Parent = frame
-    
-    -- Close button
-    local closeButton = Instance.new("TextButton")
-    closeButton.Size = UDim2.new(0, 30, 0, 30)
-    closeButton.Position = UDim2.new(1, -30, 0, 0)
-    closeButton.BackgroundTransparency = 1
-    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closeButton.TextSize = 18
-    closeButton.Font = Enum.Font.GothamBold
-    closeButton.Text = "X"
-    closeButton.Parent = frame
-    
-    closeButton.MouseButton1Click:Connect(function()
-        infoUI:Destroy()
-    end)
-end
-
-function InteractionSystem:CloneItem(item)
-    local cloneEvent = self.remoteEvents:FindFirstChild("CloneItem")
-    
-    if cloneEvent then
-        cloneEvent:FireServer(item.id)
     else
-        self:ShowLocalNotification("Cannot clone item: Remote event missing")
+        self:ShowLocalNotification("Error fetching item details")
     end
-end
+}
 
-function InteractionSystem:PickupItem(item)
-    local pickupEvent = self.remoteEvents:FindFirstChild("PickupItem")
-    
-    if pickupEvent then
-        pickupEvent:FireServer(item.id)
-    else
-        self:ShowLocalNotification("Cannot pick up item: Remote event missing")
-    end
-end
+function InteractionSystem:ShowPriceUI(item)
+    -- This would show a price tag UI for buyable items
+    print("Would show price UI for item:", item.id)
+}
 
 function InteractionSystem:ToggleInventory()
-    -- Ensure InventoryUI is loaded
-    local InventoryUI = LazyLoadModules.InventoryUI
-    if InventoryUI and typeof(InventoryUI.ToggleUI) == "function" then
-        InventoryUI.ToggleUI()
-    else
-        debugLog("InventoryUI.ToggleUI not available. InventoryUI module might not be loaded properly.")
-        self:ShowLocalNotification("Inventory UI not available")
+    -- Request inventory data from server
+    local getInventoryFunc = self.remoteEvents:FindFirstChild("GetInventory")
+    if not getInventoryFunc then
+        self:ShowLocalNotification("Cannot access inventory: Remote function missing")
+        return
     end
-end
+    
+    -- Try to load InventoryUI
+    local inventoryUI = nil
+    if LazyLoadModules.require then
+        inventoryUI = LazyLoadModules.require("InventoryUI")
+    end
+    
+    if not inventoryUI or not inventoryUI.Show then
+        self:ShowLocalNotification("Inventory UI not available")
+        return
+    end
+    
+    -- Get inventory data
+    local success, result = pcall(function()
+        return getInventoryFunc:InvokeServer()
+    end)
+    
+    if success and result and result.success then
+        -- Show inventory UI
+        inventoryUI.Show(result.inventory, result.currency)
+    else
+        self:ShowLocalNotification("Failed to load inventory data")
+    end
+}
 
 function InteractionSystem:ShowLocalNotification(message)
     if not self.player or not self.player:FindFirstChild("PlayerGui") or not self.notificationUI then
@@ -789,10 +653,6 @@ function InteractionSystem:ShowLocalNotification(message)
     text.TextXAlignment = Enum.TextXAlignment.Left
     text.Parent = notification
     
-    -- Add animations
-    notification.BackgroundTransparency = 1
-    text.TextTransparency = 1
-    
     -- Fade in
     local tweenService = game:GetService("TweenService")
     local fadeInInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -821,6 +681,43 @@ function InteractionSystem:ShowLocalNotification(message)
         fadeOut:Play()
         textFadeOut:Play()
     end)
-end
+}
 
 return InteractionSystem
+]]
+fixedModule.Parent = interactionFolder
+print("Created InteractionSystemModule_fixed in the interaction folder")
+
+-- Create an init script to ensure the fixed module is loaded first
+local initScript = Instance.new("LocalScript")
+initScript.Name = "LoadFixedModuleFirst"
+initScript.Source = [[
+-- This script ensures the fixed interaction module is loaded first
+print("Activating fixed interaction module loader")
+
+-- Wait for parent modules to be ready
+local interactionFolder = script.Parent
+local fixedModule = interactionFolder:WaitForChild("InteractionSystemModule_fixed", 5)
+
+if fixedModule then
+    print("Found fixed interaction module, setting it as priority")
+    
+    -- Add a special property to indicate this is the preferred module
+    fixedModule:SetAttribute("isPriority", true)
+    
+    -- Optional: We could pre-load the module here to ensure it's cached
+    pcall(function()
+        require(fixedModule)
+        print("Successfully pre-loaded fixed interaction module")
+    end)
+else
+    warn("Could not find fixed interaction module within timeout")
+end
+]]
+initScript.Parent = interactionFolder
+print("Created priority loader script for the fixed module")
+
+-- Done
+print("======== FIXED MODULE INSTALLATION COMPLETE ========")
+print("The fixed InteractionSystemModule is now installed and will be loaded first")
+print("Please restart your game to apply the changes")

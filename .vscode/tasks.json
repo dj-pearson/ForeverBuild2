@@ -3,12 +3,12 @@
 	"tasks": [
 		{
 			"args": [
-				"powershell.exe -ExecutionPolicy Bypass -File apply_fixes.ps1"
+				"-Command",
+				"Write-Host \"Cleaning up any previous fixed files...\" -ForegroundColor Yellow; if (Test-Path \"src\\client\\interaction\\InteractionSystemModule_fixed.lua\") { Remove-Item \"src\\client\\interaction\\InteractionSystemModule_fixed.lua\"; Write-Host \"Removed InteractionSystemModule_fixed.lua\" -ForegroundColor Green; } else { Write-Host \"InteractionSystemModule_fixed.lua not found, nothing to remove\" -ForegroundColor Cyan; }"
 			],
 			"command": "powershell.exe",
-			"group": "build",
 			"isBackground": false,
-			"label": "Apply Interaction System Fixes",
+			"label": "Cleanup Previous Fixed Module",
 			"type": "shell"
 		}
 	]

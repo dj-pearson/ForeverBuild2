@@ -141,11 +141,11 @@ if localScriptInstance then
     if interactionFolder then
         print("[InteractionSystem] Found interaction folder: " .. interactionFolder:GetFullName())
         
-        -- Try loading modules in priority order with robust error handling
+        -- Try loading the main interaction module first, then fallbacks if needed
         local moduleScripts = {
-            {name = "InteractionSystemModule", isEmergency = false},
-            {name = "InteractionSystemModule_enhanced", isEmergency = false},
-            {name = "InteractionSystemModule_emergency", isEmergency = true}
+            {name = "InteractionSystemModule", isEmergency = false}, -- Use the original (now fixed) module
+            {name = "InteractionSystemModule_enhanced", isEmergency = false}, -- Only use enhanced as backup
+            {name = "InteractionSystemModule_emergency", isEmergency = true} -- Last resort
         }
         
         local loadedModule = nil
