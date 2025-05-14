@@ -77,16 +77,28 @@ if localScriptInstance then
         print("[InteractionSystem] Found interaction folder: " .. interactionFolder:GetFullName())
         
         -- Look for InteractionSystemModule
-        local interactionSystemModuleScript = interactionFolder:WaitForChild("InteractionSystemModule", 5)
+        local interactionSystemModuleScript = interactionFolder:WaitForChild("InteractionSystemModule_enhanced", 5)
         if interactionSystemModuleScript then
-            print("[InteractionSystem] Found InteractionSystemModule: " .. interactionSystemModuleScript:GetFullName())
+            print("[InteractionSystem] Found InteractionSystemModule_enhanced: " .. interactionSystemModuleScript:GetFullName())
             
             local success, result = pcall(require, interactionSystemModuleScript)
             if success then
                 InteractionSystem = result
-                print("[InteractionSystem] Successfully loaded InteractionSystemModule")
+                print("[InteractionSystem] Successfully loaded enhanced InteractionSystemModule")
             else
-                warn("[InteractionSystem] Failed to require InteractionSystemModule: " .. tostring(result))
+                warn("[InteractionSystem] Failed to require enhanced InteractionSystemModule: " .. tostring(result))
+                
+                -- Fall back to the original module
+                local originalModule = interactionFolder:WaitForChild("InteractionSystemModule", 5)
+                if originalModule then
+                    local origSuccess, origResult = pcall(require, originalModule)
+                    if origSuccess then
+                        InteractionSystem = origResult
+                        print("[InteractionSystem] Successfully loaded fallback InteractionSystemModule")
+                    else
+                        warn("[InteractionSystem] Failed to require fallback InteractionSystemModule: " .. tostring(origResult))
+                    end
+                end
             end
         else
             warn("[InteractionSystem] InteractionSystemModule not found in interaction folder")
