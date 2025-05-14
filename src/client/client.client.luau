@@ -111,9 +111,28 @@ local function initializeClient()
         print("[DEBUG] SharedModule.GameManager:", SharedModule and SharedModule.GameManager)
         if GameManagerModule then
             print("[DEBUG] GameManagerModule type:", type(GameManagerModule))
-            print("[DEBUG] About to check typeof(GameManagerModule.new) at line 109ish. script.Parent.Parent is: ", script.Parent.Parent and script.Parent.Parent.Name or "nil") -- <-- ADDED DEBUG
-            if typeof(GameManagerModule.new) == "function" then
-                -- GameManager = GameManagerModule.new()
+            print("[DEBUG] Original line 108 print - script.Parent.Parent is: ", script.Parent.Parent and script.Parent.Parent.Name or "nil")
+
+            print("[LINE 108 PRE-CHECK] --- Detailed Debug for Line 109 --- ")
+            print("[LINE 108 PRE-CHECK] script:GetFullName() = ", script:GetFullName())
+            print("[LINE 108 PRE-CHECK] script.Parent:GetFullName() = ", script.Parent:GetFullName())
+            print("[LINE 108 PRE-CHECK] Does script.Parent.interaction exist? Answer:", tostring(script.Parent:FindFirstChild("interaction") ~= nil))
+
+            local gmm_new_prop_access_success, gmm_new_prop_or_error = pcall(function() return GameManagerModule.new end)
+            local gmm_new_prop
+
+            if gmm_new_prop_access_success then
+                gmm_new_prop = gmm_new_prop_or_error
+                print("[LINE 108 PRE-CHECK] Successfully accessed GameManagerModule.new. Its type is:", type(gmm_new_prop))
+            else
+                gmm_new_prop = nil -- Ensure it's nil if access failed
+                print("[LINE 108 PRE-CHECK] ERROR accessing GameManagerModule.new:", tostring(gmm_new_prop_or_error))
+                -- This is a critical point; if the error happens here, it's during property access.
+            end
+
+            print("[LINE 108 PRE-CHECK] About to evaluate: typeof(gmm_new_prop) == 'function'")
+            if typeof(gmm_new_prop) == "function" then -- This is the new line 109 equivalent
+                print("[LINE 109 SUCCESS] typeof(GameManagerModule.new) is 'function'")
                 local successGM, resultGM = pcall(GameManagerModule.new)
                 if successGM then
                     GameManager = resultGM
@@ -123,8 +142,10 @@ local function initializeClient()
                     GameManager = nil -- Ensure it's nil if creation failed
                 end
             else
-                warn("GameManagerModule.new is not a function. GameManagerModule is:", GameManagerModule)
+                print("[LINE 109 FAIL] typeof(GameManagerModule.new) is NOT 'function'. Actual type of gmm_new_prop:", typeof(gmm_new_prop))
+                warn("GameManagerModule.new is not a function. GameManagerModule is:", GameManagerModule, ". GameManagerModule.new was (type " .. type(gmm_new_prop) .. "):", gmm_new_prop)
             end
+            print("[LINE 109 POST-CHECK] --- End Detailed Debug ---")
         else
             warn("GameManagerModule is nil in initializeClient. SharedModule.GameManager was:", SharedModule and SharedModule.GameManager)
         end

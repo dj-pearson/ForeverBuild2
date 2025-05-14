@@ -271,15 +271,25 @@ function InteractionSystem:PerformInteraction(placedItem, interactionType)
 end
 
 function InteractionSystem:ShowInteractionMenu(interactions)
-    -- Use the lazily loaded PlacedItemDialog to show interaction options
-    -- The module will only be required when this function is called
-    if LazyLoadModules.PlacedItemDialog.ShowInteractionOptions then
-        LazyLoadModules.PlacedItemDialog.ShowInteractionOptions(self.currentTarget, interactions, function(interaction)
-            self:PerformInteraction(self.currentTarget, interaction)
+    local itemForInteraction = self.currentTarget -- Capture the item at the moment the menu is to be shown
+    if not itemForInteraction then
+        print("[DEBUG] ShowInteractionMenu called with no currentTarget.")
+        return
+    end
+
+    -- Ensure LazyLoadModules.PlacedItemDialog is loaded and has ShowInteractionOptions
+    local PlacedItemDialog = LazyLoadModules.PlacedItemDialog 
+    if PlacedItemDialog and typeof(PlacedItemDialog.ShowInteractionOptions) == "function" then
+        PlacedItemDialog.ShowInteractionOptions(itemForInteraction, interactions, function(interaction)
+            self:PerformInteraction(itemForInteraction, interaction) -- Use captured item
         end)
     else
-        -- Fallback: just use the first interaction
-        self:PerformInteraction(self.currentTarget, interactions[1])
+        print("[DEBUG] PlacedItemDialog.ShowInteractionOptions not available or PlacedItemDialog module is nil. Using fallback for item:", itemForInteraction.id)
+        if interactions and #interactions > 0 then
+            self:PerformInteraction(itemForInteraction, interactions[1]) -- Use captured item
+        else
+            print("[DEBUG] No interactions available for fallback in ShowInteractionMenu for item:", itemForInteraction.id)
+        end
     end
 end
 
