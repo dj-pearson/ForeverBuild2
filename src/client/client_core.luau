@@ -6,89 +6,96 @@ local UserInputService = game:GetService("UserInputService")
 -- Safe initialization of variables
 local player = nil
 local character = nil
-local SharedModule = require(ReplicatedStorage.shared)
--- Initialize the shared module
-SharedModule.Init()
 
-local GameManagerModule = SharedModule.GameManager
-print("[DEBUG in client_core.luau] GameManagerModule obtained from SharedModule. Type:", type(GameManagerModule)) -- <-- ADDED DEBUG
-if GameManagerModule then
-    print("[DEBUG in client_core.luau] GameManagerModule.new type after obtaining from SharedModule:", type(GameManagerModule.new)) -- <-- ADDED DEBUG
+-- Safely require the shared module
+print("client_core.luau: Attempting to require shared module")
+local SharedModule
+local success, errorMessage = pcall(function()
+    local shared = ReplicatedStorage:WaitForChild("shared", 10)
+    print("client_core.luau: Found shared module at " .. shared:GetFullName())
+    SharedModule = require(shared)
+    return true
+end)
+
+if not success then
+    warn("client_core.luau: Failed to require SharedModule:", errorMessage)
+    SharedModule = {}
+else
+    print("client_core.luau: Successfully required SharedModule")
+    -- Initialize the shared module
+    if SharedModule.Init then
+        local initSuccess, initError = pcall(function()
+            SharedModule.Init()
+        end)
+        
+        if not initSuccess then
+            warn("client_core.luau: Failed to initialize SharedModule:", initError)
+        else
+            print("client_core.luau: SharedModule initialized successfully")
+        end
+    end
 end
 
+-- Get references to needed modules
+print("client_core.luau: Getting references to modules")
+local GameManagerModule = SharedModule.GameManager
 local Constants = SharedModule.Constants
-local GameManager = nil
 local PurchaseDialogModule = SharedModule.PurchaseDialog
 local InventoryUIModule = SharedModule.InventoryUI
-local PlacedItemDialogModule = SharedModule.PlacedItemDialog -- Keep module reference
+local PlacedItemDialogModule = SharedModule.PlacedItemDialog
+local CurrencyUIModule = SharedModule.CurrencyUI
+
+-- Print debug info about loaded modules
+print("client_core.luau: Module references:")
+print("  - GameManagerModule: " .. (GameManagerModule ~= nil and "loaded" or "nil"))
+print("  - Constants: " .. (Constants ~= nil and "loaded" or "nil"))
+print("  - PurchaseDialogModule: " .. (PurchaseDialogModule ~= nil and "loaded" or "nil"))
+print("  - InventoryUIModule: " .. (InventoryUIModule ~= nil and "loaded" or "nil"))
+print("  - PlacedItemDialogModule: " .. (PlacedItemDialogModule ~= nil and "loaded" or "nil"))
+print("  - CurrencyUIModule: " .. (CurrencyUIModule ~= nil and "loaded" or "nil"))
+
+local GameManager = nil
 local Remotes = nil
 local BuyItemEvent = nil
 local GetInventoryFunc = nil
 local PlaceItemEvent = nil
 local InteractWithItemEvent = nil
 
-local CurrencyUIModule = SharedModule.CurrencyUI
-
--- Directly require InteractionSystem
+-- Directly require InteractionSystem with improved path resolution
 local InteractionSystem -- Module table
 local interactionSystemInstance -- Instance of the class
-local successIS, interactionSystemOrError
 
--- Corrected path: In a ModuleScript child of a LocalScript,
--- 'script' is the ModuleScript, 'script.Parent' is the LocalScript.
--- The 'interaction' folder is a child of the LocalScript.
-print("[InteractionSystem Debug in client_core.luau] script (ModuleScript): " .. script:GetFullName())
-print("[InteractionSystem Debug in client_core.luau] script.Parent (LocalScript 'client'): " .. (script.Parent and script.Parent:GetFullName() or "nil"))
-
+-- Get the interaction folder directly from script.Parent (the LocalScript)
 local localScriptInstance = script.Parent -- This should be the 'client' LocalScript
 local interactionFolder = nil
 
 if localScriptInstance then
-    print("[InteractionSystem Debug in client_core.luau] Attempting to find 'interaction' folder in: " .. localScriptInstance:GetFullName())
-    interactionFolder = localScriptInstance:WaitForChild("interaction", 10) -- Correct path: localScriptInstance.interaction
-else
-    warn("[InteractionSystem Debug in client_core.luau] localScriptInstance (script.Parent) is nil. This means client_core.luau is not a child of the expected LocalScript.")
-end
-
-if interactionFolder then
-    print("[InteractionSystem Debug in client_core.luau] Found 'interaction' folder: " .. interactionFolder:GetFullName())
-    print("[InteractionSystem Debug in client_core.luau] Children of interaction folder:")
-    for _, child in ipairs(interactionFolder:GetChildren()) do
-        print("  - " .. child.Name .. " (" .. child.ClassName .. ")")
-    end
-
-    local interactionSystemModuleScript = interactionFolder:WaitForChild("InteractionSystemModule", 5) -- <-- Changed to InteractionSystemModule
-    if interactionSystemModuleScript then
-        print("[InteractionSystem Debug in client_core.luau] Found 'InteractionSystemModule' ModuleScript: " .. interactionSystemModuleScript:GetFullName()) -- <-- Updated print
-        successIS, interactionSystemOrError = pcall(require, interactionSystemModuleScript)
-        if not successIS then
-            warn("pcall(require, InteractionSystem) failed in client_core.luau: ", tostring(interactionSystemOrError))
-        elseif type(interactionSystemOrError) ~= "table" then
-            warn("InteractionSystem loaded in client_core.luau but is not a table: ", tostring(type(interactionSystemOrError)))
-            InteractionSystem = nil
-            successIS = false
+    print("[InteractionSystem] Looking for interaction folder in: " .. localScriptInstance:GetFullName())
+    interactionFolder = localScriptInstance:WaitForChild("interaction", 10)
+    
+    if interactionFolder then
+        print("[InteractionSystem] Found interaction folder: " .. interactionFolder:GetFullName())
+        
+        -- Look for InteractionSystemModule
+        local interactionSystemModuleScript = interactionFolder:WaitForChild("InteractionSystemModule", 5)
+        if interactionSystemModuleScript then
+            print("[InteractionSystem] Found InteractionSystemModule: " .. interactionSystemModuleScript:GetFullName())
+            
+            local success, result = pcall(require, interactionSystemModuleScript)
+            if success then
+                InteractionSystem = result
+                print("[InteractionSystem] Successfully loaded InteractionSystemModule")
+            else
+                warn("[InteractionSystem] Failed to require InteractionSystemModule: " .. tostring(result))
+            end
         else
-            InteractionSystem = interactionSystemOrError
+            warn("[InteractionSystem] InteractionSystemModule not found in interaction folder")
         end
     else
-        warn("InteractionSystem ModuleScript not found within interaction folder (Path in client_core.luau: ", interactionFolder:GetFullName(), "). WaitForChild timed out or it does not exist.")
-        successIS = false
-        interactionSystemOrError = "InteractionSystem ModuleScript not found (WaitForChild failed)"
+        warn("[InteractionSystem] Interaction folder not found in " .. localScriptInstance:GetFullName())
     end
 else
-    warn("Interaction folder not found as child of client script (Path in client_core.luau: ", (localScriptInstance and localScriptInstance:GetFullName() or "script.Parent was nil"), ")")
-    successIS = false
-    interactionSystemOrError = "Interaction folder not found"
-end
-
-
-if InteractionSystem then
-    print("InteractionSystem loaded successfully by client_core.luau")
-    if not InteractionSystem.new or not InteractionSystem.Initialize then
-        warn("InteractionSystem loaded by client_core.luau but seems to be missing new() or Initialize() methods.")
-    end
-else
-    warn("Failed to load InteractionSystem in client_core.luau. Final status - Success: ", tostring(successIS), "Error/Module: ", tostring(interactionSystemOrError))
+    warn("[InteractionSystem] LocalScript instance (script.Parent) is nil")
 end
 
 -- State variables
@@ -180,6 +187,55 @@ local function initializeClient()
 
     else
         warn("[DEBUG in client_core.luau] Remotes folder NOT found in ReplicatedStorage during initializeClient after 10s wait.")
+    end
+
+    -- Initialize UI components only once
+    if InventoryUIModule then
+        local inventoryUI = nil
+        if typeof(InventoryUIModule) == "table" and InventoryUIModule.new then
+            inventoryUI = InventoryUIModule.new()
+            if inventoryUI and inventoryUI.Initialize then
+                inventoryUI:Initialize()
+                print("[UI] InventoryUI initialized successfully")
+            end
+        elseif typeof(InventoryUIModule) == "table" and InventoryUIModule.Initialize then
+            InventoryUIModule.Initialize(player.PlayerGui)
+            print("[UI] InventoryUI initialized successfully (functional style)")
+        end
+    else
+        warn("[UI] InventoryUIModule is nil")
+    end
+    
+    if PlacedItemDialogModule then
+        local placedItemDialog = nil
+        if typeof(PlacedItemDialogModule) == "table" and PlacedItemDialogModule.new then
+            placedItemDialog = PlacedItemDialogModule.new()
+            if placedItemDialog and placedItemDialog.Initialize then
+                placedItemDialog:Initialize()
+                print("[UI] PlacedItemDialog initialized successfully")
+            end
+        elseif typeof(PlacedItemDialogModule) == "table" and PlacedItemDialogModule.Initialize then
+            PlacedItemDialogModule.Initialize(player.PlayerGui)
+            print("[UI] PlacedItemDialog initialized successfully (functional style)")
+        end
+    else
+        warn("[UI] PlacedItemDialogModule is nil")
+    end
+    
+    if PurchaseDialogModule then
+        local purchaseDialog = nil
+        if typeof(PurchaseDialogModule) == "table" and PurchaseDialogModule.new then
+            purchaseDialog = PurchaseDialogModule.new()
+            if purchaseDialog and purchaseDialog.Initialize then
+                purchaseDialog:Initialize()
+                print("[UI] PurchaseDialog initialized successfully")
+            end
+        elseif typeof(PurchaseDialogModule) == "table" and PurchaseDialogModule.Initialize then
+            PurchaseDialogModule.Initialize(player.PlayerGui)
+            print("[UI] PurchaseDialog initialized successfully (functional style)")
+        end
+    else
+        warn("[UI] PurchaseDialogModule is nil")
     end
 end
 

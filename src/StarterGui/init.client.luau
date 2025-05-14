@@ -11,191 +11,97 @@ print("StarterGui script starting...")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
--- Get shared module
-local SharedModule = require(ReplicatedStorage.shared)
--- Initialize the shared module
-SharedModule.Init()
+-- Get shared module with error handling
+print("StarterGui.init: Attempting to require shared module")
+local SharedModule
+local success, errorMessage = pcall(function()
+    local shared = ReplicatedStorage:WaitForChild("shared", 10)
+    print("StarterGui.init: Found shared module at " .. shared:GetFullName())
+    SharedModule = require(shared)
+    return true
+end)
 
--- Local references to commonly used modules
+if not success then
+    warn("StarterGui.init: Failed to require SharedModule:", errorMessage)
+    SharedModule = {}
+    print("StarterGui will not function properly without SharedModule")
+    return
+else
+    print("StarterGui.init: Successfully required SharedModule")
+    
+    -- Initialize the shared module
+    if SharedModule.Init then
+        local initSuccess, initError = pcall(function()
+            SharedModule.Init()
+        end)
+        
+        if not initSuccess then
+            warn("StarterGui.init: Failed to initialize SharedModule:", initError)
+        else
+            print("StarterGui.init: SharedModule initialized successfully")
+        end
+    end
+end
+
+-- Local references to commonly used modules with error handling
 local Constants = SharedModule.Constants
 local GameManagerModule = SharedModule.GameManager
 local CurrencyManagerModule = SharedModule.CurrencyManager
 
--- Create manager instances
-local gameManager = GameManagerModule.new()
-local currencyManager = CurrencyManagerModule.new()
+-- Create manager instances with error handling
+local gameManager, currencyManager
 
--- Initialize managers
-gameManager:Initialize()
-currencyManager:Initialize()
-
-local StarterGui = {}
-StarterGui.__index = StarterGui
-
-function StarterGui.new()
-    local self = setmetatable({}, StarterGui)
-    self.remoteEvents = ReplicatedStorage.Remotes
-    self.gameManager = gameManager
-    self.currencyManager = currencyManager
-    self.player = Players.LocalPlayer
-    return self
-end
-
-function StarterGui:Init()
-    print("Initializing StarterGui...")
-    
-    -- Create main UI
-    self:CreateMainUI()
-    
-    -- Set up event handlers
-    self:SetupEventHandlers()
-    
-    -- Set up error handling
-    self:SetupErrorHandling()
-end
-
-function StarterGui:SetupErrorHandling()
-    -- Global error handler for client-side errors
-    game:GetService("ScriptContext").Error:Connect(function(message, stackTrace, script)
-        if self.ui and self.ui.Parent then
-            self:ShowNotification("Error: " .. message)
-            warn("UI Error: " .. message .. "\n" .. stackTrace)
-        end
+if GameManagerModule and GameManagerModule.new then
+    local gmSuccess, gmResult = pcall(function()
+        return GameManagerModule.new()
     end)
-end
-
-function StarterGui:CreateMainUI()
-    -- Create ScreenGui
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "MainUI"
-    screenGui.ResetOnSpawn = false -- Ensure UI persists across respawns
-    -- Ensure PlayerGui is available
-    local playerGui = self.player and self.player:WaitForChild("PlayerGui", 10)
-    if not playerGui then
-        warn("PlayerGui not found for StarterGui:CreateMainUI")
-        return
-    end
-    screenGui.Parent = playerGui
     
-    -- Create main frame
-    local frame = Instance.new("Frame")
-    frame.Name = "MainFrame"
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundTransparency = 1
-    frame.Parent = screenGui
-    
-    self.ui = screenGui
-end
-
-function StarterGui:SetupEventHandlers()
-    if not self.remoteEvents then
-        warn("RemoteEvents not available in StarterGui:SetupEventHandlers")
-        return
-    end
-
-    -- Handle item description
-    local showItemDescriptionEvent = self.remoteEvents:WaitForChild("ShowItemDescription", 5)
-    if showItemDescriptionEvent then
-        showItemDescriptionEvent.OnClientEvent:Connect(function(description)
-            self:ShowItemDescription(description)
-        end)
+    if gmSuccess then
+        gameManager = gmResult
+        print("Successfully created GameManager instance")
     else
-        warn("ShowItemDescription RemoteEvent not found in Remotes folder.")
+        warn("Failed to create GameManager instance:", gmResult)
+        gameManager = {}
     end
-    
-    -- Handle notifications
-    local notifyPlayerEvent = self.remoteEvents:WaitForChild("NotifyPlayer", 5)
-    if notifyPlayerEvent then
-        notifyPlayerEvent.OnClientEvent:Connect(function(message)
-            self:ShowNotification(message)
-        end)
-    else
-        warn("NotifyPlayer RemoteEvent not found in Remotes folder.")
-    end
+else
+    warn("GameManagerModule or GameManagerModule.new is not available")
+    gameManager = {}
 end
 
-function StarterGui:ShowItemDescription(description)
-    -- Create description UI
-    local playerGui = self.player and self.player:WaitForChild("PlayerGui", 10)
-    if not playerGui then
-        warn("PlayerGui not found for StarterGui:ShowItemDescription")
-        return
-    end
-    local descriptionUI = Instance.new("ScreenGui")
-    descriptionUI.Name = "ItemDescription"
-    descriptionUI.Parent = playerGui
-    
-    local frame = Instance.new("Frame")
-    frame.Name = "DescriptionFrame"
-    frame.Size = UDim2.new(0, 300, 0, 200)
-    frame.Position = UDim2.new(0.5, -150, 0.5, -100)
-    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    frame.BorderSizePixel = 0
-    frame.Parent = descriptionUI
-    
-    local label = Instance.new("TextLabel")
-    label.Name = "DescriptionLabel"
-    label.Size = UDim2.new(1, -20, 1, -20)
-    label.Position = UDim2.new(0, 10, 0, 10)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextSize = 16
-    label.Font = Enum.Font.Gotham
-    label.Text = description
-    label.TextWrapped = true
-    label.Parent = frame
-    
-    -- Add close button
-    local closeButton = Instance.new("TextButton")
-    closeButton.Name = "CloseButton"
-    closeButton.Size = UDim2.new(0, 30, 0, 30)
-    closeButton.Position = UDim2.new(1, -40, 0, 10)
-    closeButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-    closeButton.Text = "X"
-    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closeButton.TextSize = 20
-    closeButton.Font = Enum.Font.GothamBold
-    closeButton.Parent = frame
-    
-    closeButton.MouseButton1Click:Connect(function()
-        descriptionUI:Destroy()
+if CurrencyManagerModule and CurrencyManagerModule.new then
+    local cmSuccess, cmResult = pcall(function()
+        return CurrencyManagerModule.new()
     end)
-end
-
-function StarterGui:ShowNotification(message)
-    -- Create notification UI
-    local playerGui = self.player and self.player:WaitForChild("PlayerGui", 10)
-    if not playerGui then
-        warn("PlayerGui not found for StarterGui:ShowNotification")
-        return
+    
+    if cmSuccess then
+        currencyManager = cmResult
+        print("Successfully created CurrencyManager instance")
+    else
+        warn("Failed to create CurrencyManager instance:", cmResult)
+        currencyManager = {}
     end
-    local notification = Instance.new("ScreenGui")
-    notification.Name = "Notification"
-    notification.Parent = playerGui
-    
-    local frame = Instance.new("Frame")
-    frame.Name = "NotificationFrame"
-    frame.Size = UDim2.new(0, 300, 0, 50)
-    frame.Position = UDim2.new(0.5, -150, 0.1, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    frame.BorderSizePixel = 0
-    frame.Parent = notification
-    
-    local label = Instance.new("TextLabel")
-    label.Name = "MessageLabel"
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextSize = 18
-    label.Font = Enum.Font.GothamBold
-    label.Text = message
-    label.Parent = frame
-    
-    -- Animate and destroy
-    game:GetService("Debris"):AddItem(notification, 3)
+else
+    warn("CurrencyManagerModule or CurrencyManagerModule.new is not available")
+    currencyManager = {}
 end
 
--- Add this to self-initialize
-StarterGui.new():Init()
+-- Initialize managers with error handling
+if gameManager and gameManager.Initialize then
+    local success, error = pcall(function()
+        gameManager:Initialize()
+    end)
+    
+    if not success then
+        warn("Failed to initialize GameManager:", error)
+    end
+end
 
-return StarterGui
+if currencyManager and currencyManager.Initialize then
+    local success, error = pcall(function()
+        currencyManager:Initialize()
+    end)
+    
+    if not success then
+        warn("Failed to initialize CurrencyManager:", error)
+    end
+end 

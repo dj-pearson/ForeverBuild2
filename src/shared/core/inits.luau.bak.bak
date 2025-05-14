@@ -1,0 +1,57 @@
+local Core = {}
+
+local function safeRequire(modulePath, moduleName)
+	local success, result = pcall(function()
+		return require(modulePath)
+	end)
+	if success then
+		if result == nil then
+			warn("Warning: Module loaded successfully but returned nil: ", moduleName, " at path ", tostring(modulePath))
+		end
+		return result
+	else
+		warn("Error loading module: ", moduleName, " at path ", tostring(modulePath), "\nError: ", tostring(result))
+		return nil
+	end
+end
+
+-- Define all module paths explicitly for clarity
+local modulePaths = {
+    -- Interaction
+    InteractionManager = script.interaction.InteractionManager,
+    
+    -- Inventory
+    InventoryManager = script.inventory.InventoryManager,
+    ItemManager = script.inventory.ItemManager,
+    
+    -- Placement
+    PlacementManager = script.placement.PlacementManager,
+    
+    -- Economy
+    CurrencyManager = script.economy.CurrencyManager,
+    
+    -- GameManager
+    GameManager = script.GameManager,
+    
+    -- UI
+    PurchaseDialog = script.ui.PurchaseDialog,
+    InventoryUI = script.ui.InventoryUI,
+    CurrencyUI = script.ui.CurrencyUI,
+    PlacedItemDialog = script.ui.PlacedItemDialog,
+    
+    -- Utilities
+    LazyLoadModules = script.LazyLoadModules
+}
+
+-- Load all modules using the defined paths
+for name, path in pairs(modulePaths) do
+    Core[name] = safeRequire(path, name)
+end
+
+-- Print loaded modules for debugging
+print("Core module initialized with the following modules:")
+for name, module in pairs(Core) do
+    print("  - " .. name .. ": " .. (module and "Loaded" or "Failed to load"))
+end
+
+return Core 
