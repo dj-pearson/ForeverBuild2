@@ -16,8 +16,7 @@ local function safeRequire(modulePath, moduleName)
 end
 
 -- Interaction
-Core.InteractionManager = safeRequire(script.interaction.InteractionManager, "InteractionManager")
-Core.InteractionSystem = nil -- This will be set on the client side
+Core.InteractionManager = safeRequire(script.interaction.InteractionManager, "InteractionManager") -- Restored this line
 
 -- Inventory
 Core.InventoryManager = safeRequire(script.inventory.InventoryManager, "InventoryManager")

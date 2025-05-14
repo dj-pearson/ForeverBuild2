@@ -20,7 +20,7 @@ InteractionSystem.__index = InteractionSystem
 function InteractionSystem.new()
     local self = setmetatable({}, InteractionSystem)
     self.player = Players.LocalPlayer
-    self.mouse = self.player:GetMouse()
+    -- self.mouse = self.player:GetMouse() -- MOVED to Initialize
     self.currentTarget = nil
     self.interactionDistance = 10 -- Maximum distance for interaction
     self.ui = nil
@@ -30,11 +30,31 @@ end
 
 function InteractionSystem:Initialize()
     print("[DEBUG] InteractionSystem:Initialize() called")
+
+    if not self.player then
+        self.player = Players.LocalPlayer
+        if not self.player then
+            warn("[InteractionSystemModule] Critical: LocalPlayer not available at Initialize.")
+            return -- Cannot proceed without player
+        end
+    end
+    
+    self.mouse = self.player:GetMouse() -- Initialize mouse here
+    if not self.mouse then
+        warn("[InteractionSystemModule] Warning: player:GetMouse() returned nil at Initialize. Mouse-dependent interactions (clicks, target highlighting) will be disabled.")
+    end
+
     self:CreateUI()
-    self:SetupInputHandling()
-    self:SetupMouseHandling()
+    self:SetupInputHandling() -- Handles E key, does not depend on self.mouse
+
+    if self.mouse then -- Only setup mouse handling if mouse is available
+        self:SetupMouseHandling()
+    else
+        print("[DEBUG] InteractionSystem:Initialize() - Mouse not available, skipping SetupMouseHandling.")
+    end
+
     self:SetupEventHandlers()
-    self:SetupInventoryKey()
+    self:SetupInventoryKey() -- Handles I key, does not depend on self.mouse
 end
 
 function InteractionSystem:CreateUI()

@@ -69,7 +69,13 @@ function StarterGui:CreateMainUI()
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "MainUI"
     screenGui.ResetOnSpawn = false -- Ensure UI persists across respawns
-    screenGui.Parent = self.player:WaitForChild("PlayerGui")
+    -- Ensure PlayerGui is available
+    local playerGui = self.player and self.player:WaitForChild("PlayerGui", 10)
+    if not playerGui then
+        warn("PlayerGui not found for StarterGui:CreateMainUI")
+        return
+    end
+    screenGui.Parent = playerGui
     
     -- Create main frame
     local frame = Instance.new("Frame")
@@ -82,22 +88,42 @@ function StarterGui:CreateMainUI()
 end
 
 function StarterGui:SetupEventHandlers()
+    if not self.remoteEvents then
+        warn("RemoteEvents not available in StarterGui:SetupEventHandlers")
+        return
+    end
+
     -- Handle item description
-    self.remoteEvents.ShowItemDescription.OnClientEvent:Connect(function(description)
-        self:ShowItemDescription(description)
-    end)
+    local showItemDescriptionEvent = self.remoteEvents:WaitForChild("ShowItemDescription", 5)
+    if showItemDescriptionEvent then
+        showItemDescriptionEvent.OnClientEvent:Connect(function(description)
+            self:ShowItemDescription(description)
+        end)
+    else
+        warn("ShowItemDescription RemoteEvent not found in Remotes folder.")
+    end
     
     -- Handle notifications
-    self.remoteEvents.NotifyPlayer.OnClientEvent:Connect(function(message)
-        self:ShowNotification(message)
-    end)
+    local notifyPlayerEvent = self.remoteEvents:WaitForChild("NotifyPlayer", 5)
+    if notifyPlayerEvent then
+        notifyPlayerEvent.OnClientEvent:Connect(function(message)
+            self:ShowNotification(message)
+        end)
+    else
+        warn("NotifyPlayer RemoteEvent not found in Remotes folder.")
+    end
 end
 
 function StarterGui:ShowItemDescription(description)
     -- Create description UI
+    local playerGui = self.player and self.player:WaitForChild("PlayerGui", 10)
+    if not playerGui then
+        warn("PlayerGui not found for StarterGui:ShowItemDescription")
+        return
+    end
     local descriptionUI = Instance.new("ScreenGui")
     descriptionUI.Name = "ItemDescription"
-    descriptionUI.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+    descriptionUI.Parent = playerGui
     
     local frame = Instance.new("Frame")
     frame.Name = "DescriptionFrame"
@@ -138,9 +164,14 @@ end
 
 function StarterGui:ShowNotification(message)
     -- Create notification UI
+    local playerGui = self.player and self.player:WaitForChild("PlayerGui", 10)
+    if not playerGui then
+        warn("PlayerGui not found for StarterGui:ShowNotification")
+        return
+    end
     local notification = Instance.new("ScreenGui")
     notification.Name = "Notification"
-    notification.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+    notification.Parent = playerGui
     
     local frame = Instance.new("Frame")
     frame.Name = "NotificationFrame"
