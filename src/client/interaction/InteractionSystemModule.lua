@@ -98,13 +98,13 @@ function InteractionSystem.new()
 end
 
 function InteractionSystem:Initialize()
-    print("[DEBUG] InteractionSystem:Initialize() called")
+    print("[InteractionSystem] Initialize() called")
 
     if not self.player then
         self.player = Players.LocalPlayer
         if not self.player then
-            warn("[InteractionSystem] Critical: LocalPlayer not available at Initialize.")
-            return -- Cannot proceed without player
+            warn("[InteractionSystem] CRITICAL: LocalPlayer not available at Initialize.")
+            return false -- Cannot proceed without player
         end
     end
     
@@ -115,6 +115,12 @@ function InteractionSystem:Initialize()
 
     -- Create needed UI elements
     self:CreateUI()
+    
+    -- Ensure all needed remotes exist
+    self:EnsureRemotesExist()
+    
+    -- Verify remotes are properly configured
+    self:VerifyRemotes()
     
     -- Set up input and event handlers
     self:SetupInputHandling()
@@ -128,32 +134,49 @@ function InteractionSystem:Initialize()
         self:SetupAlternativeInteraction()
     end
     
+    -- Create a notification to inform the player the system is ready
+    self:ShowLocalNotification("Interaction system ready - press E to interact with objects")
+    
     print("[InteractionSystem] Initialization complete")
     return true
 end
 
 function InteractionSystem:CreateUI()
-    -- Prepare BillboardGui template for proximity popup
+    -- Prepare BillboardGui template for proximity popup with improved visibility
     self.billboardTemplate = Instance.new("BillboardGui")
     self.billboardTemplate.Name = "ProximityInteractUI"
-    self.billboardTemplate.Size = UDim2.new(0, 200, 0, 50)
+    self.billboardTemplate.Size = UDim2.new(0, 220, 0, 60)  -- Increased size
     self.billboardTemplate.StudsOffset = Vector3.new(0, 3, 0)
     self.billboardTemplate.AlwaysOnTop = true
     self.billboardTemplate.Enabled = false
+    self.billboardTemplate.MaxDistance = 30  -- Increased visibility distance
 
+    -- Add background frame with improved contrast
     local bg = Instance.new("Frame")
     bg.Size = UDim2.new(1, 0, 1, 0)
-    bg.BackgroundColor3 = Constants.UI_COLORS.SECONDARY
-    bg.BackgroundTransparency = 0.2
+    bg.BackgroundColor3 = Color3.fromRGB(30, 30, 50)  -- Darker blue background
+    bg.BackgroundTransparency = 0.2  -- More opaque
     bg.BorderSizePixel = 0
     bg.Parent = self.billboardTemplate
-
+    
+    -- Add rounded corners
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = bg
+    
+    -- Add highlighting stroke
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(0, 170, 255)  -- Blue outline
+    stroke.Thickness = 2
+    stroke.Parent = bg
+    
+    -- Main interaction text with improved styling
     local label = Instance.new("TextLabel")
     label.Name = "Title"
     label.Size = UDim2.new(1, 0, 1, 0)
     label.BackgroundTransparency = 1
-    label.TextColor3 = Constants.UI_COLORS.TEXT
-    label.TextSize = 20
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)  -- White text
+    label.TextSize = 22  -- Larger text
     label.Font = Enum.Font.GothamBold
     label.Text = "[E] Interact"
     label.Parent = bg
@@ -179,6 +202,8 @@ function InteractionSystem:CreateUI()
         layout.Padding = UDim.new(0, 5)
         layout.Parent = container
     end
+    
+    print("[InteractionSystem] UI elements created successfully")
 end
 
 function InteractionSystem:SetupInputHandling()
@@ -187,15 +212,74 @@ function InteractionSystem:SetupInputHandling()
         if gameProcessed then return end
         
         if input.KeyCode == Enum.KeyCode.E then
-            debugLog("E key pressed")
+            print("[InteractionSystem] E key pressed - attempting interaction")
             self:AttemptInteraction()
         elseif input.KeyCode == Enum.KeyCode.I then
-            debugLog("I key pressed")
+            print("[InteractionSystem] I key pressed - toggling inventory")
             self:ToggleInventory()
         end
     end)
     
+    -- Add keyboard hints UI
+    local playerGui = self.player:FindFirstChild("PlayerGui")
+    if playerGui then
+        local hintsGui = playerGui:FindFirstChild("KeyboardHintsGui")
+        if not hintsGui then
+            hintsGui = Instance.new("ScreenGui")
+            hintsGui.Name = "KeyboardHintsGui"
+            hintsGui.ResetOnSpawn = false
+            hintsGui.Parent = playerGui
+            
+            local hintsFrame = Instance.new("Frame")
+            hintsFrame.Size = UDim2.new(0, 200, 0, 80)
+            hintsFrame.Position = UDim2.new(0, 10, 1, -90)
+            hintsFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+            hintsFrame.BackgroundTransparency = 0.3
+            hintsFrame.BorderSizePixel = 0
+            hintsFrame.Parent = hintsGui
+            
+            local corner = Instance.new("UICorner")
+            corner.CornerRadius = UDim.new(0, 6)
+            corner.Parent = hintsFrame
+            
+            local title = Instance.new("TextLabel")
+            title.Size = UDim2.new(1, 0, 0, 25)
+            title.Position = UDim2.new(0, 0, 0, 0)
+            title.BackgroundTransparency = 1
+            title.TextColor3 = Color3.fromRGB(255, 255, 255)
+            title.TextSize = 14
+            title.Font = Enum.Font.GothamBold
+            title.Text = "CONTROLS"
+            title.Parent = hintsFrame
+            
+            local eKeyHint = Instance.new("TextLabel")
+            eKeyHint.Size = UDim2.new(1, -20, 0, 20)
+            eKeyHint.Position = UDim2.new(0, 10, 0, 30)
+            eKeyHint.BackgroundTransparency = 1
+            eKeyHint.TextColor3 = Color3.fromRGB(255, 255, 255)
+            eKeyHint.TextSize = 14
+            eKeyHint.Font = Enum.Font.Gotham
+            eKeyHint.TextXAlignment = Enum.TextXAlignment.Left
+            eKeyHint.Text = "E - Interact with objects"
+            eKeyHint.Parent = hintsFrame
+            
+            local iKeyHint = Instance.new("TextLabel")
+            iKeyHint.Size = UDim2.new(1, -20, 0, 20)
+            iKeyHint.Position = UDim2.new(0, 10, 0, 50)
+            iKeyHint.BackgroundTransparency = 1
+            iKeyHint.TextColor3 = Color3.fromRGB(255, 255, 255)
+            iKeyHint.TextSize = 14
+            iKeyHint.Font = Enum.Font.Gotham
+            iKeyHint.TextXAlignment = Enum.TextXAlignment.Left
+            iKeyHint.Text = "I - Open inventory"
+            iKeyHint.Parent = hintsFrame
+            
+            print("[InteractionSystem] Created keyboard hints UI")
+        end
+    end
+    
     table.insert(self.connections, inputConnection)
+    print("[InteractionSystem] Input handling setup complete")
 end
 
 function InteractionSystem:SetupAlternativeInteraction()
@@ -318,27 +402,57 @@ function InteractionSystem:Cleanup()
 end
 
 function InteractionSystem:UpdateCurrentTarget()
-    if not self.mouse then return end
+    if not self.mouse then 
+        return 
+    end
     
     local target = self.mouse.Target
     if not target then
-        self:ClearCurrentTarget()
+        -- No target under mouse, clear current target
+        if self.currentTarget then
+            print("[InteractionSystem] No target under mouse, clearing current target")
+            self:ClearCurrentTarget()
+        end
         return
     end
+    
+    -- Debug print target information
+    local targetInfo = string.format("%s (class: %s)", target.Name, target.ClassName)
+    if target.Parent then
+        targetInfo = targetInfo .. string.format(" in %s", target.Parent:GetFullName())
+    end
+    print("[InteractionSystem] Mouse over:", targetInfo)
     
     -- Check items folder for purchasable items
     local itemsFolder = workspace:FindFirstChild("Items")
     if itemsFolder and target:IsDescendantOf(itemsFolder) then
-        debugLog("Target is a world item:", target.Name)
+        print("[InteractionSystem] Target is a world item:", target.Name)
+        
+        -- If this is already our current target, no need to update
+        if self.currentTarget and self.currentTarget.id == target.Name and 
+           self.currentTarget.model == target then
+            return
+        end
+        
+        -- Otherwise, update current target and show UI
         self.currentTarget = { id = target.Name, model = target }
         self:ShowPriceUI(self.currentTarget)
+        print("[InteractionSystem] Updated current target to world item:", target.Name)
         return
     end
     
     -- Check for placed items
     local placedItem = self:GetPlacedItemFromPart(target)
     if not placedItem then
-        self:ClearCurrentTarget()
+        if self.currentTarget then
+            print("[InteractionSystem] Target is not a placeable item, clearing current target")
+            self:ClearCurrentTarget()
+        end
+        return
+    end
+    
+    -- If this is the same target we already have, no need to update
+    if self.currentTarget and self.currentTarget.id == placedItem.id then
         return
     end
     
@@ -346,14 +460,16 @@ function InteractionSystem:UpdateCurrentTarget()
     if self.player.Character and self.player.Character:FindFirstChild("HumanoidRootPart") then
         local distance = (target.Position - self.player.Character.HumanoidRootPart.Position).Magnitude
         if distance > self.interactionDistance then
+            print("[InteractionSystem] Target too far away (" .. tostring(math.floor(distance)) .. " studs), max distance is " .. tostring(self.interactionDistance))
             self:ClearCurrentTarget()
             return
         end
     end
     
-    -- Set current target
+    -- Set current target and show interaction UI
     self.currentTarget = placedItem
-    debugLog("Target is a placed item:", placedItem.id)
+    self:ShowInteractionUI(placedItem)
+    print("[InteractionSystem] Updated current target to placed item:", placedItem.id)
 end
 
 function InteractionSystem:ClearCurrentTarget()
@@ -385,26 +501,68 @@ function InteractionSystem:GetPlacedItemFromPart(part)
 end
 
 function InteractionSystem:ShowInteractionUI(placedItem)
-    if not placedItem or not placedItem.model then return end
+    if not placedItem or not placedItem.model then 
+        print("[InteractionSystem] Cannot show interaction UI: Invalid placedItem")
+        return 
+    end
+    
+    print("[InteractionSystem] Showing interaction UI for:", placedItem.id)
     
     -- Attach BillboardGui to the item model's PrimaryPart
     local primaryPart = placedItem.model.PrimaryPart
     if not primaryPart then
+        -- Try to find a suitable part to use as PrimaryPart
         primaryPart = placedItem.model:FindFirstChildWhichIsA("BasePart")
         if primaryPart then
+            -- Set it as primary part for future use
             placedItem.model.PrimaryPart = primaryPart
+            print("[InteractionSystem] Set PrimaryPart for model:", primaryPart.Name)
+        else
+            print("[InteractionSystem] No suitable part found for UI attachment")
+            return
         end
     end
     
-    if not primaryPart then return end
-
     -- Remove any existing BillboardGui
     local existing = primaryPart:FindFirstChild("ProximityInteractUI")
     if existing then existing:Destroy() end
 
+    -- Create a fresh billboard from our template
     local bb = self.billboardTemplate:Clone()
     bb.Enabled = true
+    
+    -- Add a pulsing animation to make it more noticeable
+    local textLabel = bb:FindFirstChild("Title", true)
+    if textLabel then
+        -- Update text to include the item name
+        textLabel.Text = "[E] Interact with " .. placedItem.id
+        
+        -- Add a pulsing effect using TweenService
+        local tweenService = game:GetService("TweenService")
+        local tweenInfo = TweenInfo.new(
+            0.8,                    -- Time
+            Enum.EasingStyle.Sine,  -- EasingStyle
+            Enum.EasingDirection.InOut, -- EasingDirection
+            -1,                     -- RepeatCount (-1 means infinite)
+            true,                   -- Reverses
+            0                       -- DelayTime
+        )
+        
+        local goals = {
+            TextSize = 24,  -- Slightly larger
+            TextTransparency = 0.2  -- Slightly transparent
+        }
+        
+        local tween = tweenService:Create(textLabel, tweenInfo, goals)
+        tween:Play()
+        
+        -- Store the tween so we can cancel it later if needed
+        bb:SetAttribute("activeTween", true)
+    end
+    
+    -- Parent the billboard to the part
     bb.Parent = primaryPart
+    print("[InteractionSystem] Interaction UI displayed successfully")
 end
 
 function InteractionSystem:HideInteractionUI()
@@ -418,14 +576,21 @@ function InteractionSystem:HideInteractionUI()
 end
 
 function InteractionSystem:ShowPriceUI(worldItem)
-    if not worldItem or not worldItem.model then return end
-    debugLog("ShowPriceUI for:", worldItem.id)
+    if not worldItem or not worldItem.model then 
+        print("[InteractionSystem] Cannot show price UI: Invalid worldItem")
+        return 
+    end
+    
+    print("[InteractionSystem] Showing price UI for:", worldItem.id)
     
     -- Check if world item model has a primary part
     local targetPart = worldItem.model
     if worldItem.model:IsA("Model") then
         targetPart = worldItem.model.PrimaryPart or worldItem.model:FindFirstChildWhichIsA("BasePart")
-        if not targetPart then return end
+        if not targetPart then 
+            print("[InteractionSystem] No suitable part found for price UI")
+            return 
+        end
     end
     
     -- Remove any existing price GUIs
@@ -435,97 +600,180 @@ function InteractionSystem:ShowPriceUI(worldItem)
     -- Get item data, with fallback
     local itemData = Constants.ITEMS and Constants.ITEMS[worldItem.id]
     if not itemData then
-        itemData = { price = { INGAME = 10 } }
+        itemData = { 
+            price = { INGAME = 10 },
+            name = worldItem.id,
+            description = "A purchasable item"
+        }
     end
     
-    -- Create price UI
+    -- Create price UI with improved styling
     local priceGui = Instance.new("BillboardGui")
     priceGui.Name = "PriceBillboard"
-    priceGui.Size = UDim2.new(0, 200, 0, 60)
+    priceGui.Size = UDim2.new(0, 220, 0, 80) -- Larger size
     priceGui.StudsOffset = Vector3.new(0, 4, 0)
     priceGui.AlwaysOnTop = true
+    priceGui.MaxDistance = 30 -- Increased visibility distance
     priceGui.Parent = targetPart
     
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 60) -- Darker blue background
     frame.BackgroundTransparency = 0.2
     frame.BorderSizePixel = 0
     frame.Parent = priceGui
     
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0.5, 0)
-    label.Position = UDim2.new(0, 0, 0, 0)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(255, 255, 0)
-    label.TextSize = 20
-    label.Font = Enum.Font.GothamBold
-    label.Text = "Price: " .. tostring(itemData.price and itemData.price.INGAME or "?")
-    label.Parent = frame
+    -- Add rounded corners
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = frame
     
+    -- Add highlighting stroke
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(255, 215, 0) -- Gold outline
+    stroke.Thickness = 2
+    stroke.Parent = frame
+    
+    -- Item name
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Size = UDim2.new(1, 0, 0.3, 0)
+    nameLabel.Position = UDim2.new(0, 0, 0, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextSize = 18
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.Text = itemData.name or worldItem.id
+    nameLabel.Parent = frame
+    
+    -- Price label
+    local priceLabel = Instance.new("TextLabel")
+    priceLabel.Size = UDim2.new(1, 0, 0.35, 0)
+    priceLabel.Position = UDim2.new(0, 0, 0.3, 0)
+    priceLabel.BackgroundTransparency = 1
+    priceLabel.TextColor3 = Color3.fromRGB(255, 255, 0) -- Yellow/gold for price
+    priceLabel.TextSize = 22
+    priceLabel.Font = Enum.Font.GothamBold
+    priceLabel.Text = "Price: " .. tostring(itemData.price and itemData.price.INGAME or "?")
+    priceLabel.Parent = frame
+    
+    -- Interactive prompt
     local prompt = Instance.new("TextLabel")
-    prompt.Size = UDim2.new(1, 0, 0.5, 0)
-    prompt.Position = UDim2.new(0, 0, 0.5, 0)
+    prompt.Size = UDim2.new(1, 0, 0.35, 0)
+    prompt.Position = UDim2.new(0, 0, 0.65, 0)
     prompt.BackgroundTransparency = 1
     prompt.TextColor3 = Color3.fromRGB(255, 255, 255)
     prompt.TextSize = 18
     prompt.Font = Enum.Font.Gotham
-    prompt.Text = "Press E to interact"
+    prompt.Text = "Press E to buy"
     prompt.Parent = frame
+    
+    -- Add pulsing effect to the prompt text
+    local tweenService = game:GetService("TweenService")
+    local tweenInfo = TweenInfo.new(
+        0.8,                    -- Time
+        Enum.EasingStyle.Sine,  -- EasingStyle
+        Enum.EasingDirection.InOut, -- EasingDirection
+        -1,                     -- RepeatCount (-1 means infinite)
+        true,                   -- Reverses
+        0                       -- DelayTime
+    )
+    
+    local goals = {
+        TextSize = 20,  -- Slightly larger
+        TextTransparency = 0.2  -- Slightly transparent
+    }
+    
+    local tween = tweenService:Create(prompt, tweenInfo, goals)
+    tween:Play()
+    
+    print("[InteractionSystem] Price UI displayed successfully")
 end
 
 function InteractionSystem:AttemptInteraction()
-    debugLog("AttemptInteraction called")
-    if not self.currentTarget then return end
+    print("[InteractionSystem] AttemptInteraction called")
+    if not self.currentTarget then 
+        print("[InteractionSystem] No current target to interact with")
+        return 
+    end
     
+    -- Check if we're interacting with a world item (in Items folder)
     local itemsFolder = workspace:FindFirstChild("Items")
     if itemsFolder and self.currentTarget.model and self.currentTarget.model:IsDescendantOf(itemsFolder) then
-        debugLog("Attempting to interact with world item:", self.currentTarget.id)
+        print("[InteractionSystem] Attempting to interact with world item:", self.currentTarget.id)
         
         local pickupEvent = self.remoteEvents:FindFirstChild("PickupItem")
         if pickupEvent then
-            debugLog("Sending PickupItem event to server for", self.currentTarget.id)
+            print("[InteractionSystem] Sending PickupItem event to server for", self.currentTarget.id)
             pickupEvent:FireServer(self.currentTarget.id)
         else
-            debugLog("PickupItem remote event not found")
+            print("[InteractionSystem] PickupItem remote event not found")
             -- Display a local notification since we can't use the server
             self:ShowLocalNotification("Can't pick up item: Remote event missing")
         end
         return
     end
     
-    debugLog("Attempting to interact with placed item:", self.currentTarget.id)
+    -- Handle interaction with placed items
+    print("[InteractionSystem] Attempting to interact with placed item:", self.currentTarget.id)
     local interactions = self:GetAvailableInteractions(self.currentTarget)
-    if not interactions or #interactions == 0 then return end
+    if not interactions or #interactions == 0 then
+        print("[InteractionSystem] No available interactions for target")
+        return 
+    end
     
+    -- If we have exactly one interaction option, perform it directly
     if #interactions == 1 then
+        print("[InteractionSystem] Single interaction available, performing:", interactions[1])
         self:PerformInteraction(self.currentTarget, interactions[1])
         return
     end
     
+    -- Otherwise show the interaction menu
+    print("[InteractionSystem] Multiple interactions available, showing menu:", table.concat(interactions, ", "))
     self:ShowInteractionMenu(interactions)
 end
 
 function InteractionSystem:GetAvailableInteractions(placedItem)
+    print("[InteractionSystem] Getting available interactions for", placedItem.id)
+    
     -- Check if the remote function exists
-    if not self.remoteEvents:FindFirstChild("GetAvailableInteractions") then
-        debugLog("GetAvailableInteractions remote function not found, using default interactions")
+    local interactionRemote = self.remoteEvents:FindFirstChild("GetAvailableInteractions")
+    if not interactionRemote then
+        print("[InteractionSystem] GetAvailableInteractions remote function not found, using default interactions")
         -- Return default interactions
         return {"examine", "clone"}
     end
     
     -- Request available interactions from server
     local success, result = pcall(function()
-        return self.remoteEvents.GetAvailableInteractions:InvokeServer(placedItem)
+        return interactionRemote:InvokeServer(placedItem.id)
     end)
     
     if not success or not result then
-        debugLog("Error getting available interactions:", tostring(result))
-        result = {"examine"}
+        print("[InteractionSystem] Error getting available interactions:", tostring(result))
+        -- Ensure we return at least examine action as fallback
+        return {"examine"}
     end
     
-    -- Always add 'examine' for placed items
-    table.insert(result, "examine")
+    print("[InteractionSystem] Server returned interactions:", result and table.concat(result, ", "))
+    
+    -- Always ensure examine is available
+    if type(result) == "table" then
+        local hasExamine = false
+        for _, action in ipairs(result) do
+            if action == "examine" then
+                hasExamine = true
+                break
+            end
+        end
+        
+        if not hasExamine then
+            table.insert(result, "examine")
+        end
+    else
+        -- If result is not a table, create a default array
+        result = {"examine"}
+    end
     
     return result
 end
@@ -613,33 +861,40 @@ function InteractionSystem:ShowSimpleInteractionMenu(interactions)
 end
 
 function InteractionSystem:PerformInteraction(item, action)
-    debugLog("Performing interaction", action, "on", item.id)
+    print("[InteractionSystem] Performing interaction", action, "on", item.id)
     
     -- Handle different interaction types
     if action == "examine" then
+        print("[InteractionSystem] Examine action triggered")
         self:ExamineItem(item)
         return
     end
     
     if action == "clone" then
+        print("[InteractionSystem] Clone action triggered")
         self:CloneItem(item)
         return
     end
     
     if action == "pickup" then
+        print("[InteractionSystem] Pickup action triggered")
         self:PickupItem(item)
         return
     end
     
     -- For any other actions, send to server
-    if self.remoteEvents:FindFirstChild("InteractWithItem") then
-        self.remoteEvents.InteractWithItem:FireServer(item.id, action)
+    local interactEvent = self.remoteEvents:FindFirstChild("InteractWithItem")
+    if interactEvent then
+        print("[InteractionSystem] Sending InteractWithItem event to server for", item.id, "with action", action)
+        interactEvent:FireServer(item.id, action)
     else
+        print("[InteractionSystem] InteractWithItem remote event not found")
         self:ShowLocalNotification("Can't perform action: Remote event missing")
     end
 end
 
 function InteractionSystem:ExamineItem(item)
+    print("[InteractionSystem] ExamineItem called for", item.id)
     -- Get item data from server if possible
     local getItemDataFunc = self.remoteEvents:FindFirstChild("GetItemData")
     local itemData
@@ -651,25 +906,36 @@ function InteractionSystem:ExamineItem(item)
         
         if success and result then
             itemData = result
+            print("[InteractionSystem] Got item data from server:", result)
+        else
+            print("[InteractionSystem] Failed to get item data from server:", tostring(result))
         end
+    else
+        print("[InteractionSystem] GetItemData remote function not found")
     end
     
     -- Fallback to Constants if server data not available
     if not itemData and Constants.ITEMS then
         itemData = Constants.ITEMS[item.id]
+        print("[InteractionSystem] Using item data from Constants")
     end
     
     -- Default info if nothing else is available
     if not itemData then
         itemData = {
             name = item.id,
-            description = "No information available"
+            description = "An item in your world. No additional information available.",
+            price = { INGAME = "???" }
         }
+        print("[InteractionSystem] Using default item data")
     end
     
     -- Show item info UI
     local playerGui = self.player:FindFirstChild("PlayerGui")
-    if not playerGui then return end
+    if not playerGui then 
+        print("[InteractionSystem] PlayerGui not found")
+        return 
+    end
     
     local existing = playerGui:FindFirstChild("ItemInfoUI")
     if existing then existing:Destroy() end
@@ -680,70 +946,151 @@ function InteractionSystem:ExamineItem(item)
     infoUI.Parent = playerGui
     
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 300, 0, 200)
-    frame.Position = UDim2.new(0.5, -150, 0.5, -100)
-    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    frame.Size = UDim2.new(0, 350, 0, 250)  -- Larger size
+    frame.Position = UDim2.new(0.5, -175, 0.5, -125)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 50)  -- Slightly blue tint
     frame.BorderSizePixel = 0
     frame.Parent = infoUI
     
+    -- Add corner radius
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = frame
+    
+    -- Add border
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(0, 170, 255)  -- Blue border
+    stroke.Thickness = 2
+    stroke.Parent = frame
+    
+    -- Title with nicer formatting
     local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 30)
-    title.Position = UDim2.new(0, 0, 0, 0)
-    title.BackgroundTransparency = 0.5
-    title.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    title.Size = UDim2.new(1, -20, 0, 40)
+    title.Position = UDim2.new(0, 10, 0, 10)
+    title.BackgroundTransparency = 1
     title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    title.TextSize = 18
+    title.TextSize = 22
     title.Font = Enum.Font.GothamBold
+    title.TextXAlignment = Enum.TextXAlignment.Left
     title.Text = itemData.name or item.id
     title.Parent = frame
     
+    -- Item description
     local description = Instance.new("TextLabel")
-    description.Size = UDim2.new(0.9, 0, 0, 140)
-    description.Position = UDim2.new(0.05, 0, 0.15, 20)
+    description.Size = UDim2.new(1, -40, 0, 100)
+    description.Position = UDim2.new(0, 20, 0, 60)
     description.BackgroundTransparency = 1
-    description.TextColor3 = Color3.fromRGB(255, 255, 255)
+    description.TextColor3 = Color3.fromRGB(220, 220, 220)
     description.TextSize = 16
     description.Font = Enum.Font.Gotham
-    description.Text = itemData.description or "No description available"
     description.TextWrapped = true
     description.TextXAlignment = Enum.TextXAlignment.Left
-    description.TextYAlignment = Enum.TextYAlignment.Top
+    description.Text = itemData.description or "No description available."
     description.Parent = frame
+    
+    -- Price information
+    local priceText = "Price: "
+    if itemData.price and itemData.price.INGAME then
+        priceText = priceText .. tostring(itemData.price.INGAME)
+    else
+        priceText = priceText .. "Unknown"
+    end
+    
+    local priceLabel = Instance.new("TextLabel")
+    priceLabel.Size = UDim2.new(1, -40, 0, 30)
+    priceLabel.Position = UDim2.new(0, 20, 0, 170)
+    priceLabel.BackgroundTransparency = 1
+    priceLabel.TextColor3 = Color3.fromRGB(255, 215, 0)  -- Gold color for price
+    priceLabel.TextSize = 18
+    priceLabel.Font = Enum.Font.GothamBold
+    priceLabel.TextXAlignment = Enum.TextXAlignment.Left
+    priceLabel.Text = priceText
+    priceLabel.Parent = frame
     
     -- Close button
     local closeButton = Instance.new("TextButton")
-    closeButton.Size = UDim2.new(0, 30, 0, 30)
-    closeButton.Position = UDim2.new(1, -30, 0, 0)
-    closeButton.BackgroundTransparency = 1
+    closeButton.Size = UDim2.new(0, 100, 0, 40)
+    closeButton.Position = UDim2.new(0.5, -50, 1, -50)
+    closeButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    closeButton.BorderSizePixel = 0
     closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closeButton.TextSize = 18
+    closeButton.TextSize = 16
     closeButton.Font = Enum.Font.GothamBold
-    closeButton.Text = "X"
+    closeButton.Text = "Close"
     closeButton.Parent = frame
     
+    -- Add corner radius to button
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 4)
+    buttonCorner.Parent = closeButton
+    
+    -- Close on button click
     closeButton.MouseButton1Click:Connect(function()
         infoUI:Destroy()
     end)
+    
+    -- Auto-close after 10 seconds
+    task.delay(10, function()
+        if infoUI and infoUI.Parent then
+            infoUI:Destroy()
+        end
+    end)
+    
+    print("[InteractionSystem] Item info UI displayed successfully")
 end
 
 function InteractionSystem:CloneItem(item)
-    local cloneEvent = self.remoteEvents:FindFirstChild("CloneItem")
+    print("[InteractionSystem] Attempting to clone item:", item.id)
     
-    if cloneEvent then
-        cloneEvent:FireServer(item.id)
-    else
-        self:ShowLocalNotification("Cannot clone item: Remote event missing")
+    -- Check if item is valid
+    if not item or not item.id then
+        print("[InteractionSystem] Cannot clone: Invalid item")
+        self:ShowLocalNotification("Cannot clone: Invalid item")
+        return
     end
+    
+    -- Get the clone event
+    local cloneEvent = self.remoteEvents:FindFirstChild("CloneItem")
+    if not cloneEvent then
+        print("[InteractionSystem] Creating CloneItem RemoteEvent")
+        cloneEvent = Instance.new("RemoteEvent")
+        cloneEvent.Name = "CloneItem"
+        cloneEvent.Parent = self.remoteEvents
+    end
+    
+    -- Send the clone request to the server
+    print("[InteractionSystem] Sending CloneItem event to server for:", item.id)
+    cloneEvent:FireServer(item.id)
+    
+    -- Show a confirmation notification
+    self:ShowLocalNotification("Cloning " .. item.id)
 end
 
 function InteractionSystem:PickupItem(item)
-    local pickupEvent = self.remoteEvents:FindFirstChild("PickupItem")
+    print("[InteractionSystem] Attempting to pick up item:", item.id)
     
-    if pickupEvent then
-        pickupEvent:FireServer(item.id)
-    else
-        self:ShowLocalNotification("Cannot pick up item: Remote event missing")
+    -- Check if item is valid
+    if not item or not item.id then
+        print("[InteractionSystem] Cannot pick up: Invalid item")
+        self:ShowLocalNotification("Cannot pick up: Invalid item")
+        return
     end
+    
+    -- Get the pickup event
+    local pickupEvent = self.remoteEvents:FindFirstChild("PickupItem")
+    if not pickupEvent then
+        print("[InteractionSystem] Creating PickupItem RemoteEvent")
+        pickupEvent = Instance.new("RemoteEvent")
+        pickupEvent.Name = "PickupItem"
+        pickupEvent.Parent = self.remoteEvents
+    end
+    
+    -- Send the pickup request to the server
+    print("[InteractionSystem] Sending PickupItem event to server for:", item.id)
+    pickupEvent:FireServer(item.id)
+    
+    -- Show a confirmation notification
+    self:ShowLocalNotification("Picking up " .. item.id)
 end
 
 function InteractionSystem:ToggleInventory()
@@ -821,6 +1168,87 @@ function InteractionSystem:ShowLocalNotification(message)
         fadeOut:Play()
         textFadeOut:Play()
     end)
+end
+
+function InteractionSystem:VerifyRemotes()
+    print("[InteractionSystem] Verifying required remote events and functions")
+    
+    if not self.remoteEvents then
+        warn("[InteractionSystem] Remotes folder not found")
+        return false
+    end
+    
+    -- Define required remotes and their types
+    local requiredRemotes = {
+        { name = "InteractWithItem", type = "RemoteEvent" },
+        { name = "PickupItem", type = "RemoteEvent" },
+        { name = "CloneItem", type = "RemoteEvent" },
+        { name = "GetAvailableInteractions", type = "RemoteFunction" },
+        { name = "GetItemData", type = "RemoteFunction" }
+    }
+    
+    -- Check each required remote
+    local allFound = true
+    for _, remoteInfo in ipairs(requiredRemotes) do
+        local remote = self.remoteEvents:FindFirstChild(remoteInfo.name)
+        
+        if not remote then
+            warn("[InteractionSystem] Missing remote:", remoteInfo.name)
+            allFound = false
+        elseif remote.ClassName ~= remoteInfo.type then
+            warn("[InteractionSystem] Remote", remoteInfo.name, "is of wrong type. Expected", remoteInfo.type, "but got", remote.ClassName)
+            allFound = false
+        else
+            print("[InteractionSystem] Found remote:", remoteInfo.name)
+        end
+    end
+    
+    if not allFound then
+        warn("[InteractionSystem] Some required remotes are missing - interaction functionality may be limited")
+    else
+        print("[InteractionSystem] All required remotes verified successfully")
+    end
+    
+    return allFound
+end
+
+function InteractionSystem:EnsureRemotesExist()
+    print("[InteractionSystem] Ensuring required remotes exist")
+    
+    if not self.remoteEvents then
+        self.remoteEvents = Instance.new("Folder")
+        self.remoteEvents.Name = "Remotes"
+        self.remoteEvents.Parent = ReplicatedStorage
+        print("[InteractionSystem] Created Remotes folder in ReplicatedStorage")
+    end
+    
+    -- Define required remotes and their types
+    local requiredRemotes = {
+        { name = "InteractWithItem", type = "RemoteEvent" },
+        { name = "PickupItem", type = "RemoteEvent" },
+        { name = "CloneItem", type = "RemoteEvent" },
+        { name = "GetAvailableInteractions", type = "RemoteFunction" },
+        { name = "GetItemData", type = "RemoteFunction" }
+    }
+    
+    -- Create any missing remotes
+    for _, remoteInfo in ipairs(requiredRemotes) do
+        local remote = self.remoteEvents:FindFirstChild(remoteInfo.name)
+        
+        if not remote then
+            if remoteInfo.type == "RemoteEvent" then
+                remote = Instance.new("RemoteEvent")
+            else
+                remote = Instance.new("RemoteFunction")
+            end
+            
+            remote.Name = remoteInfo.name
+            remote.Parent = self.remoteEvents
+            print("[InteractionSystem] Created missing remote:", remoteInfo.name)
+        end
+    end
+    
+    print("[InteractionSystem] All required remotes now exist")
 end
 
 return InteractionSystem
