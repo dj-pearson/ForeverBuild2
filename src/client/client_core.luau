@@ -19,7 +19,20 @@ end)
 
 if not success then
     warn("client_core.luau: Failed to require SharedModule:", errorMessage)
-    SharedModule = {}
+    print("client_core.luau: Creating minimal SharedModule fallback")
+    SharedModule = {
+        Constants = {
+            INTERACTION_DISTANCE = 10,
+            CURRENCY_TYPES = {"Coins", "Gems"},
+            DEFAULT_CURRENCY = "Coins"
+        },
+        GameManager = nil,
+        LazyLoadModules = {
+            register = function() return true end,
+            require = function() return nil end
+        },
+        Init = function() return true end
+    }
 else
     print("client_core.luau: Successfully required SharedModule")
     -- Initialize the shared module
@@ -65,6 +78,58 @@ local InteractWithItemEvent = nil
 local InteractionSystem -- Module table
 local interactionSystemInstance -- Instance of the class
 
+-- Add a function to notify players about interaction system status
+local function notifyPlayer(message, isError)
+    if not Players or not Players.LocalPlayer or not Players.LocalPlayer:FindFirstChild("PlayerGui") then
+        warn("[InteractionSystem] Cannot show notification:", message)
+        return
+    end
+    
+    local playerGui = Players.LocalPlayer:FindFirstChild("PlayerGui")
+    local notifGui = playerGui:FindFirstChild("SystemNotifications")
+    
+    if not notifGui then
+        notifGui = Instance.new("ScreenGui")
+        notifGui.Name = "SystemNotifications"
+        notifGui.ResetOnSpawn = false
+        notifGui.Parent = playerGui
+    end
+    
+    local notification = Instance.new("Frame")
+    notification.Name = "Notification"
+    notification.Size = UDim2.new(0, 300, 0, 60)
+    notification.Position = UDim2.new(0.5, -150, 0.1, 0)
+    notification.BackgroundColor3 = isError and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(50, 150, 50)
+    notification.BackgroundTransparency = 0.2
+    notification.Parent = notifGui
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = notification
+    
+    local text = Instance.new("TextLabel")
+    text.Name = "Message"
+    text.Size = UDim2.new(1, -20, 1, -20)
+    text.Position = UDim2.new(0, 10, 0, 10)
+    text.BackgroundTransparency = 1
+    text.TextColor3 = Color3.new(1, 1, 1)
+    text.TextSize = 14
+    text.Font = Enum.Font.GothamBold
+    text.TextWrapped = true
+    text.Text = message
+    text.Parent = notification
+    
+    -- Animate and remove after delay
+    spawn(function()
+        for i = 0, 10 do
+            notification.BackgroundTransparency = 0.2 + (i * 0.08)
+            text.TextTransparency = i * 0.1
+            wait(0.3)
+        end
+        notification:Destroy()
+    end)
+end
+
 -- Get the interaction folder directly from script.Parent (the LocalScript)
 local localScriptInstance = script.Parent -- This should be the 'client' LocalScript
 local interactionFolder = nil
@@ -76,38 +141,64 @@ if localScriptInstance then
     if interactionFolder then
         print("[InteractionSystem] Found interaction folder: " .. interactionFolder:GetFullName())
         
-        -- Look for InteractionSystemModule
-        local interactionSystemModuleScript = interactionFolder:WaitForChild("InteractionSystemModule_enhanced", 5)
-        if interactionSystemModuleScript then
-            print("[InteractionSystem] Found InteractionSystemModule_enhanced: " .. interactionSystemModuleScript:GetFullName())
-            
-            local success, result = pcall(require, interactionSystemModuleScript)
-            if success then
-                InteractionSystem = result
-                print("[InteractionSystem] Successfully loaded enhanced InteractionSystemModule")
-            else
-                warn("[InteractionSystem] Failed to require enhanced InteractionSystemModule: " .. tostring(result))
-                
-                -- Fall back to the original module
-                local originalModule = interactionFolder:WaitForChild("InteractionSystemModule", 5)
-                if originalModule then
-                    local origSuccess, origResult = pcall(require, originalModule)
-                    if origSuccess then
-                        InteractionSystem = origResult
-                        print("[InteractionSystem] Successfully loaded fallback InteractionSystemModule")
-                    else
-                        warn("[InteractionSystem] Failed to require fallback InteractionSystemModule: " .. tostring(origResult))
+        -- Try loading modules in priority order with robust error handling
+        local moduleScripts = {
+            {name = "InteractionSystemModule", isEmergency = false},
+            {name = "InteractionSystemModule_enhanced", isEmergency = false},
+            {name = "InteractionSystemModule_emergency", isEmergency = true}
+        }
+        
+        local loadedModule = nil
+        local moduleLoaded = false
+        
+        for _, moduleInfo in ipairs(moduleScripts) do
+            local moduleScript = interactionFolder:FindFirstChild(moduleInfo.name)
+            if moduleScript then
+                print("[InteractionSystem] Trying to load " .. moduleInfo.name)
+                local success, result = pcall(require, moduleScript)
+                if success then
+                    InteractionSystem = result
+                    loadedModule = moduleInfo.name
+                    moduleLoaded = true
+                    print("[InteractionSystem] Successfully loaded " .. moduleInfo.name)
+                    
+                    if moduleInfo.isEmergency then
+                        notifyPlayer("Emergency interaction system activated.", false)
                     end
+                    
+                    break
+                else
+                    warn("[InteractionSystem] Failed to require " .. moduleInfo.name .. ": " .. tostring(result))
                 end
             end
-        else
-            warn("[InteractionSystem] InteractionSystemModule not found in interaction folder")
+        end
+        
+        if not moduleLoaded then
+            warn("[InteractionSystem] CRITICAL: All module loading attempts failed")
+            notifyPlayer("Interaction system failed to load. Some features may not work.", true)
+            
+            -- Create a minimal fallback directly in the client code
+            InteractionSystem = {
+                new = function()
+                    return {
+                        Initialize = function() 
+                            print("[InteractionSystem] Using minimal fallback")
+                        end,
+                        Update = function() end,
+                        ShowInteraction = function() 
+                            notifyPlayer("Interaction system is not available", true)
+                        end
+                    }
+                end
+            }
         end
     else
         warn("[InteractionSystem] Interaction folder not found in " .. localScriptInstance:GetFullName())
+        notifyPlayer("Interaction system components missing", true)
     end
 else
     warn("[InteractionSystem] LocalScript instance (script.Parent) is nil")
+    notifyPlayer("Critical client error: LocalScript reference missing", true)
 end
 
 -- State variables
