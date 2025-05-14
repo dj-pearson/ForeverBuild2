@@ -105,21 +105,4 @@ local purchaseDialog = safeInitialize(SharedModule.PurchaseDialog, "PurchaseDial
 local currencyUI = safeInitialize(SharedModule.CurrencyUI, "CurrencyUI")
 local placedItemDialog = safeInitialize(SharedModule.PlacedItemDialog, "PlacedItemDialog")
 
--- Load client-specific InteractionSystem
-local InteractionSystem = safeRequire(script.Parent.interaction.InteractionSystem)
-
--- Initialize interaction system with OOP approach and error handling
-if InteractionSystem and InteractionSystem.new then
-    local interactionSystem = InteractionSystem.new()
-    local success, errorMsg = pcall(function()
-        interactionSystem:Initialize()
-    end)
-    
-    if not success then
-        warn("Failed to initialize InteractionSystem: ", errorMsg)
-    end
-else
-    warn("InteractionSystem module is missing or invalid")
-end
-
 print("Client initialized successfully")
