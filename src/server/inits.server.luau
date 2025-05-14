@@ -31,6 +31,12 @@ if not Remotes then
     createRemote("GetInventory", "RemoteFunction")
     createRemote("PlaceItem", "RemoteEvent")
     createRemote("InteractWithItem", "RemoteEvent")
+    createRemote("GetAvailableInteractions", "RemoteFunction") -- Added missing remote function
+    createRemote("CloneItem", "RemoteEvent") -- Added missing remote event
+    createRemote("PickupItem", "RemoteEvent") -- Added missing remote event
+    createRemote("AddToInventory", "RemoteEvent") -- Added missing remote event
+    createRemote("GetItemData", "RemoteFunction") -- Added missing remote function
+    createRemote("ApplyItemEffect", "RemoteEvent") -- Added missing remote event
     createRemote("ShowItemDescription", "RemoteEvent")
     createRemote("NotifyPlayer", "RemoteEvent")
     
@@ -68,7 +74,7 @@ end
 
 -- Initialize server managers with error handling
 print("server.inits: Initializing server managers")
-local GameManager, InventoryManager, CurrencyManager, PlacementManager
+local GameManager, InventoryManager, CurrencyManager, PlacementManager, InteractionManager
 
 -- GameManager
 if SharedModule.GameManager and SharedModule.GameManager.new then
@@ -134,68 +140,192 @@ else
     warn("server.inits: PlacementManager module not available")
 end
 
--- Setup remote event handlers
-if Remotes:FindFirstChild("BuyItem") and CurrencyManager then
-    Remotes.BuyItem.OnServerEvent:Connect(function(player, itemId)
-        if CurrencyManager.ProcessPurchase then
-            CurrencyManager:ProcessPurchase(player, itemId)
-        else
-            warn("CurrencyManager.ProcessPurchase method not found")
-        end
+-- InteractionManager
+if SharedModule.InteractionManager and SharedModule.InteractionManager.new then
+    local imSuccess, imResult = pcall(function()
+        return SharedModule.InteractionManager.new()
     end)
+    
+    if imSuccess and imResult then
+        InteractionManager = imResult
+        print("server.inits: Successfully created InteractionManager instance")
+        
+        -- Initialize interaction manager
+        if InteractionManager.Initialize then
+            InteractionManager:Initialize()
+        end
+    else
+        warn("server.inits: Failed to create InteractionManager instance:", imResult)
+    end
+else
+    warn("server.inits: InteractionManager module not available")
 end
 
-if Remotes:FindFirstChild("GetInventory") and InventoryManager then
-    Remotes.GetInventory.OnServerInvoke = function(player)
-        if InventoryManager.GetPlayerInventory then
-            return InventoryManager:GetPlayerInventory(player)
-        else
-            warn("InventoryManager.GetPlayerInventory method not found")
-            return {}
-        end
+-- Setup Remote Function Handlers
+-- GetInventory
+local getInventoryRemote = Remotes:FindFirstChild("GetInventory")
+if getInventoryRemote and InventoryManager then
+    getInventoryRemote.OnServerInvoke = function(player)
+        return InventoryManager:GetPlayerInventory(player)
     end
 end
 
-if Remotes:FindFirstChild("PlaceItem") and PlacementManager then
-    Remotes.PlaceItem.OnServerEvent:Connect(function(player, itemId, position, rotation)
-        if PlacementManager.PlaceItem then
-            PlacementManager:PlaceItem(player, itemId, position, rotation)
+-- GetItemData
+local getItemDataRemote = Remotes:FindFirstChild("GetItemData")
+if getItemDataRemote then
+    getItemDataRemote.OnServerInvoke = function(_, itemId)
+        return SharedModule.Constants.ITEMS[itemId] or {}
+    end
+end
+
+-- GetAvailableInteractions
+local getAvailableInteractionsRemote = Remotes:FindFirstChild("GetAvailableInteractions")
+if getAvailableInteractionsRemote and InteractionManager then
+    getAvailableInteractionsRemote.OnServerInvoke = function(player, itemData)
+        -- Return a default list of interactions if not defined specifically
+        return {"examine", "pickup"}
+    end
+end
+
+-- Setup Remote Event Handlers
+-- BuyItem
+local buyItemRemote = Remotes:FindFirstChild("BuyItem")
+if buyItemRemote and GameManager then
+    buyItemRemote.OnServerEvent:Connect(function(player, itemId)
+        if not GameManager.HandleItemPurchase then
+            warn("server.inits: GameManager.HandleItemPurchase function not found")
+            return
+        end
+        
+        local success = GameManager:HandleItemPurchase(player, itemId)
+        if success then
+            -- Notify player of successful purchase
+            Remotes.NotifyPlayer:FireClient(player, "Successfully purchased " .. itemId)
         else
-            warn("PlacementManager.PlaceItem method not found")
+            -- Notify player of failed purchase
+            Remotes.NotifyPlayer:FireClient(player, "Failed to purchase " .. itemId)
         end
     end)
 end
 
-if Remotes:FindFirstChild("InteractWithItem") and GameManager then
-    Remotes.InteractWithItem.OnServerEvent:Connect(function(player, itemId, action)
-        if GameManager.HandleInteraction then
-            GameManager:HandleInteraction(player, itemId, action)
+-- PlaceItem
+local placeItemRemote = Remotes:FindFirstChild("PlaceItem")
+if placeItemRemote and PlacementManager then
+    placeItemRemote.OnServerEvent:Connect(function(player, itemId, position, rotation)
+        if not PlacementManager.PlaceItem then
+            warn("server.inits: PlacementManager.PlaceItem function not found")
+            return
+        end
+        
+        local success = PlacementManager:PlaceItem(player, itemId, position, rotation)
+        if success then
+            Remotes.NotifyPlayer:FireClient(player, "Successfully placed " .. itemId)
         else
-            warn("GameManager.HandleInteraction method not found")
+            Remotes.NotifyPlayer:FireClient(player, "Failed to place " .. itemId)
         end
     end)
 end
 
--- Player join/leave handling
+-- InteractWithItem
+local interactItemRemote = Remotes:FindFirstChild("InteractWithItem")
+if interactItemRemote and InteractionManager then
+    interactItemRemote.OnServerEvent:Connect(function(player, itemData, interactionType)
+        if not InteractionManager.HandleInteraction then
+            warn("server.inits: InteractionManager.HandleInteraction function not found")
+            return
+        end
+        
+        local success = InteractionManager:HandleInteraction(player, itemData.id, interactionType, itemData)
+        if not success then
+            Remotes.NotifyPlayer:FireClient(player, "Failed to " .. interactionType .. " " .. itemData.id)
+        end
+    end)
+end
+
+-- PickupItem
+local pickupItemRemote = Remotes:FindFirstChild("PickupItem")
+if pickupItemRemote and InventoryManager then
+    pickupItemRemote.OnServerEvent:Connect(function(player, itemId)
+        if not InventoryManager.AddItemToInventory then
+            warn("server.inits: InventoryManager.AddItemToInventory function not found")
+            return
+        end
+        
+        local success = InventoryManager:AddItemToInventory(player, itemId)
+        if success then
+            Remotes.NotifyPlayer:FireClient(player, "Picked up " .. itemId)
+        else
+            Remotes.NotifyPlayer:FireClient(player, "Failed to pick up " .. itemId)
+        end
+    end)
+end
+
+-- AddToInventory
+local addToInventoryRemote = Remotes:FindFirstChild("AddToInventory")
+if addToInventoryRemote and InventoryManager then
+    addToInventoryRemote.OnServerEvent:Connect(function(player, itemId)
+        if not InventoryManager.AddItemToInventory then
+            warn("server.inits: InventoryManager.AddItemToInventory function not found")
+            return
+        end
+        
+        InventoryManager:AddItemToInventory(player, itemId)
+    end)
+end
+
+-- CloneItem
+local cloneItemRemote = Remotes:FindFirstChild("CloneItem")
+if cloneItemRemote and PlacementManager then
+    cloneItemRemote.OnServerEvent:Connect(function(player, itemId)
+        if not PlacementManager.CloneItem then
+            print("Creating dummy CloneItem handler")
+            Remotes.NotifyPlayer:FireClient(player, "Cloning not implemented yet")
+            return
+        end
+        
+        local success = PlacementManager:CloneItem(player, itemId)
+        if success then
+            Remotes.NotifyPlayer:FireClient(player, "Cloned " .. itemId)
+        else
+            Remotes.NotifyPlayer:FireClient(player, "Failed to clone " .. itemId)
+        end
+    end)
+end
+
+-- Player events
 Players.PlayerAdded:Connect(function(player)
-    print("Player joined: " .. player.Name)
+    print("Player joining:", player.Name)
+    
+    if not player.Character then
+        player.CharacterAdded:Wait()
+    end
     
     -- Initialize player data
-    if InventoryManager and InventoryManager.InitializePlayerData then
-        InventoryManager:InitializePlayerData(player)
+    if GameManager and GameManager.InitializePlayerData then
+        GameManager:InitializePlayerData(player)
     end
     
+    -- Initialize player currency
     if CurrencyManager and CurrencyManager.InitializePlayerCurrency then
         CurrencyManager:InitializePlayerCurrency(player)
+    end
+    
+    -- Initialize player inventory
+    if InventoryManager and InventoryManager.InitializePlayerInventory then
+        InventoryManager:InitializePlayerInventory(player)
     end
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-    print("Player leaving: " .. player.Name)
+    print("Player leaving:", player.Name)
     
-    -- Save player data
-    if InventoryManager and InventoryManager.SavePlayerData then
-        InventoryManager:SavePlayerData(player)
+    -- Save player data before they leave
+    if GameManager and GameManager.SavePlayerData then
+        GameManager:SavePlayerData(player)
+    end
+    
+    if InventoryManager and InventoryManager.SavePlayerInventory then
+        InventoryManager:SavePlayerInventory(player)
     end
     
     if CurrencyManager and CurrencyManager.SavePlayerCurrency then
@@ -203,4 +333,4 @@ Players.PlayerRemoving:Connect(function(player)
     end
 end)
 
-print("Server initialization completed successfully") 
+print("Server initialization completed successfully")

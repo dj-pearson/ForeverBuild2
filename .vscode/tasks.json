@@ -3,19 +3,12 @@
 	"tasks": [
 		{
 			"args": [
-				"del src\\client\\Currency\\CurrencyUI_fixed.lua src\\shared\\core\\ui\\CurrencyUI_fixed.lua src\\shared\\core\\economy\\CurrencyManager_client.lua src\\client\\interaction\\InteractionSystem_fixed.lua src\\client\\init_fixed.client.lua src\\client\\client_fixed.lua"
+				"powershell.exe -ExecutionPolicy Bypass -File apply_fixes.ps1"
 			],
 			"command": "powershell.exe",
 			"group": "build",
 			"isBackground": false,
-			"label": "Cleanup Fixed Files",
-			"type": "shell"
-		},
-		{
-			"command": "rojo build second.project.json -o ForeverBuild.rbxm",
-			"group": "build",
-			"isBackground": false,
-			"label": "Build Project",
+			"label": "Apply Interaction System Fixes",
 			"type": "shell"
 		}
 	]

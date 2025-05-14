@@ -95,6 +95,28 @@ function InteractionSystem:SetupInputHandling()
     end)
 end
 
+function InteractionSystem:SetupInventoryKey()
+    -- Handle inventory toggle (I key)
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        if input.KeyCode == Enum.KeyCode.I then
+            print("[DEBUG] Inventory key pressed")
+            self:ToggleInventory()
+        end
+    end)
+end
+
+function InteractionSystem:ToggleInventory()
+    -- Ensure InventoryUI is loaded
+    local InventoryUI = LazyLoadModules.InventoryUI
+    if InventoryUI and typeof(InventoryUI.ToggleUI) == "function" then
+        InventoryUI.ToggleUI()
+    else
+        print("[DEBUG] InventoryUI.ToggleUI not available. InventoryUI module might not be loaded properly.")
+    end
+end
+
 function InteractionSystem:SetupMouseHandling()
     print("[DEBUG] SetupMouseHandling called")
     game:GetService("RunService").RenderStepped:Connect(function()
@@ -239,7 +261,13 @@ function InteractionSystem:AttemptInteraction()
     local itemsFolder = workspace:FindFirstChild("Items")
     if itemsFolder and self.currentTarget.model and self.currentTarget.model:IsDescendantOf(itemsFolder) then
         print("[DEBUG] Attempting to interact with world item:", self.currentTarget.id)
-        self.remoteEvents.PickupItem:FireServer(self.currentTarget.id)
+        if self.remoteEvents:FindFirstChild("PickupItem") then
+            self.remoteEvents.PickupItem:FireServer(self.currentTarget.id)
+        else
+            print("[DEBUG] PickupItem remote event not found")
+            -- Display a local notification since we can't use the server
+            self:ShowLocalNotification("Can't pick up item: Remote event missing")
+        end
         return
     end
     print("[DEBUG] Attempting to interact with placed item:", self.currentTarget.id)
@@ -253,9 +281,23 @@ function InteractionSystem:AttemptInteraction()
 end
 
 function InteractionSystem:GetAvailableInteractions(placedItem)
+    -- Check if the remote function exists
+    if not self.remoteEvents:FindFirstChild("GetAvailableInteractions") then
+        print("[DEBUG] GetAvailableInteractions remote function not found, using default interactions")
+        -- Return default interactions
+        return {"examine", "clone"}
+    end
+    
     -- Request available interactions from server
-    local result = self.remoteEvents.GetAvailableInteractions:InvokeServer(placedItem)
-    result = result or {"examine"}
+    local success, result = pcall(function()
+        return self.remoteEvents.GetAvailableInteractions:InvokeServer(placedItem)
+    end)
+    
+    if not success or not result then
+        print("[DEBUG] Error getting available interactions:", result)
+        result = {"examine"}
+    end
+    
     -- Always add 'clone' for placed items
     table.insert(result, "clone")
     return result
@@ -264,10 +306,21 @@ end
 function InteractionSystem:PerformInteraction(placedItem, interactionType)
     print("[DEBUG] PerformInteraction called for", placedItem.id, interactionType)
     if interactionType == "clone" then
-        self.remoteEvents.CloneItem:FireServer(placedItem.id)
+        if self.remoteEvents:FindFirstChild("CloneItem") then
+            self.remoteEvents.CloneItem:FireServer(placedItem.id)
+        else
+            print("[DEBUG] CloneItem remote event not found")
+            self:ShowLocalNotification("Can't clone item: Remote event missing")
+        end
         return
     end
-    self.remoteEvents.InteractWithItem:FireServer(placedItem, interactionType)
+    
+    if self.remoteEvents:FindFirstChild("InteractWithItem") then
+        self.remoteEvents.InteractWithItem:FireServer(placedItem, interactionType)
+    else
+        print("[DEBUG] InteractWithItem remote event not found")
+        self:ShowLocalNotification("Can't " .. interactionType .. " item: Remote event missing")
+    end
 end
 
 function InteractionSystem:ShowInteractionMenu(interactions)
@@ -295,62 +348,25 @@ end
 
 function InteractionSystem:SetupEventHandlers()
     -- Handle interaction responses
-    self.remoteEvents.NotifyPlayer.OnClientEvent:Connect(function(message)
-        self:ShowNotification(message)
-    end)
+    if self.remoteEvents:FindFirstChild("NotifyPlayer") then
+        self.remoteEvents.NotifyPlayer.OnClientEvent:Connect(function(message)
+            self:ShowNotification(message)
+        end)
+    else
+        print("[DEBUG] NotifyPlayer remote event not found")
+    end
 end
 
 function InteractionSystem:ShowNotification(message)
-    -- Create notification UI
-    local notification = Instance.new("ScreenGui")
-    notification.Name = "Notification"
-    notification.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
-    
-    local frame = Instance.new("Frame")
-    frame.Name = "NotificationFrame"
-    frame.Size = UDim2.new(0, 300, 0, 50)
-    frame.Position = UDim2.new(0.5, -150, 0.1, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    frame.BorderSizePixel = 0
-    frame.Parent = notification
-    
-    local label = Instance.new("TextLabel")
-    label.Name = "MessageLabel"
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextSize = 18
-    label.Font = Enum.Font.GothamBold
-    label.Text = message
-    label.Parent = frame
-    
-    -- Animate and destroy
-    game:GetService("Debris"):AddItem(notification, 3)
+    -- Implementation depends on your game's UI system
+    print("[NOTIFICATION]", message)
+    -- You could show this in a UI element
 end
 
-function InteractionSystem:SetupInventoryKey()
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        if input.KeyCode == Enum.KeyCode.I then
-            self:OpenInventory()
-        end
-    end)
-end
-
-function InteractionSystem:OpenInventory()
-    -- Fetch inventory from server
-    local inventory = self.remoteEvents.GetInventory:InvokeServer()
-    if not inventory or not inventory.success then
-        self:ShowNotification("Could not load inventory")
-        return
-    end
-    
-    -- Use the lazily loaded InventoryUI module to display inventory
-    if LazyLoadModules.InventoryUI.Show then
-        LazyLoadModules.InventoryUI.Show(inventory.inventory, inventory.currency)
-    else
-        self:ShowNotification("Inventory system is not available")
-    end
+function InteractionSystem:ShowLocalNotification(message)
+    -- For local notifications when server communication fails
+    print("[LOCAL NOTIFICATION]", message)
+    -- Show in UI similar to ShowNotification
 end
 
 return InteractionSystem
