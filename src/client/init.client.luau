@@ -100,9 +100,9 @@ local function safeInitialize(module, name)
 end
 
 -- Initialize UI components with error handling
-local inventoryUI = safeInitialize(SharedModule.InventoryUI, "InventoryUI")
-local purchaseDialog = safeInitialize(SharedModule.PurchaseDialog, "PurchaseDialog")
+-- local inventoryUI = safeInitialize(SharedModule.InventoryUI, "InventoryUI") -- Handled by client_core.luau
+-- local purchaseDialog = safeInitialize(SharedModule.PurchaseDialog, "PurchaseDialog") -- Handled by client_core.luau
 local currencyUI = safeInitialize(SharedModule.CurrencyUI, "CurrencyUI")
-local placedItemDialog = safeInitialize(SharedModule.PlacedItemDialog, "PlacedItemDialog")
+-- local placedItemDialog = safeInitialize(SharedModule.PlacedItemDialog, "PlacedItemDialog") -- Handled by client_core.luau
 
 print("Client initialized successfully")
