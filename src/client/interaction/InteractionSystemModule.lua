@@ -1,9 +1,6 @@
---[[
-    InteractionSystemModule - ForeverBuild2
-    Enhanced version with better error handling and debug control
-    
-    This module handles all player interactions with placed items in the game.
-]]
+-- InteractionSystemModule - ForeverBuild2
+-- Enhanced version with better error handling and debug control
+-- This module handles all player interactions with placed items in the game.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
@@ -782,7 +779,7 @@ function InteractionSystem:ShowInteractionMenu(interactions)
     if not interactions or #interactions == 0 or not self.currentTarget then return end
     
     -- Try to use PlacedItemDialog if available
-    local PlacedItemDialog = LazyLoadModules.PlacedItemDialog
+    local PlacedItemDialog = LazyLoadModules.require("PlacedItemDialog")
     if PlacedItemDialog and typeof(PlacedItemDialog.Show) == "function" then
         PlacedItemDialog.Show(self.currentTarget, interactions, function(action)
             self:PerformInteraction(self.currentTarget, action)
@@ -1095,7 +1092,7 @@ end
 
 function InteractionSystem:ToggleInventory()
     -- Ensure InventoryUI is loaded
-    local InventoryUI = LazyLoadModules.InventoryUI
+    local InventoryUI = LazyLoadModules.require("InventoryUI")
     if InventoryUI and typeof(InventoryUI.ToggleUI) == "function" then
         InventoryUI.ToggleUI()
     else
