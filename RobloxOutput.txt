@@ -1,184 +1,52 @@
-  22:36:30.928  Workspace.World_Items.Rare House.House.Cute Closet.#NBK || Adidas Cap.Thank you letter.:1: Incomplete statement: expected assignment or a function call  -  Studio - Thank you letter.:1
-  22:36:30.929  Server initialization script starting...  -  Server - init:12
-  22:36:30.930  Created standard remote events and functions  -  Server - init:43
-  22:36:30.930  server.inits: Attempting to require shared module  -  Server - init:47
-  22:36:30.930  server.inits: Found shared module at ReplicatedStorage.shared  -  Server - init:51
-  22:36:30.930  server.inits: Failed to require SharedModule: Attempted to call require with invalid argument(s).  -  Server - init:57
-  22:36:30.930  server.inits: Initializing server managers  -  Server - init:76
-  22:36:30.930  server.inits: GameManager module not available  -  Server - init:92
-  22:36:30.930  server.inits: InventoryManager module not available  -  Server - init:108
-  22:36:30.930  server.inits: CurrencyManager module not available  -  Server - init:124
-  22:36:30.931  server.inits: PlacementManager module not available  -  Server - init:140
-  22:36:30.931  server.inits: InteractionManager module not available  -  Server - init:161
-  22:36:30.931  Server initialization completed successfully  -  Server - init:336
-  22:36:31.004  Player joining: Xdjpearsonx  -  Server - init:297
-  22:36:31.055  Client initialization script starting...  -  Client - init:6
-  22:36:31.055  Found shared module at ReplicatedStorage.shared  -  Client - init:43
-  22:36:31.056  Failed to require SharedModule:  Attempted to call require with invalid argument(s).  -  Client - init:49
-  22:36:31.056  Found client_core ModuleScript: Players.Xdjpearsonx.PlayerScripts.client.client_core  -  Client - init:74
-  22:36:31.056  client_core.luau: Attempting to require shared module  -  Client - client_core:11
-  22:36:31.057  client_core.luau: Found shared module at ReplicatedStorage.shared  -  Client - client_core:15
-  22:36:31.057  client_core.luau: Failed to require SharedModule: Attempted to call require with invalid argument(s).  -  Client - client_core:21
-  22:36:31.057  client_core.luau: Creating minimal SharedModule fallback  -  Client - client_core:22
-  22:36:31.057  client_core.luau: Getting references to modules  -  Client - client_core:53
-  22:36:31.057  client_core.luau: Module references:  -  Client - client_core:62
-  22:36:31.057    - GameManagerModule: nil  -  Client - client_core:63
-  22:36:31.057    - Constants: loaded  -  Client - client_core:64
-  22:36:31.057    - PurchaseDialogModule: nil  -  Client - client_core:65
-  22:36:31.057    - InventoryUIModule: nil  -  Client - client_core:66
-  22:36:31.057    - PlacedItemDialogModule: nil  -  Client - client_core:67
-  22:36:31.058    - CurrencyUIModule: nil  -  Client - client_core:68
-  22:36:31.058  [InteractionSystem] Looking for interaction folder in: Players.Xdjpearsonx.PlayerScripts.client  -  Client - client_core:138
-  22:36:31.058  [InteractionSystem] Found interaction folder: Players.Xdjpearsonx.PlayerScripts.client.interaction  -  Client - client_core:142
-  22:36:31.058  [InteractionSystem] Trying to load InteractionSystemModule  -  Client - client_core:157
-  22:36:31.060  InteractionSystem module loading...  -  Client - InteractionSystemModule:10
-  22:36:31.060  [InteractionSystem] Successfully loaded LazyLoadModules  -  Client - InteractionSystemModule:38
-  22:36:31.060  [InteractionSystem] Successfully loaded Constants  -  Client - InteractionSystemModule:59
-  22:36:31.060  [InteractionSystem] Successfully loaded InteractionSystemModule  -  Client - client_core:163
-  22:36:31.061  [DEBUG in client_core.luau] Top of initializeClient()  -  Client - client_core:214
-  22:36:31.592  [DEBUG in client_core.luau] SharedModule:  ▶ {...}  -  Client - client_core:223
-  22:36:31.592  [DEBUG in client_core.luau] SharedModule.GameManager: nil  -  Client - client_core:224
-  22:36:31.592  GameManagerModule is nil in initializeClient (client_core.luau). SharedModule.GameManager was: nil  -  Client - client_core:264
-  22:36:31.592  InventoryUIModule is nil in initializeClient (client_core.luau)  -  Client - client_core:270
-  22:36:31.592  [DEBUG in client_core.luau] Remotes folder found: ReplicatedStorage.Remotes  -  Client - client_core:276
-  22:36:31.593  [DEBUG in client_core.luau] GetInventory RemoteFunction found: ReplicatedStorage.Remotes.GetInventory  -  Client - client_core:283
-  22:36:31.593  [DEBUG in client_core.luau] BuyItem RemoteEvent found.  -  Client - client_core:287
-  22:36:31.593  [DEBUG in client_core.luau] PlaceItem RemoteEvent found.  -  Client - client_core:288
-  22:36:31.593  [DEBUG in client_core.luau] InteractWithItem RemoteEvent found.  -  Client - client_core:289
-  22:36:31.593  [UI] InventoryUIModule is nil  -  Client - client_core:309
-  22:36:31.593  [UI] PlacedItemDialogModule is nil  -  Client - client_core:325
-  22:36:31.593  [UI] PurchaseDialogModule is nil  -  Client - client_core:341
-  22:36:31.593  PurchaseDialogModule or PurchaseDialogModule.Initialize is nil or not a function in initializeUI (client_core.luau). Type of Initialize: nil  -  Client - client_core:443
-  22:36:31.593  InventoryUIModule or InventoryUIModule.Initialize is nil in client_core.luau.  -  Client - client_core:450
-  22:36:31.593  [DEBUG in client_core.luau] Attempting to create InteractionSystem instance...  -  Client - client_core:470
-  22:36:31.593  [DEBUG in client_core.luau] InteractionSystem instance created:  ▶ {...}  -  Client - client_core:474
-  22:36:31.594  [DEBUG in client_core.luau] Attempting to call Initialize on InteractionSystem instance...  -  Client - client_core:476
-  22:36:31.594  [InteractionSystem] Initialize() called  -  Client - InteractionSystemModule:98
-  22:36:31.594  [InteractionSystem] UI elements created successfully  -  Client - InteractionSystemModule:203
-  22:36:31.594  [InteractionSystem] Ensuring required remotes exist  -  Client - InteractionSystemModule:1213
-  22:36:31.595  [InteractionSystem] All required remotes now exist  -  Client - InteractionSystemModule:1248
-  22:36:31.595  [InteractionSystem] Verifying required remote events and functions  -  Client - InteractionSystemModule:1171
-  22:36:31.595  [InteractionSystem] Found remote: InteractWithItem  -  Client - InteractionSystemModule:1199
-  22:36:31.595  [InteractionSystem] Found remote: PickupItem  -  Client - InteractionSystemModule:1199
-  22:36:31.595  [InteractionSystem] Found remote: CloneItem  -  Client - InteractionSystemModule:1199
-  22:36:31.595  [InteractionSystem] Found remote: GetAvailableInteractions  -  Client - InteractionSystemModule:1199
-  22:36:31.595  [InteractionSystem] Found remote: GetItemData  -  Client - InteractionSystemModule:1199
-  22:36:31.595  [InteractionSystem] All required remotes verified successfully  -  Client - InteractionSystemModule:1206
-  22:36:31.595  [InteractionSystem] Created keyboard hints UI  -  Client - InteractionSystemModule:274
-  22:36:31.595  [InteractionSystem] Input handling setup complete  -  Client - InteractionSystemModule:279
-  22:36:31.595  [InteractionSystem] Initialization complete  -  Client - InteractionSystemModule:137
-  22:36:31.595  InteractionSystem instance initialized successfully by client_core.luau  -  Client - client_core:481
-  22:36:31.596  client_core ModuleScript loaded successfully  -  Client - init:83
-  22:36:31.596  Module CurrencyUI is nil  -  Client - init:88
-  22:36:31.596  Client initialization completed successfully  -  Client - init:119
-  22:36:31.600  StarterGui script starting...  -  Client - StarterGui:9
-  22:36:31.600  StarterGui.init: Attempting to require shared module  -  Client - StarterGui:15
-  22:36:31.600  StarterGui.init: Found shared module at ReplicatedStorage.shared  -  Client - StarterGui:19
-  22:36:31.600  StarterGui.init: Failed to require SharedModule: Attempted to call require with invalid argument(s).  -  Client - StarterGui:25
-  22:36:31.600  StarterGui will not function properly without SharedModule  -  Client - StarterGui:27
-  22:36:32.884   ▶ [InteractionSystem] Mouse over: SpawnLocation (class: SpawnLocation) in Workspace.Main.Board (x96)  -  Client - InteractionSystemModule:421
-  22:36:34.485   ▶ [InteractionSystem] Mouse over: Board (class: Part) in Workspace.Main.Board (x430)  -  Client - InteractionSystemModule:421
-  22:36:41.651  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.651  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.651  [InteractionSystem] Showing price UI for: SmoothCube  -  Client - InteractionSystemModule:581
-  22:36:41.652  [InteractionSystem] Price UI displayed successfully  -  Client - InteractionSystemModule:686
-  22:36:41.652  [InteractionSystem] Updated current target to world item: SmoothCube  -  Client - InteractionSystemModule:437
-  22:36:41.668  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.668  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.684  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.684  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.701  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.701  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.716  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.717  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.733  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.733  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.750  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.750  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.769  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.769  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.783  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.784  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.801  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.801  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.816  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.816  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.833  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.833  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.849  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.849  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.867  [InteractionSystem] Getting available interactions for Glass_Cube  -  Client - InteractionSystemModule:734
-  22:36:41.867  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.867  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.868  [InteractionSystem] Showing price UI for: SmoothCube  -  Client - InteractionSystemModule:581
-  22:36:41.868  [InteractionSystem] Price UI displayed successfully  -  Client - InteractionSystemModule:686
-  22:36:41.868  [InteractionSystem] Updated current target to world item: SmoothCube  -  Client - InteractionSystemModule:437
-  22:36:41.884  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.884  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.900  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.900  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.916  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.916  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.933  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.933  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.950  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.950  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.966  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.966  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:41.983  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:41.983  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.000  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.000  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.017  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.017  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.033  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.033  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.049  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.049  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.066  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.067  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.083  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.083  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.101  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.101  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.116  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.116  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.133  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.133  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.150  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.150  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.166  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.167  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.183  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.183  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.200  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.200  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.217  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.217  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.234  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.234  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.250  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.250  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.267  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.267  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.283  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.283  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.302  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.302  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.316  [InteractionSystem] Mouse over: SmoothCube (class: UnionOperation) in Workspace.Items.Basic.Glass_Cube  -  Client - InteractionSystemModule:421
-  22:36:42.316  [InteractionSystem] Target is a world item: SmoothCube  -  Client - InteractionSystemModule:426
-  22:36:42.334  [InteractionSystem] Mouse over: Board (class: Part) in Workspace.Main.Board  -  Client - InteractionSystemModule:421
-  22:36:42.334  [InteractionSystem] Target is not a placeable item, clearing current target  -  Client - InteractionSystemModule:445
-  22:36:42.351   ▶ [InteractionSystem] Mouse over: Board (class: Part) in Workspace.Main.Board (x69)  -  Client - InteractionSystemModule:421
-  22:36:43.500  [InteractionSystem] Mouse over: OuterGlow (class: Part) in Workspace.Items.Basic.Glow.Glow_Green_Cube  -  Client - InteractionSystemModule:421
-  22:36:43.500  [InteractionSystem] Target is a world item: OuterGlow  -  Client - InteractionSystemModule:426
-  22:36:43.500  [InteractionSystem] Showing price UI for: OuterGlow  -  Client - InteractionSystemModule:581
-  22:36:43.501  [InteractionSystem] Price UI displayed successfully  -  Client - InteractionSystemModule:686
-  22:36:43.501  [InteractionSystem] Updated current target to world item: OuterGlow  -  Client - InteractionSystemModule:437
-  22:36:43.517  [InteractionSystem] Mouse over: Board (class: Part) in Workspace.Main.Board  -  Client - InteractionSystemModule:421
-  22:36:43.517  [InteractionSystem] Target is not a placeable item, clearing current target  -  Client - InteractionSystemModule:445
-  22:36:43.533  [InteractionSystem] Mouse over: Terrain (class: Terrain) in Workspace  -  Client - InteractionSystemModule:421
-  22:36:43.551   ▶ [InteractionSystem] Mouse over: Meshes/RING! (class: MeshPart) in Workspace.World_Items.Level 2 House (x65)  -  Client - InteractionSystemModule:421
-  22:36:44.754  [InteractionSystem] Cleanup completed  -  Client - InteractionSystemModule:398
-  22:36:44.979  Disconnect from ::ffff:127.0.0.1|59755  -  Studio
-  22:36:44.982  Player leaving: Xdjpearsonx  -  Server - init:320
+  22:53:08.437  Workspace.World_Items.Rare House.House.Cute Closet.#NBK || Adidas Cap.Thank you letter.:1: Incomplete statement: expected assignment or a function call  -  Studio - Thank you letter.:1
+  22:53:08.438  Server initialization script starting...  -  Server - init:12
+  22:53:08.438  Created standard remote events and functions  -  Server - init:43
+  22:53:08.438  server.inits: Attempting to require shared module  -  Server - init:47
+  22:53:08.438  server.inits: Found shared module at ReplicatedStorage.shared  -  Server - init:51
+  22:53:08.439  server.inits: Failed to require SharedModule: Attempted to call require with invalid argument(s).  -  Server - init:57
+  22:53:08.439  server.inits: Initializing server managers  -  Server - init:76
+  22:53:08.439  server.inits: GameManager module not available  -  Server - init:92
+  22:53:08.439  server.inits: InventoryManager module not available  -  Server - init:108
+  22:53:08.439  server.inits: CurrencyManager module not available  -  Server - init:124
+  22:53:08.439  server.inits: PlacementManager module not available  -  Server - init:140
+  22:53:08.440  server.inits: InteractionManager module not available  -  Server - init:161
+  22:53:08.440  Server initialization completed successfully  -  Server - init:336
+  22:53:08.515  Player joining: Xdjpearsonx  -  Server - init:297
+  22:53:08.583  Client initialization script starting...  -  Client - init:6
+  22:53:08.583  Found shared module at ReplicatedStorage.shared  -  Client - init:43
+  22:53:08.583  Failed to require SharedModule:  Attempted to call require with invalid argument(s).  -  Client - init:49
+  22:53:08.583  Found client_core ModuleScript: Players.Xdjpearsonx.PlayerScripts.client.client_core  -  Client - init:74
+  22:53:08.584  client_core.luau: Attempting to require shared module  -  Client - client_core:11
+  22:53:08.584  client_core.luau: Found shared module at ReplicatedStorage.shared  -  Client - client_core:15
+  22:53:08.584  client_core.luau: Failed to require SharedModule: Attempted to call require with invalid argument(s).  -  Client - client_core:21
+  22:53:08.585  client_core.luau: Creating minimal SharedModule fallback  -  Client - client_core:22
+  22:53:08.585  client_core.luau: Getting references to modules  -  Client - client_core:53
+  22:53:08.585  client_core.luau: Module references:  -  Client - client_core:62
+  22:53:08.585    - GameManagerModule: nil  -  Client - client_core:63
+  22:53:08.585    - Constants: loaded  -  Client - client_core:64
+  22:53:08.585    - PurchaseDialogModule: nil  -  Client - client_core:65
+  22:53:08.585    - InventoryUIModule: nil  -  Client - client_core:66
+  22:53:08.585    - PlacedItemDialogModule: nil  -  Client - client_core:67
+  22:53:08.585    - CurrencyUIModule: nil  -  Client - client_core:68
+  22:53:08.585  [InteractionSystem] Looking for interaction folder in: Players.Xdjpearsonx.PlayerScripts.client  -  Client - client_core:138
+  22:53:08.585  [InteractionSystem] Found interaction folder: Players.Xdjpearsonx.PlayerScripts.client.interaction  -  Client - client_core:142
+  22:53:08.586  [InteractionSystem] Trying to load InteractionSystemModule  -  Client - client_core:157
+  22:53:08.587  InteractionSystem module loading...  -  Client - InteractionSystemModule:10
+  22:53:08.587  Attempted to call require with invalid argument(s).  -  Client - InteractionSystemModule:13
+  22:53:08.587  Stack Begin  -  Studio
+  22:53:08.587  Script 'Players.Xdjpearsonx.PlayerScripts.client.interaction.InteractionSystemModule', Line 13  -  Studio - InteractionSystemModule:13
+  22:53:08.587  Stack End  -  Studio
+  22:53:08.588  [InteractionSystem] Failed to require InteractionSystemModule: Requested module experienced an error while loading  -  Client - client_core:171
+  22:53:08.588  [InteractionSystem] Trying to load InteractionSystemModule_enhanced  -  Client - client_core:157
+  22:53:09.172  StarterGui script starting...  -  Client - StarterGui:9
+  22:53:09.172  StarterGui.init: Attempting to require shared module  -  Client - StarterGui:15
+  22:53:09.172  StarterGui.init: Found shared module at ReplicatedStorage.shared  -  Client - StarterGui:19
+  22:53:09.173  StarterGui.init: Failed to require SharedModule: Attempted to call require with invalid argument(s).  -  Client - StarterGui:25
+  22:53:09.173  StarterGui will not function properly without SharedModule  -  Client - StarterGui:27
+  22:53:14.178  Infinite yield possible on 'ReplicatedStorage:WaitForChild("Shared")'  -  Studio
+  22:53:14.179  Stack Begin  -  Studio
+  22:53:14.179  Script 'Players.Xdjpearsonx.PlayerScripts.client.interaction.InteractionSystemModule_enhanced', Line 34  -  Studio - InteractionSystemModule_enhanced:34
+  22:53:14.179  Script 'Players.Xdjpearsonx.PlayerScripts.client.interaction.InteractionSystemModule_enhanced', Line 33  -  Studio - InteractionSystemModule_enhanced:33
+  22:53:14.179  Stack End  -  Studio
+  22:53:31.289  Disconnect from ::ffff:127.0.0.1|64933  -  Studio
+  22:53:31.293  Player leaving: Xdjpearsonx  -  Server - init:320

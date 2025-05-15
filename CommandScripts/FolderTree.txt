@@ -1,0 +1,10 @@
+local function printTree(obj, indent)
+    indent = indent or ""
+    print(indent .. obj.Name .. " (" .. obj.ClassName .. ")")
+    for _, child in ipairs(obj:GetChildren()) do
+        printTree(child, indent .. "  ")
+    end
+end
+
+-- Example: Print everything under ReplicatedStorage
+printTree(game:GetService("ReplicatedStorage"))

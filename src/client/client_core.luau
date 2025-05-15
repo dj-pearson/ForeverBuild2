@@ -140,11 +140,11 @@ if localScriptInstance then
     
     if interactionFolder then
         print("[InteractionSystem] Found interaction folder: " .. interactionFolder:GetFullName())
-        
-        -- Try loading the main interaction module first, then fallbacks if needed
+          -- Try loading the main interaction module first, then fallbacks if needed
         local moduleScripts = {
-            {name = "InteractionSystemModule", isEmergency = false}, -- Use the original (now fixed) module
-            {name = "InteractionSystemModule_enhanced", isEmergency = false}, -- Only use enhanced as backup
+            {name = "InteractionSystemModule_fixed", isEmergency = false}, -- Use our new fixed module
+            {name = "InteractionSystemModule", isEmergency = false}, -- Try original module
+            {name = "InteractionSystemModule_enhanced", isEmergency = false}, -- Enhanced as backup
             {name = "InteractionSystemModule_emergency", isEmergency = true} -- Last resort
         }
         
@@ -518,7 +518,7 @@ else
 end
 
 -- Return API for other scripts
-return {
+local clientModule = {
     GetGameManager = function() return GameManager end,
     ShowInventory = function()
         if InventoryUIModule and InventoryUIModule.Show then
@@ -528,3 +528,57 @@ return {
         end
     end
 }
+
+-- Function to reload the interaction system
+function clientModule.reloadInteractionSystem()
+    print("Reloading interaction system...")
+    
+    -- Clean up existing interaction system if needed
+    if InteractionSystem and typeof(InteractionSystem) == "table" and InteractionSystem.cleanup then
+        print("Cleaning up existing interaction system...")
+        InteractionSystem.cleanup()
+    end
+    
+    -- Reset the InteractionSystem variable
+    InteractionSystem = nil
+    
+    -- Re-attempt to load an interaction module
+    local interactionFolder = script.Parent:FindFirstChild("interaction")
+    if interactionFolder then
+        -- Try loading modules in order of preference
+        local moduleScripts = {
+            {name = "InteractionSystemModule_fixed", isEmergency = false},
+            {name = "InteractionSystemModule", isEmergency = false},
+            {name = "InteractionSystemModule_enhanced", isEmergency = false},
+            {name = "InteractionSystemModule_emergency", isEmergency = true}
+        }
+        
+        local moduleLoaded = false
+        
+        for _, moduleInfo in ipairs(moduleScripts) do
+            local moduleScript = interactionFolder:FindFirstChild(moduleInfo.name)
+            if moduleScript then
+                print("[InteractionSystem] Trying to load " .. moduleInfo.name)
+                local success, result = pcall(require, moduleScript)
+                if success then
+                    InteractionSystem = result
+                    print("[InteractionSystem] Successfully loaded " .. moduleInfo.name)
+                    moduleLoaded = true
+                    break
+                else
+                    warn("[InteractionSystem] Failed to require " .. moduleInfo.name .. ": " .. tostring(result))
+                end
+            end
+        end
+        
+        if not moduleLoaded then
+            warn("[InteractionSystem] Failed to load any interaction module")
+        end
+    else
+        warn("[InteractionSystem] Interaction folder not found")
+    end
+    
+    return InteractionSystem ~= nil
+end
+
+return clientModule

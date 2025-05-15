@@ -116,4 +116,24 @@ end
 -- Initialize CurrencyUI only (other UIs are handled by client_core)
 local currencyUI = safeInitialize(SharedModule.CurrencyUI, "CurrencyUI")
 
+-- Initialize the new Interaction System
+local InteractionSystemPath = script.Parent:WaitForChild("interaction"):WaitForChild("InteractionSystemModule_new")
+local success, InteractionSystem = pcall(require, InteractionSystemPath)
+
+if not success then
+    warn("Failed to load InteractionSystemModule_new. Error: ", tostring(InteractionSystem))
+else
+    print("Successfully loaded new InteractionSystem module")
+    
+    local initSuccess, errorMsg = pcall(function()
+        InteractionSystem:Initialize() -- Initialize the interaction system
+    end)
+    
+    if not initSuccess then
+        warn("Failed to initialize InteractionSystem: ", errorMsg)
+    else
+        print("InteractionSystem initialized successfully")
+    end
+end
+
 print("Client initialization completed successfully")

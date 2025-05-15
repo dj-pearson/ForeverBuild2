@@ -161,6 +161,26 @@ else
     warn("server.inits: InteractionManager module not available")
 end
 
+-- Initialize ItemPurchaseHandler
+local ItemPurchaseHandlerPath = script.Parent:WaitForChild("ItemPurchaseHandler")
+local success, ItemPurchaseHandler = pcall(require, ItemPurchaseHandlerPath)
+
+if not success then
+    warn("server.inits: Failed to load ItemPurchaseHandler. Error: ", tostring(ItemPurchaseHandler))
+else
+    print("server.inits: Successfully loaded ItemPurchaseHandler module")
+    
+    local initSuccess, errorMsg = pcall(function()
+        ItemPurchaseHandler:Initialize() -- Initialize the purchase handler
+    end)
+    
+    if not initSuccess then
+        warn("server.inits: Failed to initialize ItemPurchaseHandler: ", errorMsg)
+    else
+        print("server.inits: ItemPurchaseHandler initialized successfully")
+    end
+end
+
 -- Setup Remote Function Handlers
 -- GetInventory
 local getInventoryRemote = Remotes:FindFirstChild("GetInventory")

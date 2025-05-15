@@ -48,6 +48,14 @@ Constants.ITEM_PRICES = {
         INGAME = 5, -- 5 coins
         ROBUX = 5 -- 5 Robux
     },
+    LEVEL_1 = {
+        INGAME = 10, -- 10 coins
+        ROBUX = 10 -- 10 Robux
+    },
+    LEVEL_2 = {
+        INGAME = 25, -- 25 coins
+        ROBUX = 25 -- 25 Robux
+    },
     SECONDARY = {
         INGAME = 15, -- 15 coins
         ROBUX = 15 -- 15 Robux
@@ -59,6 +67,18 @@ Constants.ITEM_PRICES = {
     EXCLUSIVE = {
         INGAME = 1000, -- 1000 coins
         ROBUX = 1000 -- 1000 Robux
+    },
+    WEAPONS = {
+        INGAME = 500, -- 500 coins
+        ROBUX = 500 -- 500 Robux
+    },
+    RARE_DROP = {
+        INGAME = 800, -- 800 coins
+        ROBUX = 800 -- 800 Robux
+    },
+    FREE_ITEMS = {
+        INGAME = 0, -- 0 coins
+        ROBUX = 0 -- 0 Robux
     }
 }
 
@@ -104,9 +124,21 @@ Constants.ITEMS = {
         tier = "BASIC",
         price = {INGAME = 5, ROBUX = 5}
     },
+    ["Level_1"] = {
+        icon = "rbxassetid://3284930700",
+        description = "A Level 1 item.",
+        tier = "LEVEL_1",
+        price = {INGAME = 10, ROBUX = 10}
+    },
+    ["Level_2"] = {
+        icon = "rbxassetid://3284930700",
+        description = "A Level 2 item.",
+        tier = "LEVEL_2",
+        price = {INGAME = 25, ROBUX = 25}
+    },
     ["Secondary"] = {
         icon = "rbxassetid://3284930700",
-        description = "A Secodandary Item.",
+        description = "A Secondary Item.",
         tier = "SECONDARY",
         price = {INGAME = 15, ROBUX = 15}
     },
@@ -114,15 +146,45 @@ Constants.ITEMS = {
         icon = "rbxassetid://3284930992",
         description = "A rare Item.",
         tier = "RARE",
-        price = {INGAME = 500, ROBUX = 500}
+        price = {INGAME = 100, ROBUX = 100}
     },
     ["Exclusive"] = {
         icon = "rbxassetid://3284931476",
         description = "An exclusive Item.",
         tier = "EXCLUSIVE",
         price = {INGAME = 1000, ROBUX = 1000}
+    },
+    ["Weapons"] = {
+        icon = "rbxassetid://3284931476",
+        description = "A weapon item.",
+        tier = "WEAPONS",
+        price = {INGAME = 500, ROBUX = 500}
+    },
+    ["Rare_Drop"] = {
+        icon = "rbxassetid://3284931476",
+        description = "A rare drop item.",
+        tier = "RARE_DROP",
+        price = {INGAME = 800, ROBUX = 800}
+    },
+    ["Free_Items"] = {
+        icon = "rbxassetid://3284931476",
+        description = "A free item.",
+        tier = "FREE_ITEMS",
+        price = {INGAME = 0, ROBUX = 0}
     }
     -- Add more items as needed
+}
+
+-- Developer Products for Item Tiers
+Constants.TIER_PRODUCTS = {
+    BASIC = {id = "tier_basic", assetId = 3285357280, robux = 5},
+    LEVEL_1 = {id = "tier_level1", assetId = 3285357280, robux = 10},
+    LEVEL_2 = {id = "tier_level2", assetId = 3285357280, robux = 25},
+    SECONDARY = {id = "tier_secondary", assetId = 3285387112, robux = 15},
+    RARE = {id = "tier_rare", assetId = 3285387112, robux = 100},
+    EXCLUSIVE = {id = "tier_exclusive", assetId = 3285387781, robux = 1000},
+    WEAPONS = {id = "tier_weapons", assetId = 3285387781, robux = 500},
+    RARE_DROP = {id = "tier_rare_drop", assetId = 3285387781, robux = 800}
 }
 
 return Constants
