@@ -422,7 +422,8 @@ function InteractionSystem:UpdateCurrentTarget()
         targetInfo = targetInfo .. string.format(" in %s", target.Parent:GetFullName())
     end
     print("[InteractionSystem] Mouse over:", targetInfo)
-      -- Check items folder for purchasable items
+    
+    -- Check items folder for purchasable items
     local itemsFolder = workspace:FindFirstChild("Items")
     if itemsFolder and target:IsDescendantOf(itemsFolder) then
         print("[InteractionSystem] Target is a world item:", target.Name)
@@ -440,62 +441,13 @@ function InteractionSystem:UpdateCurrentTarget()
         return
     end
     
-    -- Check for special items in Main folder (like Board)
-    local mainFolder = workspace:FindFirstChild("Main")
-    if mainFolder and target:IsDescendantOf(mainFolder) then
-        -- Get the top level object in Main that this target belongs to
-        local current = target
-        local topLevelObject = nil
-        
-        while current and current ~= workspace do
-            if current.Parent == mainFolder then
-                topLevelObject = current
-                break
-            end
-            current = current.Parent
-        end
-        
-        if topLevelObject then
-            print("[InteractionSystem] Target is a main item:", topLevelObject.Name)
-            
-            -- If this is already our current target, no need to update
-            if self.currentTarget and self.currentTarget.id == topLevelObject.Name and 
-               self.currentTarget.model == topLevelObject then
-                return
-            end
-            
-            -- Otherwise, update current target and show UI
-            self.currentTarget = { id = topLevelObject.Name, model = topLevelObject }
-            self:ShowInteractionUI(self.currentTarget)
-            print("[InteractionSystem] Updated current target to main item:", topLevelObject.Name)
-            return
-        end
-    end
-    
     -- Check for placed items
     local placedItem = self:GetPlacedItemFromPart(target)
-    if placedItem then
-        print("[InteractionSystem] Target is a placed item:", placedItem.id)
-        
-        -- If this is already our current target, no need to update
-        if self.currentTarget and self.currentTarget.id == placedItem.id then
-            return
-        end
-        
-        -- Otherwise, update current target and show UI
-        self.currentTarget = placedItem
-        self:ShowInteractionUI(placedItem)
-        return
-    end
-    
-    -- If we reach here, the target is not an interactive item
-    if self.currentTarget then
-        print("[InteractionSystem] Target is not a placeable item, clearing current target")
-        self:ClearCurrentTarget()
-    end
-    
-    -- Check if we received a placedItem parameter
     if not placedItem then
+        if self.currentTarget then
+            print("[InteractionSystem] Target is not a placeable item, clearing current target")
+            self:ClearCurrentTarget()
+        end
         return
     end
     
@@ -506,26 +458,10 @@ function InteractionSystem:UpdateCurrentTarget()
     
     -- Check if player is close enough to interact
     if self.player.Character and self.player.Character:FindFirstChild("HumanoidRootPart") then
-        local primaryPart = nil
-        
-        if placedItem.model:IsA("Model") and placedItem.model.PrimaryPart then
-            primaryPart = placedItem.model.PrimaryPart
-        elseif placedItem.model:IsA("BasePart") then
-            primaryPart = placedItem.model
-        else
-            -- Try to find a suitable part to use
-            primaryPart = placedItem.model:FindFirstChildWhichIsA("BasePart")
-        end
-        
-        if primaryPart then
-            local distance = (primaryPart.Position - self.player.Character.HumanoidRootPart.Position).Magnitude
-            if distance > self.interactionDistance then
-                print("[InteractionSystem] Target too far away (" .. tostring(math.floor(distance)) .. " studs), max distance is " .. tostring(self.interactionDistance))
-                self:ClearCurrentTarget()
-                return
-            end
-        else
-            print("[InteractionSystem] Unable to determine distance to target, no valid part found")
+        local distance = (target.Position - self.player.Character.HumanoidRootPart.Position).Magnitude
+        if distance > self.interactionDistance then
+            print("[InteractionSystem] Target too far away (" .. tostring(math.floor(distance)) .. " studs), max distance is " .. tostring(self.interactionDistance))
+            self:ClearCurrentTarget()
             return
         end
     end
@@ -557,16 +493,6 @@ function InteractionSystem:GetPlacedItemFromPart(part)
                 model = current
             }
         end
-        
-        -- Also check for parts that might not have the item attribute but are valid targets
-        -- This is especially important for parts in the Main folder
-        if current.Parent and current.Parent.Name == "Main" then
-            return {
-                id = current.Name,
-                model = current
-            }
-        end
-        
         current = current.Parent
         depth = depth + 1
     end
@@ -583,15 +509,11 @@ function InteractionSystem:ShowInteractionUI(placedItem)
     print("[InteractionSystem] Showing interaction UI for:", placedItem.id)
     
     -- Attach BillboardGui to the item model's PrimaryPart
-    local primaryPart = nil
-    if placedItem.model:IsA("Model") and placedItem.model.PrimaryPart then
-        primaryPart = placedItem.model.PrimaryPart
-    elseif placedItem.model:IsA("BasePart") then
-        primaryPart = placedItem.model
-    else
+    local primaryPart = placedItem.model.PrimaryPart
+    if not primaryPart then
         -- Try to find a suitable part to use as PrimaryPart
         primaryPart = placedItem.model:FindFirstChildWhichIsA("BasePart")
-        if primaryPart and placedItem.model:IsA("Model") then
+        if primaryPart then
             -- Set it as primary part for future use
             placedItem.model.PrimaryPart = primaryPart
             print("[InteractionSystem] Set PrimaryPart for model:", primaryPart.Name)
@@ -788,35 +710,10 @@ function InteractionSystem:AttemptInteraction()
             -- Display a local notification since we can't use the server
             self:ShowLocalNotification("Can't pick up item: Remote event missing")
         end
-        return true
+        return
     end
     
-    -- Check if this is a main folder item (like Board)
-    local mainFolder = workspace:FindFirstChild("Main")
-    if mainFolder and self.currentTarget.model and 
-       self.currentTarget.model:IsDescendantOf(mainFolder) then
-        print("[InteractionSystem] Attempting to interact with main item:", self.currentTarget.id)
-        
-        -- For main items, we want to trigger their specific interaction
-        -- Send event to server
-        local interactEvent = self.remoteEvents:FindFirstChild("InteractWithMain")
-        if interactEvent then
-            interactEvent:FireServer(self.currentTarget.id)
-            print("[InteractionSystem] Sending InteractWithMain event to server for", self.currentTarget.id)
-            return true
-        else
-            warn("[InteractionSystem] InteractWithMain remote event not found")
-            -- Try to create it if it doesn't exist
-            interactEvent = Instance.new("RemoteEvent")
-            interactEvent.Name = "InteractWithMain"
-            interactEvent.Parent = self.remoteEvents
-            interactEvent:FireServer(self.currentTarget.id)
-            print("[InteractionSystem] Created and fired InteractWithMain event")
-            return true
-        end
-    end
-
-    -- For placed items, we want to interact with them
+    -- Handle interaction with placed items
     print("[InteractionSystem] Attempting to interact with placed item:", self.currentTarget.id)
     local interactions = self:GetAvailableInteractions(self.currentTarget)
     if not interactions or #interactions == 0 then
@@ -1330,7 +1227,6 @@ function InteractionSystem:EnsureRemotesExist()
         { name = "InteractWithItem", type = "RemoteEvent" },
         { name = "PickupItem", type = "RemoteEvent" },
         { name = "CloneItem", type = "RemoteEvent" },
-        { name = "InteractWithMain", type = "RemoteEvent" },
         { name = "GetAvailableInteractions", type = "RemoteFunction" },
         { name = "GetItemData", type = "RemoteFunction" }
     }
