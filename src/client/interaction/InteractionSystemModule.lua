@@ -9,6 +9,11 @@ local UserInputService = game:GetService("UserInputService")
 -- Add debug print to confirm module is loading
 print("InteractionSystem module loading...")
 
+-- Import the SharedModule to access all the shared resources
+local SharedModule = require(ReplicatedStorage:WaitForChild("shared"))
+local LazyLoadModules = SharedModule.LazyLoadModules
+local Constants = SharedModule.Constants
+
 -- Limit debug logging with a toggle
 local DEBUG_VERBOSE = false -- Set to true for detailed logging
 local function debugLog(...)
@@ -17,36 +22,19 @@ local function debugLog(...)
     end
 end
 
--- Safely load dependencies with fallbacks
-local LazyLoadModules
-local Constants
-
--- Try to load LazyLoadModules
-local lazyLoadSuccess, lazyLoadError = pcall(function()
-    LazyLoadModules = require(ReplicatedStorage.shared.core.LazyLoadModules)
-    return true
-end)
-
-if not lazyLoadSuccess then
-    warn("[InteractionSystem] Failed to load LazyLoadModules:", lazyLoadError)
-    -- Create a minimal fallback implementation
+-- Verify that our dependencies are loaded
+if not LazyLoadModules then
+    warn("[InteractionSystem] LazyLoadModules not available from SharedModule, creating fallback")
     LazyLoadModules = {
         register = function() end,
         require = function() return {} end
     }
 else
-    print("[InteractionSystem] Successfully loaded LazyLoadModules")
+    print("[InteractionSystem] Successfully got LazyLoadModules from SharedModule")
 end
 
--- Try to load Constants
-local constantsSuccess, constantsError = pcall(function()
-    Constants = require(ReplicatedStorage.shared.core.Constants)
-    return true
-end)
-
-if not constantsSuccess then
-    warn("[InteractionSystem] Failed to load Constants:", constantsError)
-    -- Create fallback constants
+if not Constants then
+    warn("[InteractionSystem] Constants not available from SharedModule, creating fallback")
     Constants = {
         UI_COLORS = {
             PRIMARY = Color3.fromRGB(0, 170, 255),
@@ -56,15 +44,16 @@ if not constantsSuccess then
         ITEMS = {} -- Empty items table as fallback
     }
 else
-    print("[InteractionSystem] Successfully loaded Constants")
+    print("[InteractionSystem] Successfully got Constants from SharedModule")
 end
 
 -- Register UI modules for lazy loading if LazyLoadModules is available
 if typeof(LazyLoadModules.register) == "function" then
     pcall(function()
-        LazyLoadModules.register("PurchaseDialog", ReplicatedStorage.shared.core.ui.PurchaseDialog)
-        LazyLoadModules.register("InventoryUI", ReplicatedStorage.shared.core.ui.InventoryUI)
-        LazyLoadModules.register("PlacedItemDialog", ReplicatedStorage.shared.core.ui.PlacedItemDialog)
+        -- Use SharedModule's references to UI modules to avoid path issues
+        LazyLoadModules.register("PurchaseDialog", SharedModule.PurchaseDialog)
+        LazyLoadModules.register("InventoryUI", SharedModule.InventoryUI)
+        LazyLoadModules.register("PlacedItemDialog", SharedModule.PlacedItemDialog)
     end)
 end
 
@@ -199,595 +188,547 @@ function InteractionSystem:CreateUI()
         layout.Padding = UDim.new(0, 5)
         layout.Parent = container
     end
-    
-    print("[InteractionSystem] UI elements created successfully")
 end
 
 function InteractionSystem:SetupInputHandling()
-    -- Handle interaction input (E key)
-    local inputConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    -- Set up input handling for "E" key to trigger interaction
+    local connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if gameProcessed then return end
         
+        -- Check for E key press
         if input.KeyCode == Enum.KeyCode.E then
-            print("[InteractionSystem] E key pressed - attempting interaction")
             self:AttemptInteraction()
-        elseif input.KeyCode == Enum.KeyCode.I then
-            print("[InteractionSystem] I key pressed - toggling inventory")
-            self:ToggleInventory()
         end
     end)
     
-    -- Add keyboard hints UI
-    local playerGui = self.player:FindFirstChild("PlayerGui")
-    if playerGui then
-        local hintsGui = playerGui:FindFirstChild("KeyboardHintsGui")
-        if not hintsGui then
-            hintsGui = Instance.new("ScreenGui")
-            hintsGui.Name = "KeyboardHintsGui"
-            hintsGui.ResetOnSpawn = false
-            hintsGui.Parent = playerGui
-            
-            local hintsFrame = Instance.new("Frame")
-            hintsFrame.Size = UDim2.new(0, 200, 0, 80)
-            hintsFrame.Position = UDim2.new(0, 10, 1, -90)
-            hintsFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
-            hintsFrame.BackgroundTransparency = 0.3
-            hintsFrame.BorderSizePixel = 0
-            hintsFrame.Parent = hintsGui
-            
-            local corner = Instance.new("UICorner")
-            corner.CornerRadius = UDim.new(0, 6)
-            corner.Parent = hintsFrame
-            
-            local title = Instance.new("TextLabel")
-            title.Size = UDim2.new(1, 0, 0, 25)
-            title.Position = UDim2.new(0, 0, 0, 0)
-            title.BackgroundTransparency = 1
-            title.TextColor3 = Color3.fromRGB(255, 255, 255)
-            title.TextSize = 14
-            title.Font = Enum.Font.GothamBold
-            title.Text = "CONTROLS"
-            title.Parent = hintsFrame
-            
-            local eKeyHint = Instance.new("TextLabel")
-            eKeyHint.Size = UDim2.new(1, -20, 0, 20)
-            eKeyHint.Position = UDim2.new(0, 10, 0, 30)
-            eKeyHint.BackgroundTransparency = 1
-            eKeyHint.TextColor3 = Color3.fromRGB(255, 255, 255)
-            eKeyHint.TextSize = 14
-            eKeyHint.Font = Enum.Font.Gotham
-            eKeyHint.TextXAlignment = Enum.TextXAlignment.Left
-            eKeyHint.Text = "E - Interact with objects"
-            eKeyHint.Parent = hintsFrame
-            
-            local iKeyHint = Instance.new("TextLabel")
-            iKeyHint.Size = UDim2.new(1, -20, 0, 20)
-            iKeyHint.Position = UDim2.new(0, 10, 0, 50)
-            iKeyHint.BackgroundTransparency = 1
-            iKeyHint.TextColor3 = Color3.fromRGB(255, 255, 255)
-            iKeyHint.TextSize = 14
-            iKeyHint.Font = Enum.Font.Gotham
-            iKeyHint.TextXAlignment = Enum.TextXAlignment.Left
-            iKeyHint.Text = "I - Open inventory"
-            iKeyHint.Parent = hintsFrame
-            
-            print("[InteractionSystem] Created keyboard hints UI")
-        end
-    end
+    -- Store connection for cleanup
+    table.insert(self.connections, connection)
     
-    table.insert(self.connections, inputConnection)
-    print("[InteractionSystem] Input handling setup complete")
-end
-
-function InteractionSystem:SetupAlternativeInteraction()
-    -- For devices without a mouse, create a proximity-based interaction system
-    local heartbeatConnection = game:GetService("RunService").Heartbeat:Connect(function()
-        if not self.player.Character then return end
+    -- Also track mouse movement for targeting
+    local moveConnection = UserInputService.InputChanged:Connect(function(input, gameProcessed)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            self:UpdateCurrentTarget()
+        end
+    end)
+    
+    table.insert(self.connections, moveConnection)
+    
+    -- Handle touch input for mobile devices
+    local touchConnection = UserInputService.TouchTap:Connect(function(touchPositions, gameProcessed)
+        if gameProcessed then return end
         
-        local rootPart = self.player.Character:FindFirstChild("HumanoidRootPart")
-        if not rootPart then return end
-        
-        -- Find nearby items
-        local nearestItem = nil
-        local nearestDistance = self.interactionDistance
-        
-        -- Check placed items
-        for _, model in ipairs(workspace:GetDescendants()) do
-            if model:IsA("Model") and model:GetAttribute("item") then
-                local primaryPart = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
-                if primaryPart then
-                    local distance = (primaryPart.Position - rootPart.Position).Magnitude
-                    if distance < nearestDistance then
-                        nearestItem = {
-                            id = model.Name,
-                            model = model
-                        }
-                        nearestDistance = distance
+        -- If we have a current target and user taps, trigger interaction
+        if self.currentTarget then
+            self:AttemptInteraction()
+        else
+            -- Try to find a new target based on touch position
+            local touchPosition = touchPositions[1]
+            if touchPosition then
+                local ray = workspace.CurrentCamera:ScreenPointToRay(
+                    touchPosition.X, 
+                    touchPosition.Y
+                )
+                
+                local raycastParams = RaycastParams.new()
+                raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+                raycastParams.FilterDescendantsInstances = {self.player.Character}
+                
+                local raycastResult = workspace:Raycast(ray.Origin, ray.Direction * 50, raycastParams)
+                if raycastResult and raycastResult.Instance then
+                    local placedItem = self:GetPlacedItemFromPart(raycastResult.Instance)
+                    if placedItem then
+                        self.currentTarget = placedItem
+                        self:ShowInteractionUI(placedItem)
+                        self:AttemptInteraction()
                     end
                 end
             end
         end
-        
-        -- If we found a nearby item and it's different from current target
-        if nearestItem and (not self.currentTarget or self.currentTarget.id ~= nearestItem.id) then
-            self.currentTarget = nearestItem
-            self:ShowInteractionUI(nearestItem)
-        elseif not nearestItem and self.currentTarget then
-            self:ClearCurrentTarget()
-        end
     end)
     
-    table.insert(self.connections, heartbeatConnection)
+    table.insert(self.connections, touchConnection)
 end
 
-function InteractionSystem:SetupMouseHandling()
-    -- Don't flood the output with UpdateCurrentTarget logs
-    local RunService = game:GetService("RunService")
-    local renderConnection = RunService.RenderStepped:Connect(function()
+function InteractionSystem:SetupAlternativeInteraction()
+    -- This is called when mouse is not available
+    -- We'll implement additional methods for targeting
+    
+    -- Use camera movement to help with targeting
+    local camera = workspace.CurrentCamera
+    local cameraChangedConnection = camera:GetPropertyChangedSignal("CFrame"):Connect(function()
+        -- Refresh targeting when camera moves
         self:UpdateCurrentTarget()
     end)
     
-    table.insert(self.connections, renderConnection)
+    table.insert(self.connections, cameraChangedConnection)
     
-    -- Listen for mouse clicks on placed items
-    local mouseConnection = self.mouse.Button1Down:Connect(function()
-        local target = self.mouse.Target
-        if not target then return end
-        
-        local placedItem = self:GetPlacedItemFromPart(target)
-        if placedItem then
-            debugLog("Clicked placed item:", placedItem.id)
-            self.currentTarget = placedItem
-            local interactions = self:GetAvailableInteractions(placedItem)
-            self:ShowInteractionMenu(interactions)
+    -- Add character movement detection for targeting
+    local character = self.player.Character or self.player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    
+    local movementConnection = humanoid:GetPropertyChangedSignal("MoveDirection"):Connect(function()
+        -- Refresh targeting when character moves
+        self:UpdateCurrentTarget()
+    end)
+    
+    table.insert(self.connections, movementConnection)
+    
+    -- Set up periodic targeting refresh as a fallback
+    spawn(function()
+        while true do
+            wait(0.5) -- Check every half second
+            if self.connections[1] == nil then
+                -- Our connections table is emptied on cleanup, so break the loop
+                break
+            end
+            self:UpdateCurrentTarget()
+        end
+    end)
+end
+
+function InteractionSystem:SetupMouseHandling()
+    -- We have mouse access, set up hover effects and targeting
+    local mouseMove = self.mouse.Move:Connect(function()
+        self:UpdateCurrentTarget()
+    end)
+    
+    table.insert(self.connections, mouseMove)
+    
+    -- Set up mouse click as an alternative to E key
+    local mouseClick = self.mouse.Button1Down:Connect(function()
+        -- Only trigger if we're clicking on the current target
+        if self.currentTarget and self.currentTarget.instance then
+            local target = self.mouse.Target
+            while target do
+                if target == self.currentTarget.instance then
+                    self:AttemptInteraction()
+                    break
+                end
+                target = target.Parent
+            end
         end
     end)
     
-    table.insert(self.connections, mouseConnection)
+    table.insert(self.connections, mouseClick)
 end
 
 function InteractionSystem:SetupEventHandlers()
-    -- Handle player added event
-    local playerAddedConnection = Players.PlayerAdded:Connect(function(player)
-        if player == self.player then
-            -- When character is added, update reference
-            local characterAddedConnection = player.CharacterAdded:Connect(function(character)
-                debugLog("Character added")
-                -- Reset any ongoing interactions
+    -- Set up handlers for events from the server
+    
+    -- Handle item placed by server
+    local itemPlacedEvent = self.remoteEvents:FindFirstChild("ItemPlaced")
+    if itemPlacedEvent and itemPlacedEvent:IsA("RemoteEvent") then
+        local connection = itemPlacedEvent.OnClientEvent:Connect(function(itemData)
+            print("[InteractionSystem] Item placed:", itemData.id)
+            self:UpdateCurrentTarget() -- Refresh target in case the new item is closer
+            
+            -- Show a notification
+            self:ShowLocalNotification("New item placed: " .. itemData.id)
+        end)
+        
+        table.insert(self.connections, connection)
+    end
+    
+    -- Handle item removed by server
+    local itemRemovedEvent = self.remoteEvents:FindFirstChild("ItemRemoved")
+    if itemRemovedEvent and itemRemovedEvent:IsA("RemoteEvent") then
+        local connection = itemRemovedEvent.OnClientEvent:Connect(function(itemId)
+            print("[InteractionSystem] Item removed:", itemId)
+            
+            -- If this was our current target, clear it
+            if self.currentTarget and self.currentTarget.id == itemId then
                 self:ClearCurrentTarget()
-            end)
-            table.insert(self.connections, characterAddedConnection)
-        end
-    end)
-    
-    table.insert(self.connections, playerAddedConnection)
-    
-    -- Handle player leaving
-    local playerRemovingConnection = Players.PlayerRemoving:Connect(function(player)
-        if player == self.player then
-            self:Cleanup()
-        end
-    end)
-    
-    table.insert(self.connections, playerRemovingConnection)
-    
-    -- Note: We don't use BindToClose as it's only for server scripts
-    -- For cleanup, we rely on PlayerRemoving and explicit Cleanup calls
+            end
+            
+            -- Update targeting in case something else is now the best target
+            self:UpdateCurrentTarget()
+        end)
+        
+        table.insert(self.connections, connection)
+    end
 end
 
 function InteractionSystem:Cleanup()
-    -- Clean up any resources when player leaves or game closes
-    self:HideInteractionUI()
-    self:ClearCurrentTarget()
-    
-    -- Disconnect all connections
+    -- Disconnect all event connections
     for _, connection in ipairs(self.connections) do
-        if connection and connection.Connected then
-            connection:Disconnect()
-        end
+        connection:Disconnect()
     end
+    
+    -- Clear connections table
     self.connections = {}
     
-    -- Clean up notifications
+    -- Remove UI elements
     if self.notificationUI then
         self.notificationUI:Destroy()
         self.notificationUI = nil
     end
     
-    self.initialized = false
-    print("[InteractionSystem] Cleanup completed")
+    -- Clean up any active interaction UI
+    self:HideInteractionUI()
+    
+    print("[InteractionSystem] Cleaned up all resources")
 end
 
 function InteractionSystem:UpdateCurrentTarget()
-    if not self.mouse then 
-        return 
+    -- Find the closest interactable item in range
+    -- This is called frequently as the player moves/looks around
+    
+    local character = self.player.Character
+    if not character then return end
+    
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    local playerPosition = rootPart.Position
+    local camera = workspace.CurrentCamera
+    local cameraLookVector = camera.CFrame.LookVector
+    
+    -- Check if we're using the mouse for targeting
+    local useMouse = self.mouse ~= nil
+    local mouseRay
+    
+    if useMouse then
+        mouseRay = workspace.CurrentCamera:ScreenPointToRay(
+            self.mouse.X, 
+            self.mouse.Y
+        )
     end
     
-    local target = self.mouse.Target
-    if not target then
-        -- No target under mouse, clear current target
+    -- Find all placed items in the workspace that we can interact with
+    local potentialTargets = {}
+    
+    -- We're expecting placed items to be in a specific folder or have specific tags
+    -- This is just an example - modify this to match your actual game setup
+    local placedItems = workspace:FindFirstChild("PlacedItems")
+    
+    if placedItems then
+        for _, item in ipairs(placedItems:GetChildren()) do
+            -- Check if the item has the necessary attributes
+            if item:GetAttribute("Interactable") then
+                local itemPosition = item:GetPivot().Position
+                local distance = (itemPosition - playerPosition).Magnitude
+                
+                -- Check if it's within interaction range
+                if distance <= self.interactionDistance then
+                    local directionToItem = (itemPosition - playerPosition).Unit
+                    local dotProduct = directionToItem:Dot(cameraLookVector)
+                    
+                    -- Higher dot product means more in front of the player
+                    -- Store both the dot product and distance for scoring
+                    table.insert(potentialTargets, {
+                        instance = item,
+                        distance = distance,
+                        dotProduct = dotProduct,
+                        id = item:GetAttribute("ItemID") or item.Name
+                    })
+                end
+            end
+        end
+    end
+    
+    -- If we have no potential targets, clear the current one
+    if #potentialTargets == 0 then
         if self.currentTarget then
-            print("[InteractionSystem] No target under mouse, clearing current target")
             self:ClearCurrentTarget()
         end
         return
     end
     
-    -- Debug print target information
-    local targetInfo = string.format("%s (class: %s)", target.Name, target.ClassName)
-    if target.Parent then
-        targetInfo = targetInfo .. string.format(" in %s", target.Parent:GetFullName())
-    end
-    print("[InteractionSystem] Mouse over:", targetInfo)
+    -- Choose the best target based on a combination of factors
+    -- If using mouse, prioritize what the mouse is pointing at
+    local bestTarget = nil
+    local bestScore = -1
     
-    -- Check items folder for purchasable items
-    local itemsFolder = workspace:FindFirstChild("Items")
-    if itemsFolder and target:IsDescendantOf(itemsFolder) then
-        print("[InteractionSystem] Target is a world item:", target.Name)
+    for _, target in ipairs(potentialTargets) do
+        local score = 0
         
-        -- If this is already our current target, no need to update
-        if self.currentTarget and self.currentTarget.id == target.Name and 
-           self.currentTarget.model == target then
-            return
+        if useMouse then
+            -- Check if mouse is pointing at this item
+            local raycastParams = RaycastParams.new()
+            raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+            raycastParams.FilterDescendantsInstances = {character}
+            
+            local raycastResult = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 100, raycastParams)
+            if raycastResult and (raycastResult.Instance == target.instance or raycastResult.Instance:IsDescendantOf(target.instance)) then
+                -- Mouse is pointing directly at this item, give it a high score
+                score = 100
+            else
+                -- Mouse isn't pointing at it, use distance and direction as fallbacks
+                score = (1 - target.distance / self.interactionDistance) * 10 + target.dotProduct * 5
+            end
+        else
+            -- No mouse, use distance and whether it's in front of the player
+            score = (1 - target.distance / self.interactionDistance) * 10 + target.dotProduct * 5
         end
         
-        -- Otherwise, update current target and show UI
-        self.currentTarget = { id = target.Name, model = target }
-        self:ShowPriceUI(self.currentTarget)
-        print("[InteractionSystem] Updated current target to world item:", target.Name)
-        return
-    end
-    
-    -- Check for placed items
-    local placedItem = self:GetPlacedItemFromPart(target)
-    if not placedItem then
-        if self.currentTarget then
-            print("[InteractionSystem] Target is not a placeable item, clearing current target")
-            self:ClearCurrentTarget()
-        end
-        return
-    end
-    
-    -- If this is the same target we already have, no need to update
-    if self.currentTarget and self.currentTarget.id == placedItem.id then
-        return
-    end
-    
-    -- Check if player is close enough to interact
-    if self.player.Character and self.player.Character:FindFirstChild("HumanoidRootPart") then
-        local distance = (target.Position - self.player.Character.HumanoidRootPart.Position).Magnitude
-        if distance > self.interactionDistance then
-            print("[InteractionSystem] Target too far away (" .. tostring(math.floor(distance)) .. " studs), max distance is " .. tostring(self.interactionDistance))
-            self:ClearCurrentTarget()
-            return
+        if score > bestScore then
+            bestScore = score
+            bestTarget = target
         end
     end
     
-    -- Set current target and show interaction UI
-    self.currentTarget = placedItem
-    self:ShowInteractionUI(placedItem)
-    print("[InteractionSystem] Updated current target to placed item:", placedItem.id)
+    -- If we found a target
+    if bestTarget then
+        -- If it's different from the current target, update
+        if not self.currentTarget or self.currentTarget.id ~= bestTarget.id then
+            -- Clear old UI
+            self:HideInteractionUI()
+            
+            -- Set new target and show UI
+            self.currentTarget = bestTarget
+            self:ShowInteractionUI(bestTarget)
+        end
+    elseif self.currentTarget then
+        -- No good targets found, clear current
+        self:ClearCurrentTarget()
+    end
 end
 
 function InteractionSystem:ClearCurrentTarget()
-    if self.currentTarget then
-        self:HideInteractionUI()
-        self.currentTarget = nil
-    end
+    self:HideInteractionUI()
+    self.currentTarget = nil
 end
 
 function InteractionSystem:GetPlacedItemFromPart(part)
-    if not part then return nil end
+    -- Convert a part into a placed item data structure
+    -- This helps us work with consistent data regardless of how items are stored
     
-    local current = part
-    local maxDepth = 10 -- Prevent infinite loops
-    local depth = 0
+    -- Check if the part itself has the data
+    if part:GetAttribute("Interactable") and part:GetAttribute("ItemID") then
+        return {
+            instance = part,
+            id = part:GetAttribute("ItemID"),
+            distance = (part:GetPivot().Position - self.player.Character.HumanoidRootPart.Position).Magnitude
+        }
+    end
     
-    while current and current ~= workspace and depth < maxDepth do
-        if current:IsA("Model") and current:GetAttribute("item") then
+    -- Check if any parent has the data
+    local current = part.Parent
+    while current and current ~= workspace do
+        if current:GetAttribute("Interactable") and current:GetAttribute("ItemID") then
             return {
-                id = current.Name,
-                model = current
+                instance = current,
+                id = current:GetAttribute("ItemID"),
+                distance = (current:GetPivot().Position - self.player.Character.HumanoidRootPart.Position).Magnitude
             }
         end
         current = current.Parent
-        depth = depth + 1
     end
     
+    -- No valid placed item found
     return nil
 end
 
 function InteractionSystem:ShowInteractionUI(placedItem)
-    if not placedItem or not placedItem.model then 
-        print("[InteractionSystem] Cannot show interaction UI: Invalid placedItem")
-        return 
+    -- Show the hover UI for an interactable item
+    if not placedItem or not placedItem.instance then return end
+    
+    -- Create a clone of our billboard template
+    local billboardGui = self.billboardTemplate:Clone()
+    billboardGui.Adornee = placedItem.instance
+    billboardGui.Enabled = true
+    
+    -- Set up the name of the item in the UI
+    local title = billboardGui:FindFirstChild("Title", true)
+    if title then
+        title.Text = "[E] Interact with " .. placedItem.id
     end
     
-    print("[InteractionSystem] Showing interaction UI for:", placedItem.id)
+    -- Parent to player's GUI
+    billboardGui.Parent = self.player:FindFirstChild("PlayerGui")
     
-    -- Attach BillboardGui to the item model's PrimaryPart
-    local primaryPart = placedItem.model.PrimaryPart
-    if not primaryPart then
-        -- Try to find a suitable part to use as PrimaryPart
-        primaryPart = placedItem.model:FindFirstChildWhichIsA("BasePart")
-        if primaryPart then
-            -- Set it as primary part for future use
-            placedItem.model.PrimaryPart = primaryPart
-            print("[InteractionSystem] Set PrimaryPart for model:", primaryPart.Name)
-        else
-            print("[InteractionSystem] No suitable part found for UI attachment")
-            return
+    -- Store reference to active UI
+    self.currentInteractionUI = billboardGui
+    
+    -- Add a highlight to the object
+    local highlight = Instance.new("Highlight")
+    highlight.FillColor = Color3.fromRGB(0, 170, 255)
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 0
+    highlight.Parent = placedItem.instance
+    
+    -- Store reference to highlight
+    self.currentHighlight = highlight
+    
+    -- Add subtle pulse animation to the highlight
+    spawn(function()
+        local startTime = tick()
+        while self.currentHighlight == highlight do
+            local alpha = (math.sin(tick() - startTime) + 1) / 2 -- Value between 0 and 1
+            highlight.FillTransparency = 0.5 + 0.3 * alpha
+            wait(0.03) -- Update at about 30fps
+            
+            -- Break the loop if the highlight is no longer our current one
+            if self.currentHighlight ~= highlight then
+                break
+            end
         end
+    end)
+    
+    -- Add a contextual hint based on the item type
+    -- This is just an example - you would customize this based on your items
+    local itemType = placedItem.instance:GetAttribute("ItemType") or "default"
+    
+    if itemType == "container" then
+        self:ShowLocalNotification("This looks like a container - maybe it has something inside?")
+    elseif itemType == "door" then
+        self:ShowLocalNotification("Press E to toggle the door")
+    elseif itemType == "npc" then
+        self:ShowLocalNotification("This character might have something to say")
     end
-    
-    -- Remove any existing BillboardGui
-    local existing = primaryPart:FindFirstChild("ProximityInteractUI")
-    if existing then existing:Destroy() end
-
-    -- Create a fresh billboard from our template
-    local bb = self.billboardTemplate:Clone()
-    bb.Enabled = true
-    
-    -- Add a pulsing animation to make it more noticeable
-    local textLabel = bb:FindFirstChild("Title", true)
-    if textLabel then
-        -- Update text to include the item name
-        textLabel.Text = "[E] Interact with " .. placedItem.id
-        
-        -- Add a pulsing effect using TweenService
-        local tweenService = game:GetService("TweenService")
-        local tweenInfo = TweenInfo.new(
-            0.8,                    -- Time
-            Enum.EasingStyle.Sine,  -- EasingStyle
-            Enum.EasingDirection.InOut, -- EasingDirection
-            -1,                     -- RepeatCount (-1 means infinite)
-            true,                   -- Reverses
-            0                       -- DelayTime
-        )
-        
-        local goals = {
-            TextSize = 24,  -- Slightly larger
-            TextTransparency = 0.2  -- Slightly transparent
-        }
-        
-        local tween = tweenService:Create(textLabel, tweenInfo, goals)
-        tween:Play()
-        
-        -- Store the tween so we can cancel it later if needed
-        bb:SetAttribute("activeTween", true)
-    end
-    
-    -- Parent the billboard to the part
-    bb.Parent = primaryPart
-    print("[InteractionSystem] Interaction UI displayed successfully")
 end
 
 function InteractionSystem:HideInteractionUI()
-    -- Remove BillboardGui from all items in workspace
-    for _, model in ipairs(workspace:GetDescendants()) do
-        if model:IsA("Model") and model.PrimaryPart then
-            local bb = model.PrimaryPart:FindFirstChild("ProximityInteractUI")
-            if bb then bb:Destroy() end
-        end
+    -- Clean up any currently displayed interaction UI
+    if self.currentInteractionUI then
+        self.currentInteractionUI:Destroy()
+        self.currentInteractionUI = nil
+    end
+    
+    if self.currentHighlight then
+        self.currentHighlight:Destroy()
+        self.currentHighlight = nil
     end
 end
 
 function InteractionSystem:ShowPriceUI(worldItem)
-    if not worldItem or not worldItem.model then 
-        print("[InteractionSystem] Cannot show price UI: Invalid worldItem")
-        return 
-    end
+    debugLog("Showing price UI for", worldItem.id)
     
-    print("[InteractionSystem] Showing price UI for:", worldItem.id)
-    
-    -- Check if world item model has a primary part
-    local targetPart = worldItem.model
-    if worldItem.model:IsA("Model") then
-        targetPart = worldItem.model.PrimaryPart or worldItem.model:FindFirstChildWhichIsA("BasePart")
-        if not targetPart then 
-            print("[InteractionSystem] No suitable part found for price UI")
-            return 
-        end
-    end
-    
-    -- Remove any existing price GUIs
-    local existing = targetPart:FindFirstChild("PriceBillboard")
-    if existing then existing:Destroy() end
-    
-    -- Get item data, with fallback
-    local itemData = Constants.ITEMS and Constants.ITEMS[worldItem.id]
+    -- Get the item's price and details from game data
+    local itemData = Constants.ITEMS[worldItem.id]
     if not itemData then
-        itemData = { 
-            price = { INGAME = 10 },
-            name = worldItem.id,
-            description = "A purchasable item"
-        }
+        debugLog("No item data found for", worldItem.id)
+        return
     end
     
-    -- Create price UI with improved styling
-    local priceGui = Instance.new("BillboardGui")
-    priceGui.Name = "PriceBillboard"
-    priceGui.Size = UDim2.new(0, 220, 0, 80) -- Larger size
-    priceGui.StudsOffset = Vector3.new(0, 4, 0)
-    priceGui.AlwaysOnTop = true
-    priceGui.MaxDistance = 30 -- Increased visibility distance
-    priceGui.Parent = targetPart
+    local price = itemData.price or 0
+    local currency = itemData.currency or "coins"
     
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 60) -- Darker blue background
-    frame.BackgroundTransparency = 0.2
-    frame.BorderSizePixel = 0
-    frame.Parent = priceGui
+    -- Use lazy loaded PurchaseDialog
+    local PurchaseDialog = LazyLoadModules.require("PurchaseDialog")
+    if not PurchaseDialog or typeof(PurchaseDialog.Show) ~= "function" then
+        -- Try the SharedModule reference as a fallback
+        PurchaseDialog = SharedModule.PurchaseDialog
+    end
     
-    -- Add rounded corners
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
-    corner.Parent = frame
+    if not PurchaseDialog then
+        warn("[InteractionSystem] Failed to load PurchaseDialog module")
+        return
+    end
     
-    -- Add highlighting stroke
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 215, 0) -- Gold outline
-    stroke.Thickness = 2
-    stroke.Parent = frame
-    
-    -- Item name
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, 0, 0.3, 0)
-    nameLabel.Position = UDim2.new(0, 0, 0, 0)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameLabel.TextSize = 18
-    nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.Text = itemData.name or worldItem.id
-    nameLabel.Parent = frame
-    
-    -- Price label
-    local priceLabel = Instance.new("TextLabel")
-    priceLabel.Size = UDim2.new(1, 0, 0.35, 0)
-    priceLabel.Position = UDim2.new(0, 0, 0.3, 0)
-    priceLabel.BackgroundTransparency = 1
-    priceLabel.TextColor3 = Color3.fromRGB(255, 255, 0) -- Yellow/gold for price
-    priceLabel.TextSize = 22
-    priceLabel.Font = Enum.Font.GothamBold
-    priceLabel.Text = "Price: " .. tostring(itemData.price and itemData.price.INGAME or "?")
-    priceLabel.Parent = frame
-    
-    -- Interactive prompt
-    local prompt = Instance.new("TextLabel")
-    prompt.Size = UDim2.new(1, 0, 0.35, 0)
-    prompt.Position = UDim2.new(0, 0, 0.65, 0)
-    prompt.BackgroundTransparency = 1
-    prompt.TextColor3 = Color3.fromRGB(255, 255, 255)
-    prompt.TextSize = 18
-    prompt.Font = Enum.Font.Gotham
-    prompt.Text = "Press E to buy"
-    prompt.Parent = frame
-    
-    -- Add pulsing effect to the prompt text
-    local tweenService = game:GetService("TweenService")
-    local tweenInfo = TweenInfo.new(
-        0.8,                    -- Time
-        Enum.EasingStyle.Sine,  -- EasingStyle
-        Enum.EasingDirection.InOut, -- EasingDirection
-        -1,                     -- RepeatCount (-1 means infinite)
-        true,                   -- Reverses
-        0                       -- DelayTime
-    )
-    
-    local goals = {
-        TextSize = 20,  -- Slightly larger
-        TextTransparency = 0.2  -- Slightly transparent
-    }
-    
-    local tween = tweenService:Create(prompt, tweenInfo, goals)
-    tween:Play()
-    
-    print("[InteractionSystem] Price UI displayed successfully")
+    -- Show the purchase dialog
+    PurchaseDialog.Show({
+        itemId = worldItem.id,
+        itemName = itemData.displayName or worldItem.id,
+        price = price,
+        currency = currency,
+        onPurchase = function()
+            -- Attempt to purchase the item
+            local success = self:AttemptPurchase(worldItem, price, currency)
+            if success then
+                -- Purchase successful! Show a nice message.
+                self:ShowLocalNotification("Successfully purchased " .. (itemData.displayName or worldItem.id))
+                
+                -- Hide the UI now that purchase is complete
+                PurchaseDialog.Hide()
+                
+                -- Refresh the item's state
+                self:RefreshItem(worldItem)
+            else
+                -- Purchase failed. Dialog stays open.
+                self:ShowLocalNotification("Not enough " .. currency .. " to purchase this item")
+            end
+        end,
+        onCancel = function()
+            -- User cancelled, just hide the dialog
+            PurchaseDialog.Hide()
+        end
+    })
 end
 
 function InteractionSystem:AttemptInteraction()
-    print("[InteractionSystem] AttemptInteraction called")
-    if not self.currentTarget then 
-        print("[InteractionSystem] No current target to interact with")
-        return 
-    end
+    -- Main function that gets called when player presses E or clicks
+    if not self.currentTarget then return end
     
-    -- Check if we're interacting with a world item (in Items folder)
-    local itemsFolder = workspace:FindFirstChild("Items")
-    if itemsFolder and self.currentTarget.model and self.currentTarget.model:IsDescendantOf(itemsFolder) then
-        print("[InteractionSystem] Attempting to interact with world item:", self.currentTarget.id)
-        
-        local pickupEvent = self.remoteEvents:FindFirstChild("PickupItem")
-        if pickupEvent then
-            print("[InteractionSystem] Sending PickupItem event to server for", self.currentTarget.id)
-            pickupEvent:FireServer(self.currentTarget.id)
-        else
-            print("[InteractionSystem] PickupItem remote event not found")
-            -- Display a local notification since we can't use the server
-            self:ShowLocalNotification("Can't pick up item: Remote event missing")
-        end
+    debugLog("Attempting interaction with", self.currentTarget.id)
+    
+    -- See if we're too far away (double-check distance)
+    local character = self.player.Character
+    if not character then return end
+    
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    local distance = (self.currentTarget.instance:GetPivot().Position - rootPart.Position).Magnitude
+    if distance > self.interactionDistance then
+        debugLog("Too far for interaction:", distance, "vs max", self.interactionDistance)
+        self:ShowLocalNotification("Too far away to interact!")
         return
     end
     
-    -- Handle interaction with placed items
-    print("[InteractionSystem] Attempting to interact with placed item:", self.currentTarget.id)
+    -- Get available interactions for this item
     local interactions = self:GetAvailableInteractions(self.currentTarget)
-    if not interactions or #interactions == 0 then
-        print("[InteractionSystem] No available interactions for target")
-        return 
-    end
     
-    -- If we have exactly one interaction option, perform it directly
-    if #interactions == 1 then
-        print("[InteractionSystem] Single interaction available, performing:", interactions[1])
-        self:PerformInteraction(self.currentTarget, interactions[1])
+    -- If we have multiple interactions available, show a menu
+    if #interactions > 1 then
+        debugLog("Multiple interactions available:", table.concat(interactions, ", "))
+        self:ShowSimpleInteractionMenu(interactions)
         return
+    elseif #interactions == 1 then
+        -- Just one interaction, perform it directly
+        debugLog("Single interaction available:", interactions[1])
+        self:PerformInteraction(self.currentTarget, interactions[1])
+    else
+        -- No interactions available
+        debugLog("No interactions available for", self.currentTarget.id)
+        self:ShowLocalNotification("Nothing to do with this object")
     end
-    
-    -- Otherwise show the interaction menu
-    print("[InteractionSystem] Multiple interactions available, showing menu:", table.concat(interactions, ", "))
-    self:ShowInteractionMenu(interactions)
 end
 
 function InteractionSystem:GetAvailableInteractions(placedItem)
-    print("[InteractionSystem] Getting available interactions for", placedItem.id)
+    -- Determine what interactions are available for this item
+    -- This would typically depend on the item type and state
+    local interactions = {}
     
-    -- Check if the remote function exists
-    local interactionRemote = self.remoteEvents:FindFirstChild("GetAvailableInteractions")
-    if not interactionRemote then
-        print("[InteractionSystem] GetAvailableInteractions remote function not found, using default interactions")
-        -- Return default interactions
-        return {"examine", "clone"}
-    end
+    -- Always allow examination
+    table.insert(interactions, "examine")
     
-    -- Request available interactions from server
-    local success, result = pcall(function()
-        return interactionRemote:InvokeServer(placedItem.id)
-    end)
+    -- Check item type for specialized interactions
+    local itemType = placedItem.instance:GetAttribute("ItemType") or "default"
     
-    if not success or not result then
-        print("[InteractionSystem] Error getting available interactions:", tostring(result))
-        -- Ensure we return at least examine action as fallback
-        return {"examine"}
-    end
-    
-    print("[InteractionSystem] Server returned interactions:", result and table.concat(result, ", "))
-    
-    -- Always ensure examine is available
-    if type(result) == "table" then
-        local hasExamine = false
-        for _, action in ipairs(result) do
-            if action == "examine" then
-                hasExamine = true
-                break
-            end
-        end
+    if itemType == "container" then
+        table.insert(interactions, "open")
+        table.insert(interactions, "search")
+    elseif itemType == "door" then
+        local isOpen = placedItem.instance:GetAttribute("IsOpen") or false
+        local doorAction = isOpen and "close" or "open"
+        table.insert(interactions, doorAction)
+    elseif itemType == "usable" then
+        table.insert(interactions, "use")
+    elseif itemType == "collectable" then
+        table.insert(interactions, "collect")
+    elseif itemType == "npc" then
+        table.insert(interactions, "talk")
         
-        if not hasExamine then
-            table.insert(result, "examine")
+        -- Check if this NPC offers trades
+        if placedItem.instance:GetAttribute("OffersTrading") then
+            table.insert(interactions, "trade")
         end
-    else
-        -- If result is not a table, create a default array
-        result = {"examine"}
     end
     
-    return result
+    -- Add development tools in testing environments
+    if game:GetService("RunService"):IsStudio() then
+        table.insert(interactions, "clone")
+        table.insert(interactions, "debug")
+    end
+    
+    return interactions
 end
 
 function InteractionSystem:ShowInteractionMenu(interactions)
-    if not interactions or #interactions == 0 or not self.currentTarget then return end
-    
-    -- Try to use PlacedItemDialog if available
-    local PlacedItemDialog = LazyLoadModules.require("PlacedItemDialog")
-    if PlacedItemDialog and typeof(PlacedItemDialog.Show) == "function" then
-        PlacedItemDialog.Show(self.currentTarget, interactions, function(action)
-            self:PerformInteraction(self.currentTarget, action)
-        end)
-        return
-    end
-    
-    -- Fallback to a simple UI if PlacedItemDialog isn't available
+    -- Show a more complex menu of interactions
+    -- We'll use the simple menu for now and may expand this later
     self:ShowSimpleInteractionMenu(interactions)
 end
 
@@ -873,257 +814,365 @@ function InteractionSystem:PerformInteraction(item, action)
         return
     end
     
-    if action == "pickup" then
-        print("[InteractionSystem] Pickup action triggered")
-        self:PickupItem(item)
+    if action == "open" or action == "close" then
+        print("[InteractionSystem] Toggle action triggered:", action)
+        self:ToggleItemState(item, action)
         return
     end
     
-    -- For any other actions, send to server
-    local interactEvent = self.remoteEvents:FindFirstChild("InteractWithItem")
-    if interactEvent then
-        print("[InteractionSystem] Sending InteractWithItem event to server for", item.id, "with action", action)
-        interactEvent:FireServer(item.id, action)
-    else
-        print("[InteractionSystem] InteractWithItem remote event not found")
-        self:ShowLocalNotification("Can't perform action: Remote event missing")
+    if action == "collect" then
+        print("[InteractionSystem] Collect action triggered")
+        self:CollectItem(item)
+        return
     end
+    
+    if action == "use" then
+        print("[InteractionSystem] Use action triggered")
+        self:UseItem(item)
+        return
+    end
+    
+    if action == "talk" or action == "trade" then
+        print("[InteractionSystem] NPC interaction triggered:", action)
+        self:InteractWithNPC(item, action)
+        return
+    end
+    
+    if action == "search" then
+        print("[InteractionSystem] Search action triggered")
+        self:SearchContainer(item)
+        return
+    end
+    
+    if action == "debug" then
+        print("[InteractionSystem] Debug action triggered")
+        self:DebugItem(item)
+        return
+    end
+    
+    -- If we get here, we didn't handle the action
+    warn("[InteractionSystem] Unhandled interaction:", action)
+    self:ShowLocalNotification("This interaction isn't implemented yet!")
 end
 
 function InteractionSystem:ExamineItem(item)
-    print("[InteractionSystem] ExamineItem called for", item.id)
-    -- Get item data from server if possible
-    local getItemDataFunc = self.remoteEvents:FindFirstChild("GetItemData")
-    local itemData
+    -- Show detailed information about the item
+    debugLog("Examining item:", item.id)
     
-    if getItemDataFunc then
-        local success, result = pcall(function()
-            return getItemDataFunc:InvokeServer(item.id)
+    -- Get item data from your game's item database
+    local itemData = Constants.ITEMS[item.id]
+    if not itemData then
+        debugLog("No item data found for:", item.id)
+        itemData = {
+            displayName = item.id,
+            description = "No information available for this item."
+        }
+    end
+    
+    -- Use PlacedItemDialog for detailed view
+    local PlacedItemDialog = LazyLoadModules.require("PlacedItemDialog")
+    if not PlacedItemDialog or typeof(PlacedItemDialog.Show) ~= "function" then
+        -- Try the SharedModule reference as a fallback
+        PlacedItemDialog = SharedModule.PlacedItemDialog
+    end
+    
+    if not PlacedItemDialog then
+        warn("[InteractionSystem] Failed to load PlacedItemDialog module")
+        return
+    end
+    
+    -- Show the dialog with item information
+    PlacedItemDialog.Show({
+        title = itemData.displayName or item.id,
+        description = itemData.description or "No description available.",
+        imageId = itemData.imageId,
+        stats = itemData.stats or {},
+        onClose = function()
+            PlacedItemDialog.Hide()
+        end
+    })
+    
+    -- Trigger any examination effects on the item
+    if typeof(item.instance.OnExamined) == "function" then
+        item.instance:OnExamined()
+    elseif item.instance:FindFirstChild("OnExamined") and item.instance.OnExamined:IsA("RemoteEvent") then
+        item.instance.OnExamined:FireServer()
+    end
+end
+
+function InteractionSystem:ToggleItemState(item, action)
+    -- Toggle item between open/closed, on/off, etc.
+    debugLog("Toggling item state:", item.id, "to", action)
+    
+    -- Find the appropriate remote event
+    local toggleEvent = self.remoteEvents:FindFirstChild("ToggleItemState")
+    if not toggleEvent then
+        warn("[InteractionSystem] ToggleItemState remote event not found")
+        return
+    end
+    
+    -- Fire the remote event to the server
+    toggleEvent:FireServer(item.id, action)
+    
+    -- Optimistically update the local state for immediate feedback
+    -- The server will correct this if needed
+    if action == "open" then
+        item.instance:SetAttribute("IsOpen", true)
+    elseif action == "close" then
+        item.instance:SetAttribute("IsOpen", false)
+    end
+    
+    -- Play appropriate sound effect
+    local sound = Instance.new("Sound")
+    sound.Volume = 0.5
+    
+    if action == "open" then
+        sound.SoundId = "rbxassetid://5710236543" -- Replace with actual sound ID
+        self:ShowLocalNotification("Opened " .. item.id)
+    elseif action == "close" then
+        sound.SoundId = "rbxassetid://5710236543" -- Replace with actual sound ID
+        self:ShowLocalNotification("Closed " .. item.id)
+    end
+    
+    sound.Parent = item.instance
+    sound:Play()
+    
+    -- Clean up the sound after it plays
+    spawn(function()
+        sound.Ended:Wait()
+        sound:Destroy()
+    end)
+    
+    -- Update our interaction UI to reflect the new state
+    self:UpdateCurrentTarget()
+end
+
+function InteractionSystem:CollectItem(item)
+    -- Add the item to the player's inventory
+    debugLog("Collecting item:", item.id)
+    
+    -- Find the appropriate remote event
+    local collectEvent = self.remoteEvents:FindFirstChild("CollectItem")
+    if not collectEvent then
+        warn("[InteractionSystem] CollectItem remote event not found")
+        return
+    end
+    
+    -- Fire the event to the server
+    local success = collectEvent:InvokeServer(item.id)
+    
+    if success then
+        -- Play collect animation and sound
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://5710236543" -- Replace with actual sound ID
+        sound.Volume = 0.7
+        sound.Parent = self.player.Character.HumanoidRootPart
+        sound:Play()
+        
+        -- Show notification
+        self:ShowLocalNotification("Added " .. item.id .. " to inventory")
+        
+        -- Clean up the sound after it plays
+        spawn(function()
+            sound.Ended:Wait()
+            sound:Destroy()
         end)
         
-        if success and result then
-            itemData = result
-            print("[InteractionSystem] Got item data from server:", result)
-        else
-            print("[InteractionSystem] Failed to get item data from server:", tostring(result))
-        end
+        -- Clear our target as the item will likely be removed
+        self:ClearCurrentTarget()
     else
-        print("[InteractionSystem] GetItemData remote function not found")
+        -- Collection failed
+        self:ShowLocalNotification("Could not collect item. Inventory might be full.")
     end
-    
-    -- Fallback to Constants if server data not available
-    if not itemData and Constants.ITEMS then
-        itemData = Constants.ITEMS[item.id]
-        print("[InteractionSystem] Using item data from Constants")
-    end
-    
-    -- Default info if nothing else is available
-    if not itemData then
-        itemData = {
-            name = item.id,
-            description = "An item in your world. No additional information available.",
-            price = { INGAME = "???" }
-        }
-        print("[InteractionSystem] Using default item data")
-    end
-    
-    -- Show item info UI
-    local playerGui = self.player:FindFirstChild("PlayerGui")
-    if not playerGui then 
-        print("[InteractionSystem] PlayerGui not found")
-        return 
-    end
-    
-    local existing = playerGui:FindFirstChild("ItemInfoUI")
-    if existing then existing:Destroy() end
-    
-    local infoUI = Instance.new("ScreenGui")
-    infoUI.Name = "ItemInfoUI"
-    infoUI.ResetOnSpawn = false
-    infoUI.Parent = playerGui
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 350, 0, 250)  -- Larger size
-    frame.Position = UDim2.new(0.5, -175, 0.5, -125)
-    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 50)  -- Slightly blue tint
-    frame.BorderSizePixel = 0
-    frame.Parent = infoUI
-    
-    -- Add corner radius
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = frame
-    
-    -- Add border
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(0, 170, 255)  -- Blue border
-    stroke.Thickness = 2
-    stroke.Parent = frame
-    
-    -- Title with nicer formatting
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -20, 0, 40)
-    title.Position = UDim2.new(0, 10, 0, 10)
-    title.BackgroundTransparency = 1
-    title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    title.TextSize = 22
-    title.Font = Enum.Font.GothamBold
-    title.TextXAlignment = Enum.TextXAlignment.Left
-    title.Text = itemData.name or item.id
-    title.Parent = frame
-    
-    -- Item description
-    local description = Instance.new("TextLabel")
-    description.Size = UDim2.new(1, -40, 0, 100)
-    description.Position = UDim2.new(0, 20, 0, 60)
-    description.BackgroundTransparency = 1
-    description.TextColor3 = Color3.fromRGB(220, 220, 220)
-    description.TextSize = 16
-    description.Font = Enum.Font.Gotham
-    description.TextWrapped = true
-    description.TextXAlignment = Enum.TextXAlignment.Left
-    description.Text = itemData.description or "No description available."
-    description.Parent = frame
-    
-    -- Price information
-    local priceText = "Price: "
-    if itemData.price and itemData.price.INGAME then
-        priceText = priceText .. tostring(itemData.price.INGAME)
-    else
-        priceText = priceText .. "Unknown"
-    end
-    
-    local priceLabel = Instance.new("TextLabel")
-    priceLabel.Size = UDim2.new(1, -40, 0, 30)
-    priceLabel.Position = UDim2.new(0, 20, 0, 170)
-    priceLabel.BackgroundTransparency = 1
-    priceLabel.TextColor3 = Color3.fromRGB(255, 215, 0)  -- Gold color for price
-    priceLabel.TextSize = 18
-    priceLabel.Font = Enum.Font.GothamBold
-    priceLabel.TextXAlignment = Enum.TextXAlignment.Left
-    priceLabel.Text = priceText
-    priceLabel.Parent = frame
-    
-    -- Close button
-    local closeButton = Instance.new("TextButton")
-    closeButton.Size = UDim2.new(0, 100, 0, 40)
-    closeButton.Position = UDim2.new(0.5, -50, 1, -50)
-    closeButton.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
-    closeButton.BorderSizePixel = 0
-    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closeButton.TextSize = 16
-    closeButton.Font = Enum.Font.GothamBold
-    closeButton.Text = "Close"
-    closeButton.Parent = frame
-    
-    -- Add corner radius to button
-    local buttonCorner = Instance.new("UICorner")
-    buttonCorner.CornerRadius = UDim.new(0, 4)
-    buttonCorner.Parent = closeButton
-    
-    -- Close on button click
-    closeButton.MouseButton1Click:Connect(function()
-        infoUI:Destroy()
-    end)
-    
-    -- Auto-close after 10 seconds
-    task.delay(10, function()
-        if infoUI and infoUI.Parent then
-            infoUI:Destroy()
-        end
-    end)
-    
-    print("[InteractionSystem] Item info UI displayed successfully")
 end
 
 function InteractionSystem:CloneItem(item)
-    print("[InteractionSystem] Attempting to clone item:", item.id)
-    
-    -- Check if item is valid
-    if not item or not item.id then
-        print("[InteractionSystem] Cannot clone: Invalid item")
-        self:ShowLocalNotification("Cannot clone: Invalid item")
+    -- Development function to duplicate an item (Studio only)
+    if not game:GetService("RunService"):IsStudio() then
+        warn("[InteractionSystem] Clone function only available in Studio")
         return
     end
     
-    -- Get the clone event
-    local cloneEvent = self.remoteEvents:FindFirstChild("CloneItem")
+    debugLog("Cloning item:", item.id)
+    
+    -- Find the appropriate remote event
+    local cloneEvent = self.remoteEvents:FindFirstChild("DevCloneItem")
     if not cloneEvent then
-        print("[InteractionSystem] Creating CloneItem RemoteEvent")
-        cloneEvent = Instance.new("RemoteEvent")
-        cloneEvent.Name = "CloneItem"
-        cloneEvent.Parent = self.remoteEvents
-    end
-    
-    -- Send the clone request to the server
-    print("[InteractionSystem] Sending CloneItem event to server for:", item.id)
-    cloneEvent:FireServer(item.id)
-    
-    -- Show a confirmation notification
-    self:ShowLocalNotification("Cloning " .. item.id)
-end
-
-function InteractionSystem:PickupItem(item)
-    print("[InteractionSystem] Attempting to pick up item:", item.id)
-    
-    -- Check if item is valid
-    if not item or not item.id then
-        print("[InteractionSystem] Cannot pick up: Invalid item")
-        self:ShowLocalNotification("Cannot pick up: Invalid item")
+        warn("[InteractionSystem] DevCloneItem remote event not found")
         return
     end
     
-    -- Get the pickup event
-    local pickupEvent = self.remoteEvents:FindFirstChild("PickupItem")
-    if not pickupEvent then
-        print("[InteractionSystem] Creating PickupItem RemoteEvent")
-        pickupEvent = Instance.new("RemoteEvent")
-        pickupEvent.Name = "PickupItem"
-        pickupEvent.Parent = self.remoteEvents
-    end
+    -- Fire the event to the server
+    local success = cloneEvent:InvokeServer(item.id)
     
-    -- Send the pickup request to the server
-    print("[InteractionSystem] Sending PickupItem event to server for:", item.id)
-    pickupEvent:FireServer(item.id)
-    
-    -- Show a confirmation notification
-    self:ShowLocalNotification("Picking up " .. item.id)
-end
-
-function InteractionSystem:ToggleInventory()
-    -- Ensure InventoryUI is loaded
-    local InventoryUI = LazyLoadModules.require("InventoryUI")
-    if InventoryUI and typeof(InventoryUI.ToggleUI) == "function" then
-        InventoryUI.ToggleUI()
+    if success then
+        self:ShowLocalNotification("Cloned " .. item.id)
     else
-        debugLog("InventoryUI.ToggleUI not available. InventoryUI module might not be loaded properly.")
-        self:ShowLocalNotification("Inventory UI not available")
+        self:ShowLocalNotification("Failed to clone item")
     end
 end
 
-function InteractionSystem:ShowLocalNotification(message)
-    if not self.player or not self.player:FindFirstChild("PlayerGui") or not self.notificationUI then
+function InteractionSystem:UseItem(item)
+    -- Use the item's functionality
+    debugLog("Using item:", item.id)
+    
+    -- Find the appropriate remote event
+    local useEvent = self.remoteEvents:FindFirstChild("UseItem")
+    if not useEvent then
+        warn("[InteractionSystem] UseItem remote event not found")
         return
     end
+    
+    -- Fire the event to the server
+    local success, message = useEvent:InvokeServer(item.id)
+    
+    if success then
+        self:ShowLocalNotification(message or "Used " .. item.id)
+        
+        -- Play use animation and sound
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://5710236543" -- Replace with actual sound ID
+        sound.Volume = 0.5
+        sound.Parent = self.player.Character.HumanoidRootPart
+        sound:Play()
+        
+        -- Clean up the sound after it plays
+        spawn(function()
+            sound.Ended:Wait()
+            sound:Destroy()
+        end)
+    else
+        self:ShowLocalNotification(message or "Cannot use this item right now")
+    end
+end
+
+function InteractionSystem:InteractWithNPC(item, action)
+    -- Interact with an NPC character
+    debugLog("Interacting with NPC:", item.id, "action:", action)
+    
+    -- Find the appropriate remote event
+    local npcEvent = self.remoteEvents:FindFirstChild("NPCInteraction")
+    if not npcEvent then
+        warn("[InteractionSystem] NPCInteraction remote event not found")
+        return
+    end
+    
+    -- Fire the event to the server
+    npcEvent:FireServer(item.id, action)
+    
+    -- The server should trigger the appropriate dialog/trade UI from its end
+    -- We'll just show a notification that we're interacting
+    if action == "talk" then
+        self:ShowLocalNotification("Talking to " .. (item.instance:GetAttribute("NPCName") or item.id))
+    elseif action == "trade" then
+        self:ShowLocalNotification("Trading with " .. (item.instance:GetAttribute("NPCName") or item.id))
+    end
+end
+
+function InteractionSystem:SearchContainer(item)
+    -- Search a container for items
+    debugLog("Searching container:", item.id)
+    
+    -- Find the appropriate remote event
+    local searchEvent = self.remoteEvents:FindFirstChild("SearchContainer")
+    if not searchEvent then
+        warn("[InteractionSystem] SearchContainer remote event not found")
+        return
+    end
+    
+    -- Fire the event to the server
+    local contents, message = searchEvent:InvokeServer(item.id)
+    
+    if contents and #contents > 0 then
+        -- Show the container contents UI
+        local InventoryUI = LazyLoadModules.require("InventoryUI")
+        if not InventoryUI then
+            warn("[InteractionSystem] InventoryUI module not found")
+            return
+        end
+        
+        InventoryUI.ShowContainerContents({
+            title = "Container Contents",
+            items = contents,
+            onTake = function(itemId)
+                -- Tell the server we want to take this item
+                local takeEvent = self.remoteEvents:FindFirstChild("TakeFromContainer")
+                if not takeEvent then
+                    warn("[InteractionSystem] TakeFromContainer remote event not found")
+                    return false
+                end
+                
+                local success = takeEvent:InvokeServer(item.id, itemId)
+                return success
+            end,
+            onClose = function()
+                InventoryUI.HideContainerContents()
+            end
+        })
+    else
+        -- No items found
+        self:ShowLocalNotification(message or "Container is empty")
+    end
+end
+
+function InteractionSystem:DebugItem(item)
+    -- Development function to show detailed debug info
+    if not game:GetService("RunService"):IsStudio() then
+        warn("[InteractionSystem] Debug function only available in Studio")
+        return
+    end
+    
+    debugLog("Debugging item:", item.id)
+    
+    -- Show a debug output with all available information
+    print("=== ITEM DEBUG INFO ===")
+    print("ID:", item.id)
+    print("Instance:", item.instance:GetFullName())
+    
+    -- Show all attributes
+    print("Attributes:")
+    for _, attrName in ipairs(item.instance:GetAttributeNames()) do
+        print("  " .. attrName .. ":", item.instance:GetAttribute(attrName))
+    end
+    
+    -- Show hierarchy
+    print("Children:")
+    for _, child in ipairs(item.instance:GetChildren()) do
+        print("  " .. child.Name .. " (" .. child.ClassName .. ")")
+    end
+    
+    print("=== END DEBUG INFO ===")
+    
+    -- Also show this info in the game
+    self:ShowLocalNotification("Debug info printed to output")
+end
+
+function InteractionSystem:ShowLocalNotification(message, duration)
+    -- Show a temporary notification to the player
+    duration = duration or 4 -- Default 4 seconds
+    
+    local playerGui = self.player:FindFirstChild("PlayerGui")
+    if not playerGui or not self.notificationUI then return end
     
     local container = self.notificationUI:FindFirstChild("NotificationContainer")
     if not container then return end
     
     -- Create notification
     local notification = Instance.new("Frame")
-    notification.Name = "Notification_" .. tostring(#self.notifications + 1)
     notification.Size = UDim2.new(1, 0, 0, 40)
     notification.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     notification.BackgroundTransparency = 0.2
     notification.BorderSizePixel = 0
-    table.insert(self.notifications, notification)
-    notification.LayoutOrder = #self.notifications
-    notification.Parent = container
     
-    -- Add text
+    -- Add corners
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = notification
+    
+    -- Add message text
     local text = Instance.new("TextLabel")
-    text.Size = UDim2.new(1, -10, 1, 0)
-    text.Position = UDim2.new(0, 5, 0, 0)
+    text.Size = UDim2.new(1, -20, 1, 0)
+    text.Position = UDim2.new(0, 10, 0, 0)
     text.BackgroundTransparency = 1
     text.TextColor3 = Color3.fromRGB(255, 255, 255)
     text.TextSize = 16
@@ -1133,106 +1182,104 @@ function InteractionSystem:ShowLocalNotification(message)
     text.TextXAlignment = Enum.TextXAlignment.Left
     text.Parent = notification
     
-    -- Add animations
-    notification.BackgroundTransparency = 1
-    text.TextTransparency = 1
+    -- Add to container
+    notification.Parent = container
     
-    -- Fade in
-    local tweenService = game:GetService("TweenService")
-    local fadeInInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local fadeIn = tweenService:Create(notification, fadeInInfo, {BackgroundTransparency = 0.2})
-    local textFadeIn = tweenService:Create(text, fadeInInfo, {TextTransparency = 0})
-    fadeIn:Play()
-    textFadeIn:Play()
+    -- Animate in
+    notification.Position = UDim2.new(1, 20, 0, 0)
+    notification:TweenPosition(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.3, true)
     
-    -- Remove after delay
-    task.delay(5, function()
-        local fadeOutInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-        local fadeOut = tweenService:Create(notification, fadeOutInfo, {BackgroundTransparency = 1})
-        local textFadeOut = tweenService:Create(text, fadeOutInfo, {TextTransparency = 1})
+    -- Set up auto-removal
+    spawn(function()
+        wait(duration - 0.3) -- Subtract animation time
         
-        fadeOut.Completed:Connect(function()
+        -- Animate out
+        notification:TweenPosition(UDim2.new(1, 20, 0, 0), Enum.EasingDirection.In, Enum.EasingStyle.Quart, 0.3, true)
+        wait(0.3)
+        
+        -- Remove if it still exists
+        if notification and notification.Parent then
             notification:Destroy()
-            -- Remove from notifications table
-            for i, n in ipairs(self.notifications) do
-                if n == notification then
-                    table.remove(self.notifications, i)
-                    break
-                end
-            end
-        end)
-        
-        fadeOut:Play()
-        textFadeOut:Play()
+        end
     end)
-end
-
-function InteractionSystem:VerifyRemotes()
-    print("[InteractionSystem] Verifying required remote events and functions")
     
-    if not self.remoteEvents then
-        warn("[InteractionSystem] Remotes folder not found")
-        return false
-    end
+    -- Store reference to active notifications
+    table.insert(self.notifications, notification)
     
-    -- Define required remotes and their types
-    local requiredRemotes = {
-        { name = "InteractWithItem", type = "RemoteEvent" },
-        { name = "PickupItem", type = "RemoteEvent" },
-        { name = "CloneItem", type = "RemoteEvent" },
-        { name = "GetAvailableInteractions", type = "RemoteFunction" },
-        { name = "GetItemData", type = "RemoteFunction" }
-    }
-    
-    -- Check each required remote
-    local allFound = true
-    for _, remoteInfo in ipairs(requiredRemotes) do
-        local remote = self.remoteEvents:FindFirstChild(remoteInfo.name)
-        
-        if not remote then
-            warn("[InteractionSystem] Missing remote:", remoteInfo.name)
-            allFound = false
-        elseif remote.ClassName ~= remoteInfo.type then
-            warn("[InteractionSystem] Remote", remoteInfo.name, "is of wrong type. Expected", remoteInfo.type, "but got", remote.ClassName)
-            allFound = false
-        else
-            print("[InteractionSystem] Found remote:", remoteInfo.name)
+    -- Limit the number of notifications
+    if #self.notifications > 5 then
+        local oldest = table.remove(self.notifications, 1)
+        if oldest and oldest.Parent then
+            oldest:Destroy()
         end
     end
     
-    if not allFound then
-        warn("[InteractionSystem] Some required remotes are missing - interaction functionality may be limited")
-    else
-        print("[InteractionSystem] All required remotes verified successfully")
+    return notification
+end
+
+function InteractionSystem:RefreshItem(item)
+    -- Refresh the state of an item after interaction
+    debugLog("Refreshing item state:", item.id)
+    
+    -- Request updated data from server
+    local refreshEvent = self.remoteEvents:FindFirstChild("RefreshItemState")
+    if not refreshEvent then
+        warn("[InteractionSystem] RefreshItemState remote event not found")
+        return
     end
     
-    return allFound
+    local success = refreshEvent:InvokeServer(item.id)
+    if success then
+        -- Update our current target
+        self:UpdateCurrentTarget()
+    end
+end
+
+function InteractionSystem:AttemptPurchase(item, price, currency)
+    -- Try to purchase an item
+    debugLog("Attempting purchase of", item.id, "for", price, currency)
+    
+    -- Find the appropriate remote event
+    local purchaseEvent = self.remoteEvents:FindFirstChild("PurchaseItem")
+    if not purchaseEvent then
+        warn("[InteractionSystem] PurchaseItem remote event not found")
+        return false
+    end
+    
+    -- Fire the event to the server
+    local success = purchaseEvent:InvokeServer(item.id)
+    return success
 end
 
 function InteractionSystem:EnsureRemotesExist()
-    print("[InteractionSystem] Ensuring required remotes exist")
+    -- Make sure all required remote events/functions exist
+    debugLog("Ensuring remote events exist")
     
-    if not self.remoteEvents then
-        self.remoteEvents = Instance.new("Folder")
-        self.remoteEvents.Name = "Remotes"
-        self.remoteEvents.Parent = ReplicatedStorage
-        print("[InteractionSystem] Created Remotes folder in ReplicatedStorage")
-    end
-    
-    -- Define required remotes and their types
+    -- List of remote events needed
     local requiredRemotes = {
-        { name = "InteractWithItem", type = "RemoteEvent" },
-        { name = "PickupItem", type = "RemoteEvent" },
-        { name = "CloneItem", type = "RemoteEvent" },
-        { name = "GetAvailableInteractions", type = "RemoteFunction" },
-        { name = "GetItemData", type = "RemoteFunction" }
+        { name = "ItemPlaced", type = "RemoteEvent" },
+        { name = "ItemRemoved", type = "RemoteEvent" },
+        { name = "ToggleItemState", type = "RemoteEvent" },
+        { name = "CollectItem", type = "RemoteFunction" },
+        { name = "UseItem", type = "RemoteFunction" },
+        { name = "NPCInteraction", type = "RemoteEvent" },
+        { name = "SearchContainer", type = "RemoteFunction" },
+        { name = "TakeFromContainer", type = "RemoteFunction" },
+        { name = "RefreshItemState", type = "RemoteFunction" },
+        { name = "PurchaseItem", type = "RemoteFunction" }
     }
+    
+    -- In studio, add developer functionality
+    if game:GetService("RunService"):IsStudio() then
+        table.insert(requiredRemotes, { name = "DevCloneItem", type = "RemoteFunction" })
+    end
     
     -- Create any missing remotes
     for _, remoteInfo in ipairs(requiredRemotes) do
         local remote = self.remoteEvents:FindFirstChild(remoteInfo.name)
         
         if not remote then
+            -- Create the missing remote
             if remoteInfo.type == "RemoteEvent" then
                 remote = Instance.new("RemoteEvent")
             else
@@ -1246,6 +1293,26 @@ function InteractionSystem:EnsureRemotesExist()
     end
     
     print("[InteractionSystem] All required remotes now exist")
+end
+
+function InteractionSystem:VerifyRemotes()
+    -- Verify that we can communicate with the server
+    debugLog("Verifying remote communication")
+    
+    -- This would normally ping the server to make sure communications are working
+    -- For example, the server might provide a simple ping remote function
+    local pingRemote = self.remoteEvents:FindFirstChild("Ping")
+    if pingRemote and pingRemote:IsA("RemoteFunction") then
+        local success, response = pcall(function()
+            return pingRemote:InvokeServer("ping")
+        end)
+        
+        if success and response == "pong" then
+            print("[InteractionSystem] Server communication verified")
+        else
+            warn("[InteractionSystem] Server communication test failed")
+        end
+    end
 end
 
 return InteractionSystem
