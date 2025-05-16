@@ -5,9 +5,40 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
 
--- Import shared modules
-local SharedModule = require(ReplicatedStorage:WaitForChild("shared"))
-local Constants = SharedModule.Constants
+-- Import shared modules with fallback
+print("ItemPurchaseHandler: Attempting to require shared module")
+local SharedModule
+local Constants
+
+local success, errorMessage = pcall(function()
+    SharedModule = require(ReplicatedStorage:WaitForChild("shared", 5))
+    Constants = SharedModule.Constants
+    return true
+end)
+
+if not success then
+    warn("ItemPurchaseHandler: Failed to require SharedModule:", errorMessage)
+    print("ItemPurchaseHandler: Creating minimal SharedModule fallback")
+    -- Create minimal fallback for Constants
+    Constants = {
+        CURRENCY = {
+            INGAME = "Coins",
+            ROBUX = "Robux",
+            STARTING_CURRENCY = 100,
+            PRODUCTS = {
+                {id = "coins_1000", name = "1,000 Coins", coins = 1000, robux = 75, bonusCoins = 0, assetId = 3285357280}
+            }
+        },
+        TIER_PRODUCTS = {
+            BASIC = {id = "tier_basic", assetId = 3285357280, robux = 5}
+        }
+    }
+    SharedModule = {
+        Constants = Constants
+    }
+else
+    print("ItemPurchaseHandler: Successfully required SharedModule")
+end
 
 -- Remote events
 local remotes = ReplicatedStorage:WaitForChild("Remotes")

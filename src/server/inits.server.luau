@@ -26,19 +26,29 @@ if not Remotes then
         return remote
     end
     
-    -- Create standard remotes
+    -- Create standard remotes - EVENTS
     createRemote("BuyItem", "RemoteEvent")
-    createRemote("GetInventory", "RemoteFunction")
     createRemote("PlaceItem", "RemoteEvent")
     createRemote("InteractWithItem", "RemoteEvent")
-    createRemote("GetAvailableInteractions", "RemoteFunction") -- Added missing remote function
-    createRemote("CloneItem", "RemoteEvent") -- Added missing remote event
-    createRemote("PickupItem", "RemoteEvent") -- Added missing remote event
-    createRemote("AddToInventory", "RemoteEvent") -- Added missing remote event
-    createRemote("GetItemData", "RemoteFunction") -- Added missing remote function
-    createRemote("ApplyItemEffect", "RemoteEvent") -- Added missing remote event
+    createRemote("CloneItem", "RemoteEvent")
+    createRemote("PickupItem", "RemoteEvent")
+    createRemote("AddToInventory", "RemoteEvent")
+    createRemote("ApplyItemEffect", "RemoteEvent")
     createRemote("ShowItemDescription", "RemoteEvent")
     createRemote("NotifyPlayer", "RemoteEvent")
+    createRemote("MoveItem", "RemoteEvent")
+    createRemote("RotateItem", "RemoteEvent")
+    createRemote("DestroyItem", "RemoteEvent")
+    createRemote("ChangeItemColor", "RemoteEvent")
+    createRemote("RemoveFromInventory", "RemoteEvent")
+    createRemote("PurchaseItem", "RemoteEvent")
+    
+    -- Create standard remotes - FUNCTIONS
+    createRemote("GetInventory", "RemoteFunction")
+    createRemote("GetAvailableInteractions", "RemoteFunction")
+    createRemote("GetItemData", "RemoteFunction")
+    createRemote("GetItemCatalog", "RemoteFunction")
+    createRemote("IsItemAffordable", "RemoteFunction")
     
     print("Created standard remote events and functions")
 end
@@ -158,7 +168,32 @@ if SharedModule.InteractionManager and SharedModule.InteractionManager.new then
         warn("server.inits: Failed to create InteractionManager instance:", imResult)
     end
 else
-    warn("server.inits: InteractionManager module not available")
+    warn("server.inits: InteractionManager module not available in SharedModule, trying local version")
+    
+    -- Try loading our local ItemInteractionManager instead
+    local success, moduleOrError = pcall(function()
+        return require(script.Parent.interaction.ItemInteractionManager)
+    end)
+    
+    if success and moduleOrError then
+        local localSuccess, localResult = pcall(function()
+            return moduleOrError.new()
+        end)
+        
+        if localSuccess and localResult then
+            InteractionManager = localResult
+            print("server.inits: Successfully created local ItemInteractionManager instance")
+            
+            -- Initialize interaction manager
+            if InteractionManager.Initialize then
+                InteractionManager:Initialize()
+            end
+        else
+            warn("server.inits: Failed to create local ItemInteractionManager instance:", localResult)
+        end
+    else
+        warn("server.inits: Failed to require local ItemInteractionManager:", moduleOrError)
+    end
 end
 
 -- Initialize ItemPurchaseHandler

@@ -136,4 +136,20 @@ else
     end
 end
 
+-- Load item type fixes
+local itemTypesFixSuccess = pcall(function()
+    local interaction = script.Parent:FindFirstChild("interaction")
+    if interaction and interaction:FindFirstChild("FixItemTypes") then
+        print("Found FixItemTypes module, loading...")
+        require(interaction.FixItemTypes)
+        print("FixItemTypes module loaded successfully")
+    else
+        warn("FixItemTypes module not found")
+    end
+end)
+
+if not itemTypesFixSuccess then
+    warn("Failed to load FixItemTypes")
+end
+
 print("Client initialization completed successfully")

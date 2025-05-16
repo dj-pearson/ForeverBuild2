@@ -142,8 +142,8 @@ if localScriptInstance then
         print("[InteractionSystem] Found interaction folder: " .. interactionFolder:GetFullName())
           -- Try loading the main interaction module first, then fallbacks if needed
         local moduleScripts = {
-            {name = "InteractionSystemModule_fixed", isEmergency = false}, -- Use our new fixed module
-            {name = "InteractionSystemModule", isEmergency = false}, -- Try original module
+            {name = "ItemInteractionClient", isEmergency = false}, -- Use our new interaction client
+            {name = "InteractionSystemModule", isEmergency = false}, -- Fallback to original module
             {name = "InteractionSystemModule_enhanced", isEmergency = false}, -- Enhanced as backup
             {name = "InteractionSystemModule_emergency", isEmergency = true} -- Last resort
         }
@@ -497,7 +497,41 @@ end
 -- Initialize PlacedItemDialog if available and parent to a valid ScreenGui
 local PlacedItemDialog -- Local scope for this specific initialization
 local successPID, resultPID = pcall(function() 
-    return require(ReplicatedStorage:WaitForChild("shared"):WaitForChild("core"):WaitForChild("ui"):WaitForChild("PlacedItemDialog"))
+    -- Use a more robust approach to find the PlacedItemDialog module
+    local shared = ReplicatedStorage:FindFirstChild("shared")
+    if not shared then
+        error("shared folder not found")
+    end
+    
+    -- First try using the core path (with a timeout)
+    local core = shared:FindFirstChild("core")
+    if core then
+        local ui = core:FindFirstChild("ui")
+        if ui then
+            local placedItemDialog = ui:FindFirstChild("PlacedItemDialog")
+            if placedItemDialog then
+                return require(placedItemDialog)
+            end
+        end
+    end
+    
+    -- If that fails, try looking for PlacedItemDialog directly in multiple locations
+    -- Try in shared folder first
+    local directModule = shared:FindFirstChild("PlacedItemDialog")
+    if directModule then
+        return require(directModule)
+    end
+    
+    -- Try in client's interaction folder
+    local interaction = script.Parent:FindFirstChild("interaction")
+    if interaction then
+        local dialogModule = interaction:FindFirstChild("PlacedItemDialog") or interaction:FindFirstChild("WorldItemUI")
+        if dialogModule then
+            return require(dialogModule)
+        end
+    end
+    
+    error("Could not find PlacedItemDialog module in any expected location")
 end)
 if successPID then
     PlacedItemDialog = resultPID
@@ -547,7 +581,7 @@ function clientModule.reloadInteractionSystem()
     if interactionFolder then
         -- Try loading modules in order of preference
         local moduleScripts = {
-            {name = "InteractionSystemModule_fixed", isEmergency = false},
+            {name = "ItemInteractionClient", isEmergency = false},
             {name = "InteractionSystemModule", isEmergency = false},
             {name = "InteractionSystemModule_enhanced", isEmergency = false},
             {name = "InteractionSystemModule_emergency", isEmergency = true}
