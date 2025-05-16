@@ -56,10 +56,6 @@ Constants.ITEM_PRICES = {
         INGAME = 25, -- 25 coins
         ROBUX = 25 -- 25 Robux
     },
-    SECONDARY = {
-        INGAME = 15, -- 15 coins
-        ROBUX = 15 -- 15 Robux
-    },
     RARE = {
         INGAME = 100, -- 100 coins
         ROBUX = 100 -- 100 Robux
