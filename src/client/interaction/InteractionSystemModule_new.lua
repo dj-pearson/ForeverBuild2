@@ -201,19 +201,33 @@ function InteractionSystem:ShowInteractionUI(item)
     self.ui.itemNameLabel.Text = itemName
     self.ui.descriptionLabel.Text = itemInfo.description or "No description available"
     
-    -- Set price information
-    local ingamePrice = itemInfo.price.INGAME
-    local robuxPrice = itemInfo.price.ROBUX
+    -- Set price information with fallbacks
+    -- Make sure price exists and has the correct structure
+    if not itemInfo.price then
+        itemInfo.price = {
+            INGAME = Constants.ITEM_PRICES and Constants.ITEM_PRICES.BASIC and Constants.ITEM_PRICES.BASIC.INGAME or 5,
+            ROBUX = Constants.ITEM_PRICES and Constants.ITEM_PRICES.BASIC and Constants.ITEM_PRICES.BASIC.ROBUX or 5
+        }
+    end
     
-    self.ui.priceLabel.Text = string.format("Price: %d %s or %d Robux", 
-        ingamePrice, Constants.CURRENCY.INGAME, robuxPrice)
+    -- Ensure prices are never zero (for display purposes)
+    local ingamePrice = math.max(itemInfo.price.INGAME or 5, 5)
+    local robuxPrice = math.max(itemInfo.price.ROBUX or 5, 5)
+    
+    -- Use emojis for better display
+    local coinEmoji = "💰"
+    local robuxEmoji = "💎"
+    
+    self.ui.priceLabel.Text = string.format("Price: %s %d %s or %s %d Robux", 
+        coinEmoji, ingamePrice, Constants.CURRENCY.INGAME, robuxEmoji, robuxPrice)
     
     -- Update button text
-    self.ui.purchaseCoinsButton.Text = string.format("Buy with %d %s", 
-        ingamePrice, Constants.CURRENCY.INGAME)
-    self.ui.purchaseRobuxButton.Text = string.format("Buy with %d Robux", robuxPrice)
+    self.ui.purchaseCoinsButton.Text = string.format("%s Buy with %d %s", 
+        coinEmoji, ingamePrice, Constants.CURRENCY.INGAME)
+    self.ui.purchaseRobuxButton.Text = string.format("%s Buy with %d Robux", 
+        robuxEmoji, robuxPrice)
     
-    -- Store the current target
+    -- Store the current target with the updated prices
     self.currentTarget = {
         item = item,
         itemName = itemName,
@@ -290,16 +304,79 @@ end
 
 -- Get item information from Constants
 function InteractionSystem:GetItemInfo(itemName)
+    -- Handle case where itemName is a table instead of string
+    if type(itemName) == "table" then
+        warn("GetItemInfo received a table instead of string for itemType:", itemName)
+        -- Generate a unique key for this unknown item
+        local uniqueKey = "Unknown_Item_" .. tostring(itemName):sub(-4)
+        return {
+            icon = "rbxassetid://3284930147", -- Default icon
+            description = "Unknown Item",
+            tier = "BASIC",
+            price = {
+                INGAME = Constants.ITEM_PRICES and Constants.ITEM_PRICES.BASIC and Constants.ITEM_PRICES.BASIC.INGAME or 5,
+                ROBUX = Constants.ITEM_PRICES and Constants.ITEM_PRICES.BASIC and Constants.ITEM_PRICES.BASIC.ROBUX or 5
+            }
+        }
+    end
+    
     -- First try to match exactly
-    if Constants.ITEMS[itemName] then
-        return Constants.ITEMS[itemName]
+    if Constants.ITEMS and Constants.ITEMS[itemName] then
+        local itemInfo = Constants.ITEMS[itemName]
+        
+        -- Ensure proper price structure exists
+        if not itemInfo.price then
+            itemInfo.price = {
+                INGAME = Constants.ITEM_PRICES and Constants.ITEM_PRICES.BASIC and Constants.ITEM_PRICES.BASIC.INGAME or 5,
+                ROBUX = Constants.ITEM_PRICES and Constants.ITEM_PRICES.BASIC and Constants.ITEM_PRICES.BASIC.ROBUX or 5
+            }
+        elseif type(itemInfo.price) == "number" then
+            -- Convert old price format to new format
+            local oldPrice = itemInfo.price
+            itemInfo.price = {
+                INGAME = oldPrice,
+                ROBUX = oldPrice
+            }
+        end
+        
+        return itemInfo
+    end
+    
+    -- Ensure ITEMS exists
+    if not Constants.ITEMS then
+        Constants.ITEMS = {}
     end
     
     -- Try to match by checking if the item name contains a known item key
     for key, info in pairs(Constants.ITEMS) do
         if itemName:lower():find(key:lower()) then
+            -- Ensure proper price structure for matched item
+            if not info.price then
+                info.price = {
+                    INGAME = Constants.ITEM_PRICES and Constants.ITEM_PRICES.BASIC and Constants.ITEM_PRICES.BASIC.INGAME or 5,
+                    ROBUX = Constants.ITEM_PRICES and Constants.ITEM_PRICES.BASIC and Constants.ITEM_PRICES.BASIC.ROBUX or 5
+                }
+            elseif type(info.price) == "number" then
+                local oldPrice = info.price
+                info.price = {
+                    INGAME = oldPrice,
+                    ROBUX = oldPrice
+                }
+            end
+            
             return info
         end
+    end
+    
+    -- Ensure Constants.ITEM_PRICES exists
+    if not Constants.ITEM_PRICES then
+        Constants.ITEM_PRICES = {
+            BASIC = {INGAME = 5, ROBUX = 5},
+            LEVEL_1 = {INGAME = 10, ROBUX = 10},
+            LEVEL_2 = {INGAME = 25, ROBUX = 25},
+            RARE = {INGAME = 100, ROBUX = 100},
+            FREE_ITEMS = {INGAME = 0, ROBUX = 0}
+        }
     end
     
     -- If no match is found, determine tier and return generic info
@@ -307,28 +384,43 @@ function InteractionSystem:GetItemInfo(itemName)
     local tierPrices = Constants.ITEM_PRICES[tier] or Constants.ITEM_PRICES.BASIC
     
     -- Create generic item info
-    return {
+    local newItemInfo = {
         icon = "rbxassetid://3284930147", -- Default icon
         description = itemName .. " - " .. tier,
         tier = tier,
         price = {
-            INGAME = tierPrices.INGAME,
-            ROBUX = tierPrices.ROBUX
+            INGAME = tierPrices.INGAME or 5,
+            ROBUX = tierPrices.ROBUX or 5
         }
     }
+    
+    -- Cache this item for future lookups
+    Constants.ITEMS[itemName] = newItemInfo
+    
+    return newItemInfo
 end
 
 -- Purchase with in-game currency
 function InteractionSystem:PurchaseWithCoins()
-    if not self.currentTarget then return end
+    if not self.currentTarget then 
+        warn("PurchaseWithCoins failed: No current target")
+        return 
+    end
     
     local item = self.currentTarget.item
     local itemName = self.currentTarget.itemName
     local price = self.currentTarget.ingamePrice
     
-    debugLog("Attempting to purchase", itemName, "with", price, "coins")
+    print("CLIENT - Attempting to purchase", itemName, "with", price, "coins")
+    
+    -- Check for invalid data
+    if not item or not item:IsA("Model") then
+        warn("PurchaseWithCoins failed: Invalid item", item)
+        return
+    end
     
     -- Call server to handle purchase
+    print("CLIENT - Firing PurchaseItem event to server with item:", item:GetFullName(), "Currency type: INGAME, Price:", price)
     purchaseItemEvent:FireServer(item, "INGAME", price)
 end
 
@@ -343,12 +435,33 @@ function InteractionSystem:PurchaseWithRobux()
     
     debugLog("Attempting to purchase", itemName, "with Robux")
     
+    -- Create fallback TIER_PRODUCTS if it doesn't exist
+    if not Constants.TIER_PRODUCTS then
+        warn("Constants.TIER_PRODUCTS is nil, creating fallback")
+        Constants.TIER_PRODUCTS = {
+            BASIC = {id = "tier_basic", assetId = 1472807192, robux = 5},
+            LEVEL_1 = {id = "tier_level1", assetId = 1472807192, robux = 10},
+            LEVEL_2 = {id = "tier_level2", assetId = 1472807192, robux = 25},
+            SECONDARY = {id = "tier_secondary", assetId = 1472807192, robux = 15},
+            RARE = {id = "tier_rare", assetId = 1472807192, robux = 100},
+            EXCLUSIVE = {id = "tier_exclusive", assetId = 1472807192, robux = 1000},
+            WEAPONS = {id = "tier_weapons", assetId = 1472807192, robux = 500},
+            RARE_DROP = {id = "tier_rare_drop", assetId = 1472807192, robux = 800}
+        }
+    end
+    
     -- Get the appropriate developer product
     local productInfo = Constants.TIER_PRODUCTS[tier]
     
+    -- If no product info for this tier, use BASIC as fallback
     if not productInfo then
-        warn("No product info found for tier:", tier)
-        return
+        warn("No product info found for tier:", tier, "using BASIC tier as fallback")
+        productInfo = Constants.TIER_PRODUCTS.BASIC
+        
+        -- If still no product info, create a basic one
+        if not productInfo then
+            productInfo = {id = "tier_basic", assetId = 1472807192, robux = 5}
+        end
     end
     
     -- Prompt purchase

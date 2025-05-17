@@ -180,15 +180,25 @@ end
 
 -- Update balance display
 function CurrencyUI:UpdateBalance(balance)
-    if not self.ui then return end
+    if not self.ui then 
+        warn("CurrencyUI:UpdateBalance - UI not found!")
+        return 
+    end
     
     local mainFrame = self.ui:FindFirstChild("MainFrame")
-    if not mainFrame then return end
+    if not mainFrame then 
+        warn("CurrencyUI:UpdateBalance - MainFrame not found!")
+        return 
+    end
     
     local balanceLabel = mainFrame:FindFirstChild("Balance")
-    if not balanceLabel then return end
+    if not balanceLabel then 
+        warn("CurrencyUI:UpdateBalance - Balance label not found!")
+        return 
+    end
     
     balanceLabel.Text = tostring(balance)
+    print("💰 SHARED UI UPDATED: Currency balance is now " .. balance)
 end
 
 -- Show purchase menu

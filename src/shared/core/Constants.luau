@@ -167,8 +167,62 @@ Constants.ITEMS = {
         description = "A free item.",
         tier = "FREE_ITEMS",
         price = {INGAME = 0, ROBUX = 0}
-    }
+    },
     -- Add more items as needed
+    ["Brick_Cube"] = {
+        icon = "rbxassetid://3284930147",
+        description = "A basic brick cube building block.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
+    ["Fabric_Cube"] = {
+        icon = "rbxassetid://3284930147",
+        description = "A basic fabric cube building block.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
+    ["Fire_Cube"] = {
+        icon = "rbxassetid://3284930147",
+        description = "A basic fire cube building block.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
+    ["Glass_Cube"] = {
+        icon = "rbxassetid://3284930147",
+        description = "A basic glass cube building block.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
+    ["Grass_Cube"] = {
+        icon = "rbxassetid://3284930147",
+        description = "A basic grass cube building block.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
+    ["Stone_Cube"] = {
+        icon = "rbxassetid://3284930147",
+        description = "A basic stone cube building block.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
+    ["Water_Cube"] = {
+        icon = "rbxassetid://3284930147",
+        description = "A basic water cube building block.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
+    ["Wood_Cube"] = {
+        icon = "rbxassetid://3284930147",
+        description = "A basic wood cube building block.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
+    ["Unknown_Item"] = {
+        icon = "rbxassetid://3284930147",
+        description = "An unknown item.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    }
 }
 
 -- Developer Products for Item Tiers

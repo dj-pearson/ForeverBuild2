@@ -357,13 +357,40 @@ local function safeInvoke(remote, ...)
         return { success = false, message = lastError }
     end
     
-    if type(resultOrError) ~= "table" or not resultOrError.success then
-        lastError = (type(resultOrError) == "table" and resultOrError.message) or "Unknown error."
+    -- Handle different response formats for better compatibility
+    if type(resultOrError) == "table" then
+        -- The server returned a properly formatted response table
+        if resultOrError.success ~= nil then
+            -- Standard format with success field
+            if not resultOrError.success then
+                lastError = resultOrError.message or "Unknown error."
+                return { success = false, message = lastError }
+            end
+            return resultOrError
+        else
+            -- Server returned a table but without explicit success field
+            -- Treat it as a successful response
+            lastError = nil
+            return { 
+                success = true, 
+                message = "Data received", 
+                inventory = resultOrError.inventory or {}, 
+                currency = resultOrError.currency or 0
+            }
+        end
+    elseif resultOrError == nil then
+        -- Handle nil response
+        lastError = "No data received from server."
+        return { success = false, message = lastError }
+    else
+        -- Handle other response types
+        lastError = "Unexpected response format."
+        warn("Unexpected result format in client_core.luau:", type(resultOrError))
         return { success = false, message = lastError }
     end
     
     lastError = nil
-    return resultOrError
+    return { success = true, message = "Success", data = resultOrError }
 end
 
 -- Create inventory button with proper error handling
@@ -398,20 +425,50 @@ local function createInventoryButton()
             warn("GetInventoryFunc not initialized for inventory button click in client_core.luau")
             return
         end
-        local result = safeInvoke(GetInventoryFunc)
-        if result and result.success then
-            currentInventory = result.inventory or {}
-            currentCurrency = result.currency or 0
+        
+        -- Improved error handling for inventory retrieval
+        local success, response = pcall(function()
+            return GetInventoryFunc:InvokeServer()
+        end)
+        
+        if not success then
+            warn("GetInventory invocation failed with error:", response)
+            return
+        end
+        
+        -- Process the response, being tolerant of different formats
+        if response == nil then
+            warn("GetInventory returned nil")
+            return
+        end
+        
+        local inventoryData = {}
+        local currencyAmount = 0
+        
+        if type(response) == "table" then
+            -- Extract inventory and currency regardless of exact structure
+            if response.inventory then
+                inventoryData = response.inventory
+            end
+            
+            if response.currency then
+                currencyAmount = response.currency
+            end
+            
+            -- Update local cache
+            currentInventory = inventoryData
+            currentCurrency = currencyAmount
+            
+            -- Try to update UI if the module is available
             if InventoryUIModule and InventoryUIModule.UpdateInventory and InventoryUIModule.Show then
-                InventoryUIModule.UpdateInventory(currentInventory, currentCurrency)
+                InventoryUIModule.UpdateInventory(inventoryData, currencyAmount)
                 InventoryUIModule.Show()
             else
-                warn("InventoryUIModule not properly initialized or missing methods for inventory button click in client_core.luau. UpdateInventory exists: ", tostring(InventoryUIModule and InventoryUIModule.UpdateInventory), "Show exists: ", tostring(InventoryUIModule and InventoryUIModule.Show))
+                print("InventoryUIModule not available, but data was retrieved successfully")
+                print("Retrieved " .. #inventoryData .. " inventory items and " .. currencyAmount .. " currency")
             end
-        elseif result then
-            warn("Failed to get inventory in client_core.luau:", result.message)
         else
-            warn("Failed to get inventory in client_core.luau: safeInvoke returned nil")
+            warn("Unexpected response format from GetInventory:", type(response))
         end
     end)
 end

@@ -250,21 +250,41 @@ function CurrencyUI:SetupEventHandling()
         return ReplicatedStorage:WaitForChild("Remotes", 5)
     end)
     
-    if success and remotes and remotes:FindFirstChild("UpdateBalance") then
-        remotes.UpdateBalance.OnClientEvent:Connect(function(balance)
-            self:UpdateBalance(balance)
-        end)
+    if success and remotes then
+        local updateBalanceEvent = remotes:FindFirstChild("UpdateBalance")
+        if updateBalanceEvent then
+            print("Found UpdateBalance remote event, connecting...")
+            
+            updateBalanceEvent.OnClientEvent:Connect(function(balance)
+                print("📣 UpdateBalance event received with balance: " .. tostring(balance))
+                self:UpdateBalance(balance)
+            end)
+            
+            print("Successfully connected to UpdateBalance remote event")
+        else
+            warn("CurrencyUI: UpdateBalance remote event not found or timed out")
+            -- Try again later
+            task.delay(5, function()
+                local laterRemotes = ReplicatedStorage:FindFirstChild("Remotes")
+                if laterRemotes then
+                    local laterEvent = laterRemotes:FindFirstChild("UpdateBalance")
+                    if laterEvent then
+                        print("Found UpdateBalance remote event after delay, connecting...")
+                        
+                        laterEvent.OnClientEvent:Connect(function(balance)
+                            print("📣 UpdateBalance event received with balance: " .. tostring(balance))
+                            self:UpdateBalance(balance)
+                        end)
+                        
+                        print("Successfully connected to UpdateBalance remote event after delay")
+                    else
+                        warn("Still couldn't find UpdateBalance event after delay")
+                    end
+                end
+            end)
+        end
     else
-        warn("CurrencyUI: UpdateBalance remote event not found or timed out")
-        -- Try again later
-        task.delay(5, function()
-            if ReplicatedStorage:FindFirstChild("Remotes") and 
-               ReplicatedStorage.Remotes:FindFirstChild("UpdateBalance") then
-                ReplicatedStorage.Remotes.UpdateBalance.OnClientEvent:Connect(function(balance)
-                    self:UpdateBalance(balance)
-                end)
-            end
-        end)
+        warn("CurrencyUI: Failed to find Remotes folder")
     end
     
     -- Handle purchase button click if UI was created
@@ -278,7 +298,25 @@ end
 
 -- Update balance display
 function CurrencyUI:UpdateBalance(balance)
-    self.ui.MainFrame.BalanceLabel.Text = tostring(balance)
+    -- Store the balance in the object
+    self.balance = balance
+    
+    -- Check if UI exists
+    if not self.ui or not self.ui:FindFirstChild("MainFrame") then
+        warn("CurrencyUI:UpdateBalance - UI not found!")
+        return
+    end
+    
+    -- Check if BalanceLabel exists
+    local balanceLabel = self.ui.MainFrame:FindFirstChild("BalanceLabel")
+    if not balanceLabel then
+        warn("CurrencyUI:UpdateBalance - BalanceLabel not found!")
+        return
+    end
+    
+    -- Update the display
+    balanceLabel.Text = tostring(balance)
+    print("💰 CLIENT UI UPDATED: Currency balance is now " .. balance)
 end
 
 -- Show purchase menu

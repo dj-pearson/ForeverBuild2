@@ -78,6 +78,33 @@ else
                 STARTING_CURRENCY = 100,
                 STARTING_COINS = 100
             },
+            ITEM_PRICES = {
+                BASIC = {
+                    INGAME = 5,
+                    ROBUX = 5
+                },
+                LEVEL_1 = {
+                    INGAME = 10,
+                    ROBUX = 10
+                },
+                LEVEL_2 = {
+                    INGAME = 25,
+                    ROBUX = 25
+                },
+                RARE = {
+                    INGAME = 100,
+                    ROBUX = 100
+                },
+                FREE_ITEMS = {
+                    INGAME = 0,
+                    ROBUX = 0
+                }
+            },
+            TIER_PRODUCTS = {
+                BASIC = {id = "tier_basic", assetId = 1472807192, robux = 5},
+                LEVEL_1 = {id = "tier_level1", assetId = 1472807192, robux = 10},
+                LEVEL_2 = {id = "tier_level2", assetId = 1472807192, robux = 25}
+            },
             UI_COLORS = {
                 PRIMARY = Color3.fromRGB(0, 170, 255),
                 SECONDARY = Color3.fromRGB(40, 40, 40),
@@ -87,9 +114,24 @@ else
             -- Add missing item types structure
             ITEMS = {
                 -- These are dummy items to avoid the nil indexing errors
-                Brick_Cube = { name = "Brick Cube", price = 10 },
-                Wood_Plank = { name = "Wood Plank", price = 5 },
-                Stone_Block = { name = "Stone Block", price = 15 }
+                Brick_Cube = { 
+                    name = "Brick Cube", 
+                    description = "A basic brick cube building block.",
+                    tier = "BASIC",
+                    price = {INGAME = 5, ROBUX = 5}
+                },
+                Wood_Cube = { 
+                    name = "Wood Cube", 
+                    description = "A basic wood cube building block.",
+                    tier = "BASIC",
+                    price = {INGAME = 5, ROBUX = 5}
+                },
+                Stone_Cube = { 
+                    name = "Stone Block", 
+                    description = "A basic stone cube building block.",
+                    tier = "BASIC",
+                    price = {INGAME = 5, ROBUX = 5}
+                }
             }
         }
     end

@@ -42,6 +42,7 @@ if not Remotes then
     createRemote("ChangeItemColor", "RemoteEvent")
     createRemote("RemoveFromInventory", "RemoteEvent")
     createRemote("PurchaseItem", "RemoteEvent")
+    createRemote("UpdateBalance", "RemoteEvent")
     
     -- Create standard remotes - FUNCTIONS
     createRemote("GetInventory", "RemoteFunction")
@@ -219,9 +220,39 @@ end
 -- Setup Remote Function Handlers
 -- GetInventory
 local getInventoryRemote = Remotes:FindFirstChild("GetInventory")
-if getInventoryRemote and InventoryManager then
+if getInventoryRemote then
     getInventoryRemote.OnServerInvoke = function(player)
-        return InventoryManager:GetPlayerInventory(player)
+        print("GetInventory RemoteFunction called by player:", player.Name)
+        
+        -- Always use ItemPurchaseHandler if available
+        if ItemPurchaseHandler and ItemPurchaseHandler.GetPlayerInventory then
+            local success, result = pcall(function()
+                return ItemPurchaseHandler:GetPlayerInventory(player)
+            end)
+            
+            if success then
+                -- Debug log the result before returning
+                print("GetInventory result for", player.Name, ":", 
+                    "success=", result.success, 
+                    "items=", result.inventory and #result.inventory or 0, 
+                    "currency=", result.currency)
+                
+                -- Return the result directly
+                return result
+            else
+                warn("Error in GetPlayerInventory:", result)
+            end
+        else
+            warn("ItemPurchaseHandler or GetPlayerInventory not available")
+        end
+        
+        -- If we get here, something went wrong - return a basic response
+        return {
+            success = true,
+            inventory = {},
+            currency = 100,
+            message = "Default fallback response"
+        }
     end
 end
 

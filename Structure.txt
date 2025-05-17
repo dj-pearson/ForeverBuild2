@@ -1,409 +1,289 @@
-  # ForeverBuild2 Structure File
-# This file defines all items, their properties, and organization
-# Format: [Category] followed by item entries
 
-[Items]
-# Basic items
-brick_cube=Brick Cube,100
-wood_cube=Wood Cube,150
-stone_cube=Stone Cube,175
-grass_cube=Grass Cube,150
-fabric_cube=Fabric Cube,125
-glass_cube=Glass Cube,200
-water_cube=Water Cube,225
-fire_cube=Fire Cube,250
+-- Export the main function globally so it can be called with different parameters
+_G.scanGameStructure = scanGameStructure
 
-# Glowing items
-glow_red_cube=Red Glowing Cube,300
-glow_blue_cube=Blue Glowing Cube,300
-glow_green_cube=Green Glowing Cube,300
-glow_purple_cube=Purple Glowing Cube,350
-glow_yellow_cube=Yellow Glowing Cube,325
-glow_white_cube=White Glowing Cube,400
-# Interactive items
-gear=Spinning Gear,500
-trampoline=Trampoline,750
-
-# Teleportation items
-portal_blue=Blue Portal,1000
-portal_red=Red Portal,1000
-
-[Categories]
-# Category definitions
-basic=brick_cube,wood_cube,stone_cube,grass_cube,fabric_cube,glass_cube,water_cube,fire_cube
-glow=glow_red_cube,glow_blue_cube,glow_green_cube,glow_purple_cube,glow_yellow_cube,glow_white_cube
-interactive=gear,trampoline
-teleport=portal_blue,portal_red
-
-[Properties]
-# Properties for specific items
-trampoline=bounceHeight:20,bounceCooldown:1.5
-gear=rotationSpeed:2
-portal_blue=linkedPortal:portal_red,cooldown:5
-portal_red=linkedPortal:portal_blue,cooldown:5
-glow_red_cube=glowIntensity:1.5,glowColor:255,0,0
-glow_blue_cube=glowIntensity:1.5,glowColor:0,0,255
-glow_green_cube=glowIntensity:1.5,glowColor:0,255,0
-    end
-    
-    if attrCount > 0 then
-        attrStr = attrStr .. "]"
-        info = info .. attrStr
-    end
-    
-    -- Print the current object
-    print(prefix .. connector .. icon .. " " .. info)
-    
-    -- Get children and sort them (Folders first, then alphabetically)
-    local children = object:GetChildren()
-    table.sort(children, function(a, b)
-        if a:IsA("Folder") and not b:IsA("Folder") then
-            return true
-        elseif not a:IsA("Folder") and b:IsA("Folder") then
-            return false
-        else
-            return a.Name < b.Name
-        end
-    end)
-    
-    -- Print children
-    for i, child in ipairs(children) do
-        local isLastChild = (i == #children)
-        printTree(child, depth + 1, isLastChild, nextPrefix)
-    end
-end
-
--- Add a collapsible version for large structures
-local function printTreeCollapsible(object, depth, isLast, prefix, maxDepth)
-    depth = depth or 0
-    maxDepth = maxDepth or 3  -- Default max depth
-    prefix = prefix or ""
-    
-    if depth > maxDepth then
-        return
-    end
-    
-    -- Same tree printing logic as above
-    local connector = isLast and "└─ " or "├─ "
-    local nextPrefix = prefix .. (isLast and "   " or "│  ")
-    
-    local icon = getObjectIcon(object)
-    local info = string.format("%s (%s)", object.Name, object.ClassName)
-    
-    local attributes = object:GetAttributes()
-    local attrCount = 0
-    local attrStr = ""
-    
-    for key, value in pairs(attributes) do
-        attrCount = attrCount + 1
-        if attrCount == 1 then
-            attrStr = string.format(" [%s=%s", key, tostring(value))
-        else
-            attrStr = attrStr .. string.format(", %s=%s", key, tostring(value))
-        endglow_purple_cube=glowIntensity:1.5,glowColor:125,0,255
-glow_yellow_cube=glowIntensity:1.5,glowColor:255,255,0
-glow_white_cube=glowIntensity:2.0,glowColor:255,255,255
-
-[Tiers]
-# Pricing tiers for items
-tier1=100
-tier2=200
-tier3=300
-tier4=500
-tier5=750
-tier6=1000
-
-[TierAssignments]
-# Assign items to tiers
-tier1=brick_cube,wood_cube,grass_cube,fabric_cube
-tier2=stone_cube,glass_cube,water_cube
-tier3=fire_cube,glow_red_cube,glow_blue_cube,glow_green_cube,glow_yellow_cube
-tier4=glow_purple_cube,glow_white_cube,gear
-tier5=trampoline
-tier6=portal_blue,portal_red
-
-[Interactions]
-# Define possible interactions for items
-trampoline=jump,examine,customize
-gear=spin,examine,pickup
-portal_blue=teleport,examine,configure
-portal_red=teleport,examine,configure
-    
-    for i, child in ipairs(children) do
-        local isLastChild = (i == #children)
-        printTreeCollapsible(child, depth + 1, isLastChild, nextPrefix, maxDepth)
-    end
-end
-
--- Statistics function
-local function getWorkspaceStats()
-    local stats = {
-        totalModels = 0,
-        totalParts = 0,
-        totalFolders = 0,
-        totalScripts = 0,
-        totalOthers = 0
-    }
-    
-    local function countObjects(parent)
-        for _, child in ipairs(parent:GetChildren()) do
-            if child:IsA("Model") then
-                stats.totalModels = stats.totalModels + 1
-            elseif child:IsA("BasePart") then
-                stats.totalParts = stats.totalParts + 1
-            elseif child:IsA("Folder") then
-                stats.totalFolders = stats.totalFolders + 1
-            elseif child:IsA("BaseScript") then
-                stats.totalScripts = stats.totalScripts + 1
-            else
-                stats.totalOthers = stats.totalOthers + 1
-            end
-            countObjects(child)
-        end
-    end
-    
-    countObjects(workspace)
-    return stats
-end
-
--- Main execution
-print("=== WORKSPACE STRUCTURE ===")
-print("🌎 " .. workspace.Name .. " (Workspace)")
-print("│")
-
-local children = workspace:GetChildren()
-for i, child in ipairs(children) do
-    local isLast = (i == #children)
-    printTree(child, 1, isLast, "")
-end
-
-print("\n=== WORKSPACE STATISTICS ===")
-local stats = getWorkspaceStats()
-print("📁 Folders: " .. stats.totalFolders)
-print("📋 Models: " .. stats.totalModels)
-print("🧊 Parts: " .. stats.totalParts)
-print("📝 Scripts: " .. stats.totalScripts)
-print("❓ Others: " .. stats.totalOthers)
-print("📊 Total Objects: " .. (stats.totalFolders + stats.totalModels + stats.totalParts + stats.totalScripts + stats.totalOthers))
-
--- Alternative collapsible view for large workspaces
-print("\n=== COLLAPSED VIEW (Max Depth: 3) ===")
-print("🌎 " .. workspace.Name .. " (Workspace)")
-print("│")
-
-for i, child in ipairs(children) do
-    local isLast = (i == #children)
-    printTreeCollapsible(child, 1, isLast, "", 3)
-end  -  Studio
-  15:02:32.629  === WORKSPACE STRUCTURE ===  -  Edit
-  15:02:32.629  🌎 Workspace (Workspace)  -  Edit
-  15:02:32.629  │  -  Edit
-  15:02:32.629  ├─ ❓ Terrain (Terrain)  -  Edit
-  15:02:32.629  ├─ 📷 Camera (Camera)  -  Edit
-  15:02:32.629  ├─ 📁 Items (Folder)  -  Edit
-  15:02:32.630  │  ├─ 📁 Basic (Folder)  -  Edit
-  15:02:32.630  │  │  ├─ 📁 Glow (Folder)  -  Edit
-  15:02:32.630  │  │  │  ├─ 📋 Glow_Blue_Cube (Model) [GlowColor=Blue]  -  Edit
-  15:02:32.630  │  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.630  │  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.630  │  │  │  ├─ 📋 Glow_Green_Cube (Model) [GlowColor=Green]  -  Edit
-  15:02:32.630  │  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.631  │  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.631  │  │  │  ├─ 📋 Glow_Purple_Cube (Model) [GlowColor=Purple]  -  Edit
-  15:02:32.631  │  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.631  │  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.631  │  │  │  ├─ 📋 Glow_Red_Cube (Model) [GlowColor=Red]  -  Edit
-  15:02:32.632  │  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.632  │  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.632  │  │  │  ├─ 📋 Glow_White_Cube (Model) [GlowColor=White]  -  Edit
-  15:02:32.632  │  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.632  │  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.632  │  │  │  └─ 📋 Glow_Yellow_Cube (Model) [GlowColor=Yellow]  -  Edit
-  15:02:32.633  │  │  │     └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.633  │  │  │        └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.633  │  │  ├─ 📋 Brick_Cube (Model)  -  Edit
-  15:02:32.633  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.633  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.633  │  │  ├─ 📋 Fabric_Cube (Model)  -  Edit
-  15:02:32.634  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.634  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.634  │  │  ├─ 📋 Fire_Cube (Model)  -  Edit
-  15:02:32.634  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.635  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.635  │  │  ├─ 📋 Gear (Model)  -  Edit
-  15:02:32.635  │  │  │  └─ 🔗 Gear (UnionOperation)  -  Edit
-  15:02:32.635  │  │  │     └─ 📝 Spinning Script (Script)  -  Edit
-  15:02:32.635  │  │  ├─ 📋 Glass_Cube (Model)  -  Edit
-  15:02:32.636  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.636  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.636  │  │  ├─ 📋 Grass_Cube (Model)  -  Edit
-  15:02:32.636  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.636  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.636  │  │  ├─ 📋 Stone_Cube (Model)  -  Edit
-  15:02:32.636  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.636  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.636  │  │  ├─ 📋 Water_Cube (Model)  -  Edit
-  15:02:32.637  │  │  │  └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.637  │  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.637  │  │  └─ 📋 Wood_Cube (Model)  -  Edit
-  15:02:32.637  │  │     └─ 🔗 SmoothCube (UnionOperation)  -  Edit
-  15:02:32.637  │  │        └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.637  │  ├─ 📁 Exclusive (Folder)  -  Edit
-  15:02:32.637  │  ├─ 📁 Free_items (Folder)  -  Edit
-  15:02:32.637  │  ├─ 📁 Random_Drop (Folder)  -  Edit
-  15:02:32.637  │  ├─ 📁 Rare (Folder)  -  Edit
-  15:02:32.637  │  ├─ 📁 Secondary (Folder)  -  Edit
-  15:02:32.638  │  │  └─ 📁 Teleport Portals (Folder)  -  Edit
-  15:02:32.638  │  │     ├─ 📋 PortalBlue (Model)  -  Edit
-  15:02:32.638  │  │     │  ├─ 🧊 BlueArrive (Part)  -  Edit
-  15:02:32.638  │  │     │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.638  │  │     │  ├─ 🧊 BlueTeleport (Part)  -  Edit
-  15:02:32.639  │  │     │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.639  │  │     │  ├─ 📋 Model (Model)  -  Edit
-  15:02:32.639  │  │     │  │  ├─ 🧊 Part (Part)  -  Edit
-  15:02:32.640  │  │     │  │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.640  │  │     │  │  ├─ 🧊 Part (Part)  -  Edit
-  15:02:32.640  │  │     │  │  │  ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.640  │  │     │  │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.640  │  │     │  │  └─ 🔗 Union (UnionOperation)  -  Edit
-  15:02:32.640  │  │     │  │     └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.640  │  │     │  └─ 🧊 Part (Part)  -  Edit
-  15:02:32.640  │  │     ├─ 📋 PortalRed (Model)  -  Edit
-  15:02:32.640  │  │     │  ├─ 📋 Model (Model)  -  Edit
-  15:02:32.641  │  │     │  │  ├─ 🧊 Part (Part)  -  Edit
-  15:02:32.641  │  │     │  │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.641  │  │     │  │  ├─ 🧊 Part (Part)  -  Edit
-  15:02:32.641  │  │     │  │  │  ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.641  │  │     │  │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.641  │  │     │  │  └─ 🔗 Union (UnionOperation)  -  Edit
-  15:02:32.641  │  │     │  │     └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.642  │  │     │  ├─ 🧊 Part (Part)  -  Edit
-  15:02:32.642  │  │     │  ├─ 🧊 RedArrive (Part)  -  Edit
-  15:02:32.642  │  │     │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.642  │  │     │  └─ 🧊 RedTeleport (Part)  -  Edit
-  15:02:32.643  │  │     │     └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.643  │  │     ├─ 📝 Script (Script)  -  Edit
-  15:02:32.643  │  │     └─ 📷 ThumbnailCamera (Camera)  -  Edit
-  15:02:32.643  │  └─ 📁 Weapons (Folder)  -  Edit
-  15:02:32.643  ├─ 📁 World_Items (Folder)  -  Edit
-  15:02:32.643  │  ├─ 📋 Trampoline (Model)  -  Edit
-  15:02:32.643  │  │  ├─ 🔗 Trampoline (UnionOperation)  -  Edit
-  15:02:32.644  │  │  │  └─ ❓ Texture (Texture)  -  Edit
-  15:02:32.644  │  │  ├─ 🧊 TrampolineBouncyThing (Part)  -  Edit
-  15:02:32.644  │  │  │  ├─ 📝 BouncePad (Script)  -  Edit
-  15:02:32.645  │  │  │  └─ ❓ Texture (Texture)  -  Edit
-  15:02:32.645  │  │  ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.645  │  │  │  ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.645  │  │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.645  │  │  ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.645  │  │  │  ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.646  │  │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.646  │  │  ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.646  │  │  │  ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.646  │  │  │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.646  │  │  └─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.646  │  │     ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.646  │  │     └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.646  │  └─ 📋 Trampoline (Model)  -  Edit
-  15:02:32.647  │     ├─ 🔗 Trampoline (UnionOperation)  -  Edit
-  15:02:32.649  │     │  └─ ❓ Texture (Texture)  -  Edit
-  15:02:32.649  │     ├─ 🧊 TrampolineBouncyThing (Part)  -  Edit
-  15:02:32.650  │     │  ├─ 📝 BouncePad (Script)  -  Edit
-  15:02:32.652  │     │  └─ ❓ Texture (Texture)  -  Edit
-  15:02:32.653  │     ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.653  │     │  ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.653  │     │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.653  │     ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.654  │     │  ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.654  │     │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.654  │     ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.655  │     │  ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.655  │     │  └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.656  │     └─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.656  │        ├─ ❓ Weld (Weld)  -  Edit
-  15:02:32.657  │        └─ ❓ Weld (Weld)  -  Edit
-  15:02:32.657  └─ 📁 Main (Folder)  -  Edit
-  15:02:32.657     ├─ 🧊 Baseplate (Part)  -  Edit
-  15:02:32.658     │  └─ ❓ Texture (Texture)  -  Edit
-  15:02:32.658     └─ 📋 Board (Model)  -  Edit
-  15:02:32.658        ├─ 🧊 Board (Part)  -  Edit
-  15:02:32.658        └─ 🧊 SpawnLocation (SpawnLocation)  -  Edit
-  15:02:32.659           └─ ❓ Decal (Decal)  -  Edit
-  15:02:32.659  
-=== WORKSPACE STATISTICS ===  -  Edit
-  15:02:32.659  📁 Folders: 12  -  Edit
-  15:02:32.659  📋 Models: 22  -  Edit
-  15:02:32.660  🧊 Parts: 43  -  Edit
-  15:02:32.660  📝 Scripts: 4  -  Edit
-  15:02:32.660  ❓ Others: 84  -  Edit
-  15:02:32.660  📊 Total Objects: 165  -  Edit
-  15:02:32.660  
-=== COLLAPSED VIEW (Max Depth: 3) ===  -  Edit
-  15:02:32.661  🌎 Workspace (Workspace)  -  Edit
-  15:02:32.661  │  -  Edit
-  15:02:32.661  ├─ ❓ Terrain (Terrain)  -  Edit
-  15:02:32.661  ├─ 📷 Camera (Camera)  -  Edit
-  15:02:32.662  ├─ 📁 Items (Folder)  -  Edit
-  15:02:32.662  │  ├─ 📁 Basic (Folder)  -  Edit
-  15:02:32.662  │  │  ├─ 📁 Glow (Folder)  -  Edit
-  15:02:32.662  │  │  │  └─ 📂 ... (6 more items)  -  Edit
-  15:02:32.663  │  │  ├─ 📋 Brick_Cube (Model)  -  Edit
-  15:02:32.663  │  │  │  └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.663  │  │  ├─ 📋 Fabric_Cube (Model)  -  Edit
-  15:02:32.663  │  │  │  └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.663  │  │  ├─ 📋 Fire_Cube (Model)  -  Edit
-  15:02:32.663  │  │  │  └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.663  │  │  ├─ 📋 Gear (Model)  -  Edit
-  15:02:32.664  │  │  │  └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.664  │  │  ├─ 📋 Glass_Cube (Model)  -  Edit
-  15:02:32.664  │  │  │  └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.664  │  │  ├─ 📋 Grass_Cube (Model)  -  Edit
-  15:02:32.664  │  │  │  └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.665  │  │  ├─ 📋 Stone_Cube (Model)  -  Edit
-  15:02:32.665  │  │  │  └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.665  │  │  ├─ 📋 Water_Cube (Model)  -  Edit
-  15:02:32.665  │  │  │  └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.666  │  │  └─ 📋 Wood_Cube (Model)  -  Edit
-  15:02:32.666  │  │     └─ 📂 ... (1 more items)  -  Edit
-  15:02:32.666  │  ├─ 📁 Exclusive (Folder)  -  Edit
-  15:02:32.667  │  ├─ 📁 Free_items (Folder)  -  Edit
-  15:02:32.667  │  ├─ 📁 Random_Drop (Folder)  -  Edit
-  15:02:32.667  │  ├─ 📁 Rare (Folder)  -  Edit
-  15:02:32.668  │  ├─ 📁 Secondary (Folder)  -  Edit
-  15:02:32.668  │  │  └─ 📁 Teleport Portals (Folder)  -  Edit
-  15:02:32.668  │  │     └─ 📂 ... (4 more items)  -  Edit
-  15:02:32.668  │  └─ 📁 Weapons (Folder)  -  Edit
-  15:02:32.668  ├─ 📁 World_Items (Folder)  -  Edit
-  15:02:32.668  │  ├─ 📋 Trampoline (Model)  -  Edit
-  15:02:32.669  │  │  ├─ 🔗 Trampoline (UnionOperation)  -  Edit
-  15:02:32.669  │  │  │  └─ 📂 ... (6 more items)  -  Edit
-  15:02:32.669  │  │  ├─ 🧊 TrampolineBouncyThing (Part)  -  Edit
-  15:02:32.670  │  │  │  └─ 📂 ... (7 more items)  -  Edit
-  15:02:32.670  │  │  ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.670  │  │  │  └─ 📂 ... (2 more items)  -  Edit
-  15:02:32.670  │  │  ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.670  │  │  │  └─ 📂 ... (2 more items)  -  Edit
-  15:02:32.670  │  │  ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.670  │  │  │  └─ 📂 ... (2 more items)  -  Edit
-  15:02:32.671  │  │  └─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.671  │  │     └─ 📂 ... (2 more items)  -  Edit
-  15:02:32.671  │  └─ 📋 Trampoline (Model)  -  Edit
-  15:02:32.671  │     ├─ 🔗 Trampoline (UnionOperation)  -  Edit
-  15:02:32.672  │     │  └─ 📂 ... (6 more items)  -  Edit
-  15:02:32.672  │     ├─ 🧊 TrampolineBouncyThing (Part)  -  Edit
-  15:02:32.672  │     │  └─ 📂 ... (7 more items)  -  Edit
-  15:02:32.672  │     ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.672  │     │  └─ 📂 ... (2 more items)  -  Edit
-  15:02:32.673  │     ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.673  │     │  └─ 📂 ... (2 more items)  -  Edit
-  15:02:32.673  │     ├─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.673  │     │  └─ 📂 ... (2 more items)  -  Edit
-  15:02:32.673  │     └─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  15:02:32.673  │        └─ 📂 ... (2 more items)  -  Edit
-  15:02:32.674  └─ 📁 Main (Folder)  -  Edit
-  15:02:32.674     ├─ 🧊 Baseplate (Part)  -  Edit
-  15:02:32.674     │  └─ ❓ Texture (Texture)  -  Edit
-  15:02:32.674     └─ 📋 Board (Model)  -  Edit
-  15:02:32.674        ├─ 🧊 Board (Part)  -  Edit
-  15:02:32.675        └─ 🧊 SpawnLocation (SpawnLocation)  -  Edit
-  15:02:32.675           └─ 📂 ... (1 more items)  -  Edit
+-- Run with default depth of 3
+scanGameStructure(3)  -  Studio
+  08:14:42.798  === ROBLOX GAME STRUCTURE SCANNER ===  -  Edit
+  08:14:42.799  Generated: 2025-05-15 08:14:42  -  Edit
+  08:14:42.799  Game: Place1  -  Edit
+  08:14:42.799  Place ID: 103099385437670  -  Edit
+  08:14:42.799  Max Depth: 3  -  Edit
+  08:14:42.799  
+=== Workspace ===  -  Edit
+  08:14:42.800  🌎 Workspace (Workspace)  -  Edit
+  08:14:42.800  │  -  Edit
+  08:14:42.800  ├─ 📁 Items (Folder)  -  Edit
+  08:14:42.800  │  ├─ 📁 Basic (Folder)  -  Edit
+  08:14:42.801  │  │  ├─ 📁 Glow (Folder)  -  Edit
+  08:14:42.801  │  │  ├─ 📋 Brick_Cube (Model) [item=basic]  -  Edit
+  08:14:42.802  │  │  ├─ 📋 Fabric_Cube (Model) [item=basic]  -  Edit
+  08:14:42.802  │  │  ├─ 📋 Fire_Cube (Model) [item=basic]  -  Edit
+  08:14:42.802  │  │  ├─ 📋 Glass_Cube (Model) [item=basic]  -  Edit
+  08:14:42.803  │  │  ├─ 📋 Grass_Cube (Model) [item=basic]  -  Edit
+  08:14:42.803  │  │  ├─ 📋 Stone_Cube (Model) [item=basic]  -  Edit
+  08:14:42.803  │  │  ├─ 📋 Water_Cube (Model) [item=basic]  -  Edit
+  08:14:42.803  │  │  └─ 📋 Wood_Cube (Model) [item=basic]  -  Edit
+  08:14:42.803  │  ├─ 📁 Exclusive (Folder)  -  Edit
+  08:14:42.803  │  ├─ 📁 Free_items (Folder)  -  Edit
+  08:14:42.803  │  ├─ 📁 Level_1 (Folder)  -  Edit
+  08:14:42.803  │  │  └─ 📋 Torch (Model)  -  Edit
+  08:14:42.804  │  ├─ 📁 Level_2 (Folder)  -  Edit
+  08:14:42.804  │  │  ├─ 📁 Teleport Portals (Folder)  -  Edit
+  08:14:42.804  │  │  └─ 📋 Gear (Model) [item=basic]  -  Edit
+  08:14:42.804  │  ├─ 📁 Random_Drop (Folder)  -  Edit
+  08:14:42.804  │  ├─ 📁 Rare (Folder)  -  Edit
+  08:14:42.804  │  └─ 📁 Weapons (Folder)  -  Edit
+  08:14:42.804  ├─ 📁 Main (Folder)  -  Edit
+  08:14:42.804  │  ├─ 🧊 Baseplate (Part)  -  Edit
+  08:14:42.805  │  │  └─ 🎨 Texture (Texture)  -  Edit
+  08:14:42.805  │  └─ 📋 Board (Model)  -  Edit
+  08:14:42.805  │     ├─ 🧊 Board (Part)  -  Edit
+  08:14:42.805  │     └─ ❓ SpawnLocation (SpawnLocation)  -  Edit
+  08:14:42.805  ├─ 📁 World_Items (Folder)  -  Edit
+  08:14:42.805  │  ├─ 📋 Classic House (Model)  -  Edit
+  08:14:42.805  │  │  └─ 📋 House (Model)  -  Edit
+  08:14:42.806  │  ├─ 📋 Level 2 House (Model)  -  Edit
+  08:14:42.807   ▶ │  │  ├─ 🎲 Meshes/RING! (MeshPart) (x66)  -  Edit
+  08:14:42.823   ▶ │  │  ├─ 🧊 Part (Part) (x153)  -  Edit
+  08:14:42.850  │  │  ├─ ❓ Wedge (WedgePart)  -  Edit
+  08:14:42.850  │  │  └─ ❓ Wedge (WedgePart)  -  Edit
+  08:14:42.850  │  ├─ 📋 Level 3 House (Model)  -  Edit
+  08:14:42.851   ▶ │  │  ├─ 📋 Model (Model) (x23)  -  Edit
+  08:14:42.855   ▶ │  │  ├─ 🧊 Part (Part) (x225)  -  Edit
+  08:14:42.903   ▶ │  │  ├─ 🧊 Smooth Block Model (Part) (x5)  -  Edit
+  08:14:42.906   ▶ │  │  ├─ 📋 Toilet (Model) (x2)  -  Edit
+  08:14:42.906   ▶ │  │  ├─ 🔗 Union (UnionOperation) (x9)  -  Edit
+  08:14:42.909   ▶ │  │  ├─ ❓ Wedge (WedgePart) (x8)  -  Edit
+  08:14:42.911  │  │  └─ ❓ Wedge (WedgePart)  -  Edit
+  08:14:42.911  │  ├─ 📋 Rare House (Model)  -  Edit
+  08:14:42.912   ▶ │  │  ├─ 📋 AMECO Ester (Model) (x2)  -  Edit
+  08:14:42.913  │  │  └─ 📋 House (Model)  -  Edit
+  08:14:42.915  │  ├─ 📋 Trampoline (Model)  -  Edit
+  08:14:42.915  │  │  ├─ 🔗 Trampoline (UnionOperation)  -  Edit
+  08:14:42.915  │  │  ├─ 🧊 TrampolineBouncyThing (Part)  -  Edit
+  08:14:42.916   ▶ │  │  ├─ 🔗 TrampolineLeg (UnionOperation) (x3)  -  Edit
+  08:14:42.916  │  │  └─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
+  08:14:42.917  │  └─ 📋 Trampoline (Model)  -  Edit
+  08:14:42.917  │     ├─ 🔗 Trampoline (UnionOperation)  -  Edit
+  08:14:42.917  │     ├─ 🧊 TrampolineBouncyThing (Part)  -  Edit
+  08:14:42.917   ▶ │     ├─ 🔗 TrampolineLeg (UnionOperation) (x3)  -  Edit
+  08:14:42.918  │     └─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
+  08:14:42.918  ├─ 📷 Camera (Camera)  -  Edit
+  08:14:42.919  ├─ ❓ CornerWedge (CornerWedgePart)  -  Edit
+  08:14:42.919  ├─ 🏔️ Terrain (Terrain)  -  Edit
+  08:14:42.919  └─ 🔗 Triangle Wedge (UnionOperation)  -  Edit
+  08:14:42.923  
+📊 Workspace Statistics:  -  Edit
+  08:14:42.923     📁 Folders: 13  -  Edit
+  08:14:42.923     📋 Models: 222  -  Edit
+  08:14:42.924     🧊 Parts: 2291  -  Edit
+  08:14:42.924     📜 Scripts: 43  -  Edit
+  08:14:42.924     🖥️ GUIs: 28  -  Edit
+  08:14:42.925     ❓ Others: 2486  -  Edit
+  08:14:42.925     📊 Total: 5083  -  Edit
+  08:14:42.925  
+=== Players ===  -  Edit
+  08:14:42.925  👥 Players (Players)  -  Edit
+  08:14:42.925  │  -  Edit
+  08:14:42.925  └─ ❓ Xdjpearsonx (Player)  -  Edit
+  08:14:42.926     ├─ ❓ Backpack (Backpack)  -  Edit
+  08:14:42.926     └─ ❓ PlayerScripts (PlayerScripts)  -  Edit
+  08:14:42.926  
+📊 Players Statistics:  -  Edit
+  08:14:42.926     📁 Folders: 0  -  Edit
+  08:14:42.926     📋 Models: 0  -  Edit
+  08:14:42.926     🧊 Parts: 0  -  Edit
+  08:14:42.927     📜 Scripts: 0  -  Edit
+  08:14:42.927     🖥️ GUIs: 0  -  Edit
+  08:14:42.927     ❓ Others: 3  -  Edit
+  08:14:42.928     📊 Total: 3  -  Edit
+  08:14:42.928  
+=== ServerStorage ===  -  Edit
+  08:14:42.928  🗄️ ServerStorage (ServerStorage)  -  Edit
+  08:14:42.928  │  -  Edit
+  08:14:42.928  └─ (empty)  -  Edit
+  08:14:42.928  
+=== ServerScriptService ===  -  Edit
+  08:14:42.928  ⚙️ ServerScriptService (ServerScriptService)  -  Edit
+  08:14:42.929  │  -  Edit
+  08:14:42.929  └─ 📁 server (Folder)  -  Edit
+  08:14:42.929     ├─ 📁 Neon (Folder)  -  Edit
+  08:14:42.929     │  └─ 📜 NeonGlowManager (Script) [171 lines]  -  Edit
+  08:14:42.930     └─ 📜 init (Script) [337 lines]  -  Edit
+  08:14:42.930  
+📊 ServerScriptService Statistics:  -  Edit
+  08:14:42.930     📁 Folders: 2  -  Edit
+  08:14:42.930     📋 Models: 0  -  Edit
+  08:14:42.930     🧊 Parts: 0  -  Edit
+  08:14:42.930     📜 Scripts: 2  -  Edit
+  08:14:42.930     🖥️ GUIs: 0  -  Edit
+  08:14:42.931     ❓ Others: 0  -  Edit
+  08:14:42.931     📊 Total: 4  -  Edit
+  08:14:42.931  
+=== ReplicatedStorage ===  -  Edit
+  08:14:42.931  🔄 ReplicatedStorage (ReplicatedStorage)  -  Edit
+  08:14:42.931  │  -  Edit
+  08:14:42.932  └─ 📁 shared (Folder)  -  Edit
+  08:14:42.932     ├─ 📁 core (Folder)  -  Edit
+  08:14:42.932     │  ├─ 📁 economy (Folder)  -  Edit
+  08:14:42.932     │  ├─ 📁 interaction (Folder)  -  Edit
+  08:14:42.932     │  ├─ 📁 inventory (Folder)  -  Edit
+  08:14:42.932     │  ├─ 📁 placement (Folder)  -  Edit
+  08:14:42.933     │  ├─ 📁 ui (Folder)  -  Edit
+  08:14:42.933     │  ├─ 📄 Constants (ModuleScript)  -  Edit
+  08:14:42.933     │  ├─ 📄 GameManager (ModuleScript)  -  Edit
+  08:14:42.933     │  └─ 📄 LazyLoadModules (ModuleScript)  -  Edit
+  08:14:42.933     ├─ 📄 SharedModule (ModuleScript)  -  Edit
+  08:14:42.933     └─ 📄 init (ModuleScript)  -  Edit
+  08:14:42.933  
+📊 ReplicatedStorage Statistics:  -  Edit
+  08:14:42.934     📁 Folders: 7  -  Edit
+  08:14:42.934     📋 Models: 0  -  Edit
+  08:14:42.934     🧊 Parts: 0  -  Edit
+  08:14:42.935     📜 Scripts: 0  -  Edit
+  08:14:42.935     🖥️ GUIs: 0  -  Edit
+  08:14:42.935     ❓ Others: 14  -  Edit
+  08:14:42.935     📊 Total: 21  -  Edit
+  08:14:42.936  
+=== ReplicatedFirst ===  -  Edit
+  08:14:42.936  ❓ ReplicatedFirst (ReplicatedFirst)  -  Edit
+  08:14:42.936  │  -  Edit
+  08:14:42.936  └─ (empty)  -  Edit
+  08:14:42.936  
+=== StarterGui ===  -  Edit
+  08:14:42.937  🖥️ StarterGui (StarterGui)  -  Edit
+  08:14:42.937  │  -  Edit
+  08:14:42.937  └─ 💻 StarterGui (LocalScript) [107 lines]  -  Edit
+  08:14:42.937  
+📊 StarterGui Statistics:  -  Edit
+  08:14:42.938     📁 Folders: 0  -  Edit
+  08:14:42.938     📋 Models: 0  -  Edit
+  08:14:42.938     🧊 Parts: 0  -  Edit
+  08:14:42.938     📜 Scripts: 1  -  Edit
+  08:14:42.938     🖥️ GUIs: 0  -  Edit
+  08:14:42.938     ❓ Others: 0  -  Edit
+  08:14:42.939     📊 Total: 1  -  Edit
+  08:14:42.939  
+=== StarterPack ===  -  Edit
+  08:14:42.939  🎒 StarterPack (StarterPack)  -  Edit
+  08:14:42.939  │  -  Edit
+  08:14:42.939  └─ (empty)  -  Edit
+  08:14:42.939  
+=== StarterPlayer ===  -  Edit
+  08:14:42.939  👤 StarterPlayer (StarterPlayer)  -  Edit
+  08:14:42.939  │  -  Edit
+  08:14:42.940  ├─ ❓ StarterCharacterScripts (StarterCharacterScripts)  -  Edit
+  08:14:42.940  └─ ❓ StarterPlayerScripts (StarterPlayerScripts)  -  Edit
+  08:14:42.940     └─ 📁 client (Folder)  -  Edit
+  08:14:42.940        ├─ 📁 Currency (Folder)  -  Edit
+  08:14:42.940        ├─ 📁 interaction (Folder)  -  Edit
+  08:14:42.941        ├─ 📄 client (ModuleScript)  -  Edit
+  08:14:42.941        ├─ 📄 client_core (ModuleScript)  -  Edit
+  08:14:42.941        └─ 💻 init (LocalScript) [120 lines]  -  Edit
+  08:14:42.941  
+📊 StarterPlayer Statistics:  -  Edit
+  08:14:42.941     📁 Folders: 3  -  Edit
+  08:14:42.942     📋 Models: 0  -  Edit
+  08:14:42.942     🧊 Parts: 0  -  Edit
+  08:14:42.942     📜 Scripts: 1  -  Edit
+  08:14:42.942     🖥️ GUIs: 0  -  Edit
+  08:14:42.942     ❓ Others: 9  -  Edit
+  08:14:42.942     📊 Total: 13  -  Edit
+  08:14:42.942  
+=== Teams ===  -  Edit
+  08:14:42.943  🏆 Teams (Teams)  -  Edit
+  08:14:42.943  │  -  Edit
+  08:14:42.943  └─ (empty)  -  Edit
+  08:14:42.943  
+=== SoundService ===  -  Edit
+  08:14:42.943  🎵 SoundService (SoundService)  -  Edit
+  08:14:42.943  │  -  Edit
+  08:14:42.944  └─ (empty)  -  Edit
+  08:14:42.944  
+=== Lighting ===  -  Edit
+  08:14:42.944  💡 Lighting (Lighting)  -  Edit
+  08:14:42.944  │  -  Edit
+  08:14:42.945  ├─ ❓ Atmosphere (Atmosphere)  -  Edit
+  08:14:42.945  ├─ ❓ Bloom (BloomEffect)  -  Edit
+  08:14:42.945  ├─ ❓ DepthOfField (DepthOfFieldEffect)  -  Edit
+  08:14:42.946  ├─ ❓ Sky (Sky)  -  Edit
+  08:14:42.946  └─ ❓ SunRays (SunRaysEffect)  -  Edit
+  08:14:42.946  
+📊 Lighting Statistics:  -  Edit
+  08:14:42.946     📁 Folders: 0  -  Edit
+  08:14:42.946     📋 Models: 0  -  Edit
+  08:14:42.946     🧊 Parts: 0  -  Edit
+  08:14:42.947     📜 Scripts: 0  -  Edit
+  08:14:42.947     🖥️ GUIs: 0  -  Edit
+  08:14:42.947     ❓ Others: 5  -  Edit
+  08:14:42.947     📊 Total: 5  -  Edit
+  08:14:42.947  
+=== MaterialService ===  -  Edit
+  08:14:42.948  🏗️ MaterialService (MaterialService)  -  Edit
+  08:14:42.948  │  -  Edit
+  08:14:42.948  └─ (empty)  -  Edit
+  08:14:42.948  
+=== Chat ===  -  Edit
+  08:14:42.949  💬 Chat (Chat)  -  Edit
+  08:14:42.949  │  -  Edit
+  08:14:42.949  └─ (empty)  -  Edit
+  08:14:42.949  
+=== SCRIPT SUMMARY ===  -  Edit
+  08:14:42.955  Total Scripts Found: 47  -  Edit
+  08:14:42.955  
+Script Types:  -  Edit
+  08:14:42.955     Script: 45  -  Edit
+  08:14:42.955     LocalScript: 2  -  Edit
+  08:14:42.955  
+Script Statistics:  -  Edit
+  08:14:42.955     📜 Scripts with code: 30  -  Edit
+  08:14:42.956     📄 Empty scripts: 17  -  Edit
+  08:14:42.956     📏 Total lines of code: 1482  -  Edit
+  08:14:42.956     📈 Average lines per script: 31  -  Edit
+  08:14:42.956  
+=== DETAILED SCRIPT LIST ===  -  Edit
+  08:14:42.956  📜 Workspace.Items.Level_2.Teleport Portals.Script [25 lines]  -  Edit
+  08:14:42.956  📜 Workspace.Items.Level_2.Gear.Gear.Spinning Script [14 lines]  -  Edit
+  08:14:42.956   ▶ 📜 Workspace.World_Items.Trampoline.TrampolineBouncyThing.BouncePad [11 lines] (x2)  -  Edit
+  08:14:42.956   ▶ 📜 Workspace.World_Items.Level 3 House.Model.Model.Seat.Script [EMPTY] (x6)  -  Edit
+  08:14:42.958  📜 Workspace.World_Items.Level 3 House.Toilet.Flush.Script [EMPTY]  -  Edit
+  08:14:42.958  📜 Workspace.World_Items.Level 3 House.Toilet.Flush.ClickScript [EMPTY]  -  Edit
+  08:14:42.958  📜 Workspace.World_Items.Level 3 House.Toilet.ToiletSeat2.Script [EMPTY]  -  Edit
+  08:14:42.959  📜 Workspace.World_Items.Level 3 House.Toilet.ToiletSeat.Script [EMPTY]  -  Edit
+  08:14:42.959  📜 Workspace.World_Items.Level 3 House.Model.Seat.Script [EMPTY]  -  Edit
+  08:14:42.959  📜 Workspace.World_Items.Level 3 House.Toilet.Flush.Script [EMPTY]  -  Edit
+  08:14:42.959  📜 Workspace.World_Items.Level 3 House.Toilet.Flush.ClickScript [EMPTY]  -  Edit
+  08:14:42.959  📜 Workspace.World_Items.Level 3 House.Toilet.ToiletSeat2.Script [EMPTY]  -  Edit
+  08:14:42.959  📜 Workspace.World_Items.Level 3 House.Toilet.ToiletSeat.Script [EMPTY]  -  Edit
+  08:14:42.960   ▶ 📜 Workspace.World_Items.Level 3 House.Model.Seat.Script [EMPTY] (x2)  -  Edit
+  08:14:42.960  📜 Workspace.World_Items.Rare House.House.Cute Closet.#NBK || Adidas Cap.Delete if used for decoration [25 lines]  -  Edit
+  08:14:42.960  📜 Workspace.World_Items.Rare House.House.Cute Closet.#NBK || Adidas Cap.Thank you letter. [26 lines]  -  Edit
+  08:14:42.960  📜 Workspace.World_Items.Rare House.House.Cute Closet.#NBK || Rainbow Cap.Delete if used for decoration [25 lines]  -  Edit
+  08:14:42.961  📜 Workspace.World_Items.Rare House.House.Cute Closet.#NBK || Tommy Hilfiger Visor.Script [27 lines]  -  Edit
+  08:14:42.961  📜 Workspace.World_Items.Rare House.House.Cute Closet.nike cap.nike cap.HatHelperGuideGiverScript [72 lines]  -  Edit
+  08:14:42.961  📜 Workspace.World_Items.Rare House.House.Cute Closet.#NBK || Rose RND Cap.Delete if used for decoration [25 lines]  -  Edit
+  08:14:42.962  📜 Workspace.World_Items.Rare House.AMECO Ester.AMECOTouch.FanClick.Script [39 lines]  -  Edit
+  08:14:42.962  📜 Workspace.World_Items.Rare House.AMECO Ester.AMECOTouch.LightClick.Script [11 lines]  -  Edit
+  08:14:42.962  📜 Workspace.World_Items.Rare House.AMECO Ester.AMECOTouch.ReverseClick.Script [9 lines]  -  Edit
+  08:14:42.962  📜 Workspace.World_Items.Rare House.AMECO Ester.AMECOTouch.DemoMode [95 lines]  -  Edit
+  08:14:42.962  📜 Workspace.World_Items.Rare House.AMECO Ester.Fan.Light.LightScript [24 lines]  -  Edit
+  08:14:42.963  📜 Workspace.World_Items.Rare House.AMECO Ester.Fan.Motorset.Motor.SpeedScript [18 lines]  -  Edit
+  08:14:42.963  📜 Workspace.World_Items.Rare House.AMECO Ester.Fan.Motorset.WeldScript [46 lines]  -  Edit
+  08:14:42.963  📜 Workspace.World_Items.Rare House.AMECO Ester.Fan.Motorset.Script [1 lines]  -  Edit
+  08:14:42.963  📜 Workspace.World_Items.Rare House.AMECO Ester.AMECOTouch.FanClick.Script [39 lines]  -  Edit
+  08:14:42.964  📜 Workspace.World_Items.Rare House.AMECO Ester.AMECOTouch.LightClick.Script [11 lines]  -  Edit
+  08:14:42.964  📜 Workspace.World_Items.Rare House.AMECO Ester.AMECOTouch.ReverseClick.Script [9 lines]  -  Edit
+  08:14:42.964  📜 Workspace.World_Items.Rare House.AMECO Ester.AMECOTouch.DemoMode [95 lines]  -  Edit
+  08:14:42.964  📜 Workspace.World_Items.Rare House.AMECO Ester.Fan.Light.LightScript [24 lines]  -  Edit
+  08:14:42.964  📜 Workspace.World_Items.Rare House.AMECO Ester.Fan.Motorset.Motor.SpeedScript [18 lines]  -  Edit
+  08:14:42.965  📜 Workspace.World_Items.Rare House.AMECO Ester.Fan.Motorset.WeldScript [46 lines]  -  Edit
+  08:14:42.965  📜 Workspace.World_Items.Rare House.AMECO Ester.Fan.Motorset.Script [1 lines]  -  Edit
+  08:14:42.965  💻 StarterPlayer.StarterPlayerScripts.client.init [120 lines]  -  Edit
+  08:14:42.965  💻 StarterGui.StarterGui [107 lines]  -  Edit
+  08:14:42.966  📜 ServerScriptService.server.Neon.NeonGlowManager [171 lines]  -  Edit
+  08:14:42.966  📜 ServerScriptService.server.init [337 lines]  -  Edit
+  08:14:42.966  
+=== SCAN COMPLETE ===  -  Edit
+  08:14:42.966  Use 'scanGameStructure(depth)' to adjust max depth  -  Edit
+  08:14:42.967  Example: scanGameStructure(5) for deeper scanning  -  Edit

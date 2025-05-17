@@ -114,6 +114,32 @@ local function safeInitialize(module, name)
 end
 
 -- Initialize CurrencyUI only (other UIs are handled by client_core)
-local currencyUI = safeInitialize(SharedModule.CurrencyUI, "CurrencyUI")
+print("Initializing CurrencyUI...")
+
+-- Check if SharedModule exists and has CurrencyUI
+if not SharedModule then
+    warn("SharedModule is nil, cannot initialize CurrencyUI")
+elseif not SharedModule.CurrencyUI then
+    warn("SharedModule.CurrencyUI is nil, cannot initialize CurrencyUI")
+else
+    print("SharedModule.CurrencyUI found, attempting to initialize...")
+    
+    -- Check for existing CurrencyUI instances
+    local playerGui = Players.LocalPlayer:FindFirstChild("PlayerGui")
+    if playerGui then
+        local existingUI = playerGui:FindFirstChild("CurrencyUI")
+        if existingUI then
+            print("Found existing CurrencyUI in PlayerGui, will be replaced")
+        end
+    end
+    
+    local currencyUI = safeInitialize(SharedModule.CurrencyUI, "CurrencyUI")
+    
+    if currencyUI then
+        print("✅ CurrencyUI successfully initialized")
+    else
+        warn("❌ CurrencyUI initialization failed")
+    end
+end
 
 print("Client initialization completed successfully")
