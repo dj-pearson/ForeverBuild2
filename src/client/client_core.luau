@@ -612,10 +612,30 @@ end
 local clientModule = {
     GetGameManager = function() return GameManager end,
     ShowInventory = function()
-        if InventoryUIModule and InventoryUIModule.Show then
+        -- Check if InventoryUI is available in SharedModule
+        if SharedModule and SharedModule.InventoryUI and SharedModule.InventoryUI.Toggle then
+            print("Using SharedModule.InventoryUI.Toggle")
+            SharedModule.InventoryUI.Toggle()
+        -- Fall back to the old module reference if it exists
+        elseif InventoryUIModule and InventoryUIModule.Show then
+            print("Using InventoryUIModule.Show")
             InventoryUIModule.Show()
         else
-            warn("InventoryUIModule not ready or Show method missing for ShowInventory API call in client_core.luau.")
+            -- Try to fetch inventory data even if UI module is missing
+            if GetInventoryFunc then
+                local success, result = pcall(function()
+                    return GetInventoryFunc:InvokeServer()
+                end)
+                
+                if success and result then
+                    print("InventoryUIModule not available, but data was retrieved successfully")
+                    print("Retrieved " .. (result.inventory and #result.inventory or 0) .. " inventory items and " .. (result.currency or 0) .. " currency")
+                else
+                    warn("InventoryUIModule not ready and failed to get inventory data:", result)
+                end
+            else
+                warn("InventoryUIModule not ready or Show method missing for ShowInventory API call in client_core.luau.")
+            end
         end
     end
 }

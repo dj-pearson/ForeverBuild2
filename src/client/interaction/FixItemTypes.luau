@@ -5,6 +5,27 @@
 
 local module = {}
 
+-- Add a function to ensure an item exists in Constants.ITEMS
+local function ensureItemInConstants(itemType, Constants)
+    if not Constants or not Constants.ITEMS then return end
+    
+    -- If the item already exists, return
+    if Constants.ITEMS[itemType] then return end
+    
+    -- Create default item information
+    local defaultItem = {
+        name = typeof(itemType) == "string" and itemType:gsub("_", " ") or "Unknown Item",
+        description = "A basic building block",
+        tier = "BASIC",
+        price = { INGAME = 5, ROBUX = 5 },
+        icon = "rbxassetid://3284930147"
+    }
+    
+    -- Add to Constants.ITEMS
+    Constants.ITEMS[itemType] = defaultItem
+    print("Added missing item to Constants.ITEMS:", itemType)
+end
+
 -- This function will be called to apply the fix
 function module.applyFix()
     print("Applying fix for missing item types...")
@@ -370,34 +391,19 @@ function module.applyFix()
                     
                     return result
                 else
-                    -- Item doesn't exist, return a default
+                    -- Item doesn't exist in Constants.ITEMS
                     warn("Missing item type in Constants.ITEMS: " .. tostring(itemTypeString))
                     
-                    -- Add it to Constants.ITEMS if possible to prevent future errors
-                    if Constants and not Constants.ITEMS then
-                        Constants.ITEMS = {}
-                    end
-                    
+                    -- Add the item to Constants.ITEMS if possible to prevent future errors
                     if Constants and Constants.ITEMS then
-                        local displayName = typeof(itemTypeString) == "string" 
-                            and itemTypeString:gsub("_", " ") 
-                            or "Unknown Item"
-                            
-                        defaultItem.name = displayName
-                        
-                        -- If player is an admin, set price to 0
-                        if isAdmin(localPlayerId, Constants) then
-                            defaultItem.originalPrice = defaultItem.price  -- Save original price
-                            defaultItem.price = { INGAME = 0, ROBUX = 0 }  -- Free for admins
+                        -- Format the item name properly
+                        if typeof(itemTypeString) == "string" then
+                            defaultItem.name = itemTypeString:gsub("_", " ")
                         end
                         
-                        Constants.ITEMS[itemTypeString] = defaultItem
+                        -- Add to Constants
+                        Constants.ITEMS[itemTypeString] = table.clone(defaultItem)
                         print("Added missing item type to Constants.ITEMS: " .. tostring(itemTypeString))
-                    end
-                    
-                    -- Set item display name
-                    if typeof(itemTypeString) == "string" then
-                        defaultItem.name = itemTypeString:gsub("_", " ")
                     end
                     
                     return defaultItem

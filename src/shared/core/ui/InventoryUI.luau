@@ -1,10 +1,13 @@
 -- InventoryUI.lua
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
 
 local Constants = require(script.Parent.Parent.Constants)
 
 local InventoryUI = {}
+InventoryUI._isVisible = false
+InventoryUI._buttonConnection = nil -- Store the button connection
 
 -- UI Constants
 local INVENTORY_SIZE = UDim2.new(0, 600, 0, 400)
@@ -25,10 +28,18 @@ local function createInventory()
         inventoryScreenGui.ResetOnSpawn = false
         inventoryScreenGui.Parent = playerGui
     end
+    
+    -- First check if the main frame already exists
+    local existingInventory = inventoryScreenGui:FindFirstChild("InventoryFrame")
+    if existingInventory then
+        print("Found existing inventory frame, removing it")
+        existingInventory:Destroy()
+    end
+    
     local inventory = Instance.new("Frame")
-    inventory.Name = "InventoryUI"
+    inventory.Name = "InventoryFrame" -- Changed from "InventoryUI" to avoid confusion
     inventory.Size = UDim2.new(0, 600, 0, 400)
-    inventory.Position = UDim2.new(0.5, -300, 1, -420) -- Bottom center
+    inventory.Position = UDim2.new(0.5, -300, 0.5, -200) -- Center of screen
     inventory.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     inventory.BorderSizePixel = 0
     inventory.Visible = false
@@ -125,6 +136,20 @@ local function createInventory()
     gridLayout.VerticalAlignment = Enum.VerticalAlignment.Top
     gridLayout.Parent = itemsContainer
     
+    -- No items message
+    local noItemsLabel = Instance.new("TextLabel")
+    noItemsLabel.Name = "NoItemsLabel"
+    noItemsLabel.Size = UDim2.new(1, 0, 0, 40)
+    noItemsLabel.Position = UDim2.new(0, 0, 0, 100)
+    noItemsLabel.BackgroundTransparency = 1
+    noItemsLabel.Font = Enum.Font.Gotham
+    noItemsLabel.Text = "Your inventory is empty. Purchase items to see them here."
+    noItemsLabel.TextSize = 16
+    noItemsLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    noItemsLabel.TextWrapped = true
+    noItemsLabel.Visible = false
+    noItemsLabel.Parent = inventory
+    
     return inventory
 end
 
@@ -147,7 +172,7 @@ local function createItemButton(itemName, itemData, quantity)
     icon.Size = UDim2.new(1, -20, 0, 60)
     icon.Position = UDim2.new(0, 10, 0, 10)
     icon.BackgroundTransparency = 1
-    icon.Image = itemData.icon or "rbxassetid://0" -- Replace with actual icon
+    icon.Image = itemData.icon or "rbxassetid://6034973115" -- Default icon if none provided
     icon.Parent = button
     
     -- Item name
@@ -193,7 +218,20 @@ end
 
 -- Initialize the inventory UI
 function InventoryUI.Initialize(parent)
+    print("InventoryUI.Initialize called")
     local inventory = createInventory()
+    
+    -- Verify we can locate this inventory frame later
+    local player = game.Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+    local inventoryScreenGui = playerGui:FindFirstChild("InventoryUI")
+    local inventoryFrame = inventoryScreenGui and inventoryScreenGui:FindFirstChild("InventoryFrame")
+    
+    if not inventoryFrame then
+        warn("InventoryUI.Initialize: Failed to verify inventory frame was created properly")
+    else
+        print("InventoryUI.Initialize: Successfully verified inventory frame exists")
+    end
     
     -- Set up close button
     inventory.TitleBar.CloseButton.MouseButton1Click:Connect(function()
@@ -202,6 +240,177 @@ function InventoryUI.Initialize(parent)
     
     -- Store inventory reference
     InventoryUI._inventory = inventory
+    print("InventoryUI.Initialize: Stored inventory reference")
+    
+    -- Create or update inventory button
+    InventoryUI.CreateButton()
+    
+    -- Connect to AddToInventory event
+    InventoryUI.SetupEventHandling()
+    
+    -- Register this module with SharedModule
+    local success, sharedModule = pcall(function()
+        return require(ReplicatedStorage:WaitForChild("shared", 5))
+    end)
+    
+    if success and sharedModule then
+        -- Add this module to the SharedModule directly
+        sharedModule.InventoryUI = InventoryUI
+        print("InventoryUI: Successfully registered with SharedModule")
+    end
+    
+    print("InventoryUI.Initialize completed")
+    return inventory
+end
+
+-- Create or update inventory button
+function InventoryUI.CreateButton()
+    local player = Players.LocalPlayer
+    if not player then return end
+    
+    local playerGui = player:WaitForChild("PlayerGui")
+    local existingButton = playerGui:FindFirstChild("InventoryButtonUI")
+    
+    -- Don't create a new button if one already exists
+    if existingButton then 
+        -- Just update the click handler
+        local button = existingButton:FindFirstChild("InventoryButton")
+        if button then
+            -- Disconnect previous connection if it exists
+            if InventoryUI._buttonConnection then
+                InventoryUI._buttonConnection:Disconnect()
+                InventoryUI._buttonConnection = nil
+            end
+            
+            -- Create new connection
+            InventoryUI._buttonConnection = button.MouseButton1Click:Connect(function()
+                InventoryUI.Toggle()
+            end)
+        end
+        return
+    end
+    
+    local buttonGui = Instance.new("ScreenGui")
+    buttonGui.Name = "InventoryButtonUI"
+    buttonGui.ResetOnSpawn = false
+    buttonGui.Parent = playerGui
+    
+    local button = Instance.new("TextButton")
+    button.Name = "InventoryButton"
+    button.Size = UDim2.new(0, 120, 0, 40)
+    button.Position = UDim2.new(0.5, -60, 1, -60) -- Bottom center
+    button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    button.Font = Enum.Font.GothamBold
+    button.Text = "Inventory"
+    button.TextSize = 18
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.Parent = buttonGui
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = button
+    
+    -- Add button glow effect on hover
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 2
+    stroke.Color = Color3.fromRGB(255, 215, 0)
+    stroke.Transparency = 1
+    stroke.Parent = button
+    
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        }):Play()
+        
+        TweenService:Create(stroke, TweenInfo.new(0.2), {
+            Transparency = 0
+        }):Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        }):Play()
+        
+        TweenService:Create(stroke, TweenInfo.new(0.2), {
+            Transparency = 1
+        }):Play()
+    end)
+    
+    -- Store the connection
+    InventoryUI._buttonConnection = button.MouseButton1Click:Connect(function()
+        InventoryUI.Toggle()
+    end)
+    
+    print("InventoryUI: Created inventory button")
+    return buttonGui
+end
+
+-- Connect to AddToInventory event
+function InventoryUI.SetupEventHandling()
+    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+    if not remotes then
+        print("InventoryUI: Remotes folder not found, waiting...")
+        task.delay(1, InventoryUI.SetupEventHandling)
+        return
+    end
+    
+    local addToInventoryEvent = remotes:FindFirstChild("AddToInventory")
+    if addToInventoryEvent then
+        print("InventoryUI: Found AddToInventory event, connecting...")
+        
+        addToInventoryEvent.OnClientEvent:Connect(function(item)
+            print("InventoryUI: Item added to inventory:", item.name)
+            
+            -- Re-fetch the entire inventory to ensure we have the latest data
+            InventoryUI.RefreshInventory()
+        end)
+        
+        print("InventoryUI: Successfully connected to AddToInventory event")
+    else
+        print("InventoryUI: AddToInventory event not found, will retry in 1 second")
+        task.delay(1, InventoryUI.SetupEventHandling)
+    end
+end
+
+-- Refresh inventory data from server
+function InventoryUI.RefreshInventory()
+    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+    if not remotes then return end
+    
+    local getInventoryFunc = remotes:FindFirstChild("GetInventory")
+    if getInventoryFunc then
+        local success, result = pcall(function()
+            return getInventoryFunc:InvokeServer()
+        end)
+        
+        if success and result then
+            local itemCount = 0
+            if result.inventory then
+                if typeof(result.inventory) == "table" then
+                    -- Count items in either array or dictionary format
+                    if #result.inventory > 0 then
+                        itemCount = #result.inventory
+                    else
+                        for _, quantity in pairs(result.inventory) do
+                            if quantity > 0 then
+                                itemCount = itemCount + 1
+                            end
+                        end
+                    end
+                end
+            end
+            
+            print("InventoryUI: Retrieved inventory data:", 
+                itemCount, "items, Currency:", result.currency)
+            
+            InventoryUI.UpdateInventory(result.inventory or {}, result.currency or 0)
+        else
+            warn("InventoryUI: Failed to get inventory data:", result)
+        end
+    else
+        warn("InventoryUI: GetInventory RemoteFunction not found")
+    end
 end
 
 -- Update inventory display
@@ -220,13 +429,38 @@ function InventoryUI.UpdateInventory(inventory, currency)
         end
     end
     
-    -- Add items
+    -- Add items or show "no items" message
     local itemCount = 0
-    for itemName, quantity in pairs(inventory) do
-        if quantity > 0 then
-            local itemData = Constants.ITEMS[itemName]
-            if itemData then
-                local button = createItemButton(itemName, itemData, quantity)
+    
+    -- Check if inventory is an array or dictionary structure
+    if typeof(inventory) == "table" then
+        -- Handle array-style inventory from server (items with IDs)
+        if #inventory > 0 then
+            for _, itemData in pairs(inventory) do
+                local itemName = itemData.name or itemData.itemType
+                
+                -- Ensure we have valid item data in Constants
+                if not Constants.ITEMS then Constants.ITEMS = {} end
+                
+                -- Create fallback item data if needed
+                if not Constants.ITEMS[itemName] then
+                    Constants.ITEMS[itemName] = {
+                        name = typeof(itemName) == "string" and itemName:gsub("_", " ") or "Unknown Item",
+                        icon = "rbxassetid://3284930147",
+                        tier = itemData.tier or "BASIC",
+                        description = "Item description",
+                        price = { INGAME = 10, ROBUX = 10 }
+                    }
+                    print("Created fallback item data for: " .. tostring(itemName))
+                end
+                
+                -- Get the item info from Constants or fallback
+                local itemInfo = Constants.ITEMS[itemName] or {
+                    icon = "rbxassetid://3284930147",
+                    tier = itemData.tier or "BASIC"
+                }
+                
+                local button = createItemButton(itemName, itemInfo, 1) -- Assume quantity 1 if not specified
                 button.Parent = container
                 
                 -- Set up click handler
@@ -238,42 +472,204 @@ function InventoryUI.UpdateInventory(inventory, currency)
                 
                 itemCount = itemCount + 1
             end
+        -- Handle dictionary-style inventory (itemName -> quantity)
+        else
+            for itemName, quantity in pairs(inventory) do
+                if quantity > 0 then
+                    -- Ensure we have valid item data in Constants
+                    if not Constants.ITEMS then Constants.ITEMS = {} end
+                    
+                    -- Create fallback item data if needed
+                    if not Constants.ITEMS[itemName] then
+                        Constants.ITEMS[itemName] = {
+                            name = typeof(itemName) == "string" and itemName:gsub("_", " ") or "Unknown Item",
+                            icon = "rbxassetid://3284930147",
+                            tier = "BASIC",
+                            description = "Item description",
+                            price = { INGAME = 10, ROBUX = 10 }
+                        }
+                        print("Created fallback item data for: " .. tostring(itemName))
+                    end
+                    
+                    -- Get the item info from Constants
+                    local itemInfo = Constants.ITEMS[itemName] or {
+                        icon = "rbxassetid://3284930147",
+                        tier = "BASIC"
+                    }
+                    
+                    local button = createItemButton(itemName, itemInfo, quantity)
+                    button.Parent = container
+                    
+                    -- Set up click handler
+                    button.MouseButton1Click:Connect(function()
+                        if InventoryUI.OnItemSelected then
+                            InventoryUI.OnItemSelected(itemName)
+                        end
+                    end)
+                    
+                    itemCount = itemCount + 1
+                end
+            end
         end
+    end
+    
+    -- Show/hide no items message
+    local noItemsLabel = ui:FindFirstChild("NoItemsLabel")
+    if noItemsLabel then
+        noItemsLabel.Visible = (itemCount == 0)
     end
     
     -- Update canvas size
     local rows = math.ceil(itemCount / ITEMS_PER_ROW)
     container.CanvasSize = UDim2.new(0, 0, 0, rows * (ITEM_SIZE.Y.Offset + ITEM_PADDING) + ITEM_PADDING)
+    
+    print("InventoryUI: Updated inventory with", itemCount, "items")
+end
+
+-- Toggle inventory visibility
+function InventoryUI.Toggle()
+    print("InventoryUI: Toggle called, current visibility:", InventoryUI._isVisible)
+    print("InventoryUI: _inventory reference exists:", InventoryUI._inventory ~= nil)
+    
+    -- First check if the UI actually exists in PlayerGui
+    local player = game.Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui") 
+    local inventoryScreenGui = playerGui:FindFirstChild("InventoryUI")
+    local inventoryFrame = inventoryScreenGui and inventoryScreenGui:FindFirstChild("InventoryFrame")
+    
+    -- Determine the actual current visibility state
+    local actuallyVisible = false
+    if inventoryFrame then
+        actuallyVisible = inventoryFrame.Visible
+        print("InventoryUI: Toggle - actual frame visibility:", actuallyVisible)
+    else
+        print("InventoryUI: Toggle - inventory frame not found, recreating it")
+        InventoryUI.Initialize()
+        actuallyVisible = false -- Since we just created it, it should be hidden
+    end
+    
+    -- Use the actual visibility to decide what to do
+    if actuallyVisible then
+        print("InventoryUI: Toggle - hiding inventory")
+        InventoryUI.Hide()
+    else
+        print("InventoryUI: Toggle - showing inventory")
+        InventoryUI.Show()
+    end
 end
 
 -- Show the inventory
 function InventoryUI.Show()
+    print("InventoryUI: Show function called")
     local inventory = InventoryUI._inventory
-    if not inventory then return end
     
-    inventory.Visible = true
-    inventory.BackgroundTransparency = 1
+    if not inventory then 
+        print("InventoryUI: No inventory UI found, creating it...")
+        InventoryUI.Initialize()
+        inventory = InventoryUI._inventory
+        print("InventoryUI: After Initialize, inventory reference exists:", inventory ~= nil)
+        
+        if not inventory then
+            warn("InventoryUI: Failed to create inventory UI")
+            return
+        end
+    end
     
-    local showTween = TweenService:Create(inventory, TweenInfo.new(ANIMATION_DURATION), {
-        BackgroundTransparency = 0
-    })
-    showTween:Play()
+    -- Do a safety check - find the actual ScreenGui + Frame
+    local player = game.Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+    local inventoryScreenGui = playerGui:FindFirstChild("InventoryUI")
+    
+    if inventoryScreenGui then
+        -- Check whether our frame exists and get a direct reference to it
+        local inventoryFrame = inventoryScreenGui:FindFirstChild("InventoryFrame")
+        if not inventoryFrame then
+            warn("InventoryUI: InventoryFrame not found in ScreenGui - recreating UI")
+            InventoryUI.Initialize()
+            inventoryFrame = InventoryUI._inventory
+            
+            if not inventoryFrame then
+                warn("InventoryUI: Still failed to create inventory UI after retry")
+                return
+            end
+        end
+        
+        print("InventoryUI: About to refresh inventory data...")
+        -- First refresh the inventory data
+        InventoryUI.RefreshInventory()
+        
+        print("InventoryUI: Setting inventory visible = true")
+        inventoryFrame.Visible = true
+        inventoryFrame.BackgroundTransparency = 1
+        
+        local showTween = TweenService:Create(inventoryFrame, TweenInfo.new(ANIMATION_DURATION), {
+            BackgroundTransparency = 0
+        })
+        showTween:Play()
+        
+        InventoryUI._isVisible = true
+        print("InventoryUI: Showing inventory completed")
+    else
+        warn("InventoryUI: ScreenGui not found - recreating entire UI")
+        InventoryUI.Initialize()
+        inventory = InventoryUI._inventory
+        
+        if inventory then
+            InventoryUI.RefreshInventory()
+            inventory.Visible = true
+            inventory.BackgroundTransparency = 1
+            
+            local showTween = TweenService:Create(inventory, TweenInfo.new(ANIMATION_DURATION), {
+                BackgroundTransparency = 0
+            })
+            showTween:Play()
+            
+            InventoryUI._isVisible = true
+            print("InventoryUI: Showing inventory completed after recreation")
+        else
+            warn("InventoryUI: Failed to create inventory UI after multiple attempts")
+        end
+    end
 end
 
 -- Hide the inventory
 function InventoryUI.Hide()
+    print("InventoryUI: Hide function called")
     local inventory = InventoryUI._inventory
-    if not inventory then return end
+    if not inventory then 
+        print("InventoryUI: No inventory reference to hide")
+        InventoryUI._isVisible = false
+        return 
+    end
     
-    local hideTween = TweenService:Create(inventory, TweenInfo.new(ANIMATION_DURATION), {
-        BackgroundTransparency = 1
-    })
+    -- Find the actual frame in the player's GUI
+    local player = game.Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+    local inventoryScreenGui = playerGui:FindFirstChild("InventoryUI")
     
-    hideTween.Completed:Connect(function()
-        inventory.Visible = false
-    end)
+    if inventoryScreenGui then
+        local inventoryFrame = inventoryScreenGui:FindFirstChild("InventoryFrame")
+        if inventoryFrame then
+            print("InventoryUI: Found frame to hide")
+            local hideTween = TweenService:Create(inventoryFrame, TweenInfo.new(ANIMATION_DURATION), {
+                BackgroundTransparency = 1
+            })
+            
+            hideTween.Completed:Connect(function()
+                inventoryFrame.Visible = false
+                print("InventoryUI: Frame hidden after tween")
+            end)
+            
+            hideTween:Play()
+        else
+            print("InventoryUI: Frame not found, but updating visibility state")
+        end
+    else
+        print("InventoryUI: ScreenGui not found, but updating visibility state")
+    end
     
-    hideTween:Play()
+    InventoryUI._isVisible = false
+    print("InventoryUI: Hide completed")
 end
 
 return InventoryUI 

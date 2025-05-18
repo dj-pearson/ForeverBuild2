@@ -2,9 +2,93 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
 -- Configuration
-local ENABLE_THIS_UI = true -- Set to true to use this UI
+local ENABLE_THIS_UI = false -- Set to false so we always use shared UI
 
--- Only proceed if this UI is enabled
+-- First, check if InventoryUI is available in SharedModule
+local useSharedUI = false
+local sharedModule 
+
+local success, result = pcall(function()
+    return require(ReplicatedStorage:WaitForChild("shared", 5))
+end)
+
+if success then
+    sharedModule = result
+    if sharedModule.InventoryUI then
+        print("DirectInventoryUI: Using external module implementation instead")
+        useSharedUI = true
+        
+        -- If the InventoryUI from shared module isn't initialized yet, do that now
+        if not sharedModule.InventoryUI._inventory then
+            sharedModule.InventoryUI.Initialize()
+        end
+        
+        -- Wire up our inventory button to use the shared UI's toggle function
+        local player = Players.LocalPlayer
+        if player then
+            task.spawn(function()
+                local playerGui = player:WaitForChild("PlayerGui")
+                task.wait(1) -- Wait a bit for button to be created by other scripts
+                
+                local inventoryButtonUI = playerGui:FindFirstChild("InventoryButtonUI")
+                if inventoryButtonUI then
+                    local button = inventoryButtonUI:FindFirstChild("InventoryButton")
+                    if button then
+                        -- Connect directly to the shared Toggle function
+                        print("DirectInventoryUI: Found button, connecting to shared Toggle function")
+                        
+                        -- Clear any existing connections first
+                        local oldConnections = getconnections(button.MouseButton1Click)
+                        for _, connection in ipairs(oldConnections) do
+                            connection:Disconnect()
+                        end
+                        
+                        -- Add the new connection
+                        button.MouseButton1Click:Connect(function()
+                            print("DirectInventoryUI: Button clicked - calling shared Toggle")
+                            sharedModule.InventoryUI.Toggle()
+                        end)
+                        
+                        print("DirectInventoryUI: Successfully connected button to shared Toggle")
+                    end
+                else
+                    -- Create a button that uses the shared UI
+                    local buttonGui = Instance.new("ScreenGui")
+                    buttonGui.Name = "InventoryButtonUI"
+                    buttonGui.ResetOnSpawn = false
+                    buttonGui.Parent = playerGui
+                    
+                    local button = Instance.new("TextButton")
+                    button.Name = "InventoryButton"
+                    button.Size = UDim2.new(0, 120, 0, 40)
+                    button.Position = UDim2.new(0.5, -60, 1, -60) -- Bottom center
+                    button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+                    button.Font = Enum.Font.GothamBold
+                    button.Text = "Inventory"
+                    button.TextSize = 18
+                    button.TextColor3 = Color3.new(1, 1, 1)
+                    button.Parent = buttonGui
+                    
+                    local corner = Instance.new("UICorner")
+                    corner.CornerRadius = UDim.new(0, 8)
+                    corner.Parent = button
+                    
+                    button.MouseButton1Click:Connect(function()
+                        print("DirectInventoryUI: Created button clicked - calling shared Toggle")
+                        sharedModule.InventoryUI.Toggle()
+                    end)
+                    
+                    print("DirectInventoryUI: Created inventory button for shared UI")
+                end
+            end)
+        end
+        
+        -- No need to continue with this script
+        return
+    end
+end
+
+-- Only proceed if this UI is enabled and we don't have a shared implementation
 if not ENABLE_THIS_UI then
     print("DirectInventoryUI: Disabled via ENABLE_THIS_UI flag")
     return
@@ -223,70 +307,116 @@ local function createItemButton(itemName, itemData)
     return button
 end
 
--- Function to update inventory display
+-- Function to update the inventory UI
 local function updateInventory(inventory, currency)
-    if not inventoryUI then
-        print("DirectInventoryUI: inventoryUI is nil in updateInventory")
-        return
-    end
+    if not inventoryUI then return end
     
     local mainFrame = inventoryUI:FindFirstChild("InventoryFrame")
-    if not mainFrame then
-        print("DirectInventoryUI: mainFrame is nil in updateInventory")
-        return
-    end
+    if not mainFrame then return end
     
     -- Update currency display
-    local currencyLabel = mainFrame.TitleBar:FindFirstChild("Currency")
-    if currencyLabel then
-        currencyLabel.Text = tostring(currency or 0)
-    else
-        print("DirectInventoryUI: currencyLabel not found in updateInventory")
-    end
-    
-    -- Update visibility of no items message
-    local noItemsLabel = mainFrame:FindFirstChild("NoItemsLabel")
-    if noItemsLabel then
-        noItemsLabel.Visible = #inventory == 0
-        print("DirectInventoryUI: No items label visibility set to", noItemsLabel.Visible)
-    else
-        print("DirectInventoryUI: noItemsLabel not found in updateInventory")
-    end
+    mainFrame.TitleBar.Currency.Text = tostring(currency or 0)
     
     -- Clear existing items
-    local container = mainFrame:FindFirstChild("ItemsContainer")
-    if not container then
-        print("DirectInventoryUI: container is nil in updateInventory")
-        return
-    end
-    
-    for _, child in ipairs(container:GetChildren()) do
+    local itemsContainer = mainFrame.ItemsContainer
+    for _, child in ipairs(itemsContainer:GetChildren()) do
         if child:IsA("TextButton") then
             child:Destroy()
         end
     end
     
-    -- Add items
+    local noItemsLabel = mainFrame:FindFirstChild("NoItemsLabel")
     local itemCount = 0
-    for _, item in ipairs(inventory) do
-        local itemData = {
-            name = item.name,
-            tier = item.tier or "BASIC"
-        }
-        
-        print("DirectInventoryUI: Adding item to display:", item.name, "Tier:", itemData.tier)
-        
-        local button = createItemButton(item.name, itemData)
-        button.Parent = container
-        
-        itemCount = itemCount + 1
+    
+    -- Try to get Constants for item info
+    local Constants = nil
+    pcall(function()
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        local shared = ReplicatedStorage:FindFirstChild("shared")
+        if shared then
+            Constants = require(shared).Constants
+        end
+    end)
+    
+    -- Create local fallback if needed
+    if not Constants then 
+        Constants = { ITEMS = {} }
+        print("DirectInventoryUI: Using local Constants fallback")
     end
     
-    -- Update canvas size
-    local rows = math.ceil(itemCount / ITEMS_PER_ROW)
-    container.CanvasSize = UDim2.new(0, 0, 0, rows * (ITEM_SIZE.Y.Offset + ITEM_PADDING) + ITEM_PADDING)
+    if not Constants.ITEMS then
+        Constants.ITEMS = {}
+        print("DirectInventoryUI: Created empty ITEMS table in Constants")
+    end
     
-    print("DirectInventoryUI: Updated inventory with " .. itemCount .. " items")
+    -- Check the inventory data structure (array or dictionary)
+    if typeof(inventory) == "table" then
+        -- Array-style inventory from server (items with IDs)
+        if #inventory > 0 then
+            for _, itemData in pairs(inventory) do
+                local itemName = itemData.name or itemData.itemType
+                if itemName then
+                    -- Create fallback item data if needed
+                    if not Constants.ITEMS[itemName] then
+                        Constants.ITEMS[itemName] = {
+                            name = typeof(itemName) == "string" and itemName:gsub("_", " ") or "Unknown Item",
+                            icon = "rbxassetid://3284930147",
+                            tier = itemData.tier or "BASIC",
+                            description = "Item description",
+                            price = { INGAME = 10, ROBUX = 10 }
+                        }
+                        print("DirectInventoryUI: Created fallback item data for: " .. tostring(itemName))
+                    end
+                    
+                    local itemInfo = Constants.ITEMS[itemName] or {
+                        tier = itemData.tier or "BASIC",
+                        icon = "rbxassetid://3284930147"
+                    }
+                    
+                    local button = createItemButton(itemName, itemInfo)
+                    button.Parent = itemsContainer
+                    itemCount = itemCount + 1
+                end
+            end
+        -- Dictionary-style inventory (itemName -> quantity)
+        else
+            for itemName, quantity in pairs(inventory) do
+                if quantity > 0 then
+                    -- Create fallback item data if needed
+                    if not Constants.ITEMS[itemName] then
+                        Constants.ITEMS[itemName] = {
+                            name = typeof(itemName) == "string" and itemName:gsub("_", " ") or "Unknown Item",
+                            icon = "rbxassetid://3284930147",
+                            tier = "BASIC",
+                            description = "Item description",
+                            price = { INGAME = 10, ROBUX = 10 }
+                        }
+                        print("DirectInventoryUI: Created fallback item data for: " .. tostring(itemName))
+                    end
+                    
+                    local itemInfo = Constants.ITEMS[itemName] or {
+                        tier = "BASIC",
+                        icon = "rbxassetid://3284930147"
+                    }
+                    
+                    local button = createItemButton(itemName, itemInfo)
+                    button.Parent = itemsContainer
+                    itemCount = itemCount + 1
+                end
+            end
+        end
+    end
+    
+    -- Show/hide "no items" message
+    if noItemsLabel then
+        noItemsLabel.Visible = (itemCount == 0)
+    end
+    
+    -- Update canvas size for scrolling
+    local rows = math.ceil(itemCount / ITEMS_PER_ROW)
+    itemsContainer.CanvasSize = UDim2.new(0, 0, 0, rows * (ITEM_SIZE.Y.Offset + ITEM_PADDING) + ITEM_PADDING)
+    
+    print("DirectInventoryUI: Updated inventory with", itemCount, "items")
 end
 
 -- Function to show inventory
@@ -296,43 +426,47 @@ local function showInventory()
     end
     
     local mainFrame = inventoryUI:FindFirstChild("InventoryFrame")
-    if not mainFrame then
-        print("DirectInventoryUI: mainFrame is nil in showInventory")
-        return
-    end
+    if not mainFrame then return end
     
     -- Get inventory data from server
-    local getInventoryFunc = ReplicatedStorage:FindFirstChild("Remotes"):FindFirstChild("GetInventory")
-    if getInventoryFunc then
-        print("DirectInventoryUI: Calling GetInventory RemoteFunction...")
-        
-        local success, result = pcall(function()
-            return getInventoryFunc:InvokeServer()
-        end)
-        
-        if success then
-            print("DirectInventoryUI: GetInventory RemoteFunction result:", result)
+    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+    if remotes then
+        local getInventoryFunc = remotes:FindFirstChild("GetInventory")
+        if getInventoryFunc then
+            print("DirectInventoryUI: Calling GetInventory RemoteFunction")
             
-            -- Check if the result is a table
-            if typeof(result) == "table" then
-                print("DirectInventoryUI: GetInventory returned data - Items:", 
-                    result.inventory and #result.inventory or 0, 
-                    "Currency:", result.currency)
+            local success, result = pcall(function()
+                return getInventoryFunc:InvokeServer()
+            end)
+            
+            if success then
+                print("DirectInventoryUI: GetInventory RemoteFunction result:", result)
                 
-                currentInventory = result
-                updateInventory(result.inventory or {}, result.currency or 0)
+                -- Check if the result is a table
+                if typeof(result) == "table" then
+                    print("DirectInventoryUI: GetInventory returned data - Items:", 
+                        result.inventory and #result.inventory or 0, 
+                        "Currency:", result.currency)
+                    
+                    currentInventory = result
+                    updateInventory(result.inventory or {}, result.currency or 0)
+                else
+                    warn("DirectInventoryUI: GetInventory returned non-table result:", typeof(result))
+                    -- Show empty inventory as fallback
+                    updateInventory({}, 0)
+                end
             else
-                warn("DirectInventoryUI: GetInventory returned non-table result:", typeof(result))
+                warn("DirectInventoryUI: Failed to get inventory data from server:", result)
                 -- Show empty inventory as fallback
                 updateInventory({}, 0)
             end
         else
-            warn("DirectInventoryUI: Failed to get inventory data from server:", result)
+            warn("DirectInventoryUI: GetInventory RemoteFunction not found")
             -- Show empty inventory as fallback
             updateInventory({}, 0)
         end
     else
-        warn("DirectInventoryUI: GetInventory RemoteFunction not found")
+        warn("DirectInventoryUI: Remotes folder not found")
         -- Show empty inventory as fallback
         updateInventory({}, 0)
     end
@@ -483,25 +617,27 @@ local function createInventoryButton()
     return buttonGui
 end
 
--- Initialize everything
-print("DirectInventoryUI: Initializing...")
-setupEventHandling()
-local buttonUI = createInventoryButton()
+-- Only initialize if we're not using the shared UI
+if not useSharedUI then
+    print("DirectInventoryUI: Initializing...")
+    setupEventHandling()
+    local buttonUI = createInventoryButton()
 
--- Create the actual inventory UI (but don't show it yet)
-inventoryUI = createInventoryUI()
+    -- Create the actual inventory UI (but don't show it yet)
+    inventoryUI = createInventoryUI()
 
--- Set up close button handling
-local mainFrame = inventoryUI:FindFirstChild("InventoryFrame")
-if mainFrame then
-    local closeButton = mainFrame.TitleBar.CloseButton
-    if closeButton then
-        closeButton.MouseButton1Click:Connect(hideInventory)
+    -- Set up close button handling
+    local mainFrame = inventoryUI:FindFirstChild("InventoryFrame")
+    if mainFrame then
+        local closeButton = mainFrame.TitleBar.CloseButton
+        if closeButton then
+            closeButton.MouseButton1Click:Connect(hideInventory)
+        else
+            warn("DirectInventoryUI: Close button not found")
+        end
     else
-        warn("DirectInventoryUI: Close button not found")
+        warn("DirectInventoryUI: Main frame not found")
     end
-else
-    warn("DirectInventoryUI: Main frame not found")
-end
 
-print("DirectInventoryUI: Initialization complete") 
+    print("DirectInventoryUI: Initialization complete") 
+end 

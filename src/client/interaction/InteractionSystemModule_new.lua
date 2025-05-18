@@ -38,11 +38,22 @@ local FADE_OUT_DURATION = 0.2 -- Duration of fade out animation
 
 -- Module table
 local InteractionSystem = {}
-InteractionSystem.initialized = false
-InteractionSystem.activeInteractions = {}
-InteractionSystem.proximityPrompts = {}
-InteractionSystem.currentTarget = nil
-InteractionSystem.ui = nil
+InteractionSystem.__index = InteractionSystem  -- Add metatable for proper OOP
+
+function InteractionSystem.new()
+    local self = setmetatable({}, InteractionSystem)
+    
+    -- Initialize properties
+    self.initialized = false
+    self.activeInteractions = {}
+    self.proximityPrompts = {}
+    self.currentTarget = nil
+    self.ui = nil
+    self.cooldownActive = false
+    self.isAdmin = false
+    
+    return self
+end
 
 -- Create interaction UI
 function InteractionSystem:CreateUI()
@@ -402,10 +413,17 @@ end
 
 -- Purchase with in-game currency
 function InteractionSystem:PurchaseWithCoins()
-    if not self.currentTarget then 
-        warn("PurchaseWithCoins failed: No current target")
+    if not self.currentTarget or self.cooldownActive then 
+        if self.cooldownActive then
+            print("Purchase on cooldown, ignoring request")
+        else
+            warn("PurchaseWithCoins failed: No current target")
+        end
         return 
     end
+    
+    -- Set cooldown to prevent spam
+    self.cooldownActive = true
     
     local item = self.currentTarget.item
     local itemName = self.currentTarget.itemName
@@ -416,12 +434,22 @@ function InteractionSystem:PurchaseWithCoins()
     -- Check for invalid data
     if not item or not item:IsA("Model") then
         warn("PurchaseWithCoins failed: Invalid item", item)
+        self.cooldownActive = false -- Reset cooldown
         return
     end
     
     -- Call server to handle purchase
     print("CLIENT - Firing PurchaseItem event to server with item:", item:GetFullName(), "Currency type: INGAME, Price:", price)
     purchaseItemEvent:FireServer(item, "INGAME", price)
+    
+    -- Hide the UI to show that purchase is in progress
+    self:HideInteractionUI()
+    
+    -- Reset cooldown after 2 seconds
+    spawn(function()
+        wait(2)
+        self.cooldownActive = false
+    end)
 end
 
 -- Purchase with Robux through developer product
@@ -574,7 +602,7 @@ function InteractionSystem:HandleInput(input, gameProcessed)
     if gameProcessed then return end
     
     -- Check for 'E' key press for interaction
-    if input.KeyCode == Enum.KeyCode.E and self.currentTarget then
+    if input.KeyCode == Enum.KeyCode.E and self.currentTarget and not self.cooldownActive then
         self:PurchaseWithCoins()
     end
 end

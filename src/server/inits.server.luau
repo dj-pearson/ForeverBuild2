@@ -8,6 +8,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
 
 print("Server initialization script starting...")
 
@@ -43,6 +44,12 @@ if not Remotes then
     createRemote("RemoveFromInventory", "RemoteEvent")
     createRemote("PurchaseItem", "RemoteEvent")
     createRemote("UpdateBalance", "RemoteEvent")
+    
+    -- Create placement system remotes
+    createRemote("RecallItem", "RemoteEvent")
+    createRemote("CancelPlacement", "RemoteEvent")
+    createRemote("ItemPlaced", "RemoteEvent")
+    createRemote("ItemRecalled", "RemoteEvent")
     
     -- Create standard remotes - FUNCTIONS
     createRemote("GetInventory", "RemoteFunction")
@@ -81,6 +88,100 @@ else
             print("server.inits: SharedModule initialized successfully")
         end
     end
+end
+
+-- Load DataService
+local DataService
+local function initDataService()
+    print("server.inits: Initializing DataService...")
+    
+    -- Check if DataService is already available in SharedModule
+    if SharedModule.DataService then
+        print("server.inits: Using existing DataService from SharedModule")
+        DataService = SharedModule.DataService
+        return true
+    end
+    
+    -- Try to require the DataService module
+    local success, result
+    
+    -- First attempt with absolute path
+    success, result = pcall(function()
+        return require(ReplicatedStorage.shared.core.DataService)
+    end)
+    
+    -- Try alternative path if first attempt failed
+    if not success then
+        print("server.inits: First DataService path failed, trying alternative path...")
+        success, result = pcall(function()
+            if script and script.Parent and script.Parent.Parent then
+                local corePath = script.Parent.Parent:FindFirstChild("shared")
+                if corePath then
+                    local dataServiceModule = corePath:FindFirstChild("core")
+                    if dataServiceModule then
+                        dataServiceModule = dataServiceModule:FindFirstChild("DataService")
+                        if dataServiceModule then
+                            return require(dataServiceModule)
+                        end
+                    end
+                end
+            end
+            return nil
+        end)
+    end
+    
+    -- Create mock DataService if couldn't load
+    if not success or not result then
+        print("server.inits: Creating basic mock DataService")
+        -- Create a basic mock DataService
+        result = {
+            new = function()
+                local mockDS = {
+                    dataStore = {},
+                    
+                    SaveData = function(self, key, value)
+                        self.dataStore[key] = value
+                        return true
+                    end,
+                    
+                    LoadData = function(self, key)
+                        return self.dataStore[key]
+                    end,
+                    
+                    Initialize = function(self, sharedModule)
+                        print("Mock DataService initialized")
+                        return self
+                    end
+                }
+                return mockDS
+            end
+        }
+        success = true
+    end
+    
+    if success and result then
+        -- Create and initialize the DataService
+        print("server.inits: Creating new DataService instance")
+        DataService = result.new()
+        DataService:Initialize(SharedModule)
+        
+        -- Register with SharedModule
+        SharedModule.DataService = DataService
+        
+        print("server.inits: DataService initialized successfully")
+        return true
+    else
+        warn("server.inits: Failed to create DataService")
+        return false
+    end
+end
+
+-- Add after SharedModule initialization but before other managers
+local dataServiceSuccess = initDataService()
+if dataServiceSuccess then
+    print("server.inits: Successfully created DataService instance")
+else
+    warn("server.inits: DataService initialization failed")
 end
 
 -- Initialize server managers with error handling
@@ -135,20 +236,70 @@ else
     warn("server.inits: CurrencyManager module not available")
 end
 
--- PlacementManager
-if SharedModule.PlacementManager and SharedModule.PlacementManager.new then
-    local pmSuccess, pmResult = pcall(function()
-        return SharedModule.PlacementManager.new()
+-- Load PlacementManager
+PlacementManager = nil
+local function initPlacementManager()
+    print("server.inits: Initializing PlacementManager...")
+    
+    -- Check if PlacementManager is already available in SharedModule
+    if SharedModule.PlacementManager then
+        print("server.inits: Using existing PlacementManager from SharedModule")
+        PlacementManager = SharedModule.PlacementManager
+        return true
+    end
+    
+    -- Try to require the PlacementManager module
+    local placementPath = script.Parent.Parent:FindFirstChild("shared")
+    if not placementPath then
+        warn("server.inits: shared folder not found for PlacementManager")
+        return false
+    end
+    
+    local corePath = placementPath:FindFirstChild("core")
+    if not corePath then
+        warn("server.inits: core folder not found in shared")
+        return false
+    end
+    
+    local placementFolder = corePath:FindFirstChild("placement")
+    if not placementFolder then
+        warn("server.inits: placement folder not found in core")
+        return false
+    end
+    
+    local placementModule = placementFolder:FindFirstChild("PlacementManager")
+    if not placementModule then
+        warn("server.inits: PlacementManager module not found")
+        return false
+    end
+    
+    local success, result = pcall(function()
+        return require(placementModule)
     end)
     
-    if pmSuccess and pmResult then
-        PlacementManager = pmResult
-        print("server.inits: Successfully created PlacementManager instance")
-    else
-        warn("server.inits: Failed to create PlacementManager instance:", pmResult)
+    if not success then
+        warn("server.inits: Failed to require PlacementManager:", result)
+        return false
     end
+    
+    -- Create and initialize the PlacementManager
+    print("server.inits: Creating new PlacementManager instance")
+    PlacementManager = result.new(SharedModule)
+    PlacementManager:Initialize()
+    
+    -- Register with SharedModule
+    SharedModule.PlacementManager = PlacementManager
+    
+    print("server.inits: PlacementManager initialized successfully")
+    return true
+end
+
+-- Add after other manager initializations, before remote setup
+local placementManagerSuccess = initPlacementManager()
+if placementManagerSuccess then
+    print("server.inits: Successfully created PlacementManager instance")
 else
-    warn("server.inits: PlacementManager module not available")
+    warn("server.inits: PlacementManager initialization failed")
 end
 
 -- InteractionManager
@@ -304,12 +455,10 @@ if placeItemRemote and PlacementManager then
         end
         
         local success = PlacementManager:PlaceItem(player, itemId, position, rotation)
-        if success then
-            Remotes.NotifyPlayer:FireClient(player, "Successfully placed " .. itemId)
-        else
-            Remotes.NotifyPlayer:FireClient(player, "Failed to place " .. itemId)
-        end
+        print("server.inits: PlaceItem result for player", player.Name, ":", success)
     end)
+    
+    print("server.inits: Connected PlaceItem remote event")
 end
 
 -- InteractWithItem
@@ -419,4 +568,85 @@ Players.PlayerRemoving:Connect(function(player)
     end
 end)
 
+-- Add a new RemoteEvent for RecallItem
+local recallItemRemote = Remotes:FindFirstChild("RecallItem")
+if recallItemRemote and PlacementManager then
+    recallItemRemote.OnServerEvent:Connect(function(player, instanceId)
+        if not PlacementManager.RecallItem then
+            warn("server.inits: PlacementManager.RecallItem function not found")
+            return
+        end
+        
+        local success = PlacementManager:RecallItem(player, instanceId)
+        print("server.inits: RecallItem result for player", player.Name, ":", success)
+    end)
+    
+    print("server.inits: Connected RecallItem remote event")
+end
+
 print("Server initialization completed successfully")
+
+-- Ensure PlacedItems folder exists in Workspace
+local placedItemsFolder = Workspace:FindFirstChild("PlacedItems")
+if not placedItemsFolder then
+    placedItemsFolder = Instance.new("Folder")
+    placedItemsFolder.Name = "PlacedItems"
+    placedItemsFolder.Parent = Workspace
+    print("Created PlacedItems folder in Workspace")
+end
+
+-- Ensure ItemTemplates folder exists and contains all required templates
+local function setupItemTemplates()
+    local itemTemplates = ReplicatedStorage:FindFirstChild("ItemTemplates")
+    if not itemTemplates then
+        itemTemplates = Instance.new("Folder")
+        itemTemplates.Name = "ItemTemplates"
+        itemTemplates.Parent = ReplicatedStorage
+        
+        -- Create some basic templates for testing
+        local items = {
+            { name = "Grass_Cube", color = BrickColor.new("Bright green"), transparency = 0, material = Enum.Material.Grass },
+            { name = "Stone_Cube", color = BrickColor.new("Medium stone grey"), transparency = 0, material = Enum.Material.Slate },
+            { name = "Wood_Plank", color = BrickColor.new("Brown"), transparency = 0, material = Enum.Material.Wood },
+            { name = "Water_Cube", color = BrickColor.new("Bright blue"), transparency = 0.3, material = Enum.Material.Water },
+            { name = "Fire_Cube", color = BrickColor.new("Bright red"), transparency = 0, material = Enum.Material.Neon },
+            { name = "Brick_Cube", color = BrickColor.new("Brick red"), transparency = 0, material = Enum.Material.Brick },
+            { name = "Sand_Cube", color = BrickColor.new("Brick yellow"), transparency = 0, material = Enum.Material.Sand },
+            { name = "Concrete_Cube", color = BrickColor.new("Institutional white"), transparency = 0, material = Enum.Material.Concrete },
+            { name = "Metal_Cube", color = BrickColor.new("Medium grey"), transparency = 0, material = Enum.Material.Metal },
+            { name = "Glass_Cube", color = BrickColor.new("Toothpaste"), transparency = 0.5, material = Enum.Material.Glass }
+        }
+        
+        for _, itemInfo in ipairs(items) do
+            local part = Instance.new("Part")
+            part.Name = itemInfo.name
+            part.Size = Vector3.new(2, 2, 2)
+            part.Anchored = true
+            part.CanCollide = true
+            part.BrickColor = itemInfo.color
+            part.Transparency = itemInfo.transparency
+            part.Material = itemInfo.material
+            
+            -- Also create a shorthand version without the _Cube suffix for convenience
+            local shortName = itemInfo.name:gsub("_Cube", "")
+            if shortName ~= itemInfo.name then
+                local shortPart = part:Clone()
+                shortPart.Name = shortName
+                shortPart.Parent = itemTemplates
+            end
+            
+            part.Parent = itemTemplates
+            
+            print("Created template: " .. part.Name .. " (" .. tostring(part.BrickColor) .. ", transparency=" .. tostring(part.Transparency) .. ")")
+        end
+        
+        print("Server init: Created " .. #itemTemplates:GetChildren() .. " item templates")
+    else
+        print("Server init: ItemTemplates folder already exists with " .. #itemTemplates:GetChildren() .. " items")
+    end
+    
+    return itemTemplates
+end
+
+-- Call the setup function to ensure templates exist
+setupItemTemplates()
