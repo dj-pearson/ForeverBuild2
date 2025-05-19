@@ -491,6 +491,42 @@ if placeItemRemote and PlacementManager then
     print("server.init: PlaceItem remote event already handled by PlacementManager module")
 end
 
+-- PurchaseItem
+local purchaseItemRemote = Remotes:FindFirstChild("PurchaseItem")
+if purchaseItemRemote and ItemPurchaseHandler then
+    purchaseItemRemote.OnServerEvent:Connect(function(player, itemId, quantity)
+        print("server.init: PurchaseItem remote event called by", player.Name, "for item", itemId, "quantity:", quantity or 1)
+        
+        quantity = quantity or 1
+        
+        if not ItemPurchaseHandler.AddToInventory then
+            warn("server.init: ItemPurchaseHandler.AddToInventory function not found")
+            return
+        end
+        
+        -- Get item data
+        local itemData = {}
+        if SharedModule and SharedModule.Constants and SharedModule.Constants.ITEMS then
+            itemData = SharedModule.Constants.ITEMS[itemId] or { Name = itemId, Price = 10 }
+        else
+            itemData = { Name = itemId, Price = 10 }
+        end
+        
+        -- Process the purchase
+        local success, message = ItemPurchaseHandler:ProcessCurrencyPurchase(player, itemData, itemData.Price or 10)
+        
+        -- Notify player of purchase result
+        local notifyRemote = Remotes:FindFirstChild("NotifyPlayer")
+        if notifyRemote then
+            notifyRemote:FireClient(player, message or (success and "Item purchased!" or "Purchase failed!"))
+        end
+        
+        print("server.init: PurchaseItem result for player", player.Name, ":", success, message)
+    end)
+    
+    print("server.init: Connected PurchaseItem remote event handler")
+end
+
 -- InteractWithItem
 local interactItemRemote = Remotes:FindFirstChild("InteractWithItem")
 if interactItemRemote and InteractionManager then

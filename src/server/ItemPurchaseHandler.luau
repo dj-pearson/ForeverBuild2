@@ -429,14 +429,13 @@ function ItemPurchaseHandler:ProcessCurrencyPurchase(player, item, price)
     -- Check if player is an admin for free purchases
     if self:IsAdmin(player) then
         print("[ItemPurchaseHandler] Admin detected: Free purchase granted for " .. player.Name)
-        
-        -- Add the item to the player's inventory without charging
+          -- Add the item to the player's inventory without charging
         self:AddToInventory(player, item.Name)
         
         -- Save the data
         self:SavePlayerData(player)
         
-        return true, "Admin free purchase of " .. item.Name
+        return true, "Admin free purchase of " .. tostring(item.Name)
     end
     
     -- Check if player can afford the item

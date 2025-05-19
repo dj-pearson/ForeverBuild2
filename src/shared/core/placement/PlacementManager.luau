@@ -24,6 +24,20 @@ function PlacementManager.new(sharedModule)
     self.Constants = sharedModule.Constants
     self.remotes = {}
     
+    -- Add a lookup table for numeric/generic item IDs to template names
+    self.itemTemplateMap = {
+        ["item_1"] = "Grass_Cube",
+        ["item_2"] = "Stone_Cube",
+        ["item_3"] = "Wood_Plank",
+        ["item_4"] = "Wood_Cube",
+        ["item_5"] = "Brick_Cube",
+        ["item_6"] = "Water_Cube",
+        ["item_7"] = "Glass_Cube",
+        ["item_8"] = "Sand_Cube",
+        ["item_9"] = "Concrete_Cube",
+        ["item_10"] = "Metal_Cube"
+    }
+    
     -- Setup the world folder for placed items
     if isServer then
         -- First look for the main World_Items folder
@@ -105,6 +119,13 @@ end
 -- Get an item template from ReplicatedStorage or other sources
 function PlacementManager:GetItemTemplate(itemId)
     print("PlacementManager: Getting template for item:", itemId)
+    
+    -- Check if this is a numeric item ID that needs to be mapped to a template name
+    if self.itemTemplateMap and self.itemTemplateMap[itemId] then
+        local mappedTemplate = self.itemTemplateMap[itemId]
+        print("PlacementManager: Mapped numeric ID", itemId, "to template name:", mappedTemplate)
+        itemId = mappedTemplate
+    end
     
     -- Normalize the itemId (replace spaces with underscores)
     local normalizedItemId = itemId:gsub(" ", "_")
@@ -226,7 +247,14 @@ function PlacementManager:GetItemTemplate(itemId)
     end
     
     -- If all else fails, create a basic template
-    print("PlacementManager: No template found, creating basic template for:", normalizedItemId)
+    print("PlacementManager: No template found for " .. normalizedItemId .. " - creating basic preview")
+    
+    -- Check if this looks like a numeric ID (item_X format)
+    local numericId = normalizedItemId:match("item_(%d+)")
+    if numericId then
+        print("PlacementManager: ⚠️ Item appears to be a numeric ID (item_" .. numericId .. "). Consider adding it to the itemTemplateMap.")
+    end
+    
     local newTemplate = Instance.new("Part")
     newTemplate.Name = normalizedItemId
     newTemplate.Size = Vector3.new(2, 2, 2)
@@ -414,8 +442,8 @@ function PlacementManager:PlaceItem(player, itemId, position, rotation)
     end
     table.insert(self.placedItemsByPlayer[player.UserId], instanceId)
     
-    -- Remove from inventory
-    self:RemoveFromInventory(player, normalizedItemId)
+    -- Remove from inventory (only 1 item, not the whole stack)
+    self:RemoveFromInventory(player, normalizedItemId, 1)
     
     -- Notify the client
     if self.remotes.ItemPlaced then
@@ -432,10 +460,11 @@ function PlacementManager:PlaceItem(player, itemId, position, rotation)
 end
 
 -- Server: Remove an item from the player's inventory
-function PlacementManager:RemoveFromInventory(player, itemId)
+function PlacementManager:RemoveFromInventory(player, itemId, quantity)
     if not isServer then return false end
     
-    print("PlacementManager: Attempting to remove", itemId, "from inventory of", player.Name)
+    quantity = quantity or 1  -- Default to 1 if not specified
+    print("PlacementManager: Attempting to remove", quantity, "x", itemId, "from inventory of", player.Name)
     
     -- Find the server ItemPurchaseHandler
     local ItemPurchaseHandler = nil
@@ -476,11 +505,11 @@ function PlacementManager:RemoveFromInventory(player, itemId)
     -- 1. Try the direct ItemPurchaseHandler first (most reliable method)
     if ItemPurchaseHandler and ItemPurchaseHandler.RemoveFromInventory then
         local success, result = pcall(function()
-            return ItemPurchaseHandler:RemoveFromInventory(player, itemId, 1)
+            return ItemPurchaseHandler:RemoveFromInventory(player, itemId, quantity)
         end)
         
         if success and result then
-            print("PlacementManager: Successfully removed item using ItemPurchaseHandler directly")
+            print("PlacementManager: Successfully removed", quantity, "x", itemId, "using ItemPurchaseHandler directly")
     return true
         end
     end
@@ -489,25 +518,37 @@ function PlacementManager:RemoveFromInventory(player, itemId)
     if self.shared and self.shared.ItemPurchaseHandler and 
        self.shared.ItemPurchaseHandler.RemoveFromInventory then
         local success, result = pcall(function()
-            return self.shared.ItemPurchaseHandler:RemoveFromInventory(player, itemId, 1)
+            return self.shared.ItemPurchaseHandler:RemoveFromInventory(player, itemId, quantity)
         end)
         
         if success and result then
-            print("PlacementManager: Successfully removed item using SharedModule.ItemPurchaseHandler")
+            print("PlacementManager: Successfully removed", quantity, "x", itemId, "using SharedModule.ItemPurchaseHandler")
             return true
         end
     end
     
     -- 3. Try with InventoryManager if available
     local InventoryManager = self.shared and self.shared.InventoryManager
+    if not InventoryManager then
+        -- Try to find InventoryManager in ServerStorage or other locations
+        local success, result = pcall(function()
+            return require(game:GetService("ServerStorage").server.InventoryManager)
+        end)
+        
+        if success then
+            InventoryManager = result
+            print("PlacementManager: Found InventoryManager in ServerStorage")
+        end
+    end
+    
     if InventoryManager and InventoryManager.RemoveItem then
         local success, result = pcall(function()
-            return InventoryManager:RemoveItem(player, itemId, 1)
+            return InventoryManager:RemoveItem(player, itemId, quantity)
         end)
         
         if success and result then
-            print("PlacementManager: Successfully removed item using InventoryManager")
-    return true
+            print("PlacementManager: Successfully removed", quantity, "x", itemId, "using InventoryManager")
+            return true
         end
     end
     
@@ -521,11 +562,22 @@ function PlacementManager:RemoveFromInventory(player, itemId)
             if (item.id and (item.id == itemId or item.id == normalizedItemId)) or
                (item.name and (item.name == itemId or item.name == normalizedItemId)) then
                 
-                local currentCount = item.count or 1
-                if currentCount <= 1 then
+                -- Check if the item uses count or quantity property
+                local currentCount = item.quantity or item.count or 1
+                
+                if currentCount <= quantity then
+                    -- Remove the entire item
                     table.remove(playerData.inventory, i)
+                    print("PlacementManager: Manually removed entire item from inventory (had", currentCount, "items)")
                 else
-                    item.count = currentCount - 1
+                    -- Reduce quantity
+                    if item.quantity ~= nil then
+                        item.quantity = currentCount - quantity
+                        print("PlacementManager: Reduced item.quantity from", currentCount, "to", item.quantity)
+                    elseif item.count ~= nil then
+                        item.count = currentCount - quantity
+                        print("PlacementManager: Reduced item.count from", currentCount, "to", item.count)
+                    end
                 end
                 
                 found = true
@@ -758,12 +810,14 @@ function PlacementManager:CreateWorldItem(itemId, position, rotation)
             template.Material = Enum.Material.Brick
         elseif normalizedItemId:lower():find("glass") then
             template.BrickColor = BrickColor.new("Institutional white")
-            template.Transparency = 0.5
             template.Material = Enum.Material.Glass
+            template.Transparency = 0.5
         else
             template.BrickColor = BrickColor.new("Medium stone grey")
             template.Material = Enum.Material.Concrete
         end
+    else
+        template = template:Clone()
     end
     
     -- Store template properties for debugging
@@ -852,6 +906,37 @@ function PlacementManager:CreateWorldItem(itemId, position, rotation)
     item.Parent = self.worldFolder
     
     return item
+end
+
+-- Find an item by its instanceId
+function PlacementManager:FindItemByInstanceId(instanceId)
+    if not instanceId then
+        warn("PlacementManager: Cannot find item with nil instanceId")
+        return nil
+    end
+    
+    -- Check if we have a placed items folder to search
+    if not self.placedFolder then
+        if isServer then
+            -- Create the folder if it doesn't exist on the server
+            self.placedFolder = game.Workspace:FindFirstChild("PlacedItems") or Instance.new("Folder")
+            self.placedFolder.Name = "PlacedItems"
+            self.placedFolder.Parent = game.Workspace
+        else
+            warn("PlacementManager: No placedFolder available to search")
+            return nil
+        end
+    end
+    
+    -- Search through all children in the placed folder
+    for _, item in ipairs(self.placedFolder:GetChildren()) do
+        if item:GetAttribute("instanceId") == instanceId then
+            return item
+        end
+    end
+    
+    -- If we reach here, the item wasn't found
+    return nil
 end
 
 -- Server: Get player data from appropriate manager
@@ -996,27 +1081,19 @@ function PlacementManager:SaveWorldData()
     -- First check for items in the placedItemsByPlayer tracking table
     for playerId, items in pairs(self.placedItemsByPlayer or {}) do
         for _, instanceId in ipairs(items) do
-            -- Try to find the item in the world
             local item = self:FindItemByInstanceId(instanceId)
+            
             if item then
-                local itemPosition = item:IsA("Model") and item:GetPrimaryPartCFrame().Position or item.Position
-                local itemRotation = item:IsA("Model") and item:GetPrimaryPartCFrame().Rotation or item.Rotation
+                local itemData = {
+                    instanceId = instanceId,
+                    itemId = item:GetAttribute("itemId"),
+                    owner = item:GetAttribute("owner") or tonumber(playerId),
+                    position = item:IsA("Model") and item.PrimaryPart and item.PrimaryPart.Position or item.Position,
+                    rotation = item:IsA("Model") and item.PrimaryPart and item.PrimaryPart.Orientation or item.Orientation,
+                    placedTime = item:GetAttribute("placedTime") or os.time(),
+                }
                 
-                table.insert(worldData, {
-                    id = item:GetAttribute("itemId") or item.Name:gsub("_%d+_%d+$", ""),
-                    position = {
-                        x = itemPosition.X,
-                        y = itemPosition.Y, 
-                        z = itemPosition.Z
-                    },
-                    rotation = {
-                        x = itemRotation and itemRotation.X or 0,
-                        y = itemRotation and itemRotation.Y or 0,
-                        z = itemRotation and itemRotation.Z or 0
-                    },
-                    owner = playerId,
-                    instanceId = instanceId
-                })
+                table.insert(worldData, itemData)
             end
         end
     end
@@ -1024,42 +1101,30 @@ function PlacementManager:SaveWorldData()
     -- Additionally, scan the Placed folder directly to catch any items that might not be in the tracking table
     if self.placedFolder then
         for _, item in ipairs(self.placedFolder:GetChildren()) do
-            -- Skip items we've already processed from placedItemsByPlayer
             local instanceId = item:GetAttribute("instanceId")
-            if not instanceId then
-                instanceId = item.Name -- Use name as fallback
-            end
             
-            -- Check if this item is already in our worldData
-            local alreadyIncluded = false
-            for _, existingItem in ipairs(worldData) do
-                if existingItem.instanceId == instanceId then
-                    alreadyIncluded = true
-                    break
+            -- Only add items not already in the list
+            if instanceId then
+                local found = false
+                for _, existingItem in ipairs(worldData) do
+                    if existingItem.instanceId == instanceId then
+                        found = true
+                        break
+                    end
                 end
-            end
-            
-            if not alreadyIncluded then
-                local itemPosition = item:IsA("Model") and item:GetPrimaryPartCFrame().Position or item.Position
-                local itemRotation = item:IsA("Model") and item:GetPrimaryPartCFrame().Rotation or item.Rotation
-                local itemId = item:GetAttribute("itemId") or item.Name:gsub("_%d+_%d+$", "")
-                local ownerId = item:GetAttribute("owner") or 0
                 
-                table.insert(worldData, {
-                    id = itemId,
-                    position = {
-                        x = itemPosition.X,
-                        y = itemPosition.Y, 
-                        z = itemPosition.Z
-                    },
-                    rotation = {
-                        x = itemRotation and itemRotation.X or 0,
-                        y = itemRotation and itemRotation.Y or 0,
-                        z = itemRotation and itemRotation.Z or 0
-                    },
-                    owner = ownerId,
-                    instanceId = instanceId
-                })
+                if not found then
+                    local itemData = {
+                        instanceId = instanceId,
+                        itemId = item:GetAttribute("itemId"),
+                        owner = item:GetAttribute("owner"),
+                        position = item:IsA("Model") and item.PrimaryPart and item.PrimaryPart.Position or item.Position,
+                        rotation = item:IsA("Model") and item.PrimaryPart and item.PrimaryPart.Orientation or item.Orientation,
+                        placedTime = item:GetAttribute("placedTime") or os.time(),
+                    }
+                    
+                    table.insert(worldData, itemData)
+                end
             end
         end
     end
@@ -1077,43 +1142,11 @@ function PlacementManager:SaveWorldData()
     return success
 end
 
--- Helper method to find an item by its instanceId
-function PlacementManager:FindItemByInstanceId(instanceId)
-    if not isServer then return nil end
-    
-    -- Look in the placed folder
-    if self.placedFolder then
-        for _, item in ipairs(self.placedFolder:GetChildren()) do
-            if item:GetAttribute("instanceId") == instanceId or item.Name == instanceId then
-                return item
-            end
-        end
-    end
-    
-    -- Look in legacy folder if it exists
-    if self.legacyPlacedFolder then
-        for _, item in ipairs(self.legacyPlacedFolder:GetChildren()) do
-            if item:GetAttribute("instanceId") == instanceId or item.Name == instanceId then
-                return item
-            end
-        end
-    end
-    
-    -- Look in the main world folder as a last resort
-    if self.worldFolder then
-        for _, item in ipairs(self.worldFolder:GetChildren()) do
-            if not item:IsA("Folder") and (item:GetAttribute("instanceId") == instanceId or item.Name == instanceId) then
-                return item
-            end
-        end
-    end
-    
-    return nil
-end
-
 -- Server: Load world data from DataStore
 function PlacementManager:LoadWorldData()
     if not isServer then return false end
+    
+    print("PlacementManager: Loading world data...")
     
     local DataService = self.shared and self.shared.DataService
     if not DataService then
@@ -1121,108 +1154,90 @@ function PlacementManager:LoadWorldData()
         return false
     end
     
-    -- Load world data
-    local worldData = DataService:LoadData("WorldPlacedItems")
+    -- Load world data from DataService
+    local worldData = DataService:GetData("WorldPlacedItems")
     if not worldData or type(worldData) ~= "table" or #worldData == 0 then
-        print("PlacementManager: No world data available to load")
+        print("PlacementManager: No world data found or empty data")
         return false
     end
     
-    print("PlacementManager: Loading " .. #worldData .. " placed items")
+    print("PlacementManager: Loaded " .. #worldData .. " placed items from storage")
     
-    -- Clear existing items from tracking but not from the world
-    self.placedItemsByPlayer = {}
-    
-    -- Recreate all items
-    local itemsCreated = 0
+    -- Process and spawn each item
+    local itemsPlaced = 0
     for _, itemData in ipairs(worldData) do
-        if not itemData.id then
-            warn("PlacementManager: Item data missing ID, skipping")
-            continue
-        end
-        
-        local position = Vector3.new(
-            itemData.position.x,
-            itemData.position.y,
-            itemData.position.z
-        )
-        
-        local rotation = Vector3.new(
-            itemData.rotation.x,
-            itemData.rotation.y,
-            itemData.rotation.z
-        )
-        
-        -- Create the item template first
-        local normalizedItemId = itemData.id:gsub(" ", "_")
-        local template = self:GetItemTemplate(normalizedItemId)
-        
-        if not template then
-            warn("PlacementManager: Template not found for item: " .. normalizedItemId)
-            continue
-        end
-        
-        -- Clone the template
-        local item = template:Clone()
-        if not item then
-            warn("PlacementManager: Failed to clone template for item: " .. normalizedItemId)
-            continue
-        end
-        
-        -- Set up appearance properties from template
-        if item:IsA("BasePart") and template:IsA("BasePart") then
-            item.BrickColor = template.BrickColor
-            item.Material = template.Material
-            item.Transparency = template.Transparency
-        end
-        
-        -- Generate a unique ID for this instance if needed
-        local instanceId = itemData.instanceId or (normalizedItemId .. "_" .. os.time() .. "_" .. math.random(1000, 9999))
-        item.Name = instanceId
-        
-        -- Position and orient the item EXACTLY at the saved position
-        if item:IsA("Model") and item.PrimaryPart then
-            item:SetPrimaryPartCFrame(CFrame.new(position) * CFrame.Angles(rotation.X, rotation.Y, rotation.Z))
-        else
-            item.CFrame = CFrame.new(position) * CFrame.Angles(rotation.X, rotation.Y, rotation.Z)
-        end
-        
-        -- Make sure it's anchored and can collide
-        if item:IsA("Model") then
-            for _, part in ipairs(item:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.Anchored = true
-                    part.CanCollide = true
+        if itemData.itemId and itemData.position then
+            -- Get the item template
+            local template = self:GetItemTemplate(itemData.itemId)
+            if template then
+                -- Clone the template for placement
+                local placedItem = template:Clone()
+                placedItem.Name = itemData.itemId .. "_" .. (itemData.owner or 0) .. "_" .. os.time()
+                
+                -- Set attributes
+                placedItem:SetAttribute("instanceId", itemData.instanceId)
+                placedItem:SetAttribute("itemId", itemData.itemId)
+                placedItem:SetAttribute("owner", itemData.owner)
+                placedItem:SetAttribute("placedTime", itemData.placedTime or os.time())
+                placedItem:SetAttribute("persistent", true)
+                
+                -- Convert position from table to Vector3 if needed
+                local position = itemData.position
+                if typeof(position) ~= "Vector3" then
+                    position = Vector3.new(position.X or position.x or 0, position.Y or position.y or 0, position.Z or position.z or 0)
                 end
+                
+                -- Convert rotation from table to Vector3 if needed
+                local rotation = itemData.rotation or Vector3.new(0, 0, 0)
+                if typeof(rotation) ~= "Vector3" then
+                    rotation = Vector3.new(rotation.X or rotation.x or 0, rotation.Y or rotation.y or 0, rotation.Z or rotation.z or 0)
+                end
+                
+                -- Position and anchor the item
+                if placedItem:IsA("Model") and placedItem.PrimaryPart then
+                    placedItem:SetPrimaryPartCFrame(CFrame.new(position) * CFrame.fromEulerAnglesXYZ(
+                        math.rad(rotation.X), 
+                        math.rad(rotation.Y), 
+                        math.rad(rotation.Z)
+                    ))
+                    
+                    -- Set all parts to anchored
+                    for _, part in pairs(placedItem:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.Anchored = true
+                            part.CanCollide = true
+                        end
+                    end
+                elseif placedItem:IsA("BasePart") then
+                    placedItem.CFrame = CFrame.new(position) * CFrame.fromEulerAnglesXYZ(
+                        math.rad(rotation.X), 
+                        math.rad(rotation.Y), 
+                        math.rad(rotation.Z)
+                    )
+                    placedItem.Anchored = true
+                    placedItem.CanCollide = true
+                end
+                
+                -- Parent to the placed items folder
+                placedItem.Parent = self.placedFolder
+                
+                -- Add to player's placed items list
+                local ownerId = itemData.owner
+                if ownerId then
+                    if not self.placedItemsByPlayer[ownerId] then
+                        self.placedItemsByPlayer[ownerId] = {}
+                    end
+                    table.insert(self.placedItemsByPlayer[ownerId], itemData.instanceId)
+                end
+                
+                itemsPlaced = itemsPlaced + 1
+            else
+                warn("PlacementManager: Failed to find template for item:", itemData.itemId)
             end
-        elseif item:IsA("BasePart") then
-            item.Anchored = true
-            item.CanCollide = true
         end
-        
-        -- Set attributes
-        item:SetAttribute("owner", itemData.owner)
-        item:SetAttribute("instanceId", instanceId)
-        item:SetAttribute("itemId", itemData.id)
-        item:SetAttribute("placedTime", itemData.placedTime or os.time())
-        item:SetAttribute("persistent", true)
-        item:SetAttribute("item_type", normalizedItemId)
-        item:SetAttribute("placed_at", itemData.placedTime or os.time())
-        
-        -- Ensure proper parenting
-        item.Parent = self.placedFolder
-        
-        -- Track in placedItemsByPlayer
-        local owner = itemData.owner or 0
-        if not self.placedItemsByPlayer[owner] then
-            self.placedItemsByPlayer[owner] = {}
-        end
-        
-        table.insert(self.placedItemsByPlayer[owner], instanceId)
-        itemsCreated = itemsCreated + 1
     end
     
-    print("PlacementManager: Successfully loaded " .. itemsCreated .. " items")
+    print("PlacementManager: Successfully spawned " .. itemsPlaced .. " world items")
     return true
 end
 
@@ -1230,181 +1245,448 @@ end
 function PlacementManager:ConnectPlayerEvents()
     if not isServer then return end
     
-    -- Connect to PlayerRemoving event to save data when players leave
-    game.Players.PlayerRemoving:Connect(function(player)
+    print("PlacementManager: Connecting player events")
+    
+    -- Handle player joining
+    Players.PlayerAdded:Connect(function(player)
+        print("PlacementManager: Player joined:", player.Name)
+        
+        -- Create entry for player if this is their first join
+        if not self.placedItemsByPlayer[player.UserId] then
+            self.placedItemsByPlayer[player.UserId] = {}
+        end
+    end)
+    
+    -- Handle player leaving - save their data
+    Players.PlayerRemoving:Connect(function(player)
         print("PlacementManager: Player leaving:", player.Name)
         
-        -- Save world data when a player leaves
-        self:SaveWorldData()
+        -- Save world data when a player leaves to ensure their changes are preserved
+        task.spawn(function()
+            self:SaveWorldData()
+        end)
     end)
     
-    -- Also connect to game closing event
-    game:BindToClose(function()
-        print("PlacementManager: Game closing, saving world data")
-        self:SaveWorldData()
+    -- Initialize entries for existing players
+    for _, player in ipairs(Players:GetPlayers()) do
+        if not self.placedItemsByPlayer[player.UserId] then
+            self.placedItemsByPlayer[player.UserId] = {}
+        end
+    end
+    
+    -- Setup periodic auto-save (every 5 minutes)
+    task.spawn(function()
+        while true do
+            task.wait(300) -- 5 minutes
+            print("PlacementManager: Running periodic world data save")
+            self:SaveWorldData()
+        end
     end)
     
-    print("PlacementManager: Connected to player events")
+    return true
 end
 
--- Server: Recall a placed item back to the player's inventory
+-- Server: Recall an item from the world back to player's inventory
 function PlacementManager:RecallItem(player, instanceId)
     if not isServer then return false end
     
-    print("PlacementManager: RecallItem called for", player.Name, "instanceId:", instanceId)
+    print("PlacementManager: Recalling item", instanceId, "for player", player.Name)
     
-    -- Try to find the item in the Placed folder
-    local placedItem
-    
-    -- Check in World_Items/Placed first
-    if self.worldFolder and self.placedFolder then
-        for _, item in ipairs(self.placedFolder:GetChildren()) do
-            if item:GetAttribute("instanceId") == instanceId then
-                placedItem = item
-                break
-            end
-        end
-    end
-    
-    -- If not found, check in legacy PlacedItems folder
-    if not placedItem and self.legacyPlacedFolder then
-        for _, item in ipairs(self.legacyPlacedFolder:GetChildren()) do
-            if item:GetAttribute("instanceId") == instanceId then
-                placedItem = item
-                break
-            end
-        end
-    end
-    
-    if not placedItem then
-        warn("PlacementManager: Placed item not found with instanceId", instanceId)
+    -- Find the item by instanceId
+    local item = self:FindItemByInstanceId(instanceId)
+    if not item then
+        warn("PlacementManager: Cannot recall - item not found:", instanceId)
         return false
     end
     
-    -- Get the item ID to add back to inventory
-    local itemId = placedItem:GetAttribute("itemId")
-    if not itemId then
-        -- Try to determine the item ID from the item name (strip player ID and timestamp)
-        local itemName = placedItem.Name
-        itemId = itemName:gsub("_" .. player.UserId .. "_.*$", "")
-        print("PlacementManager: Determined itemId from name:", itemId)
+    -- Check if player owns the item
+    local ownerId = item:GetAttribute("owner")
+    if ownerId ~= player.UserId then
+        warn("PlacementManager: Player", player.Name, "does not own item", instanceId)
+        return false
     end
     
-    -- Add the item back to the player's inventory
-    local success = false
+    -- Get the item ID and add to player's inventory
+    local itemId = item:GetAttribute("itemId")
+    if not itemId then
+        warn("PlacementManager: Item has no itemId attribute:", instanceId)
+        return false
+    end
     
-    -- Try to add the item to inventory using ItemPurchaseHandler
-    local ItemPurchaseHandler
-    pcall(function()
-        ItemPurchaseHandler = require(game:GetService("ServerScriptService").server.ItemPurchaseHandler)
+    -- Add item back to player's inventory
+    local addSuccess = self:AddToInventory(player, itemId, 1)
+    if not addSuccess then
+        warn("PlacementManager: Failed to add item back to inventory:", itemId)
+        return false
+    end
+    
+    -- Remove from player's placed items list
+    if self.placedItemsByPlayer[player.UserId] then
+        for i, id in ipairs(self.placedItemsByPlayer[player.UserId]) do
+            if id == instanceId then
+                table.remove(self.placedItemsByPlayer[player.UserId], i)
+                break
+            end
+        end
+    end
+    
+    -- Destroy the item from the world
+    item:Destroy()
+    
+    -- Notify the client
+    if self.remotes.ItemRecalled then
+        self.remotes.ItemRecalled:FireClient(player, itemId)
+    end
+    
+    -- Save world data after recall
+    task.spawn(function()
+        self:SaveWorldData()
     end)
     
-    if ItemPurchaseHandler and ItemPurchaseHandler.AddItemToInventory then
-        success = ItemPurchaseHandler:AddItemToInventory(player, itemId)
-        print("PlacementManager: Added item", itemId, "to player's inventory:", success)
+    return true
+end
+
+-- Server: Add an item to player's inventory
+function PlacementManager:AddToInventory(player, itemId, quantity)
+    if not isServer then return false end
+    
+    quantity = quantity or 1 -- Default to 1 if not specified
+    print("PlacementManager: Adding", quantity, "x", itemId, "to inventory of", player.Name)
+    
+    -- Find the ItemPurchaseHandler (same approaches as in RemoveFromInventory)
+    local ItemPurchaseHandler = nil
+    
+    -- Try with ItemPurchaseHandler.lua in ServerScriptService
+    local success1, result1 = pcall(function()
+        return require(game:GetService("ServerScriptService").server.ItemPurchaseHandler)
+    end)
+    
+    if success1 then
+        ItemPurchaseHandler = result1
     else
-        -- Fallback: Try with the shared ItemPurchaseHandler
-        if self.shared and self.shared.ItemPurchaseHandler and self.shared.ItemPurchaseHandler.AddItemToInventory then
-            success = self.shared.ItemPurchaseHandler:AddItemToInventory(player, itemId)
-            print("PlacementManager: Added item", itemId, "to player's inventory using shared module:", success)
-        else
-            -- Last resort: Fire a remote event to handle this on the client
-            local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-            if remotes and remotes:FindFirstChild("AddToInventory") then
-                remotes.AddToInventory:FireClient(player, {name = itemId, id = itemId, count = 1})
-                print("PlacementManager: Fired AddToInventory event to client")
-                success = true
+        -- Try direct path lookup
+        local serverFolder = game:GetService("ServerScriptService"):FindFirstChild("server")
+        if serverFolder then
+            local itemPurchaseModule = serverFolder:FindFirstChild("ItemPurchaseHandler")
+            if itemPurchaseModule then
+                local success2, result2 = pcall(function()
+                    return require(itemPurchaseModule)
+                end)
+                if success2 then
+                    ItemPurchaseHandler = result2
+                end
+            end
+        end
+        
+        -- Try loading from server folder directly
+        if not ItemPurchaseHandler then
+            local success3, result3 = pcall(function()
+                return require(game:GetService("ServerScriptService").ItemPurchaseHandler)
+            end)
+            if success3 then
+                ItemPurchaseHandler = result3
             end
         end
     end
     
-    if success then
-        -- Store the item data before removing it
-        local itemData = {
-            name = placedItem.Name,
-            position = placedItem:IsA("Model") and placedItem:GetPrimaryPartCFrame().Position or placedItem.Position,
-            itemId = itemId,
-            instanceId = instanceId
-        }
+    -- 1. Try the direct ItemPurchaseHandler.AddToInventory method
+    if ItemPurchaseHandler and ItemPurchaseHandler.AddToInventory then
+        local success, result = pcall(function()
+            return ItemPurchaseHandler:AddToInventory(player, itemId, quantity)
+        end)
         
-        -- Remove the placed item
-        placedItem:Destroy()
-        
-        -- Log the recall
-        print("PlacementManager: Successfully recalled item", itemId, "for player", player.Name)
-        
-        -- Notify player
-        local Remotes = ReplicatedStorage:FindFirstChild("Remotes")
-        if Remotes and Remotes:FindFirstChild("ItemRecalled") then
-            Remotes.ItemRecalled:FireClient(player, itemData)
-    end
-    
-    return true
-    else
-        warn("PlacementManager: Failed to add item to inventory")
-        return false
-    end
-end
-
--- Server: Add an item to inventory
-function PlacementManager:AddToInventory(player, itemId)
-    if not isServer then return false end
-    
-    local success = false
-    local InventoryManager = self.shared.InventoryManager
-    
-    if InventoryManager then
-        success = InventoryManager:AddItem(player, itemId, 1)
-    else
-        -- Fallback to ItemPurchaseHandler
-        local ItemPurchaseHandler = self.shared.ItemPurchaseHandler
-        if ItemPurchaseHandler then
-            success = ItemPurchaseHandler:AddToInventory(player, itemId, 1)
+        if success and result then
+            print("PlacementManager: Successfully added", quantity, "x", itemId, "using ItemPurchaseHandler.AddToInventory")
+            return true
         end
     end
     
-    return success
+    -- 2. Try with ItemPurchaseHandler.AddItem method (alternate name)
+    if ItemPurchaseHandler and ItemPurchaseHandler.AddItem then
+        local success, result = pcall(function()
+            return ItemPurchaseHandler:AddItem(player, itemId, quantity)
+        end)
+        
+        if success and result then
+            print("PlacementManager: Successfully added", quantity, "x", itemId, "using ItemPurchaseHandler.AddItem")
+            return true
+        end
+    end
+    
+    -- 3. Try with SharedModule.ItemPurchaseHandler
+    if self.shared and self.shared.ItemPurchaseHandler then
+        if self.shared.ItemPurchaseHandler.AddToInventory then
+            local success, result = pcall(function()
+                return self.shared.ItemPurchaseHandler:AddToInventory(player, itemId, quantity)
+            end)
+            
+            if success and result then
+                print("PlacementManager: Successfully added using SharedModule.ItemPurchaseHandler.AddToInventory")
+                return true
+            end
+        end
+        
+        if self.shared.ItemPurchaseHandler.AddItem then
+            local success, result = pcall(function()
+                return self.shared.ItemPurchaseHandler:AddItem(player, itemId, quantity)
+            end)
+            
+            if success and result then
+                print("PlacementManager: Successfully added using SharedModule.ItemPurchaseHandler.AddItem")
+                return true
+            end
+        end
+    end
+    
+    -- 4. Try with InventoryManager if available
+    local InventoryManager = self.shared and self.shared.InventoryManager
+    if not InventoryManager then
+        -- Try to find InventoryManager in ServerStorage
+        local success, result = pcall(function()
+            return require(game:GetService("ServerStorage").server.InventoryManager)
+        end)
+        
+        if success then
+            InventoryManager = result
+            print("PlacementManager: Found InventoryManager in ServerStorage")
+        end
+    end
+    
+    if InventoryManager and InventoryManager.AddItem then
+        local success, result = pcall(function()
+            return InventoryManager:AddItem(player, itemId, quantity)
+        end)
+        
+        if success and result then
+            print("PlacementManager: Successfully added item using InventoryManager")
+            return true
+        end
+    end
+    
+    -- 5. Last resort - manually update player data
+    local playerData = self:GetPlayerData(player)
+    if playerData then
+        -- Ensure inventory exists
+        if not playerData.inventory then
+            playerData.inventory = {}
+        end
+        
+        -- Normalize item ID
+        local normalizedItemId = itemId:gsub(" ", "_")
+        
+        -- Get item data for base properties
+        local itemData = self:GetItemData(normalizedItemId)
+        
+        -- Check if item already exists in inventory
+        local found = false
+        for _, item in ipairs(playerData.inventory) do
+            if (item.id and (item.id == itemId or item.id == normalizedItemId)) or
+               (item.name and (item.name == itemId or item.name == normalizedItemId)) then
+                
+                -- Increment quantity
+                if item.quantity ~= nil then
+                    item.quantity = (item.quantity or 1) + quantity
+                    print("PlacementManager: Increased item.quantity to", item.quantity)
+                elseif item.count ~= nil then
+                    item.count = (item.count or 1) + quantity
+                    print("PlacementManager: Increased item.count to", item.count)
+                else
+                    -- No quantity field, add quantity field
+                    item.quantity = (item.quantity or 1) + quantity
+                    print("PlacementManager: Added quantity field with value", item.quantity)
+                end
+                
+                found = true
+                break
+            end
+        end
+        
+        -- If item not found in inventory, add it
+        if not found then
+            local newItem = {
+                id = normalizedItemId,
+                name = itemData and itemData.name or normalizedItemId,
+                quantity = quantity,
+                description = itemData and itemData.description or "A recalled item",
+                category = itemData and itemData.category or "Building",
+                tier = itemData and itemData.tier or "BASIC"
+            }
+            
+            table.insert(playerData.inventory, newItem)
+            print("PlacementManager: Added new item to inventory:", normalizedItemId)
+        end
+        
+        -- Save the updated player data
+        if ItemPurchaseHandler and ItemPurchaseHandler.SavePlayerData then
+            ItemPurchaseHandler:SavePlayerData(player, playerData)
+            print("PlacementManager: Saved player data after adding item")
+        end
+        
+        -- Send inventory update notification to client
+        local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+        if remotes and remotes:FindFirstChild("InventoryUpdated") then
+            pcall(function()
+                remotes.InventoryUpdated:FireClient(player)
+            end)
+            print("PlacementManager: Sent InventoryUpdated event to client")
+        end
+        
+        return true
+    end
+    
+    warn("PlacementManager: All methods to add item to inventory failed")
+    return false
 end
 
--- Client: Start placing an item
+-- Server: Delete an item from the world
+function PlacementManager:DeleteItem(player, instanceId)
+    if not isServer then return false end
+    
+    print("PlacementManager: Deleting item", instanceId, "for player", player.Name)
+    
+    -- Find the item by instanceId
+    local item = self:FindItemByInstanceId(instanceId)
+    if not item then
+        warn("PlacementManager: Cannot delete - item not found:", instanceId)
+        return false
+    end
+    
+    -- Check if player owns the item (or is an admin)
+    local ownerId = item:GetAttribute("owner")
+    local isAdmin = player:GetAttribute("IsAdmin") or false
+    
+    if ownerId ~= player.UserId and not isAdmin then
+        warn("PlacementManager: Player", player.Name, "does not own item and is not admin")
+        return false
+    end
+    
+    -- Remove from player's placed items list if they own it
+    if ownerId == player.UserId and self.placedItemsByPlayer[player.UserId] then
+        for i, id in ipairs(self.placedItemsByPlayer[player.UserId]) do
+            if id == instanceId then
+                table.remove(self.placedItemsByPlayer[player.UserId], i)
+                break
+            end
+        end
+    end
+    
+    -- Destroy the item
+    item:Destroy()
+    
+    -- Notify the client
+    if self.remotes.ItemDeleted then
+        self.remotes.ItemDeleted:FireClient(player, instanceId)
+    end
+    
+    -- Save world data after deletion
+    task.spawn(function()
+        self:SaveWorldData()
+    end)
+    
+    return true
+end
+
+-- Client: Start the item placement process
 function PlacementManager:StartPlacing(itemId)
-    if isServer then return end
+    if isServer then return false end
     
-    print("PlacementManager: Starting placement of item", itemId)
+    print("PlacementManager: Starting placement for item:", itemId)
     
-    -- Stop any current placement
-    self:StopPlacing()
-    
-    -- Get item data
-    local itemData = self:GetItemData(itemId)
-    if not itemData then
-        warn("PlacementManager: No item data found for", itemId)
-        return
-    end
-    
-    -- Create a preview item
-    self.previewItem = self:CreatePreviewItem(itemId)
-    if not self.previewItem then
-        warn("PlacementManager: Failed to create preview for", itemId)
-        return
-    end
-    
-    -- Store selected item info
-    self.selectedItem = {
-        id = itemId,
-        data = itemData
-    }
+    -- Clear any existing preview item
+    self:ClearItemFromHand()
     
     -- Set placing state
     self.isPlacing = true
+    self.selectedItem = itemId
     
-    -- Connect update function
-    self.placementConnection = RunService.RenderStepped:Connect(function()
+    -- Create the preview item
+    local previewItem = self:CreatePreviewItem(itemId)
+    if not previewItem then
+        warn("PlacementManager: Failed to create preview item for", itemId)
+        self.isPlacing = false
+        self.selectedItem = nil
+        return false
+    end
+    
+    self.previewItem = previewItem
+    
+    -- Start the placement preview update loop
+    local movementConnection
+    movementConnection = RunService.RenderStepped:Connect(function()
+        if not self.isPlacing or not self.previewItem then
+            if movementConnection then
+                movementConnection:Disconnect()
+                movementConnection = nil
+            end
+            return
+        end
+        
         self:UpdatePlacementPreview()
     end)
     
-    -- Connect input events
-    self:ConnectPlacementInputs()
+    -- Setup input to place the item on click
+    local userInputService = game:GetService("UserInputService")
+    local inputConnection
+    
+    inputConnection = userInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            -- Left-click to place
+            if self.isPlacing and self.previewItem then
+                -- Get current position and rotation
+                local position = self.previewItem.Position
+                local rotation = self.previewItem.Orientation
+                
+                if typeof(self.previewItem) == "Instance" and self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
+                    position = self.previewItem.PrimaryPart.Position
+                    rotation = self.previewItem.PrimaryPart.Orientation
+                end
+                
+                -- Request server to place the item
+                if self.remotes and self.remotes.PlaceItem then
+                    self.remotes.PlaceItem:FireServer(self.selectedItem, position, rotation)
+                    print("PlacementManager: Requested server to place item:", self.selectedItem)
+                else
+                    warn("PlacementManager: Cannot place item - remote event not found")
+                end
+                
+                -- Clean up
+                self:ClearItemFromHand()
+                self.isPlacing = false
+                
+                -- Disconnect the input handler
+                if inputConnection then
+                    inputConnection:Disconnect()
+                    inputConnection = nil
+                end
+                
+                -- Disconnect the movement handler
+                if movementConnection then
+                    movementConnection:Disconnect()
+                    movementConnection = nil
+                end
+            end
+        elseif input.UserInputType == Enum.UserInputType.MouseButton2 or input.KeyCode == Enum.KeyCode.Escape then
+            -- Right-click or Escape to cancel
+            self:ClearItemFromHand()
+            self.isPlacing = false
+            
+            -- Disconnect the input handler
+            if inputConnection then
+                inputConnection:Disconnect()
+                inputConnection = nil
+            end
+            
+            -- Disconnect the movement handler
+            if movementConnection then
+                movementConnection:Disconnect()
+                movementConnection = nil
+            end
+        end
+    end)
+    
+    return true
 end
 
 -- Client: Create a preview item for placement
@@ -1413,832 +1695,144 @@ function PlacementManager:CreatePreviewItem(itemId)
     
     print("PlacementManager: Creating preview item for:", itemId)
     
-    -- Try to find template
-    local templates = ReplicatedStorage:FindFirstChild("ItemTemplates")
-    local template
+    -- Normalize the item ID
+    local normalizedItemId = itemId:gsub(" ", "_")
     
-    if templates then
-        -- Try exact match first
-        template = templates:FindFirstChild(itemId)
-        
-        if template then
-            print("PlacementManager: Found exact template match for preview:", itemId)
-        else
-            -- If no template found, try with partial match
-            local itemIdLower = itemId:lower()
-            for _, item in ipairs(templates:GetChildren()) do
-                if item.Name:lower():find(itemIdLower) or itemIdLower:find(item.Name:lower()) then
-                    template = item
-                    print("PlacementManager: Found partial match for preview:", itemId, "using", item.Name)
-            break
-                end
-        end
-    end
-    
-        -- Special case for common building materials
-        if not template then
-            local specialCases = {
-                {"brick", "Brick_Cube"},
-                {"grass", "Grass_Cube"},
-                {"stone", "Stone_Cube"},
-                {"wood", "Wood_Plank"},
-                {"water", "Water_Cube"},
-                {"fire", "Fire_Cube"},
-                {"sand", "Sand_Cube"},
-                {"concrete", "Concrete_Cube"},
-                {"metal", "Metal_Cube"},
-                {"glass", "Glass_Cube"}
-            }
-            
-            for _, case in ipairs(specialCases) do
-                if itemId:lower():find(case[1]) then
-                    template = templates:FindFirstChild(case[2])
-                    if template then
-                        print("PlacementManager: Using special case", case[2], "for preview of", itemId)
-                        break
-                    end
-                end
-            end
-        end
-    end
-    
-    -- If no template, create a basic cube
+    -- First try to get the template
+    local template = self:GetItemTemplate(normalizedItemId)
     if not template then
-        print("PlacementManager: No template found for", itemId, "- creating basic preview")
-        template = Instance.new("Part")
-        template.Name = itemId .. "_Preview"
-        template.Size = Vector3.new(2, 2, 2)
-        template.Transparency = 0.5
-        template.CanCollide = false
-        template.Anchored = true
-        
-        -- Set color based on item type
-        if itemId:lower():find("water") or itemId:lower():find("blue") then
-            template.BrickColor = BrickColor.new("Bright blue")
-            template.Transparency = 0.7
-            template.Material = Enum.Material.Water
-        elseif itemId:lower():find("fire") or itemId:lower():find("lava") then
-            template.BrickColor = BrickColor.new("Bright red")
-            template.Material = Enum.Material.Neon
-        elseif itemId:lower():find("grass") or itemId:lower():find("green") then
-            template.BrickColor = BrickColor.new("Bright green")
-            template.Material = Enum.Material.Grass
-        elseif itemId:lower():find("sand") or itemId:lower():find("earth") then
-            template.BrickColor = BrickColor.new("Brick yellow")
-            template.Material = Enum.Material.Sand
-        elseif itemId:lower():find("wood") or itemId:lower():find("brown") then
-            template.BrickColor = BrickColor.new("Brown")
-            template.Material = Enum.Material.Wood
-        elseif itemId:lower():find("brick") or itemId:lower():find("red") then
-            template.BrickColor = BrickColor.new("Brick red")
-            template.Material = Enum.Material.Brick
-        elseif itemId:lower():find("glass") or itemId:lower():find("transparent") then
-            template.BrickColor = BrickColor.new("Institutional white")
-            template.Transparency = 0.7
-            template.Material = Enum.Material.Glass
-        else
-            template.BrickColor = BrickColor.new("Medium stone grey")
-            template.Material = Enum.Material.Concrete
-        end
-    else
-        template = template:Clone()
+        warn("PlacementManager: Failed to find template for", normalizedItemId)
+        return nil
     end
     
-    -- Make semi-transparent for preview
-    if template:IsA("Model") then
-        for _, part in ipairs(template:GetDescendants()) do
+    -- Clone the template for preview
+    local previewItem = template:Clone()
+    previewItem.Name = "Preview_" .. normalizedItemId
+    
+    -- Make preview translucent and disable collision
+    if previewItem:IsA("Model") then
+        for _, part in ipairs(previewItem:GetDescendants()) do
             if part:IsA("BasePart") then
-                local originalTransparency = part.Transparency
-                part.Transparency = math.min(0.5 + originalTransparency, 0.9) -- Add transparency but keep relative differences
+                part.Transparency = math.min(0.8, part.Transparency + 0.5)
                 part.CanCollide = false
                 part.Anchored = true
                 
-                -- Add outline effect
-                local highlight = Instance.new("Highlight")
-                highlight.FillTransparency = 0.5
-                highlight.OutlineColor = Color3.new(0, 1, 0)
-                highlight.Parent = part
+                -- Set custom attribute for debugging
+                part:SetAttribute("is_preview", true)
             end
         end
-    elseif template:IsA("BasePart") then
-        local originalTransparency = template.Transparency
-        template.Transparency = math.min(0.5 + originalTransparency, 0.9)
-        template.CanCollide = false
-        template.Anchored = true
+    elseif previewItem:IsA("BasePart") then
+        previewItem.Transparency = math.min(0.8, previewItem.Transparency + 0.5)
+        previewItem.CanCollide = false
+        previewItem.Anchored = true
         
-        -- Add outline effect
-        local highlight = Instance.new("Highlight")
-        highlight.FillTransparency = 0.5
-        highlight.OutlineColor = Color3.new(0, 1, 0)
-        highlight.Parent = template
+        -- Set custom attribute for debugging
+        previewItem:SetAttribute("is_preview", true)
     end
     
-    -- Store the original template name to ensure we create the right item on placement
-    template:SetAttribute("originalTemplate", itemId)
+    -- Create a highlight effect for better visibility
+    local highlight = Instance.new("Highlight")
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 0
+    highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green fill
+    highlight.OutlineColor = Color3.fromRGB(0, 255, 0) -- Green outline
+    highlight.Parent = previewItem
     
-    template.Parent = Workspace
+    -- Add preview to workspace
+    previewItem.Parent = Workspace
     
-    return template
+    return previewItem
 end
 
--- Client: Update the placement preview position
+-- Client: Update the preview item position and appearance based on mouse position
 function PlacementManager:UpdatePlacementPreview()
     if isServer or not self.isPlacing or not self.previewItem then return end
     
     local player = Players.LocalPlayer
     local mouse = player:GetMouse()
     
-    -- Cast ray from mouse position
-    local ray = workspace.CurrentCamera:ScreenPointToRay(mouse.X, mouse.Y)
+    -- Raycast to find the surface
     local raycastParams = RaycastParams.new()
-    raycastParams.FilterDescendantsInstances = {self.previewItem}
     raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+    raycastParams.FilterDescendantsInstances = {self.previewItem}
     
-    local raycastResult = workspace:Raycast(ray.Origin, ray.Direction * 500, raycastParams)
-    if raycastResult then
-        local hitPosition = raycastResult.Position
-        
-        -- Apply grid snapping
-        local snappedPosition = Vector3.new(
-            math.floor(hitPosition.X / GRID_SIZE + 0.5) * GRID_SIZE,
-            math.floor(hitPosition.Y / GRID_SIZE + 0.5) * GRID_SIZE,
-            math.floor(hitPosition.Z / GRID_SIZE + 0.5) * GRID_SIZE
-        )
-        
-        -- Ensure Y position is at least half the height of the item above the surface
-        local itemHeight = 2 -- Default height for standard cubes
-        if self.previewItem:IsA("BasePart") then
-            itemHeight = self.previewItem.Size.Y
-        elseif self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
-            itemHeight = self.previewItem.PrimaryPart.Size.Y
-        end
-        
-        -- Adjust Y position to place bottom of item at surface level
-        snappedPosition = Vector3.new(
-            snappedPosition.X,
-            snappedPosition.Y + (itemHeight/2),
-            snappedPosition.Z
-        )
-        
-        -- Check distance from player
-        local character = player.Character
-        if character and character:FindFirstChild("HumanoidRootPart") then
-            local rootPart = character.HumanoidRootPart
-            local distance = (rootPart.Position - snappedPosition).Magnitude
-            
-            -- Update preview color based on valid placement
-            local isValidPlacement = distance <= MAX_PLACEMENT_DISTANCE
-            
-            -- Update highlight color
-            if self.previewItem:IsA("Model") then
-                for _, part in ipairs(self.previewItem:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        for _, highlight in ipairs(part:GetChildren()) do
-                            if highlight:IsA("Highlight") then
-                                highlight.OutlineColor = isValidPlacement and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
-                            end
-                        end
-                    end
-                end
-            elseif self.previewItem:IsA("BasePart") then
-                for _, highlight in ipairs(self.previewItem:GetChildren()) do
-                    if highlight:IsA("Highlight") then
-                        highlight.OutlineColor = isValidPlacement and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
-                    end
-                end
-            end
-            
-            -- Position the preview
-            if self.previewItem:IsA("Model") then
-                if self.previewItem.PrimaryPart then
-                    self.previewItem:SetPrimaryPartCFrame(CFrame.new(snappedPosition))
-                else
-                    -- If no primary part, move all parts
-                    local refPart = self.previewItem:FindFirstChildWhichIsA("BasePart")
-                    if refPart then
-                        local offset = snappedPosition - refPart.Position
-                        for _, part in ipairs(self.previewItem:GetDescendants()) do
-                            if part:IsA("BasePart") then
-                                part.Position = part.Position + offset
-                            end
-                        end
-                    end
-                end
-            else
-                self.previewItem.CFrame = CFrame.new(snappedPosition)
-            end
-        end
-    end
-end
-
--- Client: Connect placement input events
-function PlacementManager:ConnectPlacementInputs()
-    if isServer then return end
+    local cameraPosition = Workspace.CurrentCamera.CFrame.Position
+    local mouseDirection = mouse.UnitRay.Direction * MAX_PLACEMENT_DISTANCE
+    local raycastResult = Workspace:Raycast(cameraPosition, mouseDirection, raycastParams)
     
-    local UserInputService = game:GetService("UserInputService")
-    
-    -- Disconnect any existing connections
-    if self.inputBeganConnection then
-        self.inputBeganConnection:Disconnect()
-        self.inputBeganConnection = nil
-    end
-    
-    -- Connect to input
-    self.inputBeganConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            -- Left click to place
-            self:ConfirmPlacement()
-        elseif input.UserInputType == Enum.UserInputType.MouseButton2 or input.KeyCode == Enum.KeyCode.Escape then
-            -- Right click or ESC to cancel
-            self:CancelPlacement()
-        elseif input.KeyCode == Enum.KeyCode.R then
-            -- R to rotate
-            self:RotatePreview()
-        end
-    end)
-end
-
--- Client: Confirm placement
-function PlacementManager:ConfirmPlacement()
-    if isServer or not self.isPlacing or not self.previewItem or not self.selectedItem then return end
-    
-    local player = Players.LocalPlayer
-    
-    -- Check distance from player
-    local character = player.Character
-    if character and character:FindFirstChild("HumanoidRootPart") then
-        local rootPart = character.HumanoidRootPart
-        local position
-        local rotation = Vector3.new(0, 0, 0)
+    -- If no surface was hit, show out of range indicator
+    if not raycastResult then
+        -- Set preview to max distance along ray
+        local maxDistancePosition = cameraPosition + (mouseDirection.Unit * MAX_PLACEMENT_DISTANCE)
         
         if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
-            position = self.previewItem.PrimaryPart.Position
-            rotation = self.previewItem.PrimaryPart.Orientation
+            self.previewItem:SetPrimaryPartCFrame(CFrame.new(maxDistancePosition))
         else
-            position = self.previewItem.Position
-            rotation = self.previewItem.Orientation
+            self.previewItem.CFrame = CFrame.new(maxDistancePosition)
         end
         
-        local distance = (rootPart.Position - position).Magnitude
+        -- Change highlight color to red to indicate out of range
+        local highlight = self.previewItem:FindFirstChildOfClass("Highlight")
+        if highlight then
+            highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red
+            highlight.OutlineColor = Color3.fromRGB(255, 0, 0) -- Red
+        end
         
-        if distance <= MAX_PLACEMENT_DISTANCE then
-            -- Get original template name if available
-            local originalTemplate = self.previewItem:GetAttribute("originalTemplate")
-            local itemToPlace = originalTemplate or self.selectedItem.id
-            
-            -- Send place request to server
-            local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-            if remotes then
-                local placeItemRemote = remotes:FindFirstChild("PlaceItem")
-                if placeItemRemote then
-                    print("PlacementManager: Sending PlaceItem request for", itemToPlace)
-                    placeItemRemote:FireServer(itemToPlace, position, rotation)
-                    
-                    -- Immediately clear the item from hand to provide visual feedback
-                    self:ClearItemFromHand()
-                    
-                    -- Stop placing mode
-                    self.isPlacing = false
-                    
-                    -- Disconnect update
-                    if self.placementConnection then
-                        self.placementConnection:Disconnect()
-                        self.placementConnection = nil
-                    end
-                    
-                    -- Disconnect input
-                    if self.inputBeganConnection then
-                        self.inputBeganConnection:Disconnect()
-                        self.inputBeganConnection = nil
-                    end
-                    
-                    -- Clean up preview
-                    if self.previewItem then
-                        self.previewItem:Destroy()
-                        self.previewItem = nil
-                    end
-                    
-                    -- Restore player movement
-                    local humanoid = character:FindFirstChildOfClass("Humanoid")
-                    if humanoid then
-                        humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-                        humanoid.WalkSpeed = 16
-                    end
-                    
-                    return
-                end
-            end
-            
-            warn("PlacementManager: PlaceItem remote event not found")
-        else
-            print("PlacementManager: Too far to place item")
-        end
-    end
-end
-
--- Client: Cancel placement
-function PlacementManager:CancelPlacement()
-    if isServer then return end
-    
-    -- Return item to inventory
-    if self.selectedItem then
-        print("PlacementManager: Cancelled placement, returning", self.selectedItem.id, "to inventory")
+        return
     end
     
-    -- Stop placing
-    self:StopPlacing()
+    -- Surface hit, determine placement position
+    local hitPosition = raycastResult.Position
+    local hitNormal = raycastResult.Normal
     
-    -- Fire event to notify server the item should remain in inventory
-    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-    if remotes and self.selectedItem then
-        local cancelPlacementRemote = remotes:FindFirstChild("CancelPlacement")
-        if cancelPlacementRemote then
-            cancelPlacementRemote:FireServer(self.selectedItem.id)
-        end
+    -- Create rotation based on surface normal
+    local surfaceRotation = CFrame.fromMatrix(Vector3.new(), hitNormal:Cross(Vector3.new(0, 1, 0)), hitNormal)
+    
+    -- Apply grid snapping if enabled
+    local snappedPosition = hitPosition
+    if GRID_SIZE > 0 then
+        snappedPosition = Vector3.new(
+            math.floor(hitPosition.X / GRID_SIZE + 0.5) * GRID_SIZE,
+            hitPosition.Y,
+            math.floor(hitPosition.Z / GRID_SIZE + 0.5) * GRID_SIZE
+        )
     end
-end
-
--- Client: Rotate preview
-function PlacementManager:RotatePreview()
-    if isServer or not self.isPlacing or not self.previewItem then return end
     
-    -- Rotate by 90 degrees around Y axis
+    -- Calculate item height to adjust position
+    local itemHeight = 2 -- Default height
+    if self.previewItem:IsA("BasePart") then
+        itemHeight = self.previewItem.Size.Y
+    elseif self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
+        itemHeight = self.previewItem.PrimaryPart.Size.Y
+    end
+    
+    -- Adjust Y position to place bottom of item at surface level
+    local adjustedPosition = Vector3.new(
+        snappedPosition.X,
+        snappedPosition.Y + (itemHeight/2),
+        snappedPosition.Z
+    )
+    
+    -- Position the preview item
     if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
-        local currentCFrame = self.previewItem.PrimaryPart.CFrame
-        self.previewItem:SetPrimaryPartCFrame(currentCFrame * CFrame.Angles(0, math.rad(90), 0))
+        self.previewItem:SetPrimaryPartCFrame(CFrame.new(adjustedPosition) * surfaceRotation)
     else
-        local currentCFrame = self.previewItem.CFrame
-        self.previewItem.CFrame = currentCFrame * CFrame.Angles(0, math.rad(90), 0)
-    end
-end
-
--- Client: Stop placing
-function PlacementManager:StopPlacing()
-    if isServer then return end
-    
-    self.isPlacing = false
-    
-    -- Disconnect update
-    if self.placementConnection then
-        self.placementConnection:Disconnect()
-        self.placementConnection = nil
+        self.previewItem.CFrame = CFrame.new(adjustedPosition) * surfaceRotation
     end
     
-    -- Disconnect input
-    if self.inputBeganConnection then
-        self.inputBeganConnection:Disconnect()
-        self.inputBeganConnection = nil
-    end
+    -- Update highlight color based on placement validity
+    local canPlace = true -- Add placement validation logic here
     
-    -- Clean up preview
-    if self.previewItem then
-        self.previewItem:Destroy()
-        self.previewItem = nil
-    end
-    
-    self.selectedItem = nil
-end
-
--- Connect to RemoteEvents
-function PlacementManager:SetupRemoteEvents()
-    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-    if not remotes then
-        print("PlacementManager: Creating Remotes folder")
-        remotes = Instance.new("Folder")
-        remotes.Name = "Remotes"
-        remotes.Parent = ReplicatedStorage
-    end
-    
-    -- Required remotes
-    local remoteEvents = {
-        "PlaceItem",
-        "RecallItem",
-        "CancelPlacement",
-        "ItemPlaced",
-        "ItemRecalled"
-    }
-    
-    for _, eventName in ipairs(remoteEvents) do
-        local remote = remotes:FindFirstChild(eventName)
-        if not remote then
-            if isServer then
-                print("PlacementManager: Creating RemoteEvent:", eventName)
-                remote = Instance.new("RemoteEvent")
-                remote.Name = eventName
-                remote.Parent = remotes
-            else
-                print("PlacementManager: Waiting for RemoteEvent:", eventName)
-                remote = remotes:WaitForChild(eventName, 10)
-            end
-        end
-        
-        if remote then
-            self.remotes[eventName] = remote
+    local highlight = self.previewItem:FindFirstChildOfClass("Highlight")
+    if highlight then
+        if canPlace then
+            highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green
+            highlight.OutlineColor = Color3.fromRGB(0, 255, 0) -- Green
         else
-            warn("PlacementManager: Failed to find or create RemoteEvent:", eventName)
+            highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red
+            highlight.OutlineColor = Color3.fromRGB(255, 0, 0) -- Red
         end
     end
-    
-    -- Connect server-side event handlers
-    if isServer then
-        if self.remotes.PlaceItem then
-            self.remotes.PlaceItem.OnServerEvent:Connect(function(player, itemId, position, rotation)
-                local success, placedItem = self:PlaceItem(player, itemId, position, rotation)
-                print("PlacementManager: PlaceItem result for", player.Name, ":", success)
-            end)
-        end
-        
-        if self.remotes.RecallItem then
-            self.remotes.RecallItem.OnServerEvent:Connect(function(player, instanceId)
-                self:RecallItem(player, instanceId)
-            end)
-        end
-        
-        if self.remotes.CancelPlacement then
-            -- Nothing to do when placement is cancelled - item remains in inventory
-            self.remotes.CancelPlacement.OnServerEvent:Connect(function(player, itemId)
-                print("PlacementManager: Player", player.Name, "cancelled placement of", itemId)
-            end)
-        end
-    else
-        -- Client-side handlers for ItemPlaced and ItemRecalled
-        if self.remotes.ItemPlaced then
-            self.remotes.ItemPlaced.OnClientEvent:Connect(function(itemId, instanceId)
-                print("PlacementManager: Item placed successfully:", itemId, instanceId)
-                -- Clear item from hand when server confirms placement
-                self:ClearItemFromHand()
-            end)
-        end
-        
-        if self.remotes.ItemRecalled then
-            self.remotes.ItemRecalled.OnClientEvent:Connect(function(itemId, instanceId)
-                print("PlacementManager: Item recalled successfully:", itemId, instanceId)
-            end)
-        end
-    end
-    
-    print("PlacementManager: Remote events setup completed")
-end
-
--- Client: Show the item in the player's hand
-function PlacementManager:ShowItemInHand(itemId)
-    if isServer then return end
-    
-    print("PlacementManager: Showing item in hand:", itemId)
-    
-    local player = Players.LocalPlayer
-    local character = player.Character
-    if not character then
-        warn("PlacementManager: No character found")
-        return
-    end
-    
-    local rightHand = character:FindFirstChild("RightHand") or character:FindFirstChild("Right Arm")
-    if not rightHand then
-        warn("PlacementManager: No right hand/arm found")
-        return
-    end
-    
-    -- Find or create equipment slot
-    local equipSlot = rightHand:FindFirstChild("EquipSlot")
-    if not equipSlot then
-        equipSlot = Instance.new("Attachment")
-        equipSlot.Name = "EquipSlot"
-        equipSlot.Position = Vector3.new(0, -0.5, 0)
-        equipSlot.Parent = rightHand
-        print("PlacementManager: Created EquipSlot attachment on", rightHand.Name)
-    end
-    
-    -- Clear any existing equipped item
-    for _, child in ipairs(equipSlot:GetChildren()) do
-        child:Destroy()
-    end
-    
-    -- Normalize item name (replace spaces with underscores)
-    local normalizedItemId = itemId:gsub(" ", "_")
-    print("PlacementManager: Normalized item name:", normalizedItemId)
-    
-    -- Try multiple approaches to find template
-    local templates = ReplicatedStorage:FindFirstChild("ItemTemplates")
-    local template
-    
-    if templates then
-        -- Try several name variants to find the template
-        local possibleNames = {
-            normalizedItemId,
-            itemId,
-            normalizedItemId:gsub("_Cube", ""),
-            itemId:gsub("_Cube", ""),
-            normalizedItemId .. "_Cube",
-            itemId .. "_Cube"
-        }
-        
-        -- Try each possible name
-        for _, name in ipairs(possibleNames) do
-            template = templates:FindFirstChild(name)
-            if template then
-                print("PlacementManager: Found template using name variant:", name)
-                break
-            end
-        end
-        
-        -- If still no template, try case-insensitive search
-        if not template then
-            local itemIdLower = normalizedItemId:lower()
-            for _, item in ipairs(templates:GetChildren()) do
-                if item.Name:lower():find(itemIdLower) or itemIdLower:find(item.Name:lower()) then
-                    template = item
-                    print("PlacementManager: Found partial match for", normalizedItemId, "using", item.Name)
-                    break
-                end
-            end
-        end
-    else
-        warn("PlacementManager: ItemTemplates folder not found in ReplicatedStorage")
-    end
-    
-    -- Create a basic item if no template
-    if not template then
-        print("PlacementManager: No template found for", normalizedItemId, "- creating basic item")
-        template = Instance.new("Part")
-        template.Size = Vector3.new(1, 1, 1)
-        template.CanCollide = false
-        template.Name = normalizedItemId
-        
-        -- Set color based on item type
-        if normalizedItemId:lower():find("water") then
-            template.BrickColor = BrickColor.new("Bright blue")
-            template.Material = Enum.Material.Water
-            template.Transparency = 0.3
-        elseif normalizedItemId:lower():find("fire") then
-            template.BrickColor = BrickColor.new("Bright red")
-            template.Material = Enum.Material.Neon
-        elseif normalizedItemId:lower():find("grass") then
-            template.BrickColor = BrickColor.new("Bright green")
-            template.Material = Enum.Material.Grass
-        elseif normalizedItemId:lower():find("sand") or normalizedItemId:lower():find("earth") then
-            template.BrickColor = BrickColor.new("Brick yellow")
-            template.Material = Enum.Material.Sand
-        elseif normalizedItemId:lower():find("wood") then
-            template.BrickColor = BrickColor.new("Brown")
-            template.Material = Enum.Material.Wood
-        elseif normalizedItemId:lower():find("brick") then
-            template.BrickColor = BrickColor.new("Brick red")
-            template.Material = Enum.Material.Brick
-        elseif normalizedItemId:lower():find("glass") then
-            template.BrickColor = BrickColor.new("Institutional white")
-            template.Material = Enum.Material.Glass
-            template.Transparency = 0.5
-        else
-            template.BrickColor = BrickColor.new("Medium stone grey")
-            template.Material = Enum.Material.Concrete
-        end
-    else
-        print("PlacementManager: Using template:", template.Name, "for item:", normalizedItemId)
-        template = template:Clone()
-    end
-    
-    -- Setup item for hand
-    if template:IsA("Model") then
-        print("PlacementManager: Setting up model for hand placement")
-        template.PrimaryPart = template.PrimaryPart or template:FindFirstChildWhichIsA("BasePart")
-        if template.PrimaryPart then
-            -- Scale down if needed
-            local size = template.PrimaryPart.Size
-            if size.Magnitude > 2 then
-                local scale = 2 / size.Magnitude
-                for _, part in pairs(template:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.Size = part.Size * scale
-                    end
-                end
-                print("PlacementManager: Scaled down model by factor of", scale)
-            end
-            
-            -- Make sure all parts are not colliding and are CanTouch to avoid physics issues
-            for _, part in pairs(template:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = false
-                    part.CanTouch = true
-                    part.Anchored = false
-                    
-                    -- Add highlight to make it more visible
-                    local highlight = Instance.new("Highlight")
-                    highlight.FillTransparency = 0.5
-                    highlight.OutlineColor = Color3.new(1, 1, 0)
-                    highlight.Parent = part
-                end
-            end
-            
-            -- Weld to hand
-            local weld = Instance.new("WeldConstraint")
-            weld.Name = "HandWeld"
-            weld.Part0 = rightHand
-            weld.Part1 = template.PrimaryPart
-            weld.Parent = template.PrimaryPart
-            
-            -- Set custom attribute for debugging
-            template:SetAttribute("held_by_player", true)
-            template:SetAttribute("held_time", os.time())
-            template:SetAttribute("item_id", normalizedItemId)
-            
-            -- Position template at hand
-            template:SetPrimaryPartCFrame(equipSlot.WorldCFrame)
-            
-            -- Parent to equipment slot to maintain hierarchy
-            template.Parent = equipSlot
-            
-            -- Print debug info
-            print("PlacementManager: Item model placed in hand successfully:", template.Name)
-        else
-            warn("PlacementManager: Model has no PrimaryPart and no BaseParts were found")
-        end
-    elseif template:IsA("BasePart") then
-        print("PlacementManager: Setting up part for hand placement")
-        -- Scale down if needed
-        if template.Size.Magnitude > 2 then
-            local scale = 2 / template.Size.Magnitude
-            template.Size = template.Size * scale
-            print("PlacementManager: Scaled down part by factor of", scale)
-        end
-        
-        -- Setup properties to avoid physics issues
-        template.CanCollide = false
-        template.CanTouch = true
-        template.Anchored = false
-        
-        -- Add highlight to make it more visible
-        local highlight = Instance.new("Highlight")
-        highlight.FillTransparency = 0.5
-        highlight.OutlineColor = Color3.new(1, 1, 0)
-        highlight.Parent = template
-        
-        -- Set custom attribute for debugging
-        template:SetAttribute("held_by_player", true)
-        template:SetAttribute("held_time", os.time())
-        template:SetAttribute("item_id", normalizedItemId)
-        
-        -- Weld to hand
-        local weld = Instance.new("WeldConstraint")
-        weld.Name = "HandWeld" 
-        weld.Part0 = rightHand
-        weld.Part1 = template
-        weld.Parent = template
-        
-        -- Position template at hand
-        template.CFrame = equipSlot.WorldCFrame
-        
-        -- Parent to equipment slot to maintain hierarchy
-        template.Parent = equipSlot
-        
-        -- Print debug info
-        print("PlacementManager: Item part placed in hand successfully:", template.Name)
-    end
-    
-    -- Check after a short delay to make sure the item is visible
-    task.delay(0.5, function()
-        if not template or not template.Parent then
-            print("PlacementManager: Item disappeared from hand, attempting to recreate")
-            self:ShowItemInHand(itemId)
-            return
-        end
-        
-        -- Ensure the character can move
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-            humanoid.WalkSpeed = 16
-        end
-    end)
-    
-    -- Set up movement state checker to prevent character from getting stuck in physics state
-    local movementConnection
-    movementConnection = RunService.Heartbeat:Connect(function()
-        if not character or not character.Parent then
-            if movementConnection then
-                movementConnection:Disconnect()
-                movementConnection = nil
-            end
-            return
-        end
-                
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            -- Check if walkspeed is too low or in physics state
-            if humanoid.WalkSpeed < 10 or humanoid:GetState() == Enum.HumanoidStateType.Physics then
-                humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-                humanoid.WalkSpeed = 16
-            end
-        end
-    end)
-    
-    -- Make sure to disconnect if the player stops placing (to avoid unnecessary processing)
-    task.delay(60, function()
-        if movementConnection then
-            movementConnection:Disconnect()
-            movementConnection = nil
-        end
-    end)
-    
-    return template
-end
-
--- Client: Recall item from inventory to hand
-function PlacementManager:RecallItemFromInventory(itemId)
-    if isServer then return end
-    
-    print("PlacementManager: Recalling item", itemId, "from inventory")
-    
-    -- Normalize item name - replace spaces with underscores
-    local normalizedItemId = itemId:gsub(" ", "_")
-    print("PlacementManager: Normalized item name from", itemId, "to", normalizedItemId)
-    
-    -- Fix player movement by ensuring Humanoid state is reset first
-    local player = Players.LocalPlayer
-    local character = player.Character
-    if character then
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            -- Reset humanoid state to allow movement
-            humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-            -- Ensure WalkSpeed is set properly
-            humanoid.WalkSpeed = 16
-            
-            -- Force walk mode to make sure character can move
-            humanoid.PlatformStand = false
-            humanoid.Sit = false
-            humanoid.AutoRotate = true
-        end
-    end
-    
-    -- Show item in hand using normalized ID    
-    local itemInHand = self:ShowItemInHand(normalizedItemId)
-    if not itemInHand then
-        warn("PlacementManager: Failed to show item in hand")
-        -- Try with original ID as fallback
-        itemInHand = self:ShowItemInHand(itemId)
-        if not itemInHand then
-            return
-        end
-    end
-        
-    -- Start placement mode with normalized ID
-    self:StartPlacing(normalizedItemId)
-    
-    -- Use RunService to continuously ensure the player can move
-    local movementConnection
-    movementConnection = game:GetService("RunService").Heartbeat:Connect(function()
-        if not character or not character.Parent then
-            -- Character was removed, disconnect
-            if movementConnection then
-                movementConnection:Disconnect()
-                movementConnection = nil
-            end
-            return
-        end
-                
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            -- Ensure WalkSpeed is maintained
-            if humanoid.WalkSpeed < 16 then
-                humanoid.WalkSpeed = 16
-            end
-                        
-            -- Force walk mode to keep character mobile
-            humanoid.PlatformStand = false
-            humanoid.Sit = false
-            humanoid.AutoRotate = true
-                        
-            -- If in a state that prevents movement, change it
-            local currentState = humanoid:GetState()
-            if currentState == Enum.HumanoidStateType.Physics or
-               currentState == Enum.HumanoidStateType.Seated or
-               currentState == Enum.HumanoidStateType.PlatformStanding or
-               currentState == Enum.HumanoidStateType.Swimming or
-               currentState == Enum.HumanoidStateType.Ragdoll then
-                humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-                -- Force the character into walking state after getting up
-                task.delay(0.1, function()
-                    if humanoid and humanoid.Parent then
-                        humanoid:ChangeState(Enum.HumanoidStateType.Walking)
-                    end
-                end)
-            end
-        end
-    end)
-    
-    -- Disconnect after placement or if canceled
-    task.spawn(function()
-        while self.isPlacing do
-            task.wait(0.1)
-        end
-        if movementConnection then
-            movementConnection:Disconnect()
-            movementConnection = nil
-        end
-    end)
 end
 
 -- Client: Clear item from hand
@@ -2264,6 +1858,274 @@ function PlacementManager:ClearItemFromHand()
     if humanoid then
         humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
     end
+end
+
+-- Client: Show an item in the player's hand for inspection
+function PlacementManager:ShowItemInHand(itemId)
+    if isServer then return false end
+    
+    print("PlacementManager: Showing item in hand:", itemId)
+    
+    -- Clear any existing item in hand
+    self:ClearItemFromHand()
+    
+    -- Get the item template
+    local normalizedItemId = itemId:gsub(" ", "_")
+    local template = self:GetItemTemplate(normalizedItemId)
+    if not template then
+        warn("PlacementManager: Failed to find template for", normalizedItemId)
+        return false
+    end
+    
+    -- Clone the template for display
+    local displayItem = template:Clone()
+    displayItem.Name = "HandItem_" .. normalizedItemId
+    
+    -- Adjust transparency and other properties for better hand visualization
+    if displayItem:IsA("Model") then
+        for _, part in ipairs(displayItem:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Transparency = math.max(0, part.Transparency - 0.2) -- Make slightly more visible
+                part.CanCollide = false
+                part.Anchored = true
+                part:SetAttribute("is_hand_item", true)
+            end
+        end
+    elseif displayItem:IsA("BasePart") then
+        displayItem.Transparency = math.max(0, displayItem.Transparency - 0.2)
+        displayItem.CanCollide = false
+        displayItem.Anchored = true
+        displayItem:SetAttribute("is_hand_item", true)
+    end
+    
+    -- Add a highlight effect for better visibility
+    local highlight = Instance.new("Highlight")
+    highlight.FillTransparency = 0.3
+    highlight.OutlineTransparency = 0
+    highlight.FillColor = Color3.fromRGB(255, 215, 0) -- Gold fill
+    highlight.OutlineColor = Color3.fromRGB(255, 215, 0) -- Gold outline
+    highlight.Parent = displayItem
+    
+    -- Add to workspace
+    displayItem.Parent = Workspace
+    
+    -- Store reference
+    self.handItem = displayItem
+    self.handItemId = normalizedItemId
+    
+    -- Position the item in front of the player
+    local player = Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    
+    -- Connect movement to update hand item position
+    local movementConnection
+    movementConnection = RunService.RenderStepped:Connect(function()
+        if not self.handItem then
+            if movementConnection then
+                movementConnection:Disconnect()
+                movementConnection = nil
+            end
+            return
+        end
+        
+        -- Position in front of the player
+        local offset = humanoidRootPart.CFrame.LookVector * 3
+        local position = humanoidRootPart.Position + offset
+        position = Vector3.new(position.X, position.Y + 1, position.Z) -- Adjust height
+        
+        -- Rotate the item slowly
+        local rotationAngle = tick() % (2 * math.pi) -- Slow continuous rotation
+        local rotationCFrame = CFrame.Angles(0, rotationAngle, 0)
+        
+        if self.handItem:IsA("Model") and self.handItem.PrimaryPart then
+            self.handItem:SetPrimaryPartCFrame(CFrame.new(position) * rotationCFrame)
+        else
+            self.handItem.CFrame = CFrame.new(position) * rotationCFrame
+        end
+    end)
+    
+    -- Setup input handler for interaction
+    local userInputService = game:GetService("UserInputService")
+    local inputConnection
+    
+    inputConnection = userInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            -- Left click to place
+            self:StartPlacing(self.handItemId)
+            
+            -- Disconnect the input handler
+            if inputConnection then
+                inputConnection:Disconnect()
+                inputConnection = nil
+            end
+            
+            -- Disconnect the movement handler
+            if movementConnection then
+                movementConnection:Disconnect()
+                movementConnection = nil
+            end
+            
+            -- Clear the hand item (StartPlacing will create a preview)
+            self.handItem = nil
+            self.handItemId = nil
+        elseif input.UserInputType == Enum.UserInputType.MouseButton2 or input.KeyCode == Enum.KeyCode.Escape then
+            -- Right click or Escape to close
+            self:ClearItemFromHand()
+            
+            -- Disconnect the input handler
+            if inputConnection then
+                inputConnection:Disconnect()
+                inputConnection = nil
+            end
+            
+            -- Disconnect the movement handler
+            if movementConnection then
+                movementConnection:Disconnect()
+                movementConnection = nil
+            end
+        end
+    end)
+    
+    return true
+end
+
+-- Client: Recall an item from inventory to show in hand
+function PlacementManager:RecallItemFromInventory(itemId)
+    if isServer then return false end
+    
+    print("PlacementManager: Recalling item from inventory:", itemId)
+    
+    -- Check if the item is in the player's inventory
+    local player = Players.LocalPlayer
+    
+    -- Normalize the item ID
+    local normalizedItemId = itemId:gsub(" ", "_")
+    
+    -- Try to show the item in hand first
+    local success = self:ShowItemInHand(normalizedItemId)
+    if not success then
+        warn("PlacementManager: Failed to show item in hand:", normalizedItemId)
+        return false
+    end
+    
+    -- Notify user that they can now place the item
+    local message = "Left-click to place " .. normalizedItemId .. " or right-click to cancel"
+    
+    -- Check if we have a UI notification system
+    local UIManager = self.shared and self.shared.UIManager
+    if UIManager and UIManager.ShowNotification then
+        UIManager:ShowNotification(message, 5)
+    else
+        -- Fallback to direct GUI message
+        local screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "PlacementNotification"
+        
+        local textLabel = Instance.new("TextLabel")
+        textLabel.Size = UDim2.new(0, 400, 0, 50)
+        textLabel.Position = UDim2.new(0.5, -200, 0.8, 0)
+        textLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        textLabel.BackgroundTransparency = 0.5
+        textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        textLabel.TextSize = 18
+        textLabel.Text = message
+        textLabel.Parent = screenGui
+        
+        -- Auto-cleanup after 5 seconds
+        task.spawn(function()
+            task.wait(5)
+            screenGui:Destroy()
+        end)
+        
+        -- Add to player's GUI
+        screenGui.Parent = player.PlayerGui
+    end
+    
+    return true
+end
+
+-- Client: Clear any displayed item from hand
+function PlacementManager:ClearItemFromHand()
+    if isServer then return end
+    
+    if self.handItem then
+        print("PlacementManager: Clearing item from hand:", self.handItem.Name)
+        self.handItem:Destroy()
+        self.handItem = nil
+        self.handItemId = nil
+    end
+    
+    if self.previewItem then
+        print("PlacementManager: Clearing preview item:", self.previewItem.Name)
+        self.previewItem:Destroy()
+        self.previewItem = nil
+    end
+    
+    self.isPlacing = false
+    self.selectedItem = nil
+end
+
+-- Setup remote events for client-server communication
+function PlacementManager:SetupRemoteEvents()
+    if not isServer then return end
+    
+    print("PlacementManager: Setting up remote events")
+    
+    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+    if not remotes then
+        remotes = Instance.new("Folder")
+        remotes.Name = "Remotes"
+        remotes.Parent = ReplicatedStorage
+    end
+    
+    -- Create remote events for placement system if they don't exist
+    local events = {
+        "PlaceItem",       -- Client -> Server: Request to place an item
+        "ItemPlaced",      -- Server -> Client: Notify that an item was placed
+        "RecallItem",      -- Client -> Server: Request to recall an item
+        "ItemRecalled",    -- Server -> Client: Notify that an item was recalled
+        "UpdateItem",      -- Client -> Server: Update item properties (position, etc.)
+        "ItemUpdated",     -- Server -> Client: Notify that an item was updated
+        "DeleteItem",      -- Client -> Server: Request to delete an item
+        "ItemDeleted"      -- Server -> Client: Notify that an item was deleted
+    }
+    
+    self.remotes = {}
+    
+    for _, eventName in ipairs(events) do
+        local event = remotes:FindFirstChild(eventName)
+        if not event then
+            event = Instance.new("RemoteEvent")
+            event.Name = eventName
+            event.Parent = remotes
+            print("PlacementManager: Created remote event:", eventName)
+        else
+            print("PlacementManager: Using existing remote event:", eventName)
+        end
+        
+        self.remotes[eventName] = event
+    end
+    
+    -- Connect server-side event handlers
+    self.remotes.PlaceItem.OnServerEvent:Connect(function(player, itemId, position, rotation)
+        self:PlaceItem(player, itemId, position, rotation)
+    end)
+    
+    self.remotes.RecallItem.OnServerEvent:Connect(function(player, instanceId)
+        self:RecallItem(player, instanceId)
+    end)
+    
+    self.remotes.UpdateItem.OnServerEvent:Connect(function(player, instanceId, position, rotation)
+        self:UpdateItem(player, instanceId, position, rotation)
+    end)
+    
+    self.remotes.DeleteItem.OnServerEvent:Connect(function(player, instanceId)
+        self:DeleteItem(player, instanceId)
+    end)
+    
+    print("PlacementManager: Remote events setup completed")
 end
 
 return PlacementManager
