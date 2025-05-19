@@ -541,6 +541,26 @@ function ItemPurchaseHandler:SetupAdminCommands(player)
     end)
 end
 
+-- Add this function to support GetInventory RemoteFunction
+function ItemPurchaseHandler:GetPlayerInventory(player)
+    local data = self:GetPlayerData(player)
+    if data then
+        return {
+            success = true,
+            inventory = data.inventory or {},
+            currency = data.currency or 0,
+            message = "Inventory and currency fetched successfully"
+        }
+    else
+        return {
+            success = false,
+            inventory = {},
+            currency = 0,
+            message = "Failed to fetch player data"
+        }
+    end
+end
+
 -- Initialize the handler when the module is loaded
 ItemPurchaseHandler:Initialize()
 
