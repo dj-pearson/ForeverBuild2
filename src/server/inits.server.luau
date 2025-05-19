@@ -62,20 +62,20 @@ if not Remotes then
 end
 
 -- Initialize shared module with error handling
-print("server.inits: Attempting to require shared module")
+print("server.init: Attempting to require shared module")
 local SharedModule
 local success, errorMessage = pcall(function()
     local shared = ReplicatedStorage:WaitForChild("shared", 10)
-    print("server.inits: Found shared module at " .. shared:GetFullName())
+    print("server.init: Found shared module at " .. shared:GetFullName())
     SharedModule = require(shared)
     return true
 end)
 
 if not success then
-    warn("server.inits: Failed to require SharedModule:", errorMessage)
+    warn("server.init: Failed to require SharedModule:", errorMessage)
     SharedModule = {}
 else
-    print("server.inits: Successfully required SharedModule")
+    print("server.init: Successfully required SharedModule")
     
     if SharedModule.Init then
         local initSuccess, initError = pcall(function()
@@ -83,9 +83,9 @@ else
         end)
     
         if not initSuccess then
-            warn("server.inits: Failed to initialize SharedModule:", initError)
+            warn("server.init: Failed to initialize SharedModule:", initError)
         else
-            print("server.inits: SharedModule initialized successfully")
+            print("server.init: SharedModule initialized successfully")
         end
     end
 end
@@ -93,11 +93,11 @@ end
 -- Load DataService
 local DataService
 local function initDataService()
-    print("server.inits: Initializing DataService...")
+    print("server.init: Initializing DataService...")
     
     -- Check if DataService is already available in SharedModule
     if SharedModule.DataService then
-        print("server.inits: Using existing DataService from SharedModule")
+        print("server.init: Using existing DataService from SharedModule")
         DataService = SharedModule.DataService
         return true
     end
@@ -112,7 +112,7 @@ local function initDataService()
     
     -- Try alternative path if first attempt failed
     if not success then
-        print("server.inits: First DataService path failed, trying alternative path...")
+        print("server.init: First DataService path failed, trying alternative path...")
         success, result = pcall(function()
             if script and script.Parent and script.Parent.Parent then
                 local corePath = script.Parent.Parent:FindFirstChild("shared")
@@ -132,7 +132,7 @@ local function initDataService()
     
     -- Create mock DataService if couldn't load
     if not success or not result then
-        print("server.inits: Creating basic mock DataService")
+        print("server.init: Creating basic mock DataService")
         -- Create a basic mock DataService
         result = {
             new = function()
@@ -161,17 +161,17 @@ local function initDataService()
     
     if success and result then
         -- Create and initialize the DataService
-        print("server.inits: Creating new DataService instance")
+        print("server.init: Creating new DataService instance")
         DataService = result.new()
         DataService:Initialize(SharedModule)
         
         -- Register with SharedModule
         SharedModule.DataService = DataService
         
-        print("server.inits: DataService initialized successfully")
+        print("server.init: DataService initialized successfully")
         return true
     else
-        warn("server.inits: Failed to create DataService")
+        warn("server.init: Failed to create DataService")
         return false
     end
 end
@@ -179,13 +179,13 @@ end
 -- Add after SharedModule initialization but before other managers
 local dataServiceSuccess = initDataService()
 if dataServiceSuccess then
-    print("server.inits: Successfully created DataService instance")
+    print("server.init: Successfully created DataService instance")
 else
-    warn("server.inits: DataService initialization failed")
+    warn("server.init: DataService initialization failed")
 end
 
 -- Initialize server managers with error handling
-print("server.inits: Initializing server managers")
+print("server.init: Initializing server managers")
 local GameManager, InventoryManager, CurrencyManager, PlacementManager, InteractionManager
 
 -- GameManager
@@ -196,12 +196,12 @@ if SharedModule.GameManager and SharedModule.GameManager.new then
     
     if gmSuccess and gmResult then
         GameManager = gmResult
-        print("server.inits: Successfully created GameManager instance")
+        print("server.init: Successfully created GameManager instance")
     else
-        warn("server.inits: Failed to create GameManager instance:", gmResult)
+        warn("server.init: Failed to create GameManager instance:", gmResult)
     end
 else
-    warn("server.inits: GameManager module not available")
+    warn("server.init: GameManager module not available")
 end
 
 -- InventoryManager
@@ -212,12 +212,12 @@ if SharedModule.InventoryManager and SharedModule.InventoryManager.new then
     
     if imSuccess and imResult then
         InventoryManager = imResult
-        print("server.inits: Successfully created InventoryManager instance")
+        print("server.init: Successfully created InventoryManager instance")
     else
-        warn("server.inits: Failed to create InventoryManager instance:", imResult)
+        warn("server.init: Failed to create InventoryManager instance:", imResult)
     end
 else
-    warn("server.inits: InventoryManager module not available")
+    warn("server.init: InventoryManager module not available")
 end
 
 -- CurrencyManager
@@ -228,78 +228,107 @@ if SharedModule.CurrencyManager and SharedModule.CurrencyManager.new then
     
     if cmSuccess and cmResult then
         CurrencyManager = cmResult
-        print("server.inits: Successfully created CurrencyManager instance")
+        print("server.init: Successfully created CurrencyManager instance")
     else
-        warn("server.inits: Failed to create CurrencyManager instance:", cmResult)
+        warn("server.init: Failed to create CurrencyManager instance:", cmResult)
     end
 else
-    warn("server.inits: CurrencyManager module not available")
+    warn("server.init: CurrencyManager module not available")
 end
 
 -- Load PlacementManager
 PlacementManager = nil
 local function initPlacementManager()
-    print("server.inits: Initializing PlacementManager...")
+    print("server.init: Initializing PlacementManager...")
     
     -- Check if PlacementManager is already available in SharedModule
     if SharedModule.PlacementManager then
-        print("server.inits: Using existing PlacementManager from SharedModule")
+        print("server.init: Using existing PlacementManager from SharedModule")
         PlacementManager = SharedModule.PlacementManager
         return true
     end
     
-    -- Try to require the PlacementManager module
-    local placementPath = script.Parent.Parent:FindFirstChild("shared")
-    if not placementPath then
-        warn("server.inits: shared folder not found for PlacementManager")
-        return false
+    -- Try multiple paths to find the PlacementManager module
+    local placementModule
+    
+    -- Try from ReplicatedStorage
+    local success = pcall(function()
+        placementModule = ReplicatedStorage.shared.core.placement.PlacementManager
+        print("server.init: Found PlacementManager at", placementModule:GetFullName())
+    end)
+    
+    if not success or not placementModule then
+        -- Try relative path from script
+        success = pcall(function()
+            local sharedFolder = script.Parent.Parent:FindFirstChild("shared")
+            if sharedFolder then
+                local corePath = sharedFolder:FindFirstChild("core")
+                if corePath then
+                    local placementPath = corePath:FindFirstChild("placement")
+                    if placementPath then
+                        placementModule = placementPath:FindFirstChild("PlacementManager")
+                        if placementModule then
+                            print("server.init: Found PlacementManager at relative path", placementModule:GetFullName())
+                        end
+                    end
+                end
+            end
+        end)
     end
     
-    local corePath = placementPath:FindFirstChild("core")
-    if not corePath then
-        warn("server.inits: core folder not found in shared")
-        return false
-    end
-    
-    local placementFolder = corePath:FindFirstChild("placement")
-    if not placementFolder then
-        warn("server.inits: placement folder not found in core")
-        return false
-    end
-    
-    local placementModule = placementFolder:FindFirstChild("PlacementManager")
     if not placementModule then
-        warn("server.inits: PlacementManager module not found")
+        warn("server.init: PlacementManager module not found in any expected location")
         return false
     end
     
-    local success, result = pcall(function()
+    -- Try to require the module
+    local moduleFunc
+    success, moduleFunc = pcall(function()
         return require(placementModule)
     end)
     
-    if not success then
-        warn("server.inits: Failed to require PlacementManager:", result)
+    if not success or not moduleFunc then
+        warn("server.init: Failed to require PlacementManager:", moduleFunc)
         return false
     end
     
     -- Create and initialize the PlacementManager
-    print("server.inits: Creating new PlacementManager instance")
-    PlacementManager = result.new(SharedModule)
-    PlacementManager:Initialize()
+    print("server.init: Creating new PlacementManager instance")
+    local newInstance
+    success, newInstance = pcall(function()
+        return moduleFunc.new(SharedModule)
+    end)
+    
+    if not success or not newInstance then
+        warn("server.init: Failed to create PlacementManager instance:", newInstance)
+        return false
+    end
+    
+    PlacementManager = newInstance
+    
+    -- Initialize the PlacementManager
+    success = pcall(function()
+        PlacementManager:Initialize()
+    end)
+    
+    if not success then
+        warn("server.init: Failed to initialize PlacementManager")
+        return false
+    end
     
     -- Register with SharedModule
     SharedModule.PlacementManager = PlacementManager
     
-    print("server.inits: PlacementManager initialized successfully")
+    print("server.init: PlacementManager initialized successfully")
     return true
 end
 
 -- Add after other manager initializations, before remote setup
 local placementManagerSuccess = initPlacementManager()
 if placementManagerSuccess then
-    print("server.inits: Successfully created PlacementManager instance")
+    print("server.init: Successfully created PlacementManager instance")
 else
-    warn("server.inits: PlacementManager initialization failed")
+    warn("server.init: PlacementManager initialization failed")
 end
 
 -- InteractionManager
@@ -310,17 +339,17 @@ if SharedModule.InteractionManager and SharedModule.InteractionManager.new then
     
     if imSuccess and imResult then
         InteractionManager = imResult
-        print("server.inits: Successfully created InteractionManager instance")
+        print("server.init: Successfully created InteractionManager instance")
         
         -- Initialize interaction manager
         if InteractionManager.Initialize then
             InteractionManager:Initialize()
         end
     else
-        warn("server.inits: Failed to create InteractionManager instance:", imResult)
+        warn("server.init: Failed to create InteractionManager instance:", imResult)
     end
 else
-    warn("server.inits: InteractionManager module not available in SharedModule, trying local version")
+    warn("server.init: InteractionManager module not available in SharedModule, trying local version")
     
     -- Try loading our local ItemInteractionManager instead
     local success, moduleOrError = pcall(function()
@@ -334,17 +363,17 @@ else
         
         if localSuccess and localResult then
             InteractionManager = localResult
-            print("server.inits: Successfully created local ItemInteractionManager instance")
+            print("server.init: Successfully created local ItemInteractionManager instance")
             
             -- Initialize interaction manager
             if InteractionManager.Initialize then
                 InteractionManager:Initialize()
             end
         else
-            warn("server.inits: Failed to create local ItemInteractionManager instance:", localResult)
+            warn("server.init: Failed to create local ItemInteractionManager instance:", localResult)
         end
     else
-        warn("server.inits: Failed to require local ItemInteractionManager:", moduleOrError)
+        warn("server.init: Failed to require local ItemInteractionManager:", moduleOrError)
     end
 end
 
@@ -353,18 +382,18 @@ local ItemPurchaseHandlerPath = script.Parent:WaitForChild("ItemPurchaseHandler"
 local success, ItemPurchaseHandler = pcall(require, ItemPurchaseHandlerPath)
 
 if not success then
-    warn("server.inits: Failed to load ItemPurchaseHandler. Error: ", tostring(ItemPurchaseHandler))
+    warn("server.init: Failed to load ItemPurchaseHandler. Error: ", tostring(ItemPurchaseHandler))
 else
-    print("server.inits: Successfully loaded ItemPurchaseHandler module")
+    print("server.init: Successfully loaded ItemPurchaseHandler module")
     
     local initSuccess, errorMsg = pcall(function()
         ItemPurchaseHandler:Initialize() -- Initialize the purchase handler
     end)
     
     if not initSuccess then
-        warn("server.inits: Failed to initialize ItemPurchaseHandler: ", errorMsg)
+        warn("server.init: Failed to initialize ItemPurchaseHandler: ", errorMsg)
     else
-        print("server.inits: ItemPurchaseHandler initialized successfully")
+        print("server.init: ItemPurchaseHandler initialized successfully")
     end
 end
 
@@ -430,7 +459,7 @@ local buyItemRemote = Remotes:FindFirstChild("BuyItem")
 if buyItemRemote and GameManager then
     buyItemRemote.OnServerEvent:Connect(function(player, itemId)
         if not GameManager.HandleItemPurchase then
-            warn("server.inits: GameManager.HandleItemPurchase function not found")
+            warn("server.init: GameManager.HandleItemPurchase function not found")
             return
         end
         
@@ -448,17 +477,18 @@ end
 -- PlaceItem
 local placeItemRemote = Remotes:FindFirstChild("PlaceItem")
 if placeItemRemote and PlacementManager then
-    placeItemRemote.OnServerEvent:Connect(function(player, itemId, position, rotation)
-        if not PlacementManager.PlaceItem then
-            warn("server.inits: PlacementManager.PlaceItem function not found")
-            return
-        end
-        
-        local success = PlacementManager:PlaceItem(player, itemId, position, rotation)
-        print("server.inits: PlaceItem result for player", player.Name, ":", success)
-    end)
+    -- Remove the duplicate handler since PlacementManager already handles this event
+    -- placeItemRemote.OnServerEvent:Connect(function(player, itemId, position, rotation)
+    --     if not PlacementManager.PlaceItem then
+    --         warn("server.init: PlacementManager.PlaceItem function not found")
+    --         return
+    --     end
+    --     
+    --     local success = PlacementManager:PlaceItem(player, itemId, position, rotation)
+    --     print("server.init: PlaceItem result for player", player.Name, ":", success)
+    -- end)
     
-    print("server.inits: Connected PlaceItem remote event")
+    print("server.init: PlaceItem remote event already handled by PlacementManager module")
 end
 
 -- InteractWithItem
@@ -466,7 +496,7 @@ local interactItemRemote = Remotes:FindFirstChild("InteractWithItem")
 if interactItemRemote and InteractionManager then
     interactItemRemote.OnServerEvent:Connect(function(player, itemData, interactionType)
         if not InteractionManager.HandleInteraction then
-            warn("server.inits: InteractionManager.HandleInteraction function not found")
+            warn("server.init: InteractionManager.HandleInteraction function not found")
             return
         end
         
@@ -482,7 +512,7 @@ local pickupItemRemote = Remotes:FindFirstChild("PickupItem")
 if pickupItemRemote and InventoryManager then
     pickupItemRemote.OnServerEvent:Connect(function(player, itemId)
         if not InventoryManager.AddItemToInventory then
-            warn("server.inits: InventoryManager.AddItemToInventory function not found")
+            warn("server.init: InventoryManager.AddItemToInventory function not found")
             return
         end
         
@@ -500,7 +530,7 @@ local addToInventoryRemote = Remotes:FindFirstChild("AddToInventory")
 if addToInventoryRemote and InventoryManager then
     addToInventoryRemote.OnServerEvent:Connect(function(player, itemId)
         if not InventoryManager.AddItemToInventory then
-            warn("server.inits: InventoryManager.AddItemToInventory function not found")
+            warn("server.init: InventoryManager.AddItemToInventory function not found")
             return
         end
         
@@ -573,15 +603,15 @@ local recallItemRemote = Remotes:FindFirstChild("RecallItem")
 if recallItemRemote and PlacementManager then
     recallItemRemote.OnServerEvent:Connect(function(player, instanceId)
         if not PlacementManager.RecallItem then
-            warn("server.inits: PlacementManager.RecallItem function not found")
+            warn("server.init: PlacementManager.RecallItem function not found")
             return
         end
         
         local success = PlacementManager:RecallItem(player, instanceId)
-        print("server.inits: RecallItem result for player", player.Name, ":", success)
+        print("server.init: RecallItem result for player", player.Name, ":", success)
     end)
     
-    print("server.inits: Connected RecallItem remote event")
+    print("server.init: Connected RecallItem remote event")
 end
 
 print("Server initialization completed successfully")

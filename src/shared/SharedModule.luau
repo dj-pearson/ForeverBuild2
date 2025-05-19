@@ -7,7 +7,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SharedModule = {}
 
-print("Shared inits.luau loading...")
+print("Shared init.luau loading...")
 
 -- Try to load Constants from core folder
 local Constants = nil

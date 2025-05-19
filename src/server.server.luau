@@ -44,20 +44,20 @@ if not Remotes then
 end
 
 -- Initialize shared module with error handling
-print("server.inits: Attempting to require shared module")
+print("server.init: Attempting to require shared module")
 local SharedModule
 local success, errorMessage = pcall(function()
     local shared = ReplicatedStorage:WaitForChild("shared", 10)
-    print("server.inits: Found shared module at " .. shared:GetFullName())
+    print("server.init: Found shared module at " .. shared:GetFullName())
     SharedModule = require(shared)
     return true
 end)
 
 if not success then
-    warn("server.inits: Failed to require SharedModule:", errorMessage)
+    warn("server.init: Failed to require SharedModule:", errorMessage)
     SharedModule = {}
 else
-    print("server.inits: Successfully required SharedModule")
+    print("server.init: Successfully required SharedModule")
     
     if SharedModule.Init then
         local initSuccess, initError = pcall(function()
@@ -65,15 +65,15 @@ else
         end)
     
         if not initSuccess then
-            warn("server.inits: Failed to initialize SharedModule:", initError)
+            warn("server.init: Failed to initialize SharedModule:", initError)
         else
-            print("server.inits: SharedModule initialized successfully")
+            print("server.init: SharedModule initialized successfully")
         end
     end
 end
 
 -- Initialize server managers with error handling
-print("server.inits: Initializing server managers")
+print("server.init: Initializing server managers")
 local GameManager, InventoryManager, CurrencyManager, PlacementManager, InteractionManager
 
 -- GameManager
@@ -84,12 +84,12 @@ if SharedModule.GameManager and SharedModule.GameManager.new then
     
     if gmSuccess and gmResult then
         GameManager = gmResult
-        print("server.inits: Successfully created GameManager instance")
+        print("server.init: Successfully created GameManager instance")
     else
-        warn("server.inits: Failed to create GameManager instance:", gmResult)
+        warn("server.init: Failed to create GameManager instance:", gmResult)
     end
 else
-    warn("server.inits: GameManager module not available")
+    warn("server.init: GameManager module not available")
 end
 
 -- InventoryManager
@@ -100,12 +100,12 @@ if SharedModule.InventoryManager and SharedModule.InventoryManager.new then
     
     if imSuccess and imResult then
         InventoryManager = imResult
-        print("server.inits: Successfully created InventoryManager instance")
+        print("server.init: Successfully created InventoryManager instance")
     else
-        warn("server.inits: Failed to create InventoryManager instance:", imResult)
+        warn("server.init: Failed to create InventoryManager instance:", imResult)
     end
 else
-    warn("server.inits: InventoryManager module not available")
+    warn("server.init: InventoryManager module not available")
 end
 
 -- CurrencyManager
@@ -116,12 +116,12 @@ if SharedModule.CurrencyManager and SharedModule.CurrencyManager.new then
     
     if cmSuccess and cmResult then
         CurrencyManager = cmResult
-        print("server.inits: Successfully created CurrencyManager instance")
+        print("server.init: Successfully created CurrencyManager instance")
     else
-        warn("server.inits: Failed to create CurrencyManager instance:", cmResult)
+        warn("server.init: Failed to create CurrencyManager instance:", cmResult)
     end
 else
-    warn("server.inits: CurrencyManager module not available")
+    warn("server.init: CurrencyManager module not available")
 end
 
 -- PlacementManager
@@ -132,12 +132,12 @@ if SharedModule.PlacementManager and SharedModule.PlacementManager.new then
     
     if pmSuccess and pmResult then
         PlacementManager = pmResult
-        print("server.inits: Successfully created PlacementManager instance")
+        print("server.init: Successfully created PlacementManager instance")
     else
-        warn("server.inits: Failed to create PlacementManager instance:", pmResult)
+        warn("server.init: Failed to create PlacementManager instance:", pmResult)
     end
 else
-    warn("server.inits: PlacementManager module not available")
+    warn("server.init: PlacementManager module not available")
 end
 
 -- InteractionManager
@@ -148,17 +148,17 @@ if SharedModule.InteractionManager and SharedModule.InteractionManager.new then
     
     if imSuccess and imResult then
         InteractionManager = imResult
-        print("server.inits: Successfully created InteractionManager instance")
+        print("server.init: Successfully created InteractionManager instance")
         
         -- Initialize interaction manager
         if InteractionManager.Initialize then
             InteractionManager:Initialize()
         end
     else
-        warn("server.inits: Failed to create InteractionManager instance:", imResult)
+        warn("server.init: Failed to create InteractionManager instance:", imResult)
     end
 else
-    warn("server.inits: InteractionManager module not available")
+    warn("server.init: InteractionManager module not available")
 end
 
 -- Setup Remote Function Handlers
@@ -193,7 +193,7 @@ local buyItemRemote = Remotes:FindFirstChild("BuyItem")
 if buyItemRemote and GameManager then
     buyItemRemote.OnServerEvent:Connect(function(player, itemId)
         if not GameManager.HandleItemPurchase then
-            warn("server.inits: GameManager.HandleItemPurchase function not found")
+            warn("server.init: GameManager.HandleItemPurchase function not found")
             return
         end
         
@@ -211,19 +211,7 @@ end
 -- PlaceItem
 local placeItemRemote = Remotes:FindFirstChild("PlaceItem")
 if placeItemRemote and PlacementManager then
-    placeItemRemote.OnServerEvent:Connect(function(player, itemId, position, rotation)
-        if not PlacementManager.PlaceItem then
-            warn("server.inits: PlacementManager.PlaceItem function not found")
-            return
-        end
-        
-        local success = PlacementManager:PlaceItem(player, itemId, position, rotation)
-        if success then
-            Remotes.NotifyPlayer:FireClient(player, "Successfully placed " .. itemId)
-        else
-            Remotes.NotifyPlayer:FireClient(player, "Failed to place " .. itemId)
-        end
-    end)
+    print("PlaceItem remote event is already handled by PlacementManager module")
 end
 
 -- InteractWithItem
@@ -231,7 +219,7 @@ local interactItemRemote = Remotes:FindFirstChild("InteractWithItem")
 if interactItemRemote and InteractionManager then
     interactItemRemote.OnServerEvent:Connect(function(player, itemData, interactionType)
         if not InteractionManager.HandleInteraction then
-            warn("server.inits: InteractionManager.HandleInteraction function not found")
+            warn("server.init: InteractionManager.HandleInteraction function not found")
             return
         end
         
@@ -247,7 +235,7 @@ local pickupItemRemote = Remotes:FindFirstChild("PickupItem")
 if pickupItemRemote and InventoryManager then
     pickupItemRemote.OnServerEvent:Connect(function(player, itemId)
         if not InventoryManager.AddItemToInventory then
-            warn("server.inits: InventoryManager.AddItemToInventory function not found")
+            warn("server.init: InventoryManager.AddItemToInventory function not found")
             return
         end
         
@@ -265,7 +253,7 @@ local addToInventoryRemote = Remotes:FindFirstChild("AddToInventory")
 if addToInventoryRemote and InventoryManager then
     addToInventoryRemote.OnServerEvent:Connect(function(player, itemId)
         if not InventoryManager.AddItemToInventory then
-            warn("server.inits: InventoryManager.AddItemToInventory function not found")
+            warn("server.init: InventoryManager.AddItemToInventory function not found")
             return
         end
         

@@ -10,7 +10,7 @@ local DataService = {}
 DataService.__index = DataService
 
 -- Configuration
-local USE_MOCK_DATA = true -- For testing without DataStore access
+local USE_MOCK_DATA = false -- Enable actual DataStore saving
 local AUTO_SAVE_INTERVAL = 300 -- 5 minutes
 
 function DataService.new()

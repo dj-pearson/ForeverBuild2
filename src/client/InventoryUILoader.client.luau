@@ -114,38 +114,16 @@ if success then
                     buttonConnection = nil
                 end
                 
-                -- Clear any other existing connections on the button
-                local oldConnections = getconnections(button.MouseButton1Click)
-                for _, connection in ipairs(oldConnections) do
-                    connection:Disconnect()
-                end
+                -- Note: We can't use getconnections in regular scripts
+                -- Just adding our own connection is sufficient
                 
-                -- Add a direct test button
-                local testButton = Instance.new("TextButton")
-                testButton.Name = "TestInventoryButton"
-                testButton.Size = UDim2.new(0, 120, 0, 40)
-                testButton.Position = UDim2.new(0.5, -60, 1, -110) -- Above the main button
-                testButton.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
-                testButton.Font = Enum.Font.GothamBold
-                testButton.Text = "Test Inventory"
-                testButton.TextSize = 18
-                testButton.TextColor3 = Color3.new(1, 1, 1)
-                testButton.Parent = inventoryButtonUI
-                
-                local corner = Instance.new("UICorner")
-                corner.CornerRadius = UDim.new(0, 8)
-                corner.Parent = testButton
-                
-                -- Connect test button directly to Show function, bypassing Toggle
-                testButton.MouseButton1Click:Connect(function()
-                    print("TEST BUTTON CLICKED - Directly calling InventoryUI.Show()")
-                    sharedModule.InventoryUI.Show()
-                end)
-                
-                -- Create a new connection for the main button - directly use SHOW for consistency
+                -- Create a new connection for the main button - use Toggle for consistency
                 buttonConnection = button.MouseButton1Click:Connect(function()
-                    print("MAIN INVENTORY BUTTON CLICKED - Directly calling Show()")
-                    sharedModule.InventoryUI.Show()
+                    print("MAIN INVENTORY BUTTON CLICKED - Directly calling Toggle()")
+                    sharedModule.InventoryUI.Toggle()
+                    
+                    -- Force a refresh of the inventory data
+                    sharedModule.InventoryUI.RefreshInventory()
                 end)
                 
                 print("InventoryUILoader: Successfully updated inventory button click handler")

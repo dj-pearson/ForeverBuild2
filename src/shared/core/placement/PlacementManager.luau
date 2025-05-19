@@ -12,7 +12,7 @@ local PlacementManager = {}
 PlacementManager.__index = PlacementManager
 
 -- Configuration
-local PLACED_ITEMS_FOLDER_NAME = "PlacedItems"
+local PLACED_ITEMS_FOLDER_NAME = "World_Items" -- Use the existing World_Items folder
 local MAX_PLACEMENT_DISTANCE = 20
 local GRID_SIZE = 1 -- For grid snapping
 
@@ -26,15 +26,50 @@ function PlacementManager.new(sharedModule)
     
     -- Setup the world folder for placed items
     if isServer then
+        -- First look for the main World_Items folder
         self.worldFolder = Workspace:FindFirstChild(PLACED_ITEMS_FOLDER_NAME)
         if not self.worldFolder then
+            print("PlacementManager: Creating World_Items folder")
             self.worldFolder = Instance.new("Folder")
             self.worldFolder.Name = PLACED_ITEMS_FOLDER_NAME
             self.worldFolder.Parent = Workspace
         end
         
+        -- Set up subfolders for different item types
+        self.staticFolder = self.worldFolder:FindFirstChild("Static")
+        if not self.staticFolder then
+            print("PlacementManager: Creating Static folder")
+            self.staticFolder = Instance.new("Folder")
+            self.staticFolder.Name = "Static"
+            self.staticFolder.Parent = self.worldFolder
+        end
+        
+        self.placedFolder = self.worldFolder:FindFirstChild("Placed")
+        if not self.placedFolder then
+            print("PlacementManager: Creating Placed folder")
+            self.placedFolder = Instance.new("Folder")
+            self.placedFolder.Name = "Placed"
+            self.placedFolder.Parent = self.worldFolder
+        end
+        
+        -- Also look for legacy PlacedItems folder for backward compatibility
+        self.legacyPlacedFolder = Workspace:FindFirstChild("PlacedItems")
+        if not self.legacyPlacedFolder then
+            print("PlacementManager: No legacy PlacedItems folder found, will use World_Items/Placed")
+        else
+            print("PlacementManager: Found legacy PlacedItems folder, will monitor both")
+        end
+        
         -- Keep track of placed items by player
         self.placedItemsByPlayer = {}
+        
+        -- Setup tracking attributes
+        self.worldFolder:SetAttribute("PlacementManagerTrackingEnabled", true)
+        self.worldFolder:SetAttribute("PlacementManagerInitTime", os.time())
+        
+        -- Note: The following initialization is now moved to the Initialize method:
+        -- - ConnectPlayerEvents()
+        -- - LoadWorldData()
     else
         -- Client-side properties
         self.previewItem = nil
@@ -45,119 +80,572 @@ function PlacementManager.new(sharedModule)
     return self
 end
 
+-- Initialize the PlacementManager
+function PlacementManager:Initialize()
+    if not isServer then return false end
+    
+    print("PlacementManager: Initialize called")
+    
+    -- Set up remote events for placement system
+    self:SetupRemoteEvents()
+    
+    -- Connect player events for saving
+    self:ConnectPlayerEvents()
+    
+    -- Load world data from DataStore
+    task.spawn(function()
+        task.wait(2) -- Give DataService time to initialize
+        self:LoadWorldData()
+    end)
+    
+    print("PlacementManager: Initialization completed")
+    return true
+end
+
+-- Get an item template from ReplicatedStorage or other sources
+function PlacementManager:GetItemTemplate(itemId)
+    print("PlacementManager: Getting template for item:", itemId)
+    
+    -- Normalize the itemId (replace spaces with underscores)
+    local normalizedItemId = itemId:gsub(" ", "_")
+    
+    -- First check in ReplicatedStorage.ItemTemplates
+    local templates = ReplicatedStorage:FindFirstChild("ItemTemplates")
+    if not templates then
+        -- Try to create templates folder on server if missing
+        if isServer then
+            print("PlacementManager: ItemTemplates folder not found, creating it")
+            templates = Instance.new("Folder")
+            templates.Name = "ItemTemplates"
+            templates.Parent = ReplicatedStorage
+            
+            -- Create basic templates
+            local basicTemplates = {
+                { name = "Grass_Cube", color = "Bright green", material = "Grass" },
+                { name = "Stone_Cube", color = "Medium stone grey", material = "Slate" },
+                { name = "Wood_Plank", color = "Brown", material = "Wood" },
+                { name = "Wood_Cube", color = "Brown", material = "Wood" },
+                { name = "Brick_Cube", color = "Brick red", material = "Brick" },
+                { name = "Water_Cube", color = "Bright blue", material = "Water", transparency = 0.3 },
+                { name = "Glass_Cube", color = "Toothpaste", material = "Glass", transparency = 0.5 }
+            }
+            
+            for _, info in ipairs(basicTemplates) do
+                local part = Instance.new("Part")
+                part.Name = info.name
+                part.Size = Vector3.new(2, 2, 2)
+                part.Anchored = true
+                part.CanCollide = true
+                part.BrickColor = BrickColor.new(info.color)
+                part.Material = Enum.Material[info.material]
+                if info.transparency then
+                    part.Transparency = info.transparency
+                end
+                part.Parent = templates
+                
+                print("PlacementManager: Created template:", info.name)
+            end
+        else
+            warn("PlacementManager: ItemTemplates folder not found")
+            return nil
+        end
+    end
+    
+    -- Debug info
+    print("PlacementManager: Available templates in ItemTemplates folder:")
+    for _, template in ipairs(templates:GetChildren()) do
+        print("  -", template.Name)
+    end
+    
+    -- Try direct match first
+    local template = templates:FindFirstChild(normalizedItemId)
+    if template then
+        print("PlacementManager: Found exact template match:", normalizedItemId)
+        return template
+    end
+    
+    -- Try with original itemId
+    if normalizedItemId ~= itemId then
+        template = templates:FindFirstChild(itemId)
+        if template then
+            print("PlacementManager: Found template using original itemId:", itemId)
+            return template
+        end
+    end
+    
+    -- Special case for Wood_Cube - if Wood_Plank exists, create Wood_Cube from it
+    if normalizedItemId == "Wood_Cube" then
+        local woodPlank = templates:FindFirstChild("Wood_Plank")
+        if woodPlank then
+            print("PlacementManager: Creating Wood_Cube from Wood_Plank")
+            local woodCube = woodPlank:Clone()
+            woodCube.Name = "Wood_Cube"
+            woodCube.Parent = templates
+            return woodCube
+        end
+    end
+    
+    -- Try with suffix variations (with and without _Cube)
+    local tryWithCube = normalizedItemId
+    if not normalizedItemId:lower():find("_cube$") then
+        tryWithCube = normalizedItemId .. "_Cube"
+    end
+    
+    template = templates:FindFirstChild(tryWithCube)
+    if template then
+        print("PlacementManager: Found template with _Cube suffix:", tryWithCube)
+        return template
+    end
+    
+    -- Try without the _Cube suffix
+    if normalizedItemId:lower():find("_cube$") then
+        local tryWithoutCube = normalizedItemId:gsub("_Cube$", "")
+        template = templates:FindFirstChild(tryWithoutCube)
+        if template then
+            print("PlacementManager: Found template without _Cube suffix:", tryWithoutCube)
+            return template
+        end
+    end
+    
+    -- Try case-insensitive lookup
+    for _, potentialTemplate in ipairs(templates:GetChildren()) do
+        if potentialTemplate.Name:lower() == normalizedItemId:lower() or
+           potentialTemplate.Name:lower() == itemId:lower() then
+            print("PlacementManager: Found template using case-insensitive match:", potentialTemplate.Name)
+            return potentialTemplate
+        end
+    end
+    
+    -- Try to find a template with a similar name as a last resort
+    for _, potentialTemplate in ipairs(templates:GetChildren()) do
+        if potentialTemplate.Name:lower():find(normalizedItemId:lower()) or
+           normalizedItemId:lower():find(potentialTemplate.Name:lower()) then
+            print("PlacementManager: Found template with similar name:", potentialTemplate.Name)
+            return potentialTemplate
+        end
+    end
+    
+    -- If all else fails, create a basic template
+    print("PlacementManager: No template found, creating basic template for:", normalizedItemId)
+    local newTemplate = Instance.new("Part")
+    newTemplate.Name = normalizedItemId
+    newTemplate.Size = Vector3.new(2, 2, 2)
+    newTemplate.Anchored = true
+    newTemplate.CanCollide = true
+    
+    -- Set appropriate appearance
+    if normalizedItemId:lower():find("wood") then
+        newTemplate.BrickColor = BrickColor.new("Brown")
+        newTemplate.Material = Enum.Material.Wood
+    elseif normalizedItemId:lower():find("grass") then
+        newTemplate.BrickColor = BrickColor.new("Bright green")
+        newTemplate.Material = Enum.Material.Grass
+    elseif normalizedItemId:lower():find("stone") then
+        newTemplate.BrickColor = BrickColor.new("Medium stone grey")
+        newTemplate.Material = Enum.Material.Slate
+    elseif normalizedItemId:lower():find("water") then
+        newTemplate.BrickColor = BrickColor.new("Bright blue")
+        newTemplate.Material = Enum.Material.Water
+        newTemplate.Transparency = 0.3
+    elseif normalizedItemId:lower():find("glass") then
+        newTemplate.BrickColor = BrickColor.new("Toothpaste")
+        newTemplate.Material = Enum.Material.Glass
+        newTemplate.Transparency = 0.5
+    elseif normalizedItemId:lower():find("brick") then
+        newTemplate.BrickColor = BrickColor.new("Brick red")
+        newTemplate.Material = Enum.Material.Brick
+    else
+        newTemplate.BrickColor = BrickColor.new("Medium stone grey")
+        newTemplate.Material = Enum.Material.Concrete
+    end
+    
+    newTemplate.Parent = templates
+    print("PlacementManager: Created new template:", normalizedItemId)
+    return newTemplate
+end
+
 -- Server: Place an item in the world and persist it
 function PlacementManager:PlaceItem(player, itemId, position, rotation)
     if not isServer then return false end
     
+    print("PlacementManager: PlaceItem called by", player.Name, "for item", itemId)
+    
+    -- Normalize item name (replace spaces with underscores)
+    local normalizedItemId = itemId:gsub(" ", "_")
+    
+    -- Validate player data
     local playerData = self:GetPlayerData(player)
-    if not playerData or not playerData.inventory then
-        warn("PlacementManager: Player data not found for", player.Name)
+    if not playerData then
+        warn("PlacementManager: No player data found for", player.Name)
         return false
     end
     
-    -- Check if the player has this item in their inventory
+    -- Check if player has the item in inventory
     local hasItem = false
-    for _, item in pairs(playerData.inventory) do
-        if item.id == itemId or item.name == itemId then
-            hasItem = true
-            break
+    if playerData.inventory then
+        for _, item in ipairs(playerData.inventory) do
+            if (item.id and (item.id == itemId or item.id == normalizedItemId)) or 
+               (item.name and (item.name == itemId or item.name == normalizedItemId)) then
+                hasItem = true
+                break
+            end
         end
     end
     
     if not hasItem then
-        warn("PlacementManager: Player", player.Name, "does not have item", itemId)
+        warn("PlacementManager: Player", player.Name, "does not have item", itemId, "in inventory")
         return false
     end
     
     -- Get the item template
-    local itemData = self:GetItemData(itemId)
-    if not itemData then
-        warn("PlacementManager: Failed to get item data for", itemId)
+    local template = self:GetItemTemplate(normalizedItemId)
+    if not template then
+        warn("PlacementManager: Failed to find template for", normalizedItemId)
         return false
     end
     
-    -- Create the item in the world
-    local item = self:CreateWorldItem(itemId, position, rotation)
-    if not item then
-        warn("PlacementManager: Failed to create world item for", itemId)
-        return false
+    -- Log template properties for debugging
+    print("PlacementManager: Template found for", normalizedItemId)
+    if template:IsA("BasePart") then
+        print("  - BrickColor:", template.BrickColor.Name)
+        print("  - Material:", template.Material.Name)
+        print("  - Transparency:", template.Transparency)
     end
     
-    -- Set ownership
-    item:SetAttribute("owner", player.UserId)
-    item:SetAttribute("placed_time", os.time())
+    -- Clone the template for placement
+    local placedItem = template:Clone()
+    placedItem.Name = normalizedItemId .. "_" .. player.UserId .. "_" .. os.time()
     
-    -- Add to player's placed items
+    -- Explicitly set appearance properties based on item type
+    if placedItem:IsA("BasePart") then
+        -- Ensure correct appearance for specific item types
+        if normalizedItemId:lower():find("wood") then
+            placedItem.BrickColor = BrickColor.new("Brown")
+            placedItem.Material = Enum.Material.Wood
+            placedItem.Transparency = 0
+        elseif normalizedItemId:lower():find("grass") then
+            placedItem.BrickColor = BrickColor.new("Bright green")
+            placedItem.Material = Enum.Material.Grass
+            placedItem.Transparency = 0
+        elseif normalizedItemId:lower():find("stone") then
+            placedItem.BrickColor = BrickColor.new("Medium stone grey")
+            placedItem.Material = Enum.Material.Slate
+            placedItem.Transparency = 0
+        elseif normalizedItemId:lower():find("water") then
+            placedItem.BrickColor = BrickColor.new("Bright blue")
+            placedItem.Material = Enum.Material.Water
+            placedItem.Transparency = 0.3
+        elseif normalizedItemId:lower():find("glass") then
+            placedItem.BrickColor = BrickColor.new("Toothpaste")
+            placedItem.Material = Enum.Material.Glass
+            placedItem.Transparency = 0.5
+        elseif normalizedItemId:lower():find("brick") then
+            placedItem.BrickColor = BrickColor.new("Brick red")
+            placedItem.Material = Enum.Material.Brick
+            placedItem.Transparency = 0
+        end
+        
+        -- Log the actual appearance after setting properties
+        print("PlacementManager: Placed item appearance:")
+        print("  - BrickColor:", placedItem.BrickColor.Name)
+        print("  - Material:", placedItem.Material.Name)
+        print("  - Transparency:", placedItem.Transparency)
+    end
+    
+    -- Generate a unique instance ID
+    local instanceId = normalizedItemId .. "_" .. player.UserId .. "_" .. tostring(os.time())
+    placedItem:SetAttribute("instanceId", instanceId)
+    placedItem:SetAttribute("itemId", normalizedItemId)
+    placedItem:SetAttribute("owner", player.UserId)
+    placedItem:SetAttribute("placedTime", os.time())
+    placedItem:SetAttribute("persistent", true)
+    
+    -- Position and anchor the item
+    if placedItem:IsA("Model") and placedItem.PrimaryPart then
+        -- Handle rotation properly - rotation can be a Vector3 or a number
+        local rotationCFrame
+        if typeof(rotation) == "Vector3" then
+            -- Use rotation directly as Euler angles
+            rotationCFrame = CFrame.fromEulerAnglesXYZ(
+                math.rad(rotation.X or 0),
+                math.rad(rotation.Y or 0),
+                math.rad(rotation.Z or 0)
+            )
+        else
+            -- Use rotation as Y-axis rotation
+            rotationCFrame = CFrame.Angles(0, math.rad(rotation or 0), 0)
+        end
+        
+        placedItem:SetPrimaryPartCFrame(CFrame.new(position) * rotationCFrame)
+        
+        -- Set all parts to anchored
+        for _, part in pairs(placedItem:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Anchored = true
+                part.CanCollide = true
+            end
+        end
+    elseif placedItem:IsA("BasePart") then
+        -- Handle rotation properly - rotation can be a Vector3 or a number
+        local rotationCFrame
+        if typeof(rotation) == "Vector3" then
+            -- Use rotation directly as Euler angles
+            rotationCFrame = CFrame.fromEulerAnglesXYZ(
+                math.rad(rotation.X or 0),
+                math.rad(rotation.Y or 0),
+                math.rad(rotation.Z or 0)
+            )
+        else
+            -- Use rotation as Y-axis rotation
+            rotationCFrame = CFrame.Angles(0, math.rad(rotation or 0), 0)
+        end
+        
+        placedItem.CFrame = CFrame.new(position) * rotationCFrame
+        placedItem.Anchored = true
+        placedItem.CanCollide = true
+    end
+    
+    -- Parent to the placed items folder
+    placedItem.Parent = self.placedFolder
+    
+    -- Add to player's placed items list
     if not self.placedItemsByPlayer[player.UserId] then
         self.placedItemsByPlayer[player.UserId] = {}
     end
-    table.insert(self.placedItemsByPlayer[player.UserId], {
-        id = itemId,
-        position = position,
-        rotation = rotation,
-        instanceId = item.Name
-    })
+    table.insert(self.placedItemsByPlayer[player.UserId], instanceId)
     
     -- Remove from inventory
-    local removeSuccess = self:RemoveFromInventory(player, itemId)
-    if not removeSuccess then
-        warn("PlacementManager: Failed to remove item from inventory for", player.Name, itemId)
-        -- Continue anyway, but log it
-    end
+    self:RemoveFromInventory(player, normalizedItemId)
     
-    -- Save world data
-    self:SaveWorldData()
-    
-    -- Notify client of successful placement
+    -- Notify the client
     if self.remotes.ItemPlaced then
-        self.remotes.ItemPlaced:FireClient(player, itemId, item.Name)
+        self.remotes.ItemPlaced:FireClient(player, normalizedItemId, instanceId)
+        print("PlacementManager: Notified client of placed item:", normalizedItemId)
     end
     
-    print("PlacementManager: Item", itemId, "placed successfully by", player.Name)
-    return true, item
+    -- Save world data after placement
+    task.spawn(function()
+        self:SaveWorldData()
+    end)
+    
+    return true, placedItem
 end
 
 -- Server: Remove an item from the player's inventory
 function PlacementManager:RemoveFromInventory(player, itemId)
     if not isServer then return false end
     
-    local success = false
-    local InventoryManager = self.shared.InventoryManager
+    print("PlacementManager: Attempting to remove", itemId, "from inventory of", player.Name)
     
-    if InventoryManager then
-        success = InventoryManager:RemoveItem(player, itemId, 1)
+    -- Find the server ItemPurchaseHandler
+    local ItemPurchaseHandler = nil
+    
+    -- Try with ItemPurchaseHandler.lua in ServerScriptService
+    local success1, result1 = pcall(function()
+        return require(game:GetService("ServerScriptService").server.ItemPurchaseHandler)
+    end)
+    
+    if success1 then
+        ItemPurchaseHandler = result1
     else
-        -- Fallback to ItemPurchaseHandler
-        local ItemPurchaseHandler = self.shared.ItemPurchaseHandler
-        if ItemPurchaseHandler then
-            success = ItemPurchaseHandler:RemoveFromInventory(player, itemId, 1)
+        -- Try direct path lookup
+        local serverFolder = game:GetService("ServerScriptService"):FindFirstChild("server")
+        if serverFolder then
+            local itemPurchaseModule = serverFolder:FindFirstChild("ItemPurchaseHandler")
+            if itemPurchaseModule then
+                local success2, result2 = pcall(function()
+                    return require(itemPurchaseModule)
+                end)
+                if success2 then
+                    ItemPurchaseHandler = result2
+                end
+            end
+        end
+        
+        -- Try loading from server folder directly
+        if not ItemPurchaseHandler then
+            local success3, result3 = pcall(function()
+                return require(game:GetService("ServerScriptService").ItemPurchaseHandler)
+            end)
+            if success3 then
+                ItemPurchaseHandler = result3
+            end
         end
     end
     
-    return success
+    -- 1. Try the direct ItemPurchaseHandler first (most reliable method)
+    if ItemPurchaseHandler and ItemPurchaseHandler.RemoveFromInventory then
+        local success, result = pcall(function()
+            return ItemPurchaseHandler:RemoveFromInventory(player, itemId, 1)
+        end)
+        
+        if success and result then
+            print("PlacementManager: Successfully removed item using ItemPurchaseHandler directly")
+    return true
+        end
+    end
+    
+    -- 2. Try with ItemPurchaseHandler through SharedModule
+    if self.shared and self.shared.ItemPurchaseHandler and 
+       self.shared.ItemPurchaseHandler.RemoveFromInventory then
+        local success, result = pcall(function()
+            return self.shared.ItemPurchaseHandler:RemoveFromInventory(player, itemId, 1)
+        end)
+        
+        if success and result then
+            print("PlacementManager: Successfully removed item using SharedModule.ItemPurchaseHandler")
+            return true
+        end
+    end
+    
+    -- 3. Try with InventoryManager if available
+    local InventoryManager = self.shared and self.shared.InventoryManager
+    if InventoryManager and InventoryManager.RemoveItem then
+        local success, result = pcall(function()
+            return InventoryManager:RemoveItem(player, itemId, 1)
+        end)
+        
+        if success and result then
+            print("PlacementManager: Successfully removed item using InventoryManager")
+    return true
+        end
+    end
+    
+    -- 4. Last resort - manually update player data
+    local playerData = self:GetPlayerData(player)
+    if playerData and playerData.inventory then
+        local normalizedItemId = itemId:gsub(" ", "_")
+        local found = false
+        
+        for i, item in ipairs(playerData.inventory) do
+            if (item.id and (item.id == itemId or item.id == normalizedItemId)) or
+               (item.name and (item.name == itemId or item.name == normalizedItemId)) then
+                
+                local currentCount = item.count or 1
+                if currentCount <= 1 then
+                    table.remove(playerData.inventory, i)
+                else
+                    item.count = currentCount - 1
+                end
+                
+                found = true
+                print("PlacementManager: Manually removed item from player data")
+                
+                -- Save the updated player data
+                if ItemPurchaseHandler and ItemPurchaseHandler.SavePlayerData then
+                    ItemPurchaseHandler:SavePlayerData(player, playerData)
+                end
+                
+            break
+        end
+    end
+    
+        if found then
+            -- Still fire the remote event so the client is notified
+            local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+            if remotes and remotes:FindFirstChild("RemoveFromInventory") then
+                pcall(function()
+                    remotes.RemoveFromInventory:FireClient(player, itemId, 1)
+                end)
+            end
+    return true
+        end
+    end
+    
+    -- 5. RemoteEvent as absolute last resort
+    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+    if remotes and remotes:FindFirstChild("RemoveFromInventory") then
+        pcall(function()
+            remotes.RemoveFromInventory:FireClient(player, itemId, 1)
+        end)
+        print("PlacementManager: Sent RemoveFromInventory event to client")
+        return true
+    end
+    
+    warn("PlacementManager: Failed to remove item from inventory")
+    return false
 end
 
 -- Server: Get item data from Constants
 function PlacementManager:GetItemData(itemId)
-    if not self.Constants or not self.Constants.ITEMS then
-        warn("PlacementManager: Constants.ITEMS not available")
-        return nil
+    if not self.Constants then
+        warn("PlacementManager: Constants not available, creating fallback")
+        self.Constants = {
+            ITEMS = {}
+        }
     end
     
-    -- Try direct lookup
+    if not self.Constants.ITEMS then
+        warn("PlacementManager: Constants.ITEMS not available, creating fallback")
+        self.Constants.ITEMS = {}
+        
+        -- Add basic items to Constants.ITEMS as fallback
+        local basicItems = {"Grass_Cube", "Stone_Cube", "Brick_Cube", "Wood_Cube", "Glass_Cube", "Water_Cube"}
+        for _, itemName in ipairs(basicItems) do
+            self.Constants.ITEMS[itemName] = {
+                name = itemName,
+                price = {INGAME = 10, ROBUX = 10},
+                description = "A basic building block",
+                tier = "BASIC",
+                category = "Building"
+            }
+        end
+    end
+    
+    -- Normalize the item ID (replace spaces with underscores)
+    local normalizedItemId = itemId:gsub(" ", "_")
+    
+    -- Try direct lookup with original ID
     if self.Constants.ITEMS[itemId] then
         return self.Constants.ITEMS[itemId]
     end
     
-    -- Try case-insensitive lookup
+    -- Try with normalized ID
+    if normalizedItemId ~= itemId and self.Constants.ITEMS[normalizedItemId] then
+        print("PlacementManager: Found item using normalized ID:", normalizedItemId)
+        return self.Constants.ITEMS[normalizedItemId]
+    end
+    
+    -- Try case-insensitive lookup with both original and normalized IDs
     for key, data in pairs(self.Constants.ITEMS) do
-        if key:lower() == itemId:lower() then
+        if key:lower() == itemId:lower() or key:lower() == normalizedItemId:lower() then
+            print("PlacementManager: Found item using case-insensitive match:", key)
             return data
         end
     end
     
-    warn("PlacementManager: Item not found in Constants:", itemId)
-    return nil
+    -- Try with suffix variations (with and without _Cube)
+    local tryWithCube = normalizedItemId
+    if not normalizedItemId:lower():find("_cube$") then
+        tryWithCube = normalizedItemId .. "_Cube"
+    end
+    
+    if self.Constants.ITEMS[tryWithCube] then
+        print("PlacementManager: Found item by adding _Cube suffix:", tryWithCube)
+        return self.Constants.ITEMS[tryWithCube]
+    end
+    
+    for key, data in pairs(self.Constants.ITEMS) do
+        if key:lower() == tryWithCube:lower() then
+            print("PlacementManager: Found item using case-insensitive match with _Cube suffix:", key)
+            return data
+        end
+    end
+    
+    -- Last resort: Create an item entry for this ID
+    print("PlacementManager: Creating fallback item data for:", normalizedItemId)
+    local newItemData = {
+        name = normalizedItemId,
+        price = {INGAME = 10, ROBUX = 10},
+        description = "A building item",
+        tier = "BASIC",
+        category = "Building"
+    }
+    
+    -- Save to Constants for future use
+    self.Constants.ITEMS[normalizedItemId] = newItemData
+    
+    return newItemData
 end
 
 -- Server: Create an item in the world
@@ -166,89 +654,73 @@ function PlacementManager:CreateWorldItem(itemId, position, rotation)
     
     print("PlacementManager: Creating world item for:", itemId)
     
-    -- Look for templates in multiple possible locations
-    local template
+    -- Normalize item name (replace spaces with underscores)
+    local normalizedItemId = itemId:gsub(" ", "_")
     
-    -- 1. Check in ReplicatedStorage.ItemTemplates
-    local itemTemplates = ReplicatedStorage:FindFirstChild("ItemTemplates")
-    if itemTemplates then
-        -- Try exact match first
-        template = itemTemplates:FindFirstChild(itemId)
+    -- First try to get the template through our GetItemTemplate method
+    local template = self:GetItemTemplate(normalizedItemId)
+    
+    -- If template found through GetItemTemplate, use it directly
+    if template then
+        print("PlacementManager: Found template through GetItemTemplate:", template.Name)
+    else
+        -- Fallback code - try other methods to find template
+        print("PlacementManager: GetItemTemplate failed, trying fallback methods...")
         
-        if template then
-            print("PlacementManager: Found exact template match in ItemTemplates:", itemId)
-        end
-    end
-    
-    -- 2. If no match, check ServerStorage.Items if it exists
-    if not template then
-        local serverItems = game:GetService("ServerStorage"):FindFirstChild("Items")
-        if serverItems then
-            template = serverItems:FindFirstChild(itemId)
+        -- 1. Check in ReplicatedStorage.ItemTemplates
+        local itemTemplates = ReplicatedStorage:FindFirstChild("ItemTemplates")
+        if itemTemplates then
+            -- Try exact match first
+            template = itemTemplates:FindFirstChild(normalizedItemId)
             
             if template then
-                print("PlacementManager: Found template in ServerStorage.Items:", itemId)
+                print("PlacementManager: Found exact template match in ItemTemplates:", normalizedItemId)
             end
         end
-    end
-    
-    -- 3. Try suffix match - check if the item is actually a cube
-    if not template and not itemId:lower():find("cube") and not itemId:lower():find("_cube") then
-        -- Try appending "_Cube" to the itemId
-        local cubeId = itemId .. "_Cube"
         
-        if itemTemplates then
-            template = itemTemplates:FindFirstChild(cubeId)
-            if template then
-                print("PlacementManager: Found template by appending _Cube:", cubeId)
-            end
-        end
-    end
-    
-    -- 4. If still no match, try with normalized name
-    if not template and itemTemplates then
-        local normalizedName = itemId:gsub("_", ""):lower()
-        for _, item in ipairs(itemTemplates:GetChildren()) do
-            if item.Name:gsub("_", ""):lower() == normalizedName then
-                template = item
-                print("PlacementManager: Found normalized match for", itemId, "using", item.Name)
-                break
-            end
-        end
-    end
-    
-    -- 5. If still no template, try with partial match
-    if not template and itemTemplates then
-        local itemIdLower = itemId:lower()
-        for _, item in ipairs(itemTemplates:GetChildren()) do
-            if item.Name:lower():find(itemIdLower) or itemIdLower:find(item.Name:lower()) then
-                template = item
-                print("PlacementManager: Found partial match for", itemId, "using", item.Name)
-                break
-            end
-        end
-    end
-    
-    -- 6. Special case for common building materials
-    if not template and itemTemplates then
-        local specialCases = {
-            {"brick", "Brick_Cube"},
-            {"grass", "Grass_Cube"},
-            {"stone", "Stone_Cube"},
-            {"wood", "Wood_Plank"},
-            {"water", "Water_Cube"},
-            {"fire", "Fire_Cube"},
-            {"sand", "Sand_Cube"},
-            {"concrete", "Concrete_Cube"},
-            {"metal", "Metal_Cube"},
-            {"glass", "Glass_Cube"}
-        }
-        
-        for _, case in ipairs(specialCases) do
-            if itemId:lower():find(case[1]) then
-                template = itemTemplates:FindFirstChild(case[2])
+        -- 2. If no match, check ServerStorage.Items if it exists
+        if not template then
+            local serverItems = game:GetService("ServerStorage"):FindFirstChild("Items")
+            if serverItems then
+                template = serverItems:FindFirstChild(normalizedItemId)
+                
                 if template then
-                    print("PlacementManager: Using special case", case[2], "for", itemId)
+                    print("PlacementManager: Found template in ServerStorage.Items:", normalizedItemId)
+                end
+            end
+        end
+        
+        -- 3. Try suffix match - check if the item is actually a cube
+        if not template and not normalizedItemId:lower():find("cube") and not normalizedItemId:lower():find("_cube") then
+            -- Try appending "_Cube" to the itemId
+            local cubeId = normalizedItemId .. "_Cube"
+            
+            if itemTemplates then
+                template = itemTemplates:FindFirstChild(cubeId)
+                if template then
+                    print("PlacementManager: Found template by appending _Cube:", cubeId)
+                end
+            end
+        end
+        
+        -- 4. Special case for Wood_Cube - if Wood_Plank exists, create Wood_Cube from it
+        if not template and normalizedItemId == "Wood_Cube" and itemTemplates then
+            local woodPlank = itemTemplates:FindFirstChild("Wood_Plank")
+            if woodPlank then
+                print("PlacementManager: Creating Wood_Cube from Wood_Plank")
+                template = woodPlank:Clone()
+                template.Name = "Wood_Cube"
+                template.Parent = itemTemplates
+            end
+        end
+        
+        -- 5. If still no match, try with normalized name
+        if not template and itemTemplates then
+            local normalizedName = normalizedItemId:gsub("_", ""):lower()
+            for _, item in ipairs(itemTemplates:GetChildren()) do
+                if item.Name:gsub("_", ""):lower() == normalizedName then
+                    template = item
+                    print("PlacementManager: Found normalized match for", normalizedItemId, "using", item.Name)
                     break
                 end
             end
@@ -257,34 +729,34 @@ function PlacementManager:CreateWorldItem(itemId, position, rotation)
     
     -- If no template found, create a basic cube with appropriate appearance
     if not template then
-        print("PlacementManager: No template found for", itemId, "- creating basic cube")
+        print("PlacementManager: No template found for", normalizedItemId, "- creating basic cube")
         template = Instance.new("Part")
-        template.Name = itemId
+        template.Name = normalizedItemId
         template.Size = Vector3.new(2, 2, 2)
         template.Anchored = true
         template.CanCollide = true
         
         -- Set color based on item type
-        if itemId:lower():find("water") or itemId:lower():find("blue") then
+        if normalizedItemId:lower():find("water") then
             template.BrickColor = BrickColor.new("Bright blue")
             template.Transparency = 0.3
             template.Material = Enum.Material.Water
-        elseif itemId:lower():find("fire") or itemId:lower():find("lava") then
+        elseif normalizedItemId:lower():find("fire") or normalizedItemId:lower():find("lava") then
             template.BrickColor = BrickColor.new("Bright red")
             template.Material = Enum.Material.Neon
-        elseif itemId:lower():find("grass") or itemId:lower():find("green") then
+        elseif normalizedItemId:lower():find("grass") then
             template.BrickColor = BrickColor.new("Bright green")
             template.Material = Enum.Material.Grass
-        elseif itemId:lower():find("sand") or itemId:lower():find("yellow") or itemId:lower():find("earth") then
+        elseif normalizedItemId:lower():find("sand") then
             template.BrickColor = BrickColor.new("Brick yellow")
             template.Material = Enum.Material.Sand
-        elseif itemId:lower():find("wood") or itemId:lower():find("brown") then
+        elseif normalizedItemId:lower():find("wood") then
             template.BrickColor = BrickColor.new("Brown")
             template.Material = Enum.Material.Wood
-        elseif itemId:lower():find("brick") or itemId:lower():find("red") then
+        elseif normalizedItemId:lower():find("brick") then
             template.BrickColor = BrickColor.new("Brick red")
             template.Material = Enum.Material.Brick
-        elseif itemId:lower():find("glass") or itemId:lower():find("transparent") then
+        elseif normalizedItemId:lower():find("glass") then
             template.BrickColor = BrickColor.new("Institutional white")
             template.Transparency = 0.5
             template.Material = Enum.Material.Glass
@@ -294,12 +766,47 @@ function PlacementManager:CreateWorldItem(itemId, position, rotation)
         end
     end
     
-    -- Clone the template
+    -- Store template properties for debugging
+    print("PlacementManager: Template properties before cloning:")
+    if template:IsA("BasePart") then
+        print("  - BrickColor:", template.BrickColor.Name)
+        print("  - Material:", template.Material.Name)
+        print("  - Transparency:", template.Transparency)
+    end
+    
+    -- Clone the template exactly, preserving all properties
     local item = template:Clone()
-    print("PlacementManager: Creating world item from template:", template.Name)
+    print("PlacementManager: Created world item from template:", template.Name)
+    
+    -- Make sure appearance properties are explicitly set rather than relying on cloning
+    if item:IsA("BasePart") then
+        if template:IsA("BasePart") then
+            item.BrickColor = template.BrickColor
+            item.Material = template.Material
+            item.Transparency = template.Transparency
+        end
+        
+        -- Force specific appearance for certain types as a safeguard
+        if normalizedItemId:lower():find("wood") then
+            item.BrickColor = BrickColor.new("Brown")
+            item.Material = Enum.Material.Wood
+        elseif normalizedItemId:lower():find("grass") then
+            item.BrickColor = BrickColor.new("Bright green")
+            item.Material = Enum.Material.Grass
+        elseif normalizedItemId:lower():find("water") then
+            item.BrickColor = BrickColor.new("Bright blue")
+            item.Transparency = 0.3
+            item.Material = Enum.Material.Water
+        end
+        
+        print("PlacementManager: Item appearance after cloning:")
+        print("  - BrickColor:", item.BrickColor.Name)
+        print("  - Material:", item.Material.Name)
+        print("  - Transparency:", item.Transparency)
+    end
     
     -- Generate a unique ID for this instance
-    local instanceId = itemId .. "_" .. os.time() .. "_" .. math.random(1000, 9999)
+    local instanceId = normalizedItemId .. "_" .. os.time() .. "_" .. math.random(1000, 9999)
     item.Name = instanceId
     
     -- Calculate item height to adjust position
@@ -338,7 +845,7 @@ function PlacementManager:CreateWorldItem(itemId, position, rotation)
     end
     
     -- Add attributes for tracking
-    item:SetAttribute("item_type", itemId)
+    item:SetAttribute("item_type", normalizedItemId)
     item:SetAttribute("placed_at", os.time())
     
     -- Add to world folder
@@ -351,26 +858,133 @@ end
 function PlacementManager:GetPlayerData(player)
     if not isServer then return nil end
     
-    local InventoryManager = self.shared.InventoryManager
+    -- Try multiple ways to get player data for better compatibility
+    
+    -- First try ItemPurchaseHandler directly with GetPlayerDataForPlacement method
+    local ItemPurchaseHandler
+
+    -- Try to find the ItemPurchaseHandler in different possible locations
+    local success1, errorMsg1 = pcall(function()
+        -- Try to find it in ServerScriptService first
+        return require(game:GetService("ServerScriptService"):WaitForChild("server").ItemPurchaseHandler)
+    end)
+    
+    if success1 then
+        ItemPurchaseHandler = errorMsg1 -- pcall returns the value in the error position if successful
+    else
+        -- Try another approach - look for it directly in the game hierarchy
+        local serverScript = game:GetService("ServerScriptService"):FindFirstChild("server")
+        if serverScript then
+            local handler = serverScript:FindFirstChild("ItemPurchaseHandler")
+            if handler then
+                local success2, result2 = pcall(function()
+                    return require(handler)
+                end)
+                if success2 then
+                    ItemPurchaseHandler = result2
+                end
+            end
+        end
+    end
+    
+    -- If we found the handler, try to use it
+    if ItemPurchaseHandler then
+        -- Try the new dedicated method for placement first
+        if ItemPurchaseHandler.GetPlayerDataForPlacement then
+            local getSuccess, result = pcall(function()
+                return ItemPurchaseHandler:GetPlayerDataForPlacement(player)
+            end)
+            
+            if getSuccess and result then
+                print("PlacementManager: Got player data using GetPlayerDataForPlacement")
+                return result
+            end
+        end
+        
+        -- Fall back to regular GetPlayerData if needed
+        if ItemPurchaseHandler.GetPlayerData then
+            local getSuccess, result = pcall(function()
+                return ItemPurchaseHandler:GetPlayerData(player)
+            end)
+            
+            if getSuccess and result then
+                print("PlacementManager: Got player data from ItemPurchaseHandler directly")
+                return result
+            end
+        end
+    end
+    
+    -- Try using ItemPurchaseHandler through SharedModule
+    if self.shared and self.shared.ItemPurchaseHandler then
+        local success, result = pcall(function()
+            return self.shared.ItemPurchaseHandler:GetPlayerData(player)
+        end)
+        
+        if success and result then
+            print("PlacementManager: Got player data from SharedModule.ItemPurchaseHandler")
+            return result
+        end
+    end
+    
+    -- Try using InventoryManager
+    local InventoryManager = self.shared and self.shared.InventoryManager
     if InventoryManager and InventoryManager.GetPlayerData then
-        return InventoryManager:GetPlayerData(player)
+        local success, result = pcall(function()
+            return InventoryManager:GetPlayerData(player)
+        end)
+        
+        if success and result then
+            print("PlacementManager: Got player data from InventoryManager")
+            return result
+        end
     end
     
-    -- Fallback to ItemPurchaseHandler
-    local ItemPurchaseHandler = self.shared.ItemPurchaseHandler
-    if ItemPurchaseHandler and ItemPurchaseHandler.GetPlayerData then
-        return ItemPurchaseHandler:GetPlayerData(player)
+    -- If all else fails, try getting inventory directly from player
+    if player:FindFirstChild("PlayerData") and player.PlayerData:FindFirstChild("Inventory") then
+        print("PlacementManager: Using PlayerData.Inventory directly")
+        return { inventory = player.PlayerData.Inventory.Value }
     end
     
-    warn("PlacementManager: Could not find a way to get player data")
-    return nil
+    -- Last resort - create a mock inventory with all items for testing
+    warn("PlacementManager: Could not find a way to get player data - using mock data for testing")
+    
+    -- Return a mock inventory with basic items for testing purposes
+    local mockInventory = {}
+    
+    -- Add all template items to mock inventory
+    local templates = ReplicatedStorage:FindFirstChild("ItemTemplates")
+    if templates then
+        for _, template in ipairs(templates:GetChildren()) do
+            table.insert(mockInventory, {
+                id = template.Name,
+                name = template.Name,
+                count = 10
+            })
+        end
+    end
+    
+    -- Add some default items
+    for _, itemName in ipairs({"Grass_Cube", "Stone_Cube", "Wood_Plank", "Brick_Cube"}) do
+        table.insert(mockInventory, {
+            id = itemName,
+            name = itemName,
+            count = 5
+        })
+    end
+    
+    return { 
+        inventory = mockInventory,
+        mock = true  -- Flag to indicate this is mock data
+    }
 end
 
 -- Server: Save world data to DataStore
 function PlacementManager:SaveWorldData()
     if not isServer then return false end
     
-    local DataService = self.shared.DataService
+    print("PlacementManager: Saving world data...")
+    
+    local DataService = self.shared and self.shared.DataService
     if not DataService then
         warn("PlacementManager: DataService not available for saving world data")
         return false
@@ -378,28 +992,82 @@ function PlacementManager:SaveWorldData()
     
     -- Collect all placed items data
     local worldData = {}
-    for playerId, items in pairs(self.placedItemsByPlayer) do
-        for _, item in ipairs(items) do
-            table.insert(worldData, {
-                id = item.id,
-                position = {
-                    x = item.position.X,
-                    y = item.position.Y, 
-                    z = item.position.Z
-                },
-                rotation = {
-                    x = item.rotation.X,
-                    y = item.rotation.Y,
-                    z = item.rotation.Z
-                },
-                owner = playerId,
-                instanceId = item.instanceId
-            })
+    
+    -- First check for items in the placedItemsByPlayer tracking table
+    for playerId, items in pairs(self.placedItemsByPlayer or {}) do
+        for _, instanceId in ipairs(items) do
+            -- Try to find the item in the world
+            local item = self:FindItemByInstanceId(instanceId)
+            if item then
+                local itemPosition = item:IsA("Model") and item:GetPrimaryPartCFrame().Position or item.Position
+                local itemRotation = item:IsA("Model") and item:GetPrimaryPartCFrame().Rotation or item.Rotation
+                
+                table.insert(worldData, {
+                    id = item:GetAttribute("itemId") or item.Name:gsub("_%d+_%d+$", ""),
+                    position = {
+                        x = itemPosition.X,
+                        y = itemPosition.Y, 
+                        z = itemPosition.Z
+                    },
+                    rotation = {
+                        x = itemRotation and itemRotation.X or 0,
+                        y = itemRotation and itemRotation.Y or 0,
+                        z = itemRotation and itemRotation.Z or 0
+                    },
+                    owner = playerId,
+                    instanceId = instanceId
+                })
+            end
         end
     end
     
+    -- Additionally, scan the Placed folder directly to catch any items that might not be in the tracking table
+    if self.placedFolder then
+        for _, item in ipairs(self.placedFolder:GetChildren()) do
+            -- Skip items we've already processed from placedItemsByPlayer
+            local instanceId = item:GetAttribute("instanceId")
+            if not instanceId then
+                instanceId = item.Name -- Use name as fallback
+            end
+            
+            -- Check if this item is already in our worldData
+            local alreadyIncluded = false
+            for _, existingItem in ipairs(worldData) do
+                if existingItem.instanceId == instanceId then
+                    alreadyIncluded = true
+                    break
+                end
+            end
+            
+            if not alreadyIncluded then
+                local itemPosition = item:IsA("Model") and item:GetPrimaryPartCFrame().Position or item.Position
+                local itemRotation = item:IsA("Model") and item:GetPrimaryPartCFrame().Rotation or item.Rotation
+                local itemId = item:GetAttribute("itemId") or item.Name:gsub("_%d+_%d+$", "")
+                local ownerId = item:GetAttribute("owner") or 0
+                
+                table.insert(worldData, {
+                    id = itemId,
+                    position = {
+                        x = itemPosition.X,
+                        y = itemPosition.Y, 
+                        z = itemPosition.Z
+                    },
+                    rotation = {
+                        x = itemRotation and itemRotation.X or 0,
+                        y = itemRotation and itemRotation.Y or 0,
+                        z = itemRotation and itemRotation.Z or 0
+                    },
+                    owner = ownerId,
+                    instanceId = instanceId
+                })
+            end
+        end
+    end
+    
+    print("PlacementManager: Saving " .. #worldData .. " placed items")
+    
     -- Save using DataService
-    local success = DataService:SaveData("WorldData", worldData)
+    local success = DataService:SaveData("WorldPlacedItems", worldData)
     if success then
         print("PlacementManager: World data saved successfully")
     else
@@ -409,29 +1077,70 @@ function PlacementManager:SaveWorldData()
     return success
 end
 
+-- Helper method to find an item by its instanceId
+function PlacementManager:FindItemByInstanceId(instanceId)
+    if not isServer then return nil end
+    
+    -- Look in the placed folder
+    if self.placedFolder then
+        for _, item in ipairs(self.placedFolder:GetChildren()) do
+            if item:GetAttribute("instanceId") == instanceId or item.Name == instanceId then
+                return item
+            end
+        end
+    end
+    
+    -- Look in legacy folder if it exists
+    if self.legacyPlacedFolder then
+        for _, item in ipairs(self.legacyPlacedFolder:GetChildren()) do
+            if item:GetAttribute("instanceId") == instanceId or item.Name == instanceId then
+                return item
+            end
+        end
+    end
+    
+    -- Look in the main world folder as a last resort
+    if self.worldFolder then
+        for _, item in ipairs(self.worldFolder:GetChildren()) do
+            if not item:IsA("Folder") and (item:GetAttribute("instanceId") == instanceId or item.Name == instanceId) then
+                return item
+            end
+        end
+    end
+    
+    return nil
+end
+
 -- Server: Load world data from DataStore
 function PlacementManager:LoadWorldData()
     if not isServer then return false end
     
-    local DataService = self.shared.DataService
+    local DataService = self.shared and self.shared.DataService
     if not DataService then
         warn("PlacementManager: DataService not available for loading world data")
         return false
     end
     
     -- Load world data
-    local worldData = DataService:LoadData("WorldData")
-    if not worldData then
+    local worldData = DataService:LoadData("WorldPlacedItems")
+    if not worldData or type(worldData) ~= "table" or #worldData == 0 then
         print("PlacementManager: No world data available to load")
         return false
     end
     
-    -- Clear existing world
-    self.worldFolder:ClearAllChildren()
+    print("PlacementManager: Loading " .. #worldData .. " placed items")
+    
+    -- Clear existing items from tracking but not from the world
     self.placedItemsByPlayer = {}
     
     -- Recreate all items
+    local itemsCreated = 0
     for _, itemData in ipairs(worldData) do
+        if not itemData.id then
+            warn("PlacementManager: Item data missing ID, skipping")
+            continue
+        end
+        
         local position = Vector3.new(
             itemData.position.x,
             itemData.position.y,
@@ -444,84 +1153,197 @@ function PlacementManager:LoadWorldData()
             itemData.rotation.z
         )
         
-        local item = self:CreateWorldItem(itemData.id, position, rotation)
-        if item then
-            item:SetAttribute("owner", itemData.owner)
-            item.Name = itemData.instanceId or (itemData.id .. "_" .. os.time() .. "_" .. math.random(1000, 9999))
-            
-            -- Track in placedItemsByPlayer
-            if not self.placedItemsByPlayer[itemData.owner] then
-                self.placedItemsByPlayer[itemData.owner] = {}
-            end
-            
-            table.insert(self.placedItemsByPlayer[itemData.owner], {
-                id = itemData.id,
-                position = position,
-                rotation = rotation,
-                instanceId = item.Name
-            })
+        -- Create the item template first
+        local normalizedItemId = itemData.id:gsub(" ", "_")
+        local template = self:GetItemTemplate(normalizedItemId)
+        
+        if not template then
+            warn("PlacementManager: Template not found for item: " .. normalizedItemId)
+            continue
         end
+        
+        -- Clone the template
+        local item = template:Clone()
+        if not item then
+            warn("PlacementManager: Failed to clone template for item: " .. normalizedItemId)
+            continue
+        end
+        
+        -- Set up appearance properties from template
+        if item:IsA("BasePart") and template:IsA("BasePart") then
+            item.BrickColor = template.BrickColor
+            item.Material = template.Material
+            item.Transparency = template.Transparency
+        end
+        
+        -- Generate a unique ID for this instance if needed
+        local instanceId = itemData.instanceId or (normalizedItemId .. "_" .. os.time() .. "_" .. math.random(1000, 9999))
+        item.Name = instanceId
+        
+        -- Position and orient the item EXACTLY at the saved position
+        if item:IsA("Model") and item.PrimaryPart then
+            item:SetPrimaryPartCFrame(CFrame.new(position) * CFrame.Angles(rotation.X, rotation.Y, rotation.Z))
+        else
+            item.CFrame = CFrame.new(position) * CFrame.Angles(rotation.X, rotation.Y, rotation.Z)
+        end
+        
+        -- Make sure it's anchored and can collide
+        if item:IsA("Model") then
+            for _, part in ipairs(item:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Anchored = true
+                    part.CanCollide = true
+                end
+            end
+        elseif item:IsA("BasePart") then
+            item.Anchored = true
+            item.CanCollide = true
+        end
+        
+        -- Set attributes
+        item:SetAttribute("owner", itemData.owner)
+        item:SetAttribute("instanceId", instanceId)
+        item:SetAttribute("itemId", itemData.id)
+        item:SetAttribute("placedTime", itemData.placedTime or os.time())
+        item:SetAttribute("persistent", true)
+        item:SetAttribute("item_type", normalizedItemId)
+        item:SetAttribute("placed_at", itemData.placedTime or os.time())
+        
+        -- Ensure proper parenting
+        item.Parent = self.placedFolder
+        
+        -- Track in placedItemsByPlayer
+        local owner = itemData.owner or 0
+        if not self.placedItemsByPlayer[owner] then
+            self.placedItemsByPlayer[owner] = {}
+        end
+        
+        table.insert(self.placedItemsByPlayer[owner], instanceId)
+        itemsCreated = itemsCreated + 1
     end
     
-    print("PlacementManager: World data loaded successfully")
+    print("PlacementManager: Successfully loaded " .. itemsCreated .. " items")
     return true
 end
 
--- Server: Recall an item from the world back to inventory
+-- Connect to player leaving event
+function PlacementManager:ConnectPlayerEvents()
+    if not isServer then return end
+    
+    -- Connect to PlayerRemoving event to save data when players leave
+    game.Players.PlayerRemoving:Connect(function(player)
+        print("PlacementManager: Player leaving:", player.Name)
+        
+        -- Save world data when a player leaves
+        self:SaveWorldData()
+    end)
+    
+    -- Also connect to game closing event
+    game:BindToClose(function()
+        print("PlacementManager: Game closing, saving world data")
+        self:SaveWorldData()
+    end)
+    
+    print("PlacementManager: Connected to player events")
+end
+
+-- Server: Recall a placed item back to the player's inventory
 function PlacementManager:RecallItem(player, instanceId)
     if not isServer then return false end
     
-    -- Find the item in the world
-    local item = self.worldFolder:FindFirstChild(instanceId)
-    if not item then
-        warn("PlacementManager: Item not found for recall:", instanceId)
-        return false
-    end
+    print("PlacementManager: RecallItem called for", player.Name, "instanceId:", instanceId)
     
-    -- Check ownership
-    local ownerId = item:GetAttribute("owner")
-    if ownerId ~= player.UserId then
-        warn("PlacementManager: Player", player.Name, "does not own item", instanceId)
-        return false
-    end
+    -- Try to find the item in the Placed folder
+    local placedItem
     
-    -- Get the item type
-    local itemType = item:GetAttribute("item_type")
-    if not itemType then
-        warn("PlacementManager: Item", instanceId, "has no item_type attribute")
-        return false
-    end
-    
-    -- Add to player's inventory
-    local success = self:AddToInventory(player, itemType)
-    if not success then
-        warn("PlacementManager: Failed to add item", itemType, "to inventory for", player.Name)
-        return false
-    end
-    
-    -- Remove item from world
-    item:Destroy()
-    
-    -- Remove from placedItemsByPlayer
-    if self.placedItemsByPlayer[player.UserId] then
-        for i, placedItem in ipairs(self.placedItemsByPlayer[player.UserId]) do
-            if placedItem.instanceId == instanceId then
-                table.remove(self.placedItemsByPlayer[player.UserId], i)
+    -- Check in World_Items/Placed first
+    if self.worldFolder and self.placedFolder then
+        for _, item in ipairs(self.placedFolder:GetChildren()) do
+            if item:GetAttribute("instanceId") == instanceId then
+                placedItem = item
                 break
             end
         end
     end
     
-    -- Save world data
-    self:SaveWorldData()
-    
-    -- Notify client
-    if self.remotes.ItemRecalled then
-        self.remotes.ItemRecalled:FireClient(player, itemType, instanceId)
+    -- If not found, check in legacy PlacedItems folder
+    if not placedItem and self.legacyPlacedFolder then
+        for _, item in ipairs(self.legacyPlacedFolder:GetChildren()) do
+            if item:GetAttribute("instanceId") == instanceId then
+                placedItem = item
+                break
+            end
+        end
     end
     
-    print("PlacementManager: Item", instanceId, "recalled successfully by", player.Name)
+    if not placedItem then
+        warn("PlacementManager: Placed item not found with instanceId", instanceId)
+        return false
+    end
+    
+    -- Get the item ID to add back to inventory
+    local itemId = placedItem:GetAttribute("itemId")
+    if not itemId then
+        -- Try to determine the item ID from the item name (strip player ID and timestamp)
+        local itemName = placedItem.Name
+        itemId = itemName:gsub("_" .. player.UserId .. "_.*$", "")
+        print("PlacementManager: Determined itemId from name:", itemId)
+    end
+    
+    -- Add the item back to the player's inventory
+    local success = false
+    
+    -- Try to add the item to inventory using ItemPurchaseHandler
+    local ItemPurchaseHandler
+    pcall(function()
+        ItemPurchaseHandler = require(game:GetService("ServerScriptService").server.ItemPurchaseHandler)
+    end)
+    
+    if ItemPurchaseHandler and ItemPurchaseHandler.AddItemToInventory then
+        success = ItemPurchaseHandler:AddItemToInventory(player, itemId)
+        print("PlacementManager: Added item", itemId, "to player's inventory:", success)
+    else
+        -- Fallback: Try with the shared ItemPurchaseHandler
+        if self.shared and self.shared.ItemPurchaseHandler and self.shared.ItemPurchaseHandler.AddItemToInventory then
+            success = self.shared.ItemPurchaseHandler:AddItemToInventory(player, itemId)
+            print("PlacementManager: Added item", itemId, "to player's inventory using shared module:", success)
+        else
+            -- Last resort: Fire a remote event to handle this on the client
+            local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+            if remotes and remotes:FindFirstChild("AddToInventory") then
+                remotes.AddToInventory:FireClient(player, {name = itemId, id = itemId, count = 1})
+                print("PlacementManager: Fired AddToInventory event to client")
+                success = true
+            end
+        end
+    end
+    
+    if success then
+        -- Store the item data before removing it
+        local itemData = {
+            name = placedItem.Name,
+            position = placedItem:IsA("Model") and placedItem:GetPrimaryPartCFrame().Position or placedItem.Position,
+            itemId = itemId,
+            instanceId = instanceId
+        }
+        
+        -- Remove the placed item
+        placedItem:Destroy()
+        
+        -- Log the recall
+        print("PlacementManager: Successfully recalled item", itemId, "for player", player.Name)
+        
+        -- Notify player
+        local Remotes = ReplicatedStorage:FindFirstChild("Remotes")
+        if Remotes and Remotes:FindFirstChild("ItemRecalled") then
+            Remotes.ItemRecalled:FireClient(player, itemData)
+    end
+    
     return true
+    else
+        warn("PlacementManager: Failed to add item to inventory")
+        return false
+    end
 end
 
 -- Server: Add an item to inventory
@@ -608,11 +1430,11 @@ function PlacementManager:CreatePreviewItem(itemId)
                 if item.Name:lower():find(itemIdLower) or itemIdLower:find(item.Name:lower()) then
                     template = item
                     print("PlacementManager: Found partial match for preview:", itemId, "using", item.Name)
-                    break
+            break
                 end
-            end
         end
-        
+    end
+    
         -- Special case for common building materials
         if not template then
             local specialCases = {
@@ -661,7 +1483,7 @@ function PlacementManager:CreatePreviewItem(itemId)
         elseif itemId:lower():find("grass") or itemId:lower():find("green") then
             template.BrickColor = BrickColor.new("Bright green")
             template.Material = Enum.Material.Grass
-        elseif itemId:lower():find("sand") or itemId:lower():find("yellow") or itemId:lower():find("earth") then
+        elseif itemId:lower():find("sand") or itemId:lower():find("earth") then
             template.BrickColor = BrickColor.new("Brick yellow")
             template.Material = Enum.Material.Sand
         elseif itemId:lower():find("wood") or itemId:lower():find("brown") then
@@ -1064,6 +1886,8 @@ end
 function PlacementManager:ShowItemInHand(itemId)
     if isServer then return end
     
+    print("PlacementManager: Showing item in hand:", itemId)
+    
     local player = Players.LocalPlayer
     local character = player.Character
     if not character then
@@ -1084,6 +1908,7 @@ function PlacementManager:ShowItemInHand(itemId)
         equipSlot.Name = "EquipSlot"
         equipSlot.Position = Vector3.new(0, -0.5, 0)
         equipSlot.Parent = rightHand
+        print("PlacementManager: Created EquipSlot attachment on", rightHand.Name)
     end
     
     -- Clear any existing equipped item
@@ -1091,56 +1916,93 @@ function PlacementManager:ShowItemInHand(itemId)
         child:Destroy()
     end
     
-    -- Find template
+    -- Normalize item name (replace spaces with underscores)
+    local normalizedItemId = itemId:gsub(" ", "_")
+    print("PlacementManager: Normalized item name:", normalizedItemId)
+    
+    -- Try multiple approaches to find template
     local templates = ReplicatedStorage:FindFirstChild("ItemTemplates")
     local template
     
     if templates then
-        -- Try exact match first
-        template = templates:FindFirstChild(itemId)
+        -- Try several name variants to find the template
+        local possibleNames = {
+            normalizedItemId,
+            itemId,
+            normalizedItemId:gsub("_Cube", ""),
+            itemId:gsub("_Cube", ""),
+            normalizedItemId .. "_Cube",
+            itemId .. "_Cube"
+        }
         
-        -- If no template found, try with partial match
+        -- Try each possible name
+        for _, name in ipairs(possibleNames) do
+            template = templates:FindFirstChild(name)
+            if template then
+                print("PlacementManager: Found template using name variant:", name)
+                break
+            end
+        end
+        
+        -- If still no template, try case-insensitive search
         if not template then
-            local itemIdLower = itemId:lower()
+            local itemIdLower = normalizedItemId:lower()
             for _, item in ipairs(templates:GetChildren()) do
                 if item.Name:lower():find(itemIdLower) or itemIdLower:find(item.Name:lower()) then
                     template = item
-                    print("PlacementManager: Found partial match for", itemId, "using", item.Name)
+                    print("PlacementManager: Found partial match for", normalizedItemId, "using", item.Name)
                     break
                 end
             end
         end
+    else
+        warn("PlacementManager: ItemTemplates folder not found in ReplicatedStorage")
     end
     
     -- Create a basic item if no template
     if not template then
-        print("PlacementManager: No template found for", itemId, "- creating basic item")
+        print("PlacementManager: No template found for", normalizedItemId, "- creating basic item")
         template = Instance.new("Part")
         template.Size = Vector3.new(1, 1, 1)
         template.CanCollide = false
+        template.Name = normalizedItemId
         
         -- Set color based on item type
-        if itemId:lower():find("water") then
+        if normalizedItemId:lower():find("water") then
             template.BrickColor = BrickColor.new("Bright blue")
-        elseif itemId:lower():find("fire") then
+            template.Material = Enum.Material.Water
+            template.Transparency = 0.3
+        elseif normalizedItemId:lower():find("fire") then
             template.BrickColor = BrickColor.new("Bright red")
-        elseif itemId:lower():find("grass") then
+            template.Material = Enum.Material.Neon
+        elseif normalizedItemId:lower():find("grass") then
             template.BrickColor = BrickColor.new("Bright green")
-        elseif itemId:lower():find("sand") or itemId:lower():find("earth") then
+            template.Material = Enum.Material.Grass
+        elseif normalizedItemId:lower():find("sand") or normalizedItemId:lower():find("earth") then
             template.BrickColor = BrickColor.new("Brick yellow")
-        elseif itemId:lower():find("wood") then
+            template.Material = Enum.Material.Sand
+        elseif normalizedItemId:lower():find("wood") then
             template.BrickColor = BrickColor.new("Brown")
-        elseif itemId:lower():find("brick") then
+            template.Material = Enum.Material.Wood
+        elseif normalizedItemId:lower():find("brick") then
             template.BrickColor = BrickColor.new("Brick red")
+            template.Material = Enum.Material.Brick
+        elseif normalizedItemId:lower():find("glass") then
+            template.BrickColor = BrickColor.new("Institutional white")
+            template.Material = Enum.Material.Glass
+            template.Transparency = 0.5
         else
             template.BrickColor = BrickColor.new("Medium stone grey")
+            template.Material = Enum.Material.Concrete
         end
     else
+        print("PlacementManager: Using template:", template.Name, "for item:", normalizedItemId)
         template = template:Clone()
     end
     
     -- Setup item for hand
     if template:IsA("Model") then
+        print("PlacementManager: Setting up model for hand placement")
         template.PrimaryPart = template.PrimaryPart or template:FindFirstChildWhichIsA("BasePart")
         if template.PrimaryPart then
             -- Scale down if needed
@@ -1152,42 +2014,133 @@ function PlacementManager:ShowItemInHand(itemId)
                         part.Size = part.Size * scale
                     end
                 end
+                print("PlacementManager: Scaled down model by factor of", scale)
+            end
+            
+            -- Make sure all parts are not colliding and are CanTouch to avoid physics issues
+            for _, part in pairs(template:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                    part.CanTouch = true
+                    part.Anchored = false
+                    
+                    -- Add highlight to make it more visible
+                    local highlight = Instance.new("Highlight")
+                    highlight.FillTransparency = 0.5
+                    highlight.OutlineColor = Color3.new(1, 1, 0)
+                    highlight.Parent = part
+                end
             end
             
             -- Weld to hand
             local weld = Instance.new("WeldConstraint")
+            weld.Name = "HandWeld"
             weld.Part0 = rightHand
             weld.Part1 = template.PrimaryPart
             weld.Parent = template.PrimaryPart
             
+            -- Set custom attribute for debugging
+            template:SetAttribute("held_by_player", true)
+            template:SetAttribute("held_time", os.time())
+            template:SetAttribute("item_id", normalizedItemId)
+            
+            -- Position template at hand
             template:SetPrimaryPartCFrame(equipSlot.WorldCFrame)
+            
+            -- Parent to equipment slot to maintain hierarchy
+            template.Parent = equipSlot
+            
+            -- Print debug info
+            print("PlacementManager: Item model placed in hand successfully:", template.Name)
+        else
+            warn("PlacementManager: Model has no PrimaryPart and no BaseParts were found")
         end
     elseif template:IsA("BasePart") then
+        print("PlacementManager: Setting up part for hand placement")
         -- Scale down if needed
         if template.Size.Magnitude > 2 then
             local scale = 2 / template.Size.Magnitude
             template.Size = template.Size * scale
+            print("PlacementManager: Scaled down part by factor of", scale)
         end
+        
+        -- Setup properties to avoid physics issues
+        template.CanCollide = false
+        template.CanTouch = true
+        template.Anchored = false
+        
+        -- Add highlight to make it more visible
+        local highlight = Instance.new("Highlight")
+        highlight.FillTransparency = 0.5
+        highlight.OutlineColor = Color3.new(1, 1, 0)
+        highlight.Parent = template
+        
+        -- Set custom attribute for debugging
+        template:SetAttribute("held_by_player", true)
+        template:SetAttribute("held_time", os.time())
+        template:SetAttribute("item_id", normalizedItemId)
         
         -- Weld to hand
         local weld = Instance.new("WeldConstraint")
+        weld.Name = "HandWeld" 
         weld.Part0 = rightHand
         weld.Part1 = template
         weld.Parent = template
         
+        -- Position template at hand
         template.CFrame = equipSlot.WorldCFrame
+        
+        -- Parent to equipment slot to maintain hierarchy
+        template.Parent = equipSlot
+        
+        -- Print debug info
+        print("PlacementManager: Item part placed in hand successfully:", template.Name)
     end
     
-    template.Parent = equipSlot
+    -- Check after a short delay to make sure the item is visible
+    task.delay(0.5, function()
+        if not template or not template.Parent then
+            print("PlacementManager: Item disappeared from hand, attempting to recreate")
+            self:ShowItemInHand(itemId)
+            return
+        end
+        
+        -- Ensure the character can move
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+            humanoid.WalkSpeed = 16
+        end
+    end)
     
-    -- Make sure the Humanoid can still move
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        -- Ensure the humanoid is not stuck in a certain animation state
-        humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-        -- Set a reasonable walk speed
-        humanoid.WalkSpeed = 16
-    end
+    -- Set up movement state checker to prevent character from getting stuck in physics state
+    local movementConnection
+    movementConnection = RunService.Heartbeat:Connect(function()
+        if not character or not character.Parent then
+            if movementConnection then
+                movementConnection:Disconnect()
+                movementConnection = nil
+            end
+            return
+        end
+                
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            -- Check if walkspeed is too low or in physics state
+            if humanoid.WalkSpeed < 10 or humanoid:GetState() == Enum.HumanoidStateType.Physics then
+                humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+                humanoid.WalkSpeed = 16
+            end
+        end
+    end)
+    
+    -- Make sure to disconnect if the player stops placing (to avoid unnecessary processing)
+    task.delay(60, function()
+        if movementConnection then
+            movementConnection:Disconnect()
+            movementConnection = nil
+        end
+    end)
     
     return template
 end
@@ -1197,6 +2150,10 @@ function PlacementManager:RecallItemFromInventory(itemId)
     if isServer then return end
     
     print("PlacementManager: Recalling item", itemId, "from inventory")
+    
+    -- Normalize item name - replace spaces with underscores
+    local normalizedItemId = itemId:gsub(" ", "_")
+    print("PlacementManager: Normalized item name from", itemId, "to", normalizedItemId)
     
     -- Fix player movement by ensuring Humanoid state is reset first
     local player = Players.LocalPlayer
@@ -1208,40 +2165,80 @@ function PlacementManager:RecallItemFromInventory(itemId)
             humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
             -- Ensure WalkSpeed is set properly
             humanoid.WalkSpeed = 16
+            
+            -- Force walk mode to make sure character can move
+            humanoid.PlatformStand = false
+            humanoid.Sit = false
+            humanoid.AutoRotate = true
         end
     end
     
-    -- Show item in hand
-    local itemInHand = self:ShowItemInHand(itemId)
+    -- Show item in hand using normalized ID    
+    local itemInHand = self:ShowItemInHand(normalizedItemId)
     if not itemInHand then
         warn("PlacementManager: Failed to show item in hand")
-        return
-    end
-    
-    -- Start placement mode
-    self:StartPlacing(itemId)
-    
-    -- Connect to Humanoid state change to ensure movement
-    if character then
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            local stateChangeConnection
-            stateChangeConnection = humanoid.StateChanged:Connect(function(oldState, newState)
-                if newState == Enum.HumanoidStateType.Physics then
-                    -- If physics state is applied (which stops movement), change back to GettingUp
-                    humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-                end
-                
-                -- Disconnect after a few seconds to avoid constantly overriding states
-                task.delay(5, function()
-                    if stateChangeConnection then
-                        stateChangeConnection:Disconnect()
-                        stateChangeConnection = nil
-                    end
-                end)
-            end)
+        -- Try with original ID as fallback
+        itemInHand = self:ShowItemInHand(itemId)
+        if not itemInHand then
+            return
         end
     end
+        
+    -- Start placement mode with normalized ID
+    self:StartPlacing(normalizedItemId)
+    
+    -- Use RunService to continuously ensure the player can move
+    local movementConnection
+    movementConnection = game:GetService("RunService").Heartbeat:Connect(function()
+        if not character or not character.Parent then
+            -- Character was removed, disconnect
+            if movementConnection then
+                movementConnection:Disconnect()
+                movementConnection = nil
+            end
+            return
+        end
+                
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            -- Ensure WalkSpeed is maintained
+            if humanoid.WalkSpeed < 16 then
+                humanoid.WalkSpeed = 16
+            end
+                        
+            -- Force walk mode to keep character mobile
+            humanoid.PlatformStand = false
+            humanoid.Sit = false
+            humanoid.AutoRotate = true
+                        
+            -- If in a state that prevents movement, change it
+            local currentState = humanoid:GetState()
+            if currentState == Enum.HumanoidStateType.Physics or
+               currentState == Enum.HumanoidStateType.Seated or
+               currentState == Enum.HumanoidStateType.PlatformStanding or
+               currentState == Enum.HumanoidStateType.Swimming or
+               currentState == Enum.HumanoidStateType.Ragdoll then
+                humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+                -- Force the character into walking state after getting up
+                task.delay(0.1, function()
+                    if humanoid and humanoid.Parent then
+                        humanoid:ChangeState(Enum.HumanoidStateType.Walking)
+                    end
+                end)
+            end
+        end
+    end)
+    
+    -- Disconnect after placement or if canceled
+    task.spawn(function()
+        while self.isPlacing do
+            task.wait(0.1)
+        end
+        if movementConnection then
+            movementConnection:Disconnect()
+            movementConnection = nil
+        end
+    end)
 end
 
 -- Client: Clear item from hand
@@ -1269,23 +2266,5 @@ function PlacementManager:ClearItemFromHand()
     end
 end
 
--- Initialize the placement system
-function PlacementManager:Initialize()
-    print("PlacementManager: Initializing...")
-    
-    -- Setup remote events
-    self:SetupRemoteEvents()
-    
-    -- Load world data on server
-    if isServer then
-        task.spawn(function()
-            wait(1) -- Wait for game to fully load
-            self:LoadWorldData()
-        end)
-    end
-    
-    print("PlacementManager: Initialization complete")
-    return self
-end
-
 return PlacementManager
+

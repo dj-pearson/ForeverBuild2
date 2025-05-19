@@ -1,37 +1,37 @@
 --[[
     init.luau for shared folder
-    This is a bridge module that loads the existing inits.luau to maintain compatibility
+    This is a bridge module that loads the existing init.luau to maintain compatibility
     while fixing the "Module code did not return exactly one value" error
 ]]
 
--- This script loads the existing inits.luau module and returns it
+-- This script loads the existing init.luau module and returns it
 local script = script
 local parent = script.Parent
 
--- Try multiple approaches to find inits.luau
-local initsModule = nil
+-- Try multiple approaches to find init.luau
+local initModule = nil
 
 -- First check direct child
-if parent:FindFirstChild("inits") then
-    initsModule = parent:FindFirstChild("inits")
+if parent:FindFirstChild("init") then
+    initModule = parent:FindFirstChild("init")
 end
 
 -- Alternative paths based on naming conventions
-if not initsModule and parent:FindFirstChild("inits.luau") then
-    initsModule = parent:FindFirstChild("inits.luau")
+if not initModule and parent:FindFirstChild("init.luau") then
+    initModule = parent:FindFirstChild("init.luau")
 end
 
-if not initsModule and parent:FindFirstChild("inits.lua") then
-    initsModule = parent:FindFirstChild("inits.lua")
+if not initModule and parent:FindFirstChild("init.lua") then
+    initModule = parent:FindFirstChild("init.lua")
 end
 
--- If we found inits, use it
-if initsModule then
-    print("Found inits module at " .. initsModule:GetFullName() .. ", delegating to it")
-    return require(initsModule)
+-- If we found init, use it
+if initModule then
+    print("Found init module at " .. initModule:GetFullName() .. ", delegating to it")
+    return require(initModule)
 else
-    -- If inits.luau doesn't exist, create a minimal version
-    print("WARNING: inits.luau not found, creating minimal SharedModule")
+    -- If init.luau doesn't exist, create a minimal version
+    print("WARNING: init.luau not found, creating minimal SharedModule")
     
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local SharedModule = {}

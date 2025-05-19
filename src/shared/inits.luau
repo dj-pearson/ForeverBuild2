@@ -7,7 +7,7 @@
     FIXED VERSION: Ensures module loading works correctly and provides fallbacks
 ]]
 
-print("Shared inits.luau loading...")
+print("Shared init.luau loading...")
 
 local SharedModule = {}
 

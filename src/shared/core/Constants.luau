@@ -168,52 +168,103 @@ Constants.ITEMS = {
         tier = "FREE_ITEMS",
         price = {INGAME = 0, ROBUX = 0}
     },
-    -- Add more items as needed
+    ["Glow_Yellow_Cube"] = {
+        icon = "rbxassetid://128806170181723",
+        description = "A neon yellow glowing cube.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
+    ["Glow_Blue_Cube"] = {
+        icon = "rbxassetid://84435381312905",
+        description = "A neon blue glowing cube.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
+    ["Glow_Green_Cube"] = {
+        icon = "rbxassetid://77860477722817",
+        description = "A neon green glowing cube.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
+    ["Glow_Purple_Cube"] = {
+        icon = "rbxassetid://115648931142692",
+        description = "A neon purple glowing cube.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
+    ["Glow_Red_Cube"] = {
+        icon = "rbxassetid://116289336251008",
+        description = "A neon red glowing cube.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
+    ["Glow_White_Cube"] = {
+        icon = "rbxassetid://95637772062921",
+        description = "A neon white glowing cube.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
     ["Brick_Cube"] = {
-        icon = "rbxassetid://3284930147",
+        icon = "rbxassetid://120615102380248",
         description = "A basic brick cube building block.",
         tier = "BASIC",
         price = {INGAME = 5, ROBUX = 5}
     },
+    ["Corner_Wedge"] = {
+        description = "A corner wedge block.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
     ["Fabric_Cube"] = {
-        icon = "rbxassetid://3284930147",
+        icon = "rbxassetid://117472884483839",
         description = "A basic fabric cube building block.",
         tier = "BASIC",
         price = {INGAME = 5, ROBUX = 5}
     },
     ["Fire_Cube"] = {
-        icon = "rbxassetid://3284930147",
+        icon = "rbxassetid://71681608603027",
         description = "A basic fire cube building block.",
         tier = "BASIC",
         price = {INGAME = 5, ROBUX = 5}
     },
     ["Glass_Cube"] = {
-        icon = "rbxassetid://3284930147",
+        icon = "rbxassetid://83368835795295",
         description = "A basic glass cube building block.",
         tier = "BASIC",
         price = {INGAME = 5, ROBUX = 5}
     },
     ["Grass_Cube"] = {
-        icon = "rbxassetid://3284930147",
+        icon = "rbxassetid://110439433453247",
         description = "A basic grass cube building block.",
         tier = "BASIC",
         price = {INGAME = 5, ROBUX = 5}
     },
     ["Stone_Cube"] = {
-        icon = "rbxassetid://3284930147",
+        icon = "rbxassetid://138758138144155",
         description = "A basic stone cube building block.",
         tier = "BASIC",
         price = {INGAME = 5, ROBUX = 5}
     },
+    ["Triangle_Wedge"] = {
+        description = "A triangle wedge block.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
     ["Water_Cube"] = {
-        icon = "rbxassetid://3284930147",
+        icon = "rbxassetid://106216379689688",
         description = "A basic water cube building block.",
         tier = "BASIC",
         price = {INGAME = 5, ROBUX = 5}
     },
     ["Wood_Cube"] = {
-        icon = "rbxassetid://3284930147",
+        icon = "rbxassetid://132345081847393",
         description = "A basic wood cube building block.",
+        tier = "BASIC",
+        price = {INGAME = 5, ROBUX = 5}
+    },
+    ["Torch"] = {
+        icon = "rbxassetid://83703249522854",
+        description = "A torch.",
         tier = "BASIC",
         price = {INGAME = 5, ROBUX = 5}
     },

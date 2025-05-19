@@ -155,6 +155,7 @@ end
 
 -- Create an item button
 local function createItemButton(itemName, itemData, quantity)
+    quantity = quantity or 1
     local button = Instance.new("TextButton")
     button.Name = itemName
     button.Size = ITEM_SIZE
@@ -172,7 +173,9 @@ local function createItemButton(itemName, itemData, quantity)
     icon.Size = UDim2.new(1, -20, 0, 60)
     icon.Position = UDim2.new(0, 10, 0, 10)
     icon.BackgroundTransparency = 1
-    icon.Image = itemData.icon or "rbxassetid://6034973115" -- Default icon if none provided
+    -- Use icon from Constants.ITEMS if available
+    local iconId = (Constants.ITEMS[itemName] and Constants.ITEMS[itemName].icon) or itemData.icon or "rbxassetid://6034973115"
+    icon.Image = iconId
     icon.Parent = button
     
     -- Item name
@@ -188,17 +191,51 @@ local function createItemButton(itemName, itemData, quantity)
     name.TextTruncate = Enum.TextTruncate.AtEnd
     name.Parent = button
     
-    -- Quantity
-    local quantityLabel = Instance.new("TextLabel")
-    quantityLabel.Name = "Quantity"
-    quantityLabel.Size = UDim2.new(1, -20, 0, 20)
-    quantityLabel.Position = UDim2.new(0, 10, 0, 100)
-    quantityLabel.BackgroundTransparency = 1
-    quantityLabel.Font = Enum.Font.Gotham
-    quantityLabel.Text = "x" .. quantity
-    quantityLabel.TextSize = 14
-    quantityLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    quantityLabel.Parent = button
+    -- Count badge
+    if quantity > 1 then
+        -- Quantity background
+        local countBg = Instance.new("Frame")
+        countBg.Name = "CountBadge"
+        countBg.Size = UDim2.new(0, 36, 0, 24)
+        countBg.Position = UDim2.new(1, -40, 0, 5)
+        countBg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        countBg.BorderSizePixel = 0
+        countBg.ZIndex = 2
+        countBg.Parent = button
+        
+        local countCorner = Instance.new("UICorner")
+        countCorner.CornerRadius = UDim.new(0, 12)
+        countCorner.Parent = countBg
+        
+        -- Quantity text
+        local quantityLabel = Instance.new("TextLabel")
+        quantityLabel.Name = "Quantity"
+        quantityLabel.Size = UDim2.new(1, 0, 1, 0)
+        quantityLabel.BackgroundTransparency = 1
+        quantityLabel.Font = Enum.Font.GothamBold
+        quantityLabel.Text = tostring(quantity)
+        quantityLabel.TextSize = 14
+        quantityLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        quantityLabel.ZIndex = 3
+        quantityLabel.Parent = countBg
+    end
+    
+    -- Item description/count
+    local description = Instance.new("TextLabel")
+    description.Name = "Description"
+    description.Size = UDim2.new(1, -20, 0, 20)
+    description.Position = UDim2.new(0, 10, 0, 100)
+    description.BackgroundTransparency = 1
+    description.Font = Enum.Font.Gotham
+    if quantity > 1 then
+        description.Text = "Quantity: " .. quantity
+    else
+        description.Text = itemData.description or ""
+    end
+    description.TextSize = 12
+    description.TextColor3 = Color3.fromRGB(200, 200, 200)
+    description.TextTruncate = Enum.TextTruncate.AtEnd
+    description.Parent = button
     
     -- Hover effect
     button.MouseEnter:Connect(function()
@@ -416,94 +453,101 @@ end
 -- Update inventory display
 function InventoryUI.UpdateInventory(inventory, currency)
     local ui = InventoryUI._inventory
-    if not ui then return end
+    if not ui then
+        warn("InventoryUI: UI not found. Call Initialize first.")
+        return
+    end
     
-    -- Update currency
-    ui.TitleBar.Currency.Text = tostring(currency or 0)
+    -- Update currency display
+    local currencyLabel = ui.TitleBar:FindFirstChild("Currency")
+    if currencyLabel then
+        currencyLabel.Text = tostring(currency or 0)
+    end
+    
+    -- Get the container
+    local container = ui:FindFirstChild("ItemsContainer")
+    if not container then
+        warn("InventoryUI: ItemsContainer not found")
+        return
+    end
     
     -- Clear existing items
-    local container = ui.ItemsContainer
     for _, child in ipairs(container:GetChildren()) do
-        if child:IsA("TextButton") then
+        if child:IsA("TextButton") or child:IsA("UIGridLayout") then
             child:Destroy()
         end
     end
     
-    -- Add items or show "no items" message
+    -- Create grid layout
+    local gridLayout = Instance.new("UIGridLayout")
+    gridLayout.CellSize = ITEM_SIZE
+    gridLayout.CellPadding = UDim2.new(0, ITEM_PADDING, 0, ITEM_PADDING)
+    gridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    gridLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+    gridLayout.Parent = container
+    
+    -- Constants for UI layout
     local itemCount = 0
     
-    -- Check if inventory is an array or dictionary structure
-    if typeof(inventory) == "table" then
-        -- Handle array-style inventory from server (items with IDs)
-        if #inventory > 0 then
-            for _, itemData in pairs(inventory) do
-                local itemName = itemData.name or itemData.itemType
-                
-                -- Ensure we have valid item data in Constants
-                if not Constants.ITEMS then Constants.ITEMS = {} end
-                
-                -- Create fallback item data if needed
-                if not Constants.ITEMS[itemName] then
-                    Constants.ITEMS[itemName] = {
-                        name = typeof(itemName) == "string" and itemName:gsub("_", " ") or "Unknown Item",
-                        icon = "rbxassetid://3284930147",
-                        tier = itemData.tier or "BASIC",
-                        description = "Item description",
-                        price = { INGAME = 10, ROBUX = 10 }
-                    }
-                    print("Created fallback item data for: " .. tostring(itemName))
-                end
-                
-                -- Get the item info from Constants or fallback
-                local itemInfo = Constants.ITEMS[itemName] or {
-                    icon = "rbxassetid://3284930147",
-                    tier = itemData.tier or "BASIC"
-                }
-                
-                local button = createItemButton(itemName, itemInfo, 1) -- Assume quantity 1 if not specified
-                button.Parent = container
-                
-                -- Set up click handler
-                button.MouseButton1Click:Connect(function()
-                    if InventoryUI.OnItemSelected then
-                        InventoryUI.OnItemSelected(itemName)
-                    end
-                end)
-                
-                itemCount = itemCount + 1
-            end
-        -- Handle dictionary-style inventory (itemName -> quantity)
-        else
-            for itemName, quantity in pairs(inventory) do
-                if quantity > 0 then
-                    -- Ensure we have valid item data in Constants
-                    if not Constants.ITEMS then Constants.ITEMS = {} end
+    -- Add items to container
+    if inventory then
+        if typeof(inventory) == "table" then
+            for _, item in ipairs(inventory) do
+                -- Ensure the item has an id or name
+                local itemName = item.id or item.name
+                if itemName then
+                    -- Get item quantity (count), default to 1 if not specified
+                    local quantity = item.count or 1
                     
-                    -- Create fallback item data if needed
-                    if not Constants.ITEMS[itemName] then
-                        Constants.ITEMS[itemName] = {
-                            name = typeof(itemName) == "string" and itemName:gsub("_", " ") or "Unknown Item",
-                            icon = "rbxassetid://3284930147",
-                            tier = "BASIC",
-                            description = "Item description",
-                            price = { INGAME = 10, ROBUX = 10 }
-                        }
-                        print("Created fallback item data for: " .. tostring(itemName))
+                    -- Skip if quantity is 0
+                    if quantity <= 0 then
+                        continue
                     end
                     
-                    -- Get the item info from Constants
-                    local itemInfo = Constants.ITEMS[itemName] or {
-                        icon = "rbxassetid://3284930147",
-                        tier = "BASIC"
+                    -- Clean up display name
+                    local displayName = itemName
+                    displayName = displayName:gsub("_", " ")
+                    displayName = displayName:gsub("Cube", "")
+                    displayName = displayName:gsub("  ", " ")
+                    displayName = displayName:gsub("^%s+", "")
+                    displayName = displayName:gsub("%s+$", "")
+                    
+                    -- Capitalize first letter of each word
+                    displayName = displayName:gsub("(%a)([%w_']*)", function(first, rest)
+                        return first:upper() .. rest:lower()
+                    end)
+                    
+                    -- Get item info (icon, tier, etc.)
+                    local itemInfo = {
+                        icon = nil,
+                        tier = item.tier or "COMMON"
                     }
                     
-                    local button = createItemButton(itemName, itemInfo, quantity)
+                    -- Create the button and add it to the container
+                    local button = createItemButton(displayName, itemInfo, quantity)
                     button.Parent = container
+                    
+                    -- Store the original itemName for use in callbacks
+                    button:SetAttribute("originalItemName", itemName)
                     
                     -- Set up click handler
                     button.MouseButton1Click:Connect(function()
                         if InventoryUI.OnItemSelected then
-                            InventoryUI.OnItemSelected(itemName)
+                            -- Pass the original item ID and the count to the callback
+                            local itemData = {
+                                id = itemName,
+                                name = itemName,
+                                displayName = displayName,
+                                count = quantity
+                            }
+                            
+                            -- Hide the inventory UI after selecting an item
+                            InventoryUI.Hide()
+                            
+                            -- Call the callback with a slight delay to ensure UI is hidden first
+                            task.delay(0.1, function()
+                                InventoryUI.OnItemSelected(itemName, itemData)
+                            end)
                         end
                     end)
                     
@@ -528,8 +572,7 @@ end
 
 -- Toggle inventory visibility
 function InventoryUI.Toggle()
-    print("InventoryUI: Toggle called, current visibility:", InventoryUI._isVisible)
-    print("InventoryUI: _inventory reference exists:", InventoryUI._inventory ~= nil)
+    print("InventoryUI: Toggle called")
     
     -- First check if the UI actually exists in PlayerGui
     local player = game.Players.LocalPlayer
@@ -537,23 +580,37 @@ function InventoryUI.Toggle()
     local inventoryScreenGui = playerGui:FindFirstChild("InventoryUI")
     local inventoryFrame = inventoryScreenGui and inventoryScreenGui:FindFirstChild("InventoryFrame")
     
-    -- Determine the actual current visibility state
-    local actuallyVisible = false
-    if inventoryFrame then
-        actuallyVisible = inventoryFrame.Visible
-        print("InventoryUI: Toggle - actual frame visibility:", actuallyVisible)
-    else
+    -- If the inventory doesn't exist at all, create it
+    if not inventoryFrame then
         print("InventoryUI: Toggle - inventory frame not found, recreating it")
         InventoryUI.Initialize()
-        actuallyVisible = false -- Since we just created it, it should be hidden
+        InventoryUI._isVisible = false -- Ensure we're in the right state
+        
+        -- Get fresh references after initialization
+        inventoryScreenGui = playerGui:FindFirstChild("InventoryUI")
+        inventoryFrame = inventoryScreenGui and inventoryScreenGui:FindFirstChild("InventoryFrame")
+        
+        if not inventoryFrame then
+            warn("InventoryUI: Failed to create inventory frame")
+            return
+        end
     end
     
-    -- Use the actual visibility to decide what to do
+    -- Check actual current state (don't rely on tracked state which might be wrong)
+    local actuallyVisible = inventoryFrame.Visible
+    print("InventoryUI: Toggle - current visibility state:", actuallyVisible)
+    
+    -- Update our stored state to match reality
+    InventoryUI._isVisible = actuallyVisible
+    
+    -- Now toggle the state
     if actuallyVisible then
         print("InventoryUI: Toggle - hiding inventory")
         InventoryUI.Hide()
     else
         print("InventoryUI: Toggle - showing inventory")
+        -- Force refresh before showing
+        InventoryUI.RefreshInventory()
         InventoryUI.Show()
     end
 end
@@ -561,75 +618,50 @@ end
 -- Show the inventory
 function InventoryUI.Show()
     print("InventoryUI: Show function called")
-    local inventory = InventoryUI._inventory
     
-    if not inventory then 
-        print("InventoryUI: No inventory UI found, creating it...")
+    -- Ensure player GUI exists
+    local player = game.Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+    
+    -- Check if the UI already exists
+    local inventoryScreenGui = playerGui:FindFirstChild("InventoryUI")
+    local inventoryFrame = inventoryScreenGui and inventoryScreenGui:FindFirstChild("InventoryFrame")
+    
+    -- If either the ScreenGui or frame doesn't exist, initialize everything
+    if not inventoryScreenGui or not inventoryFrame then
+        print("InventoryUI: Inventory UI components missing, creating them")
         InventoryUI.Initialize()
-        inventory = InventoryUI._inventory
-        print("InventoryUI: After Initialize, inventory reference exists:", inventory ~= nil)
         
-        if not inventory then
+        -- Get updated references
+        inventoryScreenGui = playerGui:FindFirstChild("InventoryUI") 
+        inventoryFrame = inventoryScreenGui and inventoryScreenGui:FindFirstChild("InventoryFrame")
+        
+        if not inventoryFrame then
             warn("InventoryUI: Failed to create inventory UI")
             return
         end
     end
     
-    -- Do a safety check - find the actual ScreenGui + Frame
-    local player = game.Players.LocalPlayer
-    local playerGui = player:WaitForChild("PlayerGui")
-    local inventoryScreenGui = playerGui:FindFirstChild("InventoryUI")
+    -- Make sure we also have the reference in our module
+    InventoryUI._inventory = inventoryFrame
     
-    if inventoryScreenGui then
-        -- Check whether our frame exists and get a direct reference to it
-        local inventoryFrame = inventoryScreenGui:FindFirstChild("InventoryFrame")
-        if not inventoryFrame then
-            warn("InventoryUI: InventoryFrame not found in ScreenGui - recreating UI")
-            InventoryUI.Initialize()
-            inventoryFrame = InventoryUI._inventory
-            
-            if not inventoryFrame then
-                warn("InventoryUI: Still failed to create inventory UI after retry")
-                return
-            end
-        end
-        
-        print("InventoryUI: About to refresh inventory data...")
-        -- First refresh the inventory data
-        InventoryUI.RefreshInventory()
-        
-        print("InventoryUI: Setting inventory visible = true")
-        inventoryFrame.Visible = true
-        inventoryFrame.BackgroundTransparency = 1
-        
-        local showTween = TweenService:Create(inventoryFrame, TweenInfo.new(ANIMATION_DURATION), {
-            BackgroundTransparency = 0
-        })
-        showTween:Play()
-        
-        InventoryUI._isVisible = true
-        print("InventoryUI: Showing inventory completed")
-    else
-        warn("InventoryUI: ScreenGui not found - recreating entire UI")
-        InventoryUI.Initialize()
-        inventory = InventoryUI._inventory
-        
-        if inventory then
-            InventoryUI.RefreshInventory()
-            inventory.Visible = true
-            inventory.BackgroundTransparency = 1
-            
-            local showTween = TweenService:Create(inventory, TweenInfo.new(ANIMATION_DURATION), {
-                BackgroundTransparency = 0
-            })
-            showTween:Play()
-            
-            InventoryUI._isVisible = true
-            print("InventoryUI: Showing inventory completed after recreation")
-        else
-            warn("InventoryUI: Failed to create inventory UI after multiple attempts")
-        end
-    end
+    -- Refresh inventory data before showing
+    print("InventoryUI: Refreshing inventory data")
+    InventoryUI.RefreshInventory()
+    
+    -- Show the UI with animation
+    print("InventoryUI: Making inventory visible")
+    inventoryFrame.Visible = true
+    inventoryFrame.BackgroundTransparency = 1
+    
+    local showTween = TweenService:Create(inventoryFrame, TweenInfo.new(ANIMATION_DURATION), {
+        BackgroundTransparency = 0
+    })
+    showTween:Play()
+    
+    -- Update visibility state
+    InventoryUI._isVisible = true
+    print("InventoryUI: Inventory is now visible")
 end
 
 -- Hide the inventory

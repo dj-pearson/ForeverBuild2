@@ -263,7 +263,9 @@ local function createItemButton(itemName, itemData)
     icon.Size = UDim2.new(1, -20, 0, 60)
     icon.Position = UDim2.new(0, 10, 0, 10)
     icon.BackgroundTransparency = 1
-    icon.Image = "rbxassetid://6034973115" -- Default coin icon as fallback
+    local Constants = require(game:GetService("ReplicatedStorage").shared.core.Constants)
+    local iconId = (Constants.ITEMS[itemName] and Constants.ITEMS[itemName].icon) or itemData.icon or "rbxassetid://6034973115"
+    icon.Image = iconId
     icon.Parent = button
     
     -- Item name
