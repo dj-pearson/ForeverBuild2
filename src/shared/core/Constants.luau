@@ -4,6 +4,18 @@ local Constants = {}
 Constants.ADMIN_IDS = {
     7768610061 -- Main admin ID
 }
+Constants.ADMIN_NAMES = {
+    "Xdjpearsonx"
+}
+
+function Constants.isAdminPlayerName(name)
+    for _, adminName in ipairs(Constants.ADMIN_NAMES) do
+        if string.lower(name) == string.lower(adminName) then
+            return true
+        end
+    end
+    return false
+end
 
 -- Item Categories
 Constants.ITEM_CATEGORIES = {

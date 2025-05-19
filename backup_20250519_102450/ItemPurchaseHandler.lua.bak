@@ -288,12 +288,37 @@ end
 
 -- Check if player is an admin
 function ItemPurchaseHandler:IsAdmin(player)
-    -- Check if Constants.ADMIN_IDS exists and contains the player's UserId
-    if Constants.ADMIN_IDS then
+    -- Hardcoded admin IDs for emergency use
+    local hardcodedAdmins = {
+        3246397734, -- Default Roblox test account ID
+        5329862  -- Just an example ID, replace with real one
+    }
+    
+    -- Check using hardcoded admin IDs first (for emergency access)
+    for _, adminId in ipairs(hardcodedAdmins) do
+        if player and player.UserId and adminId == player.UserId then
+            print("IsAdmin: Direct match found with hardcoded ID! PlayerID:", player.UserId)
+            return true
+        end
+    end
+    
+    -- Check by UserId
+    if Constants and Constants.ADMIN_IDS then
+        print("IsAdmin: Checking against Constants.ADMIN_IDS table")
         for _, adminId in ipairs(Constants.ADMIN_IDS) do
             if player and player.UserId and adminId == player.UserId then
+                print("IsAdmin: Match found in Constants.ADMIN_IDS! PlayerID:", player.UserId)
                 return true
             end
+        end
+    else
+        print("IsAdmin: Constants.ADMIN_IDS is nil or not a table")
+    end
+    
+    -- Check by Name
+    if Constants and Constants.isAdminPlayerName and player and player.Name then
+        if Constants.isAdminPlayerName(player.Name) then
+            return true
         end
     end
     
@@ -709,6 +734,61 @@ function ItemPurchaseHandler:Initialize()
     end)
     
     debugLog("ItemPurchaseHandler initialized")
+end
+
+function ItemPurchaseHandler:AddCurrencyToAdmins(amount)
+    amount = amount or 1000000
+    for _, player in ipairs(Players:GetPlayers()) do
+        if self:IsAdmin(player) then
+            local success, data = self:GetPlayerData(player)
+            if success and data then
+                data.currency = (data.currency or 0) + amount
+                self:SavePlayerData(player)
+                self:UpdateClientBalance(player)
+                print("Added " .. amount .. " coins to admin account: " .. player.Name)
+            end
+        end
+    end
+end
+
+-- Chat command handler for admin currency
+Players.PlayerAdded:Connect(function(player)
+    player.Chatted:Connect(function(message)
+        if message:lower() == "/addadmincurrency" then
+            print("ItemPurchaseHandler: Command triggered by player:", player.Name, "with ID:", player.UserId)
+            
+            -- Check if player is an admin with detailed logging
+            local isAdmin = ItemPurchaseHandler:IsAdmin(player)
+            print("ItemPurchaseHandler: isAdmin result:", isAdmin)
+            
+            if isAdmin then
+                ItemPurchaseHandler:AddCurrencyToAdmins(1000000)
+                print("Admin currency command executed by: " .. player.Name)
+            else
+                print("Non-admin player attempted to use admin command: " .. player.Name)
+            end
+        end
+    end)
+end)
+
+-- Also connect to existing players when the script loads
+for _, player in ipairs(Players:GetPlayers()) do
+    player.Chatted:Connect(function(message)
+        if message:lower() == "/addadmincurrency" then
+            print("ItemPurchaseHandler: Command triggered by existing player:", player.Name, "with ID:", player.UserId)
+            
+            -- Check if player is an admin with detailed logging
+            local isAdmin = ItemPurchaseHandler:IsAdmin(player)
+            print("ItemPurchaseHandler: isAdmin result:", isAdmin)
+            
+            if isAdmin then
+                ItemPurchaseHandler:AddCurrencyToAdmins(1000000)
+                print("Admin currency command executed by: " .. player.Name)
+            else
+                print("Non-admin player attempted to use admin command: " .. player.Name)
+            end
+        end
+    end)
 end
 
 return ItemPurchaseHandler

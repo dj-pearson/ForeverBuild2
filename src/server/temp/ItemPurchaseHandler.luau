@@ -20,7 +20,8 @@ local success, errorMessage = pcall(function()
     return true
 end)
 
-if not success then    warn("[ItemPurchaseHandler] Failed to require SharedModule:", errorMessage)
+if not success then
+    warn("[ItemPurchaseHandler] Failed to require SharedModule:", errorMessage)
     print("[ItemPurchaseHandler] Creating minimal SharedModule fallback")
     -- Create minimal fallback for Constants
     Constants = {
@@ -37,7 +38,7 @@ if not success then    warn("[ItemPurchaseHandler] Failed to require SharedModul
         },
         ADMIN_IDS = {
             3246397734, -- Default Roblox test account ID
-            7768610061  -- Your actual user ID (Xdjpearsonx)
+            5329862  -- Replace with your real user ID
         }
     }
     SharedModule = {
@@ -45,12 +46,13 @@ if not success then    warn("[ItemPurchaseHandler] Failed to require SharedModul
     }
 else
     print("[ItemPurchaseHandler] Successfully required SharedModule")
-      -- Ensure admin IDs exist in Constants
+    
+    -- Ensure admin IDs exist in Constants
     if not Constants.ADMIN_IDS then
         print("[ItemPurchaseHandler] Creating ADMIN_IDS table in Constants")
         Constants.ADMIN_IDS = {
             3246397734, -- Default Roblox test account ID
-            7768610061  -- Your actual user ID (Xdjpearsonx)
+            5329862  -- Replace with your real user ID
         }
     end
 end
@@ -93,9 +95,6 @@ local ItemPurchaseHandler = {}
 
 -- Initialize player data
 local playerData = {}
-
--- Track players that already have command handlers set up
-local playersWithCommandHandlers = {}
 
 -- Function to get or create player data
 function ItemPurchaseHandler:GetPlayerData(player)
@@ -224,7 +223,7 @@ function ItemPurchaseHandler:IsAdmin(player)
     -- Hardcoded admin IDs for emergency use
     local hardcodedAdmins = {
         3246397734, -- Default Roblox test account ID
-        7768610061  -- Your actual user ID (Xdjpearsonx)
+        5329862  -- Replace with your real user ID
     }
     
     -- Check using hardcoded admin IDs first (for emergency access)
@@ -261,17 +260,13 @@ end
 function ItemPurchaseHandler:AddCurrencyToAdmins(amount)
     amount = amount or 1000000 -- Default to 1 million
     
-    print("[ItemPurchaseHandler] AddCurrencyToAdmins called with amount:", amount)
-    
     for _, player in ipairs(Players:GetPlayers()) do
         if self:IsAdmin(player) then
             print("[ItemPurchaseHandler] Adding currency to admin:", player.Name)
             local playerData = self:GetPlayerData(player)
             
             if playerData then
-                local oldCurrency = playerData.currency or 0
-                playerData.currency = oldCurrency + amount
-                print("[ItemPurchaseHandler] Currency update for " .. player.Name .. ": " .. oldCurrency .. " -> " .. playerData.currency)
+                playerData.currency = (playerData.currency or 0) + amount
                 self:SavePlayerData(player)
                 self:UpdateClientBalance(player)
                 print("[ItemPurchaseHandler] Added " .. amount .. " coins to admin account: " .. player.Name)
@@ -495,11 +490,6 @@ function ItemPurchaseHandler:Initialize()
     -- Connect player leave event to save data
     Players.PlayerRemoving:Connect(function(player)
         self:SavePlayerData(player)
-        -- Remove from tracking table to avoid memory leaks
-        if playersWithCommandHandlers[player.UserId] then
-            playersWithCommandHandlers[player.UserId] = nil
-            print("[ItemPurchaseHandler] Removed player from command handler tracking:", player.Name)
-        end
     end)
     
     -- Connect existing players (in case the script is being reloaded)
@@ -512,17 +502,6 @@ end
 
 -- Chat command handler for admin currency
 function ItemPurchaseHandler:SetupAdminCommands(player)
-    -- Check if this player already has command handlers set up
-    if playersWithCommandHandlers[player.UserId] then
-        print("[ItemPurchaseHandler] Player already has command handlers set up:", player.Name)
-        return
-    end
-    
-    -- Mark this player as having command handlers
-    playersWithCommandHandlers[player.UserId] = true
-    print("[ItemPurchaseHandler] Setting up command handlers for player:", player.Name)
-    
-    -- Connect the chat event
     player.Chatted:Connect(function(message)
         if message:lower() == "/addadmincurrency" then
             print("[ItemPurchaseHandler] Command triggered by player:", player.Name, "with ID:", player.UserId)
@@ -545,4 +524,3 @@ end
 ItemPurchaseHandler:Initialize()
 
 return ItemPurchaseHandler
-

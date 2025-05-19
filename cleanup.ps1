@@ -24,8 +24,33 @@ $filesToRemove = @(
     "src\StarterGui\init.client.lua",
     
     # Server folder
-    "src\server\init.server.lua"
+    "src\server\init.server.lua",
+    
+    # Duplicate module files with overlapping functionality
+    "src\server\ItemPurchaseHandler.lua",
+    "src\server\AdminCurrencyManager.lua"
 )
+
+# Create backup folder for important files
+$backupFolder = Join-Path $PSScriptRoot "backup_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+New-Item -Path $backupFolder -ItemType Directory -Force | Out-Null
+Write-Host "Created backup folder: $backupFolder"
+
+# Backup important files before removal
+$filesToBackup = @(
+    "src\server\ItemPurchaseHandler.lua",
+    "src\server\AdminCurrencyManager.lua"
+)
+
+foreach ($file in $filesToBackup) {
+    $fullPath = Join-Path $PSScriptRoot $file
+    if (Test-Path $fullPath) {
+        $fileName = Split-Path $file -Leaf
+        $backupPath = Join-Path $backupFolder "$fileName.bak"
+        Write-Host "Backing up: $file to $backupPath"
+        Copy-Item -Path $fullPath -Destination $backupPath -Force
+    }
+}
 
 # Remove each file if it exists
 foreach ($file in $filesToRemove) {
