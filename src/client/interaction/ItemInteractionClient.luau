@@ -437,12 +437,9 @@ function ItemInteractionClient:UpdateCurrentTarget()
     
     -- Check if we're pointing at an interactable object
     local target = mouse.Target
-    if target then
-        print(string.format("--- DBG:UpdateCurrentTarget() - mouse.Target: %s (Class: %s) ---", target:GetFullName(), target.ClassName))
-    else
-        print("--- DBG:UpdateCurrentTarget() - mouse.Target is NIL ---")
-    end
-    
+    -- MINIMAL DEBUG PRINT
+    -- print(string.format("DBG:UpdateCurrentTarget: mouse.Target is %s", (target and target:GetFullName() or "NIL")))
+
     if not target then
         -- Hide UI and clear target if we're not pointing at anything
         if self.currentTarget then
@@ -454,11 +451,12 @@ function ItemInteractionClient:UpdateCurrentTarget()
     
     -- Check if we're pointing at an interactable object
     local interactable = self:GetInteractableFromPart(target)
-    if interactable then
-        print(string.format("--- DBG:UpdateCurrentTarget() - GetInteractableFromPart returned: %s ---", interactable:GetFullName()))
-    else
-        print("--- DBG:UpdateCurrentTarget() - GetInteractableFromPart returned NIL for target: " .. target:GetFullName())
-    end
+    -- MINIMAL DEBUG PRINT
+    -- if ОбычноЯМама and target then -- Guard against nil target if GetInteractableFromPart is called directly elsewhere
+    --    print(string.format("DBG:UpdateCurrentTarget: GetInteractableFromPart returned %s for target %s",
+    --        (interactable and interactable:GetFullName() or "NIL"),
+    --        (target and target:GetFullName() or "NIL")))
+    -- end
 
     if not interactable then
         -- Hide UI and clear target if we're not pointing at an interactable
@@ -472,7 +470,8 @@ function ItemInteractionClient:UpdateCurrentTarget()
     -- Check distance to the object
     local objectPosition = interactable.PrimaryPart and interactable.PrimaryPart.Position or interactable:GetModelCFrame().Position
     local distance = (hrp.Position - objectPosition).Magnitude
-    print(string.format("--- DBG:UpdateCurrentTarget() - Interactable: %s, Distance: %.2f ---", interactable.Name, distance))
+    -- MINIMAL DEBUG PRINT
+    -- print(string.format("DBG:UpdateCurrentTarget: Interactable: %s, Distance: %.2f", interactable:GetFullName(), distance))
     
     if distance > self.maxInteractionDistance then
         -- Hide UI and clear target if we're too far away
@@ -485,79 +484,59 @@ function ItemInteractionClient:UpdateCurrentTarget()
     
     -- Set new target and show UI
     if interactable ~= self.currentTarget then
+        -- print(string.format("DBG:UpdateCurrentTarget: Updating target. Old: %s, New: %s",
+        --    (self.currentTarget and self.currentTarget:GetFullName() or "NIL"),
+        --    (interactable and interactable:GetFullName() or "NIL")
+        -- )) -- DEBUG
         self.currentTarget = interactable
         self:ShowProximityUI(interactable)
     end
 end
 
 function ItemInteractionClient:GetInteractableFromPart(part)
-    -- DEBUG PRINT ADDED
-    print(string.format("--- DBG:GetInteractableFromPart() - Called with part: %s (Class: %s) ---", part:GetFullName(), part.ClassName))
+    -- MINIMAL DEBUG PRINT
+    -- print(string.format("DBG:GetInteractableFromPart: Called with part: %s", (part and part:GetFullName() or "NIL")))
+    local result = nil
 
     -- First check if it's in the Items folder (store catalog item)
     local itemsFolder = workspace:FindFirstChild("Items")
     if itemsFolder and part:IsDescendantOf(itemsFolder) then
-        print("--- DBG:GetInteractableFromPart() - Checking as STORE item ---") -- DEBUG
         local ancestor = part
         while ancestor and ancestor.Parent ~= itemsFolder and not ancestor:IsDescendantOf(itemsFolder) do 
             ancestor = ancestor.Parent
         end
-        print(string.format("--- DBG:GetInteractableFromPart() - Store item ancestor loop (original). Ancestor: %s ---", ancestor and ancestor:GetFullName() or "nil")) -- DEBUG
         
         if ancestor and ancestor:IsA("Model") and ancestor.PrimaryPart then
-            print(string.format("--- DBG:GetInteractableFromPart() - Found STORE item model: %s ---", ancestor:GetFullName())) -- DEBUG
-            return ancestor
+            result = ancestor
         end
     end
     
     -- Next check if it's in the World_Items folder (placed item)
-    local worldFolder = workspace:FindFirstChild("World_Items")
-    if worldFolder and part:IsDescendantOf(worldFolder) then
-        print("--- DBG:GetInteractableFromPart() - Checking as WORLD item (part is descendant of World_Items) ---") -- DEBUG
-        local placedFolder = worldFolder:FindFirstChild("Placed") -- Get the "Placed" subfolder
-        if not placedFolder then
-            print("--- DBG:GetInteractableFromPart() - 'Placed' subfolder NOT FOUND in World_Items. Returning nil. ---") -- DEBUG
-            return nil
-        end
-
-        local ancestor = part
-        -- Corrected loop condition:
-        -- Stop when the ancestor's parent IS the 'Placed' folder.
-        -- This means 'ancestor' itself is the item model directly under 'Placed'.
-        while ancestor and ancestor.Parent ~= placedFolder do
-            if not ancestor.Parent or ancestor.Parent == workspace or ancestor.Parent == worldFolder then -- Added worldFolder to safety break
-                print("--- DBG:GetInteractableFromPart() - World item ancestor loop (corrected) - SAFETY BREAK, ancestor became: " .. (ancestor and ancestor.Name or "nil")) -- DEBUG
-                ancestor = nil
-                break
-            end
-            ancestor = ancestor.Parent
-        end
-        -- MORE DETAILED DEBUGGING FOR WORLD ITEM ANCESTOR
-        print(string.format("--- DBG:GetInteractableFromPart() - World item ANCESTOR after loop: %s ---", ancestor and ancestor:GetFullName() or "nil")) -- DEBUG
-
-        if ancestor then
-            print(string.format("--- DBG:GetInteractableFromPart() - Ancestor ClassName: %s, IsA('Model'): %s, PrimaryPart: %s ---",
-                ancestor.ClassName,
-                tostring(ancestor:IsA("Model")),
-                ancestor.PrimaryPart and ancestor.PrimaryPart:GetFullName() or "NIL"
-            )) -- DEBUG
-        end
-        
-        -- Check if it's a model with a primary part
-        if ancestor and ancestor:IsA("Model") then -- REMOVED PrimaryPart check
-            print(string.format("--- DBG:GetInteractableFromPart() - Found WORLD item model: %s (PrimaryPart check removed) ---", ancestor:GetFullName())) -- DEBUG
-            return ancestor
-        else
-            if ancestor then
-                print(string.format("--- DBG:GetInteractableFromPart() - World item ancestor (%s) is NOT a model or lacks PrimaryPart. IsA('Model'): %s, Has PrimaryPart: %s ---", ancestor:GetFullName(), tostring(ancestor:IsA("Model")), tostring(ancestor.PrimaryPart ~= nil))) -- DEBUG
-            else
-                 print("--- DBG:GetInteractableFromPart() - World item ancestor is nil after loop. ---") -- DEBUG
+    if not result then -- Only check world items if not already found as store item
+        local worldFolder = workspace:FindFirstChild("World_Items")
+        if worldFolder and part:IsDescendantOf(worldFolder) then
+            local placedFolder = worldFolder:FindFirstChild("Placed")
+            if placedFolder then
+                local ancestor = part
+                while ancestor and ancestor.Parent ~= placedFolder do
+                    if not ancestor.Parent or ancestor.Parent == workspace or ancestor.Parent == worldFolder then
+                        ancestor = nil
+                        break
+                    end
+                    ancestor = ancestor.Parent
+                end
+                if ancestor and ancestor:IsA("Model") then
+                    result = ancestor
+                end
             end
         end
     end
     
-    print(string.format("--- DBG:GetInteractableFromPart() - Returning NIL for part: %s ---", part:GetFullName())) -- DEBUG
-    return nil
+    -- MINIMAL DEBUG PRINT
+    -- print(string.format("DBG:GetInteractableFromPart: Returning %s for part %s",
+    --    (result and result:GetFullName() or "NIL"),
+    --    (part and part:GetFullName() or "NIL")))
+    return result
 end
 
 function ItemInteractionClient:ShowProximityUI(target)
@@ -603,20 +582,20 @@ function ItemInteractionClient:HideProximityUI()
 end
 
 function ItemInteractionClient:TryInteract()
-    print("--- ItemInteractionClient:TryInteract() CALLED ---") -- DEBUG
+    print("--- ItemInteractionClient:TryInteract() CALLED ---") -- Ensure this remains
     -- Don't interact if we're already interacting
     if self.isInteracting then 
-        print("--- ItemInteractionClient:TryInteract() - Already interacting, returning. ---") -- DEBUG
+        print("--- ItemInteractionClient:TryInteract() - Already interacting, returning. ---") -- Ensure this remains
         return 
     end
     
     -- Need a valid target to interact with
     if not self.currentTarget then 
-        print("--- ItemInteractionClient:TryInteract() - No currentTarget, returning. ---") -- DEBUG
+        print("--- ItemInteractionClient:TryInteract() - No currentTarget, returning. ---") -- Ensure this remains
         return 
     end
     
-    print(string.format("--- ItemInteractionClient:TryInteract() - currentTarget: %s ---", self.currentTarget:GetFullName())) -- DEBUG
+    print(string.format("--- ItemInteractionClient:TryInteract() - currentTarget: %s ---", self.currentTarget:GetFullName())) -- Ensure this remains
 
     -- Set interacting flag
     self.isInteracting = true
