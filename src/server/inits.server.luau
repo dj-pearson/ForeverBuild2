@@ -705,6 +705,7 @@ end)
 local recallItemRemote = Remotes:FindFirstChild("RecallItem")
 if recallItemRemote and PlacementManager then
     recallItemRemote.OnServerEvent:Connect(function(player, instanceId)
+        print("--- UNIQUE MARKER 171717: SERVER INIT RecallItem.OnServerEvent ENTERED ---") -- NEW UNIQUE MARKER
         print("--- SERVER INIT: RecallItem.OnServerEvent FIRED for instanceId: " .. tostring(instanceId) .. " by player: " .. player.Name .. " ---") -- DEBUG MARKER
         if not PlacementManager.RecallItem then
             warn("server.init: PlacementManager.RecallItem function not found")

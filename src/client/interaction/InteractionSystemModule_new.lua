@@ -647,8 +647,8 @@ function InteractionSystem:Initialize()
     UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
         if gameProcessedEvent then return end
         if input.KeyCode == Enum.KeyCode.E then
-            if self.currentTarget and self.ui and self.ui.mainFrame.Visible then
-                self:InteractWithTarget()
+            if self.currentTarget and self.ui and self.ui.mainFrame.Visible and not self.cooldownActive then
+                self:PurchaseWithCoins()
             end
         end
     end)

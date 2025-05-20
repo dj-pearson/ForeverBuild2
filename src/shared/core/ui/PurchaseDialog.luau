@@ -66,8 +66,8 @@ local function createDialog(parent)
     itemInfo.Size = UDim2.new(1, -40, 0, 60)
     itemInfo.Position = UDim2.new(0, 20, 0, 60) -- Below title bar
     itemInfo.BackgroundTransparency = 1
-    itemInfo.Font = Constants.UI.Fonts.Default.Font -- Updated
-    itemInfo.TextSize = Constants.UI.Fonts.Default.Size -- Updated
+    itemInfo.Font = Constants.UI.Fonts.Body.Font -- Updated (was Default)
+    itemInfo.TextSize = Constants.UI.Fonts.Body.Size -- Updated (was Default)
     itemInfo.TextColor3 = Constants.UI.Colors.TextPrimary -- Updated (was Text)
     itemInfo.TextWrapped = true
     itemInfo.TextYAlignment = Enum.TextYAlignment.Top

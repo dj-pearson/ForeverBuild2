@@ -1309,6 +1309,7 @@ end
 
 -- Server: Recall an item from the world back to player's inventory
 function PlacementManager:RecallItem(player, instanceId)
+    print("--- UNIQUE MARKER 272727: PLACEMENT MANAGER RecallItem ENTERED ---") -- NEW UNIQUE MARKER
     if RunService:IsClient() then return false end
     
     print("PlacementManager: Recalling item", instanceId, "for player", player.Name)
@@ -2014,10 +2015,6 @@ function PlacementManager:SetupRemoteEvents()
         -- Connect server-side event handlers
         self.remotes.PlaceItem.OnServerEvent:Connect(function(player, itemId, position, rotation)
             self:PlaceItem(player, itemId, position, rotation)
-        end)
-        
-        self.remotes.RecallItem.OnServerEvent:Connect(function(player, instanceId)
-            self:RecallItem(player, instanceId)
         end)
         
         self.remotes.UpdateItem.OnServerEvent:Connect(function(player, instanceId, position, rotation)
