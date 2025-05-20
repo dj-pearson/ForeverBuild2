@@ -403,6 +403,16 @@ function PlacementManager:PlaceItem(player, itemId, position, rotation)
     placedItem:SetAttribute("placedTime", os.time())
     placedItem:SetAttribute("persistent", true)
     
+    -- Get item definition to set priceIngame attribute
+    local itemDef = self.Constants and self.Constants.ITEMS and self.Constants.ITEMS[normalizedItemId]
+    if itemDef and itemDef.priceIngame then
+        placedItem:SetAttribute("priceIngame", itemDef.priceIngame)
+        print("PlacementManager: Set priceIngame attribute to:", itemDef.priceIngame, "for item:", normalizedItemId)
+    else
+        placedItem:SetAttribute("priceIngame", 0) -- Default to 0 if not found
+        warn("PlacementManager: Could not find priceIngame for", normalizedItemId, "in Constants.ITEMS. Defaulting to 0.")
+    end
+    
     -- Position and anchor the item
     if placedItem:IsA("Model") and placedItem.PrimaryPart then
         -- Handle rotation properly - rotation can be a Vector3 or a number
@@ -1111,6 +1121,7 @@ function PlacementManager:SaveWorldData()
                     -- MODIFIED: Store rotation as a table
                     rotation = if item:IsA("Model") and item.PrimaryPart then { X = item.PrimaryPart.Orientation.X, Y = item.PrimaryPart.Orientation.Y, Z = item.PrimaryPart.Orientation.Z } else { X = item.Orientation.X, Y = item.Orientation.Y, Z = item.Orientation.Z },
                     placedTime = item:GetAttribute("placedTime") or os.time(),
+                    priceIngame = item:GetAttribute("priceIngame") or 0 -- Added priceIngame
                 }
                 
                 table.insert(worldData, itemData)
@@ -1143,6 +1154,7 @@ function PlacementManager:SaveWorldData()
                         -- MODIFIED: Store rotation as a table
                         rotation = if item:IsA("Model") and item.PrimaryPart then { X = item.PrimaryPart.Orientation.X, Y = item.PrimaryPart.Orientation.Y, Z = item.PrimaryPart.Orientation.Z } else { X = item.Orientation.X, Y = item.Orientation.Y, Z = item.Orientation.Z },
                         placedTime = item:GetAttribute("placedTime") or os.time(),
+                        priceIngame = item:GetAttribute("priceIngame") or 0 -- Added priceIngame
                     }
                     
                     table.insert(worldData, itemData)
@@ -1202,6 +1214,7 @@ function PlacementManager:LoadWorldData()
                 placedItem:SetAttribute("owner", itemData.owner)
                 placedItem:SetAttribute("placedTime", itemData.placedTime or os.time())
                 placedItem:SetAttribute("persistent", true)
+                placedItem:SetAttribute("priceIngame", itemData.priceIngame or 0) -- Added priceIngame
                 
                 -- Convert position from table to Vector3 if needed
                 local position = itemData.position
@@ -2122,51 +2135,206 @@ end
 -- Placeholder for handling a CLONE item request (server-side)
 function PlacementManager:HandleCloneItemRequest(player, itemInstance, cost, originalItemId)
     print(string.format("PlacementManager:HandleCloneItemRequest called for item: %s by player %s (cost: %s, originalId: %s)", itemInstance.Name, player.Name, tostring(cost), originalItemId))
-    -- TODO: Implement actual cloning logic: create new instance, assign new instanceId, place in world, save.
-    return {success = true, message = string.format("Clone action for %s received. Cost: %s. (Not fully implemented)", itemInstance.Name, cost)}
+    
+    if not itemInstance or not itemInstance.Parent then
+        return {success = false, message = "Original item not found or invalid."}
+    end
+
+    local template = self:GetItemTemplate(originalItemId)
+    if not template then
+        return {success = false, message = string.format("Template for '%s' not found.", originalItemId)}
+    end
+
+    local newItem = template:Clone()
+    local newInstanceId = originalItemId .. "_" .. player.UserId .. "_" .. tostring(os.time()) .. "_clone"
+    
+    newItem:SetAttribute("instanceId", newInstanceId)
+    newItem:SetAttribute("itemId", originalItemId)
+    newItem:SetAttribute("owner", player.UserId)
+    newItem:SetAttribute("placedTime", os.time())
+    newItem:SetAttribute("persistent", true)
+    
+    local originalCFrame
+    if itemInstance:IsA("Model") and itemInstance.PrimaryPart then
+        originalCFrame = itemInstance.PrimaryPart.CFrame
+    elseif itemInstance:IsA("BasePart") then
+        originalCFrame = itemInstance.CFrame
+    else
+        return {success = false, message = "Original item has no CFrame."}
+    end
+
+    local size = Vector3.new(2,2,2) -- default
+    if newItem:IsA("Model") and newItem.PrimaryPart then size = newItem.PrimaryPart.Size elseif newItem:IsA("BasePart") then size = newItem.Size end
+    local offset = originalCFrame.RightVector * (size.X + 0.5) 
+    local newCFrame = originalCFrame * CFrame.new(offset)
+
+    if newItem:IsA("Model") and newItem.PrimaryPart then
+        newItem:SetPrimaryPartCFrame(newCFrame)
+        for _, part in pairs(newItem:GetDescendants()) do
+            if part:IsA("BasePart") then part.Anchored = true; part.CanCollide = true end
+        end
+    elseif newItem:IsA("BasePart") then
+        newItem.CFrame = newCFrame
+        newItem.Anchored = true
+        newItem.CanCollide = true
+    end
+    
+    newItem.Parent = self.placedFolder
+    
+    if not self.placedItemsByPlayer[player.UserId] then
+        self.placedItemsByPlayer[player.UserId] = {}
+    end
+    table.insert(self.placedItemsByPlayer[player.UserId], newInstanceId)
+    
+    self:SaveWorldData()
+    
+    return {success = true, message = string.format("Item %s cloned for %s %s. New item ID: %s", originalItemId, cost, self.Constants.CURRENCY.INGAME or "coins", newInstanceId)}
 end
 
 -- Placeholder for handling a MOVE item request (server-side)
 function PlacementManager:HandleMoveItemRequest(player, itemInstance, cost, originalItemId, newPosition, newRotation)
     print(string.format("PlacementManager:HandleMoveItemRequest called for item: %s by player %s (cost: %s, originalId: %s)", itemInstance.Name, player.Name, tostring(cost), originalItemId))
-    -- Access newPosition and newRotation if they are passed and valid
-    if newPosition then print("  New Position:", newPosition.X, newPosition.Y, newPosition.Z) end
-    if newRotation then print("  New Rotation:", newRotation.X, newRotation.Y, newRotation.Z) end
-    -- TODO: Implement actual move logic: update itemInstance's CFrame, save.
-    return {success = true, message = string.format("Move action for %s received. Cost: %s. (Not fully implemented)", itemInstance.Name, cost)}
+    
+    if not itemInstance or not itemInstance.Parent then
+        return {success = false, message = "Item to move not found or invalid."}
+    end
+
+    if not newPosition or not newRotation then
+        return {success = false, message = string.format("Move action for %s requires new position/rotation data from client. (Not fully implemented client-side)", originalItemId)}
+    end
+
+    local ownerId = itemInstance:GetAttribute("owner")
+    if ownerId ~= player.UserId and not (player:GetAttribute("IsAdmin") == true) then
+        return {success = false, message = "You do not own this item."}
+    end
+
+    local finalPosition = newPosition
+    if type(newPosition) == "table" then
+        finalPosition = Vector3.new(newPosition.X or 0, newPosition.Y or 0, newPosition.Z or 0)
+    end
+
+    local finalRotation = newRotation 
+    if type(newRotation) == "table" then 
+        finalRotation = Vector3.new(newRotation.X or 0, newRotation.Y or 0, newRotation.Z or 0)
+    end
+
+    local success, updateMessage
+    if itemInstance:IsA("Model") and itemInstance.PrimaryPart then
+        local cfRotation
+        if typeof(finalRotation) == "Vector3" then
+            cfRotation = CFrame.fromEulerAnglesXYZ(math.rad(finalRotation.X), math.rad(finalRotation.Y), math.rad(finalRotation.Z))
+        else 
+            cfRotation = finalRotation 
+        end
+        itemInstance:SetPrimaryPartCFrame(CFrame.new(finalPosition) * cfRotation)
+        success = true
+    elseif itemInstance:IsA("BasePart") then
+        local cfRotation
+        if typeof(finalRotation) == "Vector3" then
+            cfRotation = CFrame.fromEulerAnglesXYZ(math.rad(finalRotation.X), math.rad(finalRotation.Y), math.rad(finalRotation.Z))
+        else 
+            cfRotation = finalRotation
+        end
+        itemInstance.CFrame = CFrame.new(finalPosition) * cfRotation
+        success = true
+    else
+        success = false
+        updateMessage = "Item is not a Model or BasePart."
+    end
+    
+    if success then
+        itemInstance:SetAttribute("lastModified", os.time())
+        self:SaveWorldData()
+        return {success = true, message = string.format("Item %s moved for %s %s.", originalItemId, cost, self.Constants.CURRENCY.INGAME or "coins")}
+    else
+        return {success = false, message = updateMessage or string.format("Failed to move %s.", originalItemId)}
+    end
 end
 
 -- Placeholder for handling a COSTED RECALL item request (server-side)
--- This is different from the free RecallItem which is initiated by InventoryItemHandler
 function PlacementManager:HandleCostedRecallItemRequest(player, itemInstance, cost, originalItemId)
     print(string.format("PlacementManager:HandleCostedRecallItemRequest called for item: %s by player %s (cost: %s, originalId: %s)", itemInstance.Name, player.Name, tostring(cost), originalItemId))
-    -- TODO: Implement actual recall logic (similar to existing RecallItem but ensures cost was processed)
-    -- This might involve re-using parts of the existing RecallItem logic but ensuring item ownership and world state are correct.
-    -- It should destroy the itemInstance from the world and add to player's inventory via ItemPurchaseHandler.
-    local success, message = self:RecallItem(player, itemInstance.Name) -- Use existing RecallItem for now, assuming instanceId is the name here.
+    
+    if not itemInstance or not itemInstance.Parent then
+        return {success = false, message = "Item to recall not found or invalid."}
+    end
+    
+    local success, message = self:RecallItem(player, itemInstance.Name) 
+    
     if success then
-        return {success = true, message = string.format("Item %s recalled to inventory for %s %s.", originalItemId, cost, SharedModule.Constants.CURRENCY.INGAME or "coins")}
+        return {success = true, message = string.format("Item %s recalled to inventory for %s %s.", originalItemId, cost, self.Constants.CURRENCY.INGAME or "coins")}
     else
-        return {success = false, message = string.format("Failed to recall %s. %s", originalItemId, message or "")}
+        return {success = false, message = message or string.format("Failed to recall %s.", originalItemId)}
     end
 end
 
 -- Placeholder for handling a DESTROY item request (server-side)
 function PlacementManager:HandleDestroyItemRequest(player, itemInstance, cost, originalItemId)
     print(string.format("PlacementManager:HandleDestroyItemRequest called for item: %s by player %s (cost: %s, originalId: %s)", itemInstance.Name, player.Name, tostring(cost), originalItemId))
-    -- TODO: Implement actual destroy logic: remove itemInstance from world, save world state.
-    -- Player pays a fee to destroy it.
-    itemInstance:Destroy()
-    self:SaveWorldData() -- Ensure change is persisted
-    return {success = true, message = string.format("Item %s destroyed. You were charged %s %s.", originalItemId, cost, SharedModule.Constants.CURRENCY.INGAME or "coins")}
+
+    if not itemInstance or not itemInstance.Parent then
+        return {success = false, message = "Item to destroy not found or invalid."}
+    end
+        
+    local success = self:DeleteItem(player, itemInstance:GetAttribute("instanceId") or itemInstance.Name)
+
+    if success then
+        return {success = true, message = string.format("Item %s destroyed. You were charged %s %s.", originalItemId, cost, self.Constants.CURRENCY.INGAME or "coins")}
+    else
+        return {success = false, message = string.format("Failed to destroy %s.", originalItemId)}
+    end
 end
 
 -- Placeholder for handling a ROTATE item request (server-side)
 function PlacementManager:HandleRotateItemRequest(player, itemInstance, cost, originalItemId, rotationParameters)
     print(string.format("PlacementManager:HandleRotateItemRequest called for item: %s by player %s (cost: %s, originalId: %s)", itemInstance.Name, player.Name, tostring(cost), originalItemId))
     if rotationParameters then print("  Rotation Parameters:", rotationParameters) end
-    -- TODO: Implement actual rotation logic: update itemInstance's CFrame/Orientation, save.
-    return {success = true, message = string.format("Rotate action for %s received. Cost: %s. (Not fully implemented)", itemInstance.Name, cost)}
+    
+    if not itemInstance or not itemInstance.Parent then
+        return {success = false, message = "Item to rotate not found or invalid."}
+    end
+
+    if not rotationParameters or type(rotationParameters) ~= "table" or not rotationParameters.axis or not rotationParameters.degrees then
+        return {success = false, message = "Rotation parameters (axis, degrees) missing or invalid."}
+    end
+
+    local axis = string.lower(tostring(rotationParameters.axis))
+    local degrees = tonumber(rotationParameters.degrees)
+
+    if not degrees or (axis ~= "x" and axis ~= "y" and axis ~= "z") then
+        return {success = false, message = "Invalid rotation axis or degrees."}
+    end
+
+    local currentCFrame
+    if itemInstance:IsA("Model") and itemInstance.PrimaryPart then
+        currentCFrame = itemInstance.PrimaryPart.CFrame
+    elseif itemInstance:IsA("BasePart") then
+        currentCFrame = itemInstance.CFrame
+    else
+        return {success = false, message = "Item is not a Model or BasePart."}
+    end
+    
+    local rotationCFrame
+    if axis == "x" then
+        rotationCFrame = CFrame.Angles(math.rad(degrees), 0, 0)
+    elseif axis == "y" then
+        rotationCFrame = CFrame.Angles(0, math.rad(degrees), 0)
+    else -- axis == "z"
+        rotationCFrame = CFrame.Angles(0, 0, math.rad(degrees))
+    end
+    
+    local newCFrame = currentCFrame * rotationCFrame
+
+    if itemInstance:IsA("Model") and itemInstance.PrimaryPart then
+        itemInstance:SetPrimaryPartCFrame(newCFrame)
+    elseif itemInstance:IsA("BasePart") then
+        itemInstance.CFrame = newCFrame
+    end
+
+    itemInstance:SetAttribute("lastModified", os.time())
+    self:SaveWorldData()
+    
+    return {success = true, message = string.format("Item %s rotated around %s-axis by %s degrees for %s %s.", originalItemId, axis:upper(), degrees, cost, self.Constants.CURRENCY.INGAME or "coins")}
 end
 
 return PlacementManager

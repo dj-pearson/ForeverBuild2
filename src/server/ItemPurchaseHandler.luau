@@ -696,7 +696,4 @@ function ItemPurchaseHandler:GetPlayerInventory(player)
     end
 end
 
--- Initialize the handler when the module is loaded
-ItemPurchaseHandler:Initialize()
-
 return ItemPurchaseHandler
