@@ -232,35 +232,36 @@ end
 
 -- Check if player is an admin
 function ItemPurchaseHandler:IsAdmin(player)
-    -- Hardcoded admin IDs for emergency use
+    if not player then return false end
+
+    -- Check using hardcoded admin IDs first (for emergency access)
     local hardcodedAdmins = {
         3246397734, -- Default Roblox test account ID
         7768610061  -- Your actual user ID (Xdjpearsonx)
     }
-    
-    -- Check using hardcoded admin IDs first (for emergency access)
-    for _, adminId in ipairs(hardcodedAdmins) do
-        if player and player.UserId and adminId == player.UserId then
-            print("[ItemPurchaseHandler] IsAdmin: Direct match found with hardcoded ID! PlayerID:", player.UserId)
-            return true
+    if player.UserId then
+        for _, adminId in ipairs(hardcodedAdmins) do
+            if adminId == player.UserId then
+                print("[ItemPurchaseHandler] IsAdmin: Direct match found with hardcoded ID! PlayerID:", player.UserId)
+                return true
+            end
         end
     end
-    
+
     -- Check using Constants admin IDs if available
-    if Constants and Constants.ADMIN_IDS then
+    if Constants and Constants.ADMIN_IDS and player.UserId then
         for _, adminId in ipairs(Constants.ADMIN_IDS) do
-            if player and player.UserId and adminId == player.UserId then
+            if adminId == player.UserId then
                 print("[ItemPurchaseHandler] IsAdmin: Match found in Constants.ADMIN_IDS! PlayerID:", player.UserId)
                 return true
             end
         end
-    else
-        print("[ItemPurchaseHandler] IsAdmin: Constants.ADMIN_IDS is nil or not a table")
     end
     
-    -- Check by Name
-    if Constants and Constants.isAdminPlayerName and player and player.Name then
+    -- Check by Name using Constants.isAdminPlayerName if available
+    if Constants and typeof(Constants.isAdminPlayerName) == "function" and player.Name then
         if Constants.isAdminPlayerName(player.Name) then
+            print("[ItemPurchaseHandler] IsAdmin: Match found by name using Constants.isAdminPlayerName! PlayerName:", player.Name)
             return true
         end
     end
@@ -435,28 +436,30 @@ function ItemPurchaseHandler:ProcessCurrencyPurchase(player, item, price)
         return false, "Failed to access player data"
     end
     
-    print("[ItemPurchaseHandler] ProcessCurrencyPurchase - Player:", player.Name, "Item:", item.Name, "Price:", price, "Current Currency:", data.currency)
-    
-    -- Check if player is an admin for free purchases
-    if self:IsAdmin(player) then
-        print("[ItemPurchaseHandler] Admin detected: Free purchase granted for " .. player.Name)
-          -- Add the item to the player's inventory without charging
-        self:AddToInventory(player, item.Name)
-        
-        -- Save the data
-        self:SavePlayerData(player)
-        
-        return true, "Admin free purchase of " .. tostring(item.Name)
+    -- Assuming 'price' is the table like {INGAME = 5, ROBUX = 5} or just a number for Robux/other types
+    local costInGameCurrency = 0
+    if typeof(price) == "table" and price.INGAME then
+        costInGameCurrency = price.INGAME
+    elseif typeof(price) == "number" then
+        -- This case might be for Robux or a simplified price.
+        -- For now, we'll assume if it's a number, it's for the primary game currency.
+        -- This might need refinement if you have multiple currency types being processed by this function directly.
+        costInGameCurrency = price 
+    else
+        warn("[ItemPurchaseHandler] ProcessCurrencyPurchase: Invalid price structure for item:", item.Name, "Price data:", price)
+        return false, "Invalid item price data."
     end
+
+    print("[ItemPurchaseHandler] ProcessCurrencyPurchase - Player:", player.Name, "Item:", item.Name, "Price (INGAME):", costInGameCurrency, "Current Currency:", data.currency)
     
     -- Check if player can afford the item
-    if data.currency < price then
-        print("[ItemPurchaseHandler] Purchase failed: Not enough currency. Has:", data.currency, "Needs:", price)
-        return false, "Not enough " .. Constants.CURRENCY.INGAME .. " to purchase this item."
+    if data.currency < costInGameCurrency then
+        print("[ItemPurchaseHandler] Purchase failed: Not enough currency. Has:", data.currency, "Needs:", costInGameCurrency)
+        return false, "Not enough " .. (Constants.CURRENCY.INGAME or "coins") .. " to purchase this item."
     end
     
     -- Deduct the cost
-    data.currency = data.currency - price
+    data.currency = data.currency - costInGameCurrency
     print("[ItemPurchaseHandler] Purchase successful! New currency balance:", data.currency)
     
     -- Add the item to the player's inventory
@@ -468,7 +471,7 @@ function ItemPurchaseHandler:ProcessCurrencyPurchase(player, item, price)
     -- Update client UI with new balance
     self:UpdateClientBalance(player)
     
-    return true, "Successfully purchased " .. tostring(item.Name) .. " for " .. tostring(price) .. " " .. tostring(Constants.CURRENCY.INGAME)
+    return true, "Successfully purchased " .. tostring(item.Name) .. " for " .. tostring(costInGameCurrency) .. " " .. tostring(Constants.CURRENCY.INGAME)
 end
 
 -- Add a ProcessPurchase function that expects an itemId (string)
@@ -623,19 +626,39 @@ function ItemPurchaseHandler:SetupAdminCommands(player)
     
     -- Connect the chat event
     player.Chatted:Connect(function(message)
-        if message:lower() == "/addadmincurrency" then
-            print("[ItemPurchaseHandler] Command triggered by player:", player.Name, "with ID:", player.UserId)
+        local lowerMessage = string.lower(message) -- Convert message to lowercase once
+        
+        if lowerMessage == "/addadmincurrency" then -- Command to add 1,000,000 (default)
+            print("[ItemPurchaseHandler] Command '/addadmincurrency' triggered by player:", player.Name, "with ID:", player.UserId)
             
-            -- Check if player is an admin
             local isAdmin = self:IsAdmin(player)
-            print("[ItemPurchaseHandler] isAdmin result:", isAdmin)
+            print("[ItemPurchaseHandler] isAdmin result for /addadmincurrency:", isAdmin)
             
             if isAdmin then
-                self:AddCurrencyToAdmins(1000000)
-                print("[ItemPurchaseHandler] Admin currency command executed by: " .. player.Name)
+                self:AddCurrencyToAdmins(100000) -- Grant 100,000 coins
+                print("[ItemPurchaseHandler] Admin currency command executed by: " .. player.Name .. ". Granted 100,000 coins.")
             else
-                print("[ItemPurchaseHandler] Non-admin player attempted to use admin command: " .. player.Name)
+                print("[ItemPurchaseHandler] Non-admin player attempted to use /addadmincurrency: " .. player.Name)
             end
+        -- Example for a command with arguments, e.g., /givecurrency amount
+        -- elseif string.sub(lowerMessage, 1, 14) == "/givecurrency " then
+        --    if self:IsAdmin(player) then
+        --        local amountStr = string.sub(lowerMessage, 15)
+        --        local amount = tonumber(amountStr)
+        --        if amount then
+        --            local playerDataToUpdate = self:GetPlayerData(player)
+        --            if playerDataToUpdate then
+        --                playerDataToUpdate.currency = (playerDataToUpdate.currency or 0) + amount
+        --                self:SavePlayerData(player)
+        --                self:UpdateClientBalance(player)
+        --                print("[ItemPurchaseHandler] Granted " .. amount .. " currency to admin " .. player.Name)
+        --            end
+        --        else
+        --            print("[ItemPurchaseHandler] Invalid amount for /givecurrency: " .. amountStr)
+        --        end
+        --    else
+        --        print("[ItemPurchaseHandler] Non-admin player attempted to use /givecurrency: " .. player.Name)
+        --    end
         end
     end)
 end

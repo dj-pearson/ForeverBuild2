@@ -43,8 +43,8 @@ Constants.CURRENCY = {
     DAILY_BONUS = 100, -- Daily login bonus
     WEEKLY_BONUS = 500, -- Weekly login bonus
     MONTHLY_BONUS = 2000, -- Monthly login bonus
-    STARTING_COINS = 2000000, -- Starting coins for client
-    STARTING_CURRENCY = 2000000, -- Starting currency for server/GameManager
+    STARTING_COINS = 200, -- Starting coins for client
+    STARTING_CURRENCY = 200, -- Starting currency for server/GameManager
 
     PRODUCTS = {
         {id = "coins_1000", name = "1,000 Coins", coins = 1000, robux = 75, bonusCoins = 0, assetId = 3285357280, description = "Get started with a handy pack of 1,000 coins!"},

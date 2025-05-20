@@ -203,68 +203,208 @@ end
 
 -- Show purchase menu
 function CurrencyUI:ShowPurchaseMenu()
-    -- Create a simple purchase dialog
-    -- This is a stub - the full functionality is in client/Currency/CurrencyUI.luau
+    local player = Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+
+    print("[CurrencyUI:ShowPurchaseMenu] Called")
+    print("[CurrencyUI:ShowPurchaseMenu] Checking Constants.UI structure:")
+    print("  Constants.UI:", Constants.UI)
+    if Constants.UI then
+        print("  Constants.UI.Colors:", Constants.UI.Colors)
+        print("  Constants.UI.Fonts:", Constants.UI.Fonts)
+    end
+
+    -- Remove existing dialog if it exists
+    local existingDialog = self.ui and self.ui:FindFirstChild("PurchaseCurrencyDialog")
+    if existingDialog then
+        existingDialog:Destroy()
+    end
+
     local dialog = Instance.new("Frame")
-    dialog.Name = "PurchaseDialog"
-    dialog.Size = UDim2.new(0, 300, 0, 200)
-    dialog.Position = UDim2.new(0.5, -150, 0.5, -100)
-    dialog.BackgroundColor3 = Constants.UI_COLORS and Constants.UI_COLORS.SECONDARY or Color3.fromRGB(40, 40, 40)
+    dialog.Name = "PurchaseCurrencyDialog" -- Changed name for clarity
+    dialog.Size = UDim2.new(0, 400, 0, 350) -- Adjusted size
+    dialog.Position = UDim2.new(0.5, -200, 0.5, -175) -- Centered
+    dialog.BackgroundColor3 = Constants.UI and Constants.UI.Colors.Background or Color3.fromRGB(30, 30, 30)
     dialog.BorderSizePixel = 0
     dialog.Visible = true
     dialog.Parent = self.ui
-    
-    -- Add rounded corners
+    dialog.ZIndex = 10 -- Ensure it's on top
+
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 10)
     corner.Parent = dialog
-    
-    -- Add title
+
     local title = Instance.new("TextLabel")
     title.Name = "Title"
     title.Size = UDim2.new(1, 0, 0, 40)
+    title.Position = UDim2.new(0, 0, 0, 5)
     title.BackgroundTransparency = 1
-    title.Font = Enum.Font.GothamBold
+    title.Font = (Constants.UI and Constants.UI.Fonts and Constants.UI.Fonts.Title and Constants.UI.Fonts.Title.Font) or Enum.Font.GothamBold
     title.TextSize = 24
-    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextColor3 = Constants.UI and Constants.UI.Colors.TextPrimary or Color3.fromRGB(255, 255, 255)
     title.Text = "Purchase Currency"
     title.Parent = dialog
-    
-    -- Add close button
+
     local closeBtn = Instance.new("TextButton")
     closeBtn.Name = "CloseButton"
     closeBtn.Size = UDim2.new(0, 30, 0, 30)
     closeBtn.Position = UDim2.new(1, -40, 0, 10)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    closeBtn.BackgroundColor3 = Constants.UI and Constants.UI.Colors.ButtonDanger or Color3.fromRGB(200, 50, 50)
     closeBtn.BorderSizePixel = 0
-    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.Font = (Constants.UI and Constants.UI.Fonts and Constants.UI.Fonts.Button and Constants.UI.Fonts.Button.Font) or Enum.Font.GothamBold
     closeBtn.TextSize = 18
-    closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeBtn.TextColor3 = Constants.UI and Constants.UI.Colors.TextButton or Color3.fromRGB(255, 255, 255)
     closeBtn.Text = "X"
+    closeBtn.ZIndex = 11
     closeBtn.Parent = dialog
-    
-    -- Add rounded corners to close button
+
     local closeBtnCorner = Instance.new("UICorner")
     closeBtnCorner.CornerRadius = UDim.new(0, 4)
     closeBtnCorner.Parent = closeBtn
-    
-    -- Add close button handler
+
     closeBtn.MouseButton1Click:Connect(function()
         dialog:Destroy()
     end)
+
+    local scrollingFrame = Instance.new("ScrollingFrame")
+    scrollingFrame.Name = "ProductList"
+    scrollingFrame.Size = UDim2.new(1, -20, 1, -50) -- Leave space for title and padding
+    scrollingFrame.Position = UDim2.new(0, 10, 0, 45)
+    scrollingFrame.BackgroundTransparency = 1
+    scrollingFrame.BorderSizePixel = 0
+    scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Will be updated dynamically
+    scrollingFrame.ScrollBarThickness = 6
+    scrollingFrame.Parent = dialog
+
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.Padding = UDim.new(0, 10)
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listLayout.Parent = scrollingFrame
+
+    local totalContentHeight = 0
+    local itemHeight = 100 -- Height of each product item frame
+
+    print("[CurrencyUI:ShowPurchaseMenu] Initial totalContentHeight:", totalContentHeight)
+
+    if Constants.CURRENCY and Constants.CURRENCY.PRODUCTS then
+        print("[CurrencyUI:ShowPurchaseMenu] Found Constants.CURRENCY.PRODUCTS with", #Constants.CURRENCY.PRODUCTS, "items.")
+        for i, productInfo in ipairs(Constants.CURRENCY.PRODUCTS) do
+            print("[CurrencyUI:ShowPurchaseMenu] Processing product:", productInfo.name, productInfo)
+            local itemFrame = Instance.new("Frame")
+            itemFrame.Name = productInfo.id or "ProductItem" .. i
+            itemFrame.Size = UDim2.new(1, 0, 0, itemHeight - 10) -- Minus padding for layout
+            itemFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 255) -- Bright blue for testing visibility
+            itemFrame.BorderSizePixel = 1
+            itemFrame.BorderColor3 = Color3.fromRGB(255,255,0) -- Bright yellow border for testing
+            itemFrame.LayoutOrder = i
+            itemFrame.Visible = true -- Explicitly set visible
+            itemFrame.ZIndex = dialog.ZIndex + 1 -- Ensure itemFrame is above dialog background but below its own content if needed
+            itemFrame.Parent = scrollingFrame
+
+            local itemCorner = Instance.new("UICorner")
+            itemCorner.CornerRadius = UDim.new(0, 8)
+            itemCorner.Parent = itemFrame
+            
+            local itemPadding = Instance.new("UIPadding")
+            itemPadding.PaddingTop = UDim.new(0,5)
+            itemPadding.PaddingBottom = UDim.new(0,5)
+            itemPadding.PaddingLeft = UDim.new(0,10)
+            itemPadding.PaddingRight = UDim.new(0,10)
+            itemPadding.Parent = itemFrame
+
+            local productName = Instance.new("TextLabel")
+            productName.Name = "ProductName"
+            productName.Size = UDim2.new(0.7, -10, 0, 25)
+            productName.Position = UDim2.new(0, 0, 0, 0)
+            productName.BackgroundTransparency = 1
+            productName.Font = (Constants.UI and Constants.UI.Fonts and Constants.UI.Fonts.Subtitle and Constants.UI.Fonts.Subtitle.Font) or Enum.Font.GothamBold
+            productName.TextSize = 18
+            productName.TextColor3 = Color3.fromRGB(255,255,255) -- Bright white for testing
+            productName.Text = productInfo.name or "Unknown Product"
+            productName.TextXAlignment = Enum.TextXAlignment.Left
+            productName.ZIndex = itemFrame.ZIndex + 1 -- Ensure text is above itemFrame
+            productName.Parent = itemFrame
+
+            local productDesc = Instance.new("TextLabel")
+            productDesc.Name = "ProductDescription"
+            productDesc.Size = UDim2.new(1, 0, 0, 40)
+            productDesc.Position = UDim2.new(0, 0, 0, 25)
+            productDesc.BackgroundTransparency = 1
+            productDesc.Font = (Constants.UI and Constants.UI.Fonts and Constants.UI.Fonts.Body and Constants.UI.Fonts.Body.Font) or Enum.Font.Gotham
+            productDesc.TextSize = 14
+            productDesc.TextColor3 = Color3.fromRGB(220,220,220) -- Light grey for testing
+            productDesc.Text = productInfo.description or ""
+            productDesc.TextWrapped = true
+            productDesc.TextXAlignment = Enum.TextXAlignment.Left
+            productDesc.TextYAlignment = Enum.TextYAlignment.Top
+            productDesc.ZIndex = itemFrame.ZIndex + 1 -- Ensure text is above itemFrame
+            productDesc.Parent = itemFrame
+
+            local robuxPrice = Instance.new("TextLabel")
+            robuxPrice.Name = "RobuxPrice"
+            robuxPrice.Size = UDim2.new(1, 0, 0, 20)
+            robuxPrice.Position = UDim2.new(0, 0, 1, -25) -- Bottom align
+            robuxPrice.BackgroundTransparency = 1
+            robuxPrice.Font = (Constants.UI and Constants.UI.Fonts and Constants.UI.Fonts.BodyBold and Constants.UI.Fonts.BodyBold.Font) or Enum.Font.GothamBold
+            robuxPrice.TextSize = 16
+            robuxPrice.TextColor3 = Color3.fromRGB(0,255,0) -- Bright green for testing
+            robuxPrice.Text = "R$ " .. tostring(productInfo.robux or 0)
+            robuxPrice.TextXAlignment = Enum.TextXAlignment.Left
+            robuxPrice.ZIndex = itemFrame.ZIndex + 1 -- Ensure text is above itemFrame
+            robuxPrice.Parent = itemFrame
+            
+            local buyButton = Instance.new("TextButton")
+            buyButton.Name = "BuyButton"
+            buyButton.Size = UDim2.new(0.25, 0, 0, 30)
+            buyButton.Position = UDim2.new(0.75, -5, 0.5, -15) -- Centered on the right side
+            buyButton.BackgroundColor3 = Color3.fromRGB(0,170,0) -- Bright green for testing
+            buyButton.BorderSizePixel = 0
+            buyButton.Font = (Constants.UI and Constants.UI.Fonts and Constants.UI.Fonts.Button and Constants.UI.Fonts.Button.Font) or Enum.Font.GothamBold
+            buyButton.TextSize = 16
+            buyButton.TextColor3 = Color3.fromRGB(255,255,255) -- Bright white for testing
+            buyButton.Text = "Buy"
+            buyButton.ZIndex = itemFrame.ZIndex + 2 -- Ensure button is above text and frame
+            buyButton.Parent = itemFrame
+
+            local buyBtnCorner = Instance.new("UICorner")
+            buyBtnCorner.CornerRadius = UDim.new(0, 6)
+            buyBtnCorner.Parent = buyButton
+            
+            buyButton.MouseButton1Click:Connect(function()
+                if MarketplaceService and productInfo.assetId then
+                    print("Attempting to prompt purchase for assetId: " .. productInfo.assetId)
+                    local success, err = pcall(function()
+                        MarketplaceService:PromptProductPurchase(player, productInfo.assetId)
+                    end)
+                    if not success then
+                        warn("Error prompting product purchase:", err)
+                    end
+                else
+                    warn("MarketplaceService not available or product assetId missing for", productInfo.name)
+                end
+            end)
+            totalContentHeight = totalContentHeight + itemHeight
+            print("[CurrencyUI:ShowPurchaseMenu] itemFrame created for", productInfo.name, ". New totalContentHeight:", totalContentHeight)
+        end
+    else
+        print("[CurrencyUI:ShowPurchaseMenu] Constants.CURRENCY.PRODUCTS not found or empty.")
+        local noProductsLabel = Instance.new("TextLabel")
+        noProductsLabel.Name = "NoProducts"
+        noProductsLabel.Size = UDim2.new(1, -20, 0, 50)
+        noProductsLabel.Position = UDim2.new(0, 10, 0, 10)
+        noProductsLabel.BackgroundTransparency = 1
+        noProductsLabel.Font = (Constants.UI and Constants.UI.Fonts and Constants.UI.Fonts.Body and Constants.UI.Fonts.Body.Font) or Enum.Font.Gotham
+        noProductsLabel.TextSize = 16
+        noProductsLabel.TextColor3 = Constants.UI and Constants.UI.Colors.TextSecondary or Color3.fromRGB(200, 200, 200)
+        noProductsLabel.TextWrapped = true
+        noProductsLabel.Text = "No currency products are currently available. Please check back later!"
+        noProductsLabel.Parent = scrollingFrame
+        totalContentHeight = 50
+    end
     
-    -- Add placeholder text for purchase options
-    local placeholder = Instance.new("TextLabel")
-    placeholder.Name = "Placeholder"
-    placeholder.Size = UDim2.new(1, -40, 0, 100)
-    placeholder.Position = UDim2.new(0, 20, 0, 60)
-    placeholder.BackgroundTransparency = 1
-    placeholder.Font = Enum.Font.Gotham
-    placeholder.TextSize = 16
-    placeholder.TextColor3 = Color3.fromRGB(200, 200, 200)
-    placeholder.TextWrapped = true
-    placeholder.Text = "Purchase options would appear here. For the complete purchase menu, see client/Currency/CurrencyUI.luau."
-    placeholder.Parent = dialog
+    print("[CurrencyUI:ShowPurchaseMenu] Final totalContentHeight before setting CanvasSize:", totalContentHeight)
+    scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, totalContentHeight)
+    print("[CurrencyUI:ShowPurchaseMenu] Set scrollingFrame.CanvasSize to UDim2.new(0, 0, 0, " .. totalContentHeight .. ")")
 end
 
 return CurrencyUI
