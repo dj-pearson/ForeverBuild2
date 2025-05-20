@@ -467,7 +467,7 @@ if success then
     setupInventoryItemInteraction(sharedModule)
     
     -- Setup world item recall UI
-    setupWorldItemRecall(sharedModule)
+    -- setupWorldItemRecall(sharedModule) -- COMMENTED OUT TO PREVENT CONFLICT
 else
     warn("InventoryItemHandler: Failed to initialize")
 end 

@@ -1206,15 +1206,42 @@ function PlacementManager:LoadWorldData()
             if template then
                 -- Clone the template for placement
                 local placedItem = template:Clone()
-                placedItem.Name = itemData.itemId .. "_" .. (itemData.owner or 0) .. "_" .. os.time()
+                -- Ensure the name is unique but consistent if possible for debugging
+                local baseName = itemData.itemId
+                local ownerSuffix = itemData.owner or "unknown"
+                local timeSuffix = itemData.placedTime or os.time() -- Use stored placedTime if available
+                placedItem.Name = string.format("%s_%s_%s", baseName, ownerSuffix, timeSuffix)
                 
-                -- Set attributes
-                placedItem:SetAttribute("instanceId", itemData.instanceId)
-                placedItem:SetAttribute("itemId", itemData.itemId)
-                placedItem:SetAttribute("owner", itemData.owner)
+                print(string.format("PlacementManager:LoadWorldData: Processing loaded item. Original itemId: %s, instanceId from data: %s", itemData.itemId, itemData.instanceId))
+
+                -- Get the definitive item definition from Constants
+                local itemDef = self.Constants and self.Constants.ITEMS and self.Constants.ITEMS[itemData.itemId]
+
+                if not itemDef then
+                    warn(string.format("PlacementManager:LoadWorldData: No item definition found in Constants.ITEMS for itemId: %s. InstanceId: %s. Using stored/default values.", itemData.itemId, itemData.instanceId))
+                end
+
+                -- Set attributes, prioritizing Constants definition
+                placedItem:SetAttribute("instanceId", itemData.instanceId) -- This MUST come from saved data
+                placedItem:SetAttribute("itemId", itemData.itemId) -- This also MUST come from saved data
+                placedItem:SetAttribute("owner", itemData.owner) -- This also MUST come from saved data
                 placedItem:SetAttribute("placedTime", itemData.placedTime or os.time())
-                placedItem:SetAttribute("persistent", true)
-                placedItem:SetAttribute("priceIngame", itemData.priceIngame or 0) -- Added priceIngame
+                placedItem:SetAttribute("persistent", true) -- All loaded items are persistent
+
+                -- Refresh attributes from Constants if definition exists
+                if itemDef then
+                    placedItem:SetAttribute("priceIngame", itemDef.priceIngame)
+                    placedItem:SetAttribute("tier", itemDef.tier)
+                    placedItem:SetAttribute("description", itemDef.description)
+                    placedItem:SetAttribute("name", itemDef.name) -- The display name
+                    -- Any other attributes defined in Constants.ITEMS[itemId] can be set here
+                    print(string.format("PlacementManager:LoadWorldData: Updated attributes for %s from Constants: priceIngame=%s, tier=%s", itemData.itemId, itemDef.priceIngame, itemDef.tier))
+                else
+                    -- Fallback for items not in current Constants (e.g., old items)
+                    -- Try to use stored price, or default to 0 if not present
+                    placedItem:SetAttribute("priceIngame", itemData.priceIngame or 0) 
+                    warn(string.format("PlacementManager:LoadWorldData: Using stored priceIngame %s for %s as itemDef was not found.", tostring(itemData.priceIngame or 0), itemData.itemId))
+                end
                 
                 -- Convert position from table to Vector3 if needed
                 local position = itemData.position

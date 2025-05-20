@@ -88,6 +88,10 @@ Constants.ITEM_PRICES = {
     FREE_ITEMS = {
         INGAME = 0, -- 0 coins
         ROBUX = 0 -- 0 Robux
+    },
+    LEVEL_3 = { -- ADDED NEW PRICE TIER
+        INGAME = 75, -- 75 coins
+        ROBUX = 75 -- 75 Robux
     }
 }
 
@@ -302,6 +306,30 @@ Constants.ITEMS = {
         tier = "RARE",
         price = {INGAME = 100, ROBUX = 100},
         priceIngame = 100
+    },
+    ["Rare_Modern_Table"] = {
+        name = "Rare Modern Table",
+        icon = "rbxassetid://0", -- Placeholder icon
+        description = "A rare modern table.",
+        tier = "RARE",
+        price = Constants.ITEM_PRICES.RARE,
+        priceIngame = Constants.ITEM_PRICES.RARE.INGAME
+    },
+    ["Rare_Sofa"] = { -- ADDED ITEM
+        name = "Rare Sofa",
+        icon = "rbxassetid://0", -- Placeholder icon
+        description = "A rare and comfy sofa.",
+        tier = "RARE",
+        price = Constants.ITEM_PRICES.RARE,
+        priceIngame = Constants.ITEM_PRICES.RARE.INGAME
+    },
+    ["Level_3_Dining_Table"] = {
+        name = "Level 3 Dining Table",
+        icon = "rbxassetid://0", -- Placeholder icon
+        description = "A level 3 dining table.",
+        tier = "LEVEL_3",
+        price = Constants.ITEM_PRICES.LEVEL_3, -- Use new LEVEL_3 price tier
+        priceIngame = Constants.ITEM_PRICES.LEVEL_3.INGAME
     }
 }
 

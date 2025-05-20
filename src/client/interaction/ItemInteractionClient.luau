@@ -437,6 +437,12 @@ function ItemInteractionClient:UpdateCurrentTarget()
     
     -- Check if we're pointing at an interactable object
     local target = mouse.Target
+    if target then
+        print(string.format("--- DBG:UpdateCurrentTarget() - mouse.Target: %s (Class: %s) ---", target:GetFullName(), target.ClassName))
+    else
+        print("--- DBG:UpdateCurrentTarget() - mouse.Target is NIL ---")
+    end
+    
     if not target then
         -- Hide UI and clear target if we're not pointing at anything
         if self.currentTarget then
@@ -448,6 +454,12 @@ function ItemInteractionClient:UpdateCurrentTarget()
     
     -- Check if we're pointing at an interactable object
     local interactable = self:GetInteractableFromPart(target)
+    if interactable then
+        print(string.format("--- DBG:UpdateCurrentTarget() - GetInteractableFromPart returned: %s ---", interactable:GetFullName()))
+    else
+        print("--- DBG:UpdateCurrentTarget() - GetInteractableFromPart returned NIL for target: " .. target:GetFullName())
+    end
+
     if not interactable then
         -- Hide UI and clear target if we're not pointing at an interactable
         if self.currentTarget then
@@ -460,6 +472,7 @@ function ItemInteractionClient:UpdateCurrentTarget()
     -- Check distance to the object
     local objectPosition = interactable.PrimaryPart and interactable.PrimaryPart.Position or interactable:GetModelCFrame().Position
     local distance = (hrp.Position - objectPosition).Magnitude
+    print(string.format("--- DBG:UpdateCurrentTarget() - Interactable: %s, Distance: %.2f ---", interactable.Name, distance))
     
     if distance > self.maxInteractionDistance then
         -- Hide UI and clear target if we're too far away
@@ -478,19 +491,21 @@ function ItemInteractionClient:UpdateCurrentTarget()
 end
 
 function ItemInteractionClient:GetInteractableFromPart(part)
-    -- Check if the part is part of an interactable object
-    
+    -- DEBUG PRINT ADDED
+    print(string.format("--- DBG:GetInteractableFromPart() - Called with part: %s (Class: %s) ---", part:GetFullName(), part.ClassName))
+
     -- First check if it's in the Items folder (store catalog item)
     local itemsFolder = workspace:FindFirstChild("Items")
     if itemsFolder and part:IsDescendantOf(itemsFolder) then
-        -- Find the model this part belongs to
+        print("--- DBG:GetInteractableFromPart() - Checking as STORE item ---") -- DEBUG
         local ancestor = part
-        while ancestor and ancestor.Parent ~= itemsFolder and not ancestor:IsDescendantOf(itemsFolder) do
+        while ancestor and ancestor.Parent ~= itemsFolder and not ancestor:IsDescendantOf(itemsFolder) do 
             ancestor = ancestor.Parent
         end
+        print(string.format("--- DBG:GetInteractableFromPart() - Store item ancestor loop (original). Ancestor: %s ---", ancestor and ancestor:GetFullName() or "nil")) -- DEBUG
         
-        -- Check if it's a model with a primary part
         if ancestor and ancestor:IsA("Model") and ancestor.PrimaryPart then
+            print(string.format("--- DBG:GetInteractableFromPart() - Found STORE item model: %s ---", ancestor:GetFullName())) -- DEBUG
             return ancestor
         end
     end
@@ -498,18 +513,50 @@ function ItemInteractionClient:GetInteractableFromPart(part)
     -- Next check if it's in the World_Items folder (placed item)
     local worldFolder = workspace:FindFirstChild("World_Items")
     if worldFolder and part:IsDescendantOf(worldFolder) then
-        -- Find the model this part belongs to
+        print("--- DBG:GetInteractableFromPart() - Checking as WORLD item (part is descendant of World_Items) ---") -- DEBUG
+        local placedFolder = worldFolder:FindFirstChild("Placed") -- Get the "Placed" subfolder
+        if not placedFolder then
+            print("--- DBG:GetInteractableFromPart() - 'Placed' subfolder NOT FOUND in World_Items. Returning nil. ---") -- DEBUG
+            return nil
+        end
+
         local ancestor = part
-        while ancestor and ancestor.Parent ~= worldFolder do
+        -- Corrected loop condition:
+        -- Stop when the ancestor's parent IS the 'Placed' folder.
+        -- This means 'ancestor' itself is the item model directly under 'Placed'.
+        while ancestor and ancestor.Parent ~= placedFolder do
+            if not ancestor.Parent or ancestor.Parent == workspace or ancestor.Parent == worldFolder then -- Added worldFolder to safety break
+                print("--- DBG:GetInteractableFromPart() - World item ancestor loop (corrected) - SAFETY BREAK, ancestor became: " .. (ancestor and ancestor.Name or "nil")) -- DEBUG
+                ancestor = nil
+                break
+            end
             ancestor = ancestor.Parent
+        end
+        -- MORE DETAILED DEBUGGING FOR WORLD ITEM ANCESTOR
+        print(string.format("--- DBG:GetInteractableFromPart() - World item ANCESTOR after loop: %s ---", ancestor and ancestor:GetFullName() or "nil")) -- DEBUG
+
+        if ancestor then
+            print(string.format("--- DBG:GetInteractableFromPart() - Ancestor ClassName: %s, IsA('Model'): %s, PrimaryPart: %s ---",
+                ancestor.ClassName,
+                tostring(ancestor:IsA("Model")),
+                ancestor.PrimaryPart and ancestor.PrimaryPart:GetFullName() or "NIL"
+            )) -- DEBUG
         end
         
         -- Check if it's a model with a primary part
-        if ancestor and ancestor:IsA("Model") and ancestor.PrimaryPart then
+        if ancestor and ancestor:IsA("Model") then -- REMOVED PrimaryPart check
+            print(string.format("--- DBG:GetInteractableFromPart() - Found WORLD item model: %s (PrimaryPart check removed) ---", ancestor:GetFullName())) -- DEBUG
             return ancestor
+        else
+            if ancestor then
+                print(string.format("--- DBG:GetInteractableFromPart() - World item ancestor (%s) is NOT a model or lacks PrimaryPart. IsA('Model'): %s, Has PrimaryPart: %s ---", ancestor:GetFullName(), tostring(ancestor:IsA("Model")), tostring(ancestor.PrimaryPart ~= nil))) -- DEBUG
+            else
+                 print("--- DBG:GetInteractableFromPart() - World item ancestor is nil after loop. ---") -- DEBUG
+            end
         end
     end
     
+    print(string.format("--- DBG:GetInteractableFromPart() - Returning NIL for part: %s ---", part:GetFullName())) -- DEBUG
     return nil
 end
 
@@ -556,12 +603,21 @@ function ItemInteractionClient:HideProximityUI()
 end
 
 function ItemInteractionClient:TryInteract()
+    print("--- ItemInteractionClient:TryInteract() CALLED ---") -- DEBUG
     -- Don't interact if we're already interacting
-    if self.isInteracting then return end
+    if self.isInteracting then 
+        print("--- ItemInteractionClient:TryInteract() - Already interacting, returning. ---") -- DEBUG
+        return 
+    end
     
     -- Need a valid target to interact with
-    if not self.currentTarget then return end
+    if not self.currentTarget then 
+        print("--- ItemInteractionClient:TryInteract() - No currentTarget, returning. ---") -- DEBUG
+        return 
+    end
     
+    print(string.format("--- ItemInteractionClient:TryInteract() - currentTarget: %s ---", self.currentTarget:GetFullName())) -- DEBUG
+
     -- Set interacting flag
     self.isInteracting = true
     
@@ -581,6 +637,7 @@ function ItemInteractionClient:TryInteract()
         self:InteractWithStoreItem(self.currentTarget)
     else
         -- Handle world item interaction
+        print("--- ItemInteractionClient:TryInteract() - Target is a WORLD item. Calling InteractWithWorldItem. ---") -- DEBUG
         self:InteractWithWorldItem(self.currentTarget) -- This will now call PlacedItemDialog.Show
     end
     
@@ -625,7 +682,9 @@ function ItemInteractionClient:InteractWithStoreItem(target)
 end
 
 function ItemInteractionClient:InteractWithWorldItem(target)
+    print("--- ItemInteractionClient:InteractWithWorldItem() CALLED ---") -- DEBUG
     if not target then
+        print("--- ItemInteractionClient:InteractWithWorldItem() - No target, returning. ---") -- DEBUG
         self:ShowNotification("Error: No target item to interact with.", "Error")
         return
     end
@@ -634,8 +693,11 @@ function ItemInteractionClient:InteractWithWorldItem(target)
     local itemName = (Constants.ITEMS[itemId] and Constants.ITEMS[itemId].name) or itemId
     local instanceId = target:GetAttribute("instanceId") -- Get instanceId for actions
 
+    print(string.format("--- ItemInteractionClient:InteractWithWorldItem() - Target: %s, ItemID: %s, ItemName: %s, InstanceID: %s ---", target:GetFullName(), tostring(itemId), tostring(itemName), tostring(instanceId))) -- DEBUG
+
     if not instanceId then
          warn("ItemInteractionClient: Target item " .. target.Name .. " is missing 'instanceId' attribute. Cannot show action dialog.")
+         print("--- ItemInteractionClient:InteractWithWorldItem() - MISSING instanceId attribute. ---") -- DEBUG
          self:ShowNotification("Cannot perform actions on this item (missing ID).", "Error")
          return
     end
@@ -643,9 +705,12 @@ function ItemInteractionClient:InteractWithWorldItem(target)
     print(string.format("ItemInteractionClient: Interacting with world item. Name: %s, ItemID: %s, InstanceID: %s", target.Name, itemId, instanceId))
 
     if SharedModule and SharedModule.PlacedItemDialog and SharedModule.PlacedItemDialog.Show then
+        print("--- ItemInteractionClient:InteractWithWorldItem() - SharedModule.PlacedItemDialog.Show IS AVAILABLE. Calling it now... ---") -- DEBUG
         SharedModule.PlacedItemDialog.Show(itemId, itemName, target) -- Pass the actual 'target' instance
+        print("--- ItemInteractionClient:InteractWithWorldItem() - AFTER calling SharedModule.PlacedItemDialog.Show. ---") -- DEBUG
     else
         warn("ItemInteractionClient: PlacedItemDialog or its Show method not available via SharedModule.")
+        print("--- ItemInteractionClient:InteractWithWorldItem() - PlacedItemDialog.Show IS NOT AVAILABLE. ---") -- DEBUG
         self:ShowNotification("Interaction menu is currently unavailable.", "Error")
         -- Fallback: The old self:ShowWorldItemUI(itemGuid) is deprecated and likely won't work as intended.
         -- local itemGuid = target:GetAttribute("guid") -- old way
