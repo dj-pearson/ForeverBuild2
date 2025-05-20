@@ -1,0 +1,119 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
+local Players = game:GetService("Players")
+
+-- Add debug print to check if the path is correct
+print("Loading Constants from path:", ReplicatedStorage.shared.core.Constants)
+local Constants = require(ReplicatedStorage.shared.core.Constants)
+print("Constants loaded:", Constants)
+
+-- Create a local admin ID list in case the Constants one isn't working
+if not Constants.ADMIN_IDS then
+    print("Creating local ADMIN_IDS table since Constants.ADMIN_IDS is not found")
+    Constants.ADMIN_IDS = {}
+end
+
+-- Add your player ID directly to the ADMIN_IDS table for testing
+table.insert(Constants.ADMIN_IDS, 3246397734) -- Default Roblox test account ID
+-- Add your actual user ID here - replace with your real ID if this isn't it
+table.insert(Constants.ADMIN_IDS, 5329862) -- Just an example ID, replace with real one
+
+print("Updated ADMIN_IDS:", Constants.ADMIN_IDS)
+local CurrencyManager = require(ReplicatedStorage.shared.core.economy.CurrencyManager)
+
+local AdminCurrencyManager = {}
+AdminCurrencyManager.__index = AdminCurrencyManager
+
+function AdminCurrencyManager.new()
+    local self = setmetatable({}, AdminCurrencyManager)
+    self.currencyManager = CurrencyManager.new()
+    return self
+end
+
+function AdminCurrencyManager:AddAdminCurrency(amount)
+    amount = amount or 1000000 -- Default to 1 million if no amount specified
+    
+    -- Get all players
+    local players = Players:GetPlayers()
+    
+    -- Check each player
+    for _, player in ipairs(players) do
+        -- Check if player is an admin
+        if Constants.ADMIN_IDS then
+            for _, adminId in ipairs(Constants.ADMIN_IDS) do
+                if player.UserId == adminId then
+                    -- Add currency to admin account
+                    self.currencyManager:AddCoins(player, amount)
+                    print("Added " .. amount .. " coins to admin account: " .. player.Name)
+                end
+            end
+        end
+    end
+end
+
+-- Create a command to add currency to admins
+local function handleCommand(player, message)
+    if message:lower() == "/addadmincurrency" then
+        -- Debug output
+        print("Command triggered by player:", player.Name, "with ID:", player.UserId)
+        print("Constants table type:", type(Constants))
+        print("Constants.ADMIN_IDS:", Constants.ADMIN_IDS)
+        
+        -- Print the contents of the ADMIN_IDS table
+        print("ADMIN_IDS contents:")
+        if type(Constants.ADMIN_IDS) == "table" then
+            if #Constants.ADMIN_IDS == 0 then
+                print("  ADMIN_IDS table is empty")
+            else
+                for i, adminId in ipairs(Constants.ADMIN_IDS) do
+                    print("  [" .. i .. "] = " .. tostring(adminId))
+                end
+                print("Admin IDs in list:", table.concat(Constants.ADMIN_IDS, ", "))
+            end
+        else
+            print("  ADMIN_IDS is not a table, type:", type(Constants.ADMIN_IDS))
+        end
+        
+        -- Check if player is an admin
+        local isAdmin = false
+        
+        -- Temporary direct check - remove this after testing
+        if player.UserId == 3246397734 or player.UserId == 5329862 then
+            print("Direct match found with hardcoded ID! PlayerID:", player.UserId)
+            isAdmin = true
+        elseif Constants.ADMIN_IDS then
+            for _, adminId in ipairs(Constants.ADMIN_IDS) do
+                print("Comparing player ID:", player.UserId, "with admin ID:", adminId)
+                if player.UserId == adminId then
+                    isAdmin = true
+                    print("Match found! Player is admin")
+                    break
+                end
+            end
+        end
+        
+        if isAdmin then
+            local adminCurrencyManager = AdminCurrencyManager.new()
+            adminCurrencyManager:AddAdminCurrency()
+            print("Admin currency command executed by: " .. player.Name)
+        else
+            print("Non-admin player attempted to use admin command: " .. player.Name)
+        end
+    end
+end
+
+-- Connect the command handler
+Players.PlayerAdded:Connect(function(player)
+    player.Chatted:Connect(function(message)
+        handleCommand(player, message)
+    end)
+end)
+
+-- Reconnect existing players when the script loads
+for _, player in ipairs(Players:GetPlayers()) do
+    player.Chatted:Connect(function(message)
+        handleCommand(player, message)
+    end)
+end
+
+return AdminCurrencyManager

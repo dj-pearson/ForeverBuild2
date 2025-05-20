@@ -1,0 +1,50 @@
+# ForeverBuild2 Build Commands
+
+## Building with Rojo
+To build the project with the new init structure:
+
+```
+rojo build second.project.json -o ForeverBuild.rbxm
+```
+
+## After Syncing to Roblox Studio
+
+### Step 1: Rename Files
+After importing the model into Roblox Studio, manually rename the following files:
+
+1. `Players.{PlayerName}.PlayerScripts.client.inits` → `Players.{PlayerName}.PlayerScripts.client.init`
+2. `ServerScriptService.Server.inits` → `ServerScriptService.Server.init`
+3. `ReplicatedStorage.shared.inits` → `ReplicatedStorage.shared.init`
+4. `StarterGui.inits` → `StarterGui.init`
+
+### Step 2: Check Instance Hierarchy
+Verify that the instance hierarchy matches this structure:
+
+- ReplicatedStorage
+  - shared (ModuleScript)
+    - core (Folder)
+      - ui (Folder)
+      - inventory (Folder)
+      - etc...
+- Players.{PlayerName}.PlayerScripts
+  - client (Script)
+    - client_core (ModuleScript)
+    - interaction (Folder)
+      - InteractionSystemModule (ModuleScript)
+- ServerScriptService
+  - Server (Script)
+
+### Step 3: Run Diagnostic Tool
+Place the DIAGNOSTIC_TOOL.lua script in ServerScriptService and run it to check:
+- Instance paths
+- Module loading
+- Error reporting
+
+### Step 4: Test
+Run the game and check the output for any require errors. If errors persist:
+
+1. Open the offending script
+2. Check the require paths
+3. Use `:WaitForChild()` to ensure instances are loaded before requiring them
+
+This manual step is necessary to maintain the proper init functionality while avoiding Rojo's folder-to-script transformation during development. 

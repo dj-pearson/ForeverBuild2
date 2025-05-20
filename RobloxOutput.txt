@@ -1,36 +1,1462 @@
-  06:52:54.196  Initializing game systems...  -  Server - GameManager:184
-  06:52:54.196  Game systems initialized successfully  -  Server - GameManager:185
-  06:52:54.198  InteractionManager initialized  -  Server - InteractionManager:14
-  06:52:54.198  Server initialized successfully  -  Server - server:162
-  06:52:54.307  Client script starting...  -  Client - client:5
-  06:52:54.310  Initializing SharedModule...  -  Client - shared:19
-  06:52:54.310  Players.Xdjpearsonx.PlayerScripts.client:12: attempt to call a nil value  -  Client - client:12
-  06:52:54.310  Stack Begin  -  Studio
-  06:52:54.310  Script 'Players.Xdjpearsonx.PlayerScripts.client', Line 12  -  Studio - client:12
-  06:52:54.310  Stack End  -  Studio
-  06:52:54.592  DataStoreService: StudioAccessToApisNotAllowed: Studio access to APIs is not allowed. API: GetAsync, Data Store: PlayerCurrency  -  Studio
-  06:52:54.970  StarterGui script starting...  -  Client - StarterGui:9
-  06:52:54.970  Initializing StarterGui...  -  Client - StarterGui:32
-  06:52:55.199  === Enhanced Glow Manager Starting ===  -  Server - NeonGlowManager:7
-  06:52:55.200  Found 6 glow models  -  Server - NeonGlowManager:145
-  06:52:55.200  Processing: Glow_Green_Cube (Color: Green)  -  Server - NeonGlowManager:153
-  06:52:55.200    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
-  06:52:55.200    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
-  06:52:55.201  Processing: Glow_Blue_Cube (Color: Blue)  -  Server - NeonGlowManager:153
-  06:52:55.201    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
-  06:52:55.201    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
-  06:52:55.201  Processing: Glow_Yellow_Cube (Color: Yellow)  -  Server - NeonGlowManager:153
-  06:52:55.201    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
-  06:52:55.201    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
-  06:52:55.201  Processing: Glow_White_Cube (Color: White)  -  Server - NeonGlowManager:153
-  06:52:55.201    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
-  06:52:55.202    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
-  06:52:55.202  Processing: Glow_Red_Cube (Color: Red)  -  Server - NeonGlowManager:153
-  06:52:55.202    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
-  06:52:55.202    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
-  06:52:55.202  Processing: Glow_Purple_Cube (Color: Purple)  -  Server - NeonGlowManager:153
-  06:52:55.202    Enhancing glow for SmoothCube (UnionOperation)  -  Server - NeonGlowManager:85
-  06:52:55.202    ✓ Enhanced glow applied to SmoothCube  -  Server - NeonGlowManager:140
-  06:52:55.202  === Enhanced Glow Manager Complete! ===  -  Server - NeonGlowManager:166
-  06:53:29.123  Disconnect from ::ffff:127.0.0.1|50442  -  Studio
-  06:53:29.221  DataStoreService: StudioAccessToApisNotAllowed: Cannot write to DataStore from studio if API access is not enabled. API: SetAsync, Data Store: PlayerCurrency  -  Studio
+  10:59:42.870  Server initialization script starting...  -  Server - init:13
+  10:59:42.870  Created standard remote events and functions  -  Server - init:61
+  10:59:42.870  server.init: Attempting to require shared module  -  Server - init:65
+  10:59:42.871  server.init: Found shared module at ReplicatedStorage.shared  -  Server - init:69
+  10:59:42.871  WARNING: init.luau not found, creating minimal SharedModule  -  Server - shared:34
+  10:59:42.871  Using fallback Constants  -  Server - shared:64
+  10:59:42.871  server.init: Successfully required SharedModule  -  Server - init:78
+  10:59:42.872  [SharedModule] Init called. Using minimal fallback SharedModule structure.  -  Server - shared:167
+  10:59:42.872  server.init: SharedModule initialized successfully  -  Server - init:88
+  10:59:42.872  server.init: Initializing DataService...  -  Server - init:96
+  10:59:42.872  server.init: Creating new DataService instance  -  Server - init:164
+  10:59:42.873  DataService: Auto-save setup with interval 300 seconds  -  Server - DataService:227
+  10:59:42.873  DataService: Initializing...  -  Server - DataService:247
+  10:59:42.873  DataService: Initialization complete  -  Server - DataService:254
+  10:59:42.873  server.init: DataService initialized successfully  -  Server - init:171
+  10:59:42.873  server.init: Successfully created DataService instance  -  Server - init:182
+  10:59:42.873  server.init: Initializing server managers  -  Server - init:188
+  10:59:42.873  server.init: Successfully created GameManager instance  -  Server - init:199
+  10:59:42.873  server.init: Successfully created InventoryManager instance  -  Server - init:215
+  10:59:42.873  server.init: CurrencyManager module not available  -  Server - init:236
+  10:59:42.873  server.init: Initializing PlacementManager...  -  Server - init:242
+  10:59:42.874  server.init: Found PlacementManager at ReplicatedStorage.shared.core.placement.PlacementManager  -  Server - init:257
+  10:59:42.876  server.init: Creating new PlacementManager instance  -  Server - init:296
+  10:59:42.876  PlacementManager: No legacy PlacedItems folder found, will use World_Items/Placed  -  Server - PlacementManager:58
+  10:59:42.876  PlacementManager: Initialize called  -  Server - PlacementManager:87
+  10:59:42.876  PlacementManager: Remote events setup completed  -  Server - PlacementManager:1882
+  10:59:42.876  PlacementManager: Connected to player events  -  Server - PlacementManager:1247
+  10:59:42.877  PlacementManager: Initialization completed  -  Server - PlacementManager:101
+  10:59:42.877  server.init: PlacementManager initialized successfully  -  Server - init:322
+  10:59:42.877  server.init: Successfully created PlacementManager instance  -  Server - init:329
+  10:59:42.877  server.init: InteractionManager module not available in SharedModule, trying local version  -  Server - init:352
+  10:59:42.878  ItemInteractionManager: Attempting to require shared module  -  Server - ItemInteractionManager:9
+  10:59:42.878  ItemInteractionManager: Successfully required SharedModule  -  Server - ItemInteractionManager:40
+  10:59:42.878  server.init: Successfully created local ItemInteractionManager instance  -  Server - init:366
+  10:59:42.878  ItemInteractionManager initializing...  -  Server - ItemInteractionManager:62
+  10:59:42.879  Registered 8 catalog items  -  Server - ItemInteractionManager:242
+  10:59:42.893  Registered 2224 world items  -  Server - ItemInteractionManager:282
+  10:59:42.893  ItemInteractionManager initialized successfully  -  Server - ItemInteractionManager:76
+  10:59:42.894  [ItemPurchaseHandler] Attempting to require shared module  -  Server - ItemPurchaseHandler:13
+  10:59:42.894  [ItemPurchaseHandler] Successfully required SharedModule  -  Server - ItemPurchaseHandler:47
+  10:59:42.895  [ItemPurchaseHandler] Creating ADMIN_IDS table in Constants  -  Server - ItemPurchaseHandler:50
+  10:59:42.895  [ItemPurchaseHandler] Module initialized successfully  -  Server - ItemPurchaseHandler:510
+  10:59:42.895  server.init: Successfully loaded ItemPurchaseHandler module  -  Server - init:387
+  10:59:42.895  [ItemPurchaseHandler] Module initialized successfully  -  Server - ItemPurchaseHandler:510
+  10:59:42.895  server.init: ItemPurchaseHandler initialized successfully  -  Server - init:396
+  10:59:42.896  server.init: PlaceItem remote event already handled by PlacementManager module  -  Server - init:491
+  10:59:42.896  server.init: Connected RecallItem remote event  -  Server - init:614
+  10:59:42.896  Server initialization completed successfully  -  Server - init:617
+  10:59:42.896  Created PlacedItems folder in Workspace  -  Server - init:625
+  10:59:42.897  Created template: Grass_Cube (Bright green, transparency=0)  -  Server - init:670
+  10:59:42.897  Created template: Stone_Cube (Medium stone grey, transparency=0)  -  Server - init:670
+  10:59:42.897  Created template: Wood_Plank (Brown, transparency=0)  -  Server - init:670
+  10:59:42.897  Created template: Water_Cube (Bright blue, transparency=0.30000001192092896)  -  Server - init:670
+  10:59:42.897  Created template: Fire_Cube (Bright red, transparency=0)  -  Server - init:670
+  10:59:42.898  Created template: Brick_Cube (Medium stone grey, transparency=0)  -  Server - init:670
+  10:59:42.898  Created template: Sand_Cube (Brick yellow, transparency=0)  -  Server - init:670
+  10:59:42.898  Created template: Concrete_Cube (Institutional white, transparency=0)  -  Server - init:670
+  10:59:42.898  Created template: Metal_Cube (Medium stone grey, transparency=0)  -  Server - init:670
+  10:59:42.898  Created template: Glass_Cube (Toothpaste, transparency=0.5)  -  Server - init:670
+  10:59:42.898  Server init: Created 19 item templates  -  Server - init:673
+  10:59:42.972  Player joining: Xdjpearsonx  -  Server - init:562
+  10:59:42.972  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  10:59:42.972  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:42.972  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  10:59:42.972  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:43.042  WARNING: init.luau not found, creating minimal SharedModule  -  Client - shared:34
+  10:59:43.043  Using fallback Constants  -  Client - shared:64
+  10:59:43.043  DirectInventoryUI: Disabled via ENABLE_THIS_UI flag  -  Client - DirectInventoryUI:93
+  10:59:43.043  DirectCurrencyUI: Disabled via ENABLE_THIS_UI flag  -  Client - DirectCurrencyUI:11
+  10:59:43.043  InventoryUILoader: Starting initialization  -  Client - InventoryUILoader:16
+  10:59:43.044  InventoryItemHandler: Starting initialization  -  Client - InventoryItemHandler:12
+  10:59:43.044  InventoryItemHandler: SharedModule loaded  -  Client - InventoryItemHandler:25
+  10:59:43.044  InventoryItemHandler: Waiting for InventoryUI to be available  -  Client - InventoryItemHandler:29
+  10:59:43.044  Client initialization script starting...  -  Client - init:6
+  10:59:43.045  Found shared module at ReplicatedStorage.shared  -  Client - init:43
+  10:59:43.045  Successfully required SharedModule  -  Client - init:52
+  10:59:43.045  [SharedModule] Init called. Using minimal fallback SharedModule structure.  -  Client - shared:167
+  10:59:43.045  SharedModule initialized successfully  -  Client - init:62
+  10:59:43.045  Found client_core ModuleScript: Players.Xdjpearsonx.PlayerScripts.client.client_core  -  Client - init:74
+  10:59:43.046  client_core.luau: Attempting to require shared module  -  Client - client_core:11
+  10:59:43.046  client_core.luau: Found shared module at ReplicatedStorage.shared  -  Client - client_core:15
+  10:59:43.046  client_core.luau: Successfully required SharedModule  -  Client - client_core:37
+  10:59:43.046  [SharedModule] Init called. Using minimal fallback SharedModule structure.  -  Client - shared:167
+  10:59:43.047  client_core.luau: SharedModule initialized successfully  -  Client - client_core:47
+  10:59:43.047  client_core.luau: Getting references to modules  -  Client - client_core:53
+  10:59:43.047  client_core.luau: Module references:  -  Client - client_core:62
+  10:59:43.047    - GameManagerModule: loaded  -  Client - client_core:63
+  10:59:43.047    - Constants: loaded  -  Client - client_core:64
+  10:59:43.047    - PurchaseDialogModule: nil  -  Client - client_core:65
+  10:59:43.047    - InventoryUIModule: nil  -  Client - client_core:66
+  10:59:43.048    - PlacedItemDialogModule: nil  -  Client - client_core:67
+  10:59:43.048    - CurrencyUIModule: nil  -  Client - client_core:68
+  10:59:43.048  [InteractionSystem] Looking for interaction folder in: Players.Xdjpearsonx.PlayerScripts.client  -  Client - client_core:138
+  10:59:43.048  [InteractionSystem] Found interaction folder: Players.Xdjpearsonx.PlayerScripts.client.interaction  -  Client - client_core:142
+  10:59:43.048  [InteractionSystem] Trying to load ItemInteractionClient  -  Client - client_core:157
+  10:59:43.050  ItemInteractionClient: Attempting to require shared module  -  Client - ItemInteractionClient:13
+  10:59:43.050  ItemInteractionClient: Successfully required SharedModule  -  Client - ItemInteractionClient:50
+  10:59:43.050  [InteractionSystem] Successfully loaded ItemInteractionClient  -  Client - client_core:163
+  10:59:43.050  [DEBUG in client_core.luau] Top of initializeClient()  -  Client - client_core:214
+  10:59:43.447  [ItemPurchaseHandler] Loaded data from DataStore for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:43.447  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  10:59:43.447  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:43.447  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:43.447  💰 [ItemPurchaseHandler] CURRENCY UPDATE for Xdjpearsonx: 2000040 coins  -  Server - ItemPurchaseHandler:216
+  10:59:43.447  [ItemPurchaseHandler] Sent initial balance to Xdjpearsonx: 2000040  -  Server - ItemPurchaseHandler:486
+  10:59:43.447  [ItemPurchaseHandler] Setting up command handlers for player: Xdjpearsonx  -  Server - ItemPurchaseHandler:523
+  10:59:43.448  [ItemPurchaseHandler] Loaded data from DataStore for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:43.448  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  10:59:43.448  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:43.448  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:43.448  💰 [ItemPurchaseHandler] CURRENCY UPDATE for Xdjpearsonx: 2000040 coins  -  Server - ItemPurchaseHandler:216
+  10:59:43.448  [ItemPurchaseHandler] Sent initial balance to Xdjpearsonx: 2000040  -  Server - ItemPurchaseHandler:486
+  10:59:43.448  [ItemPurchaseHandler] Player already has command handlers set up: Xdjpearsonx  -  Server - ItemPurchaseHandler:517
+  10:59:43.666  [DEBUG in client_core.luau] SharedModule:  ▶ {...}  -  Client - client_core:223
+  10:59:43.667  [DEBUG in client_core.luau] SharedModule.GameManager:  ▶ {...}  -  Client - client_core:224
+  10:59:43.668  [DEBUG in client_core.luau] GameManagerModule type: table  -  Client - client_core:226
+  10:59:43.668  [DEBUG in client_core.luau] Original line 108 print - script.Parent.Parent (of ModuleScript) is:  Players.Xdjpearsonx.PlayerScripts  -  Client - client_core:227
+  10:59:43.668  [LINE 108 PRE-CHECK in client_core.luau] --- Detailed Debug for Line 109 ---   -  Client - client_core:229
+  10:59:43.668  [LINE 108 PRE-CHECK in client_core.luau] script (ModuleScript):GetFullName() =  Players.Xdjpearsonx.PlayerScripts.client.client_core  -  Client - client_core:230
+  10:59:43.668  [LINE 108 PRE-CHECK in client_core.luau] script.Parent (LocalScript):GetFullName() =  Players.Xdjpearsonx.PlayerScripts.client  -  Client - client_core:231
+  10:59:43.669  [LINE 108 PRE-CHECK in client_core.luau] Successfully accessed GameManagerModule.new. Its type is: function  -  Client - client_core:240
+  10:59:43.669  [LINE 108 PRE-CHECK in client_core.luau] About to evaluate: typeof(gmm_new_prop) == 'function'  -  Client - client_core:247
+  10:59:43.669  [LINE 109 SUCCESS in client_core.luau] typeof(GameManagerModule.new) is 'function'  -  Client - client_core:249
+  10:59:43.669  [DEBUG in client_core.luau] GameManager instance created successfully.  -  Client - client_core:253
+  10:59:43.669  [LINE 109 POST-CHECK in client_core.luau] --- End Detailed Debug ---  -  Client - client_core:262
+  10:59:43.669  InventoryUIModule is nil in initializeClient (client_core.luau)  -  Client - client_core:270
+  10:59:43.669  [DEBUG in client_core.luau] Remotes folder found: ReplicatedStorage.Remotes  -  Client - client_core:276
+  10:59:43.669  [DEBUG in client_core.luau] GetInventory RemoteFunction found: ReplicatedStorage.Remotes.GetInventory  -  Client - client_core:283
+  10:59:43.670  [DEBUG in client_core.luau] BuyItem RemoteEvent found.  -  Client - client_core:287
+  10:59:43.670  [DEBUG in client_core.luau] PlaceItem RemoteEvent found.  -  Client - client_core:288
+  10:59:43.670  [DEBUG in client_core.luau] InteractWithItem RemoteEvent found.  -  Client - client_core:289
+  10:59:43.670  [UI] InventoryUIModule is nil  -  Client - client_core:309
+  10:59:43.670  [UI] PlacedItemDialogModule is nil  -  Client - client_core:325
+  10:59:43.670  [UI] PurchaseDialogModule is nil  -  Client - client_core:341
+  10:59:43.670  PurchaseDialogModule or PurchaseDialogModule.Initialize is nil or not a function in initializeUI (client_core.luau). Type of Initialize: nil  -  Client - client_core:500
+  10:59:43.670  InventoryUIModule or InventoryUIModule.Initialize is nil in client_core.luau.  -  Client - client_core:507
+  10:59:43.670  [DEBUG in client_core.luau] Attempting to create InteractionSystem instance...  -  Client - client_core:527
+  10:59:43.670  [DEBUG in client_core.luau] InteractionSystem instance created:  ▶ {...}  -  Client - client_core:531
+  10:59:43.671  [DEBUG in client_core.luau] Attempting to call Initialize on InteractionSystem instance...  -  Client - client_core:533
+  10:59:43.671  ItemInteractionClient initializing...  -  Client - ItemInteractionClient:82
+  10:59:43.672  CatalogItemUI: Attempting to require shared module  -  Client - CatalogItemUI:11
+  10:59:43.672  CatalogItemUI: Successfully required SharedModule  -  Client - CatalogItemUI:40
+  10:59:43.673  ItemInteractionClient initialized successfully  -  Client - ItemInteractionClient:99
+  10:59:43.673  InteractionSystem instance initialized successfully by client_core.luau  -  Client - client_core:538
+  10:59:43.674  client_core ModuleScript loaded successfully  -  Client - init:83
+  10:59:43.674  Module CurrencyUI is nil  -  Client - init:88
+  10:59:43.675  Successfully loaded new InteractionSystem module  -  Client - init:126
+  10:59:43.675  InteractionSystem initialized successfully  -  Client - init:135
+  10:59:43.676  Found FixItemTypes module, loading...  -  Client - init:143
+  10:59:43.676  Applying fix for missing item types...  -  Client - FixItemTypes:31
+  10:59:43.676  Found InteractionSystemModule_new, applying fix  -  Client - FixItemTypes:52
+  10:59:43.676  Successfully patched ShowInteractionUI function to handle price formats and admin checks  -  Client - FixItemTypes:134
+  10:59:43.677  Successfully patched Update function  -  Client - FixItemTypes:145
+  10:59:43.677  Successfully patched GetItemInfo function  -  Client - FixItemTypes:413
+  10:59:43.677  FixItemTypes module loaded successfully  -  Client - init:145
+  10:59:43.677  Client initialization completed successfully  -  Client - init:155
+  10:59:43.680  StarterGui script starting...  -  Client - StarterGui:9
+  10:59:43.680  StarterGui.init: Attempting to require shared module  -  Client - StarterGui:15
+  10:59:43.681  StarterGui.init: Found shared module at ReplicatedStorage.shared  -  Client - StarterGui:19
+  10:59:43.681  StarterGui.init: Successfully required SharedModule  -  Client - StarterGui:30
+  10:59:43.681  [SharedModule] Init called. Using minimal fallback SharedModule structure.  -  Client - shared:167
+  10:59:43.681  StarterGui.init: SharedModule initialized successfully  -  Client - StarterGui:41
+  10:59:43.681  Successfully created GameManager instance  -  Client - StarterGui:61
+  10:59:43.681  CurrencyManagerModule or CurrencyManagerModule.new is not available  -  Client - StarterGui:84
+  10:59:44.061  InventoryUILoader: InventoryUI not in SharedModule, requiring it directly  -  Client - InventoryUILoader:44
+  10:59:44.063  InventoryUILoader: Initializing InventoryUI module  -  Client - InventoryUILoader:75
+  10:59:44.063  InventoryUI.Initialize called  -  Client - InventoryUI:258
+  10:59:44.063  InventoryUI.Initialize: Successfully verified inventory frame exists  -  Client - InventoryUI:270
+  10:59:44.064  InventoryUI.Initialize: Stored inventory reference  -  Client - InventoryUI:280
+  10:59:44.064  InventoryUI: Found AddToInventory event, connecting...  -  Client - InventoryUI:397
+  10:59:44.064  InventoryUI: Successfully connected to AddToInventory event  -  Client - InventoryUI:406
+  10:59:44.065  InventoryUI: Successfully registered with SharedModule  -  Client - InventoryUI:296
+  10:59:44.065  InventoryUI.Initialize completed  -  Client - InventoryUI:299
+  10:59:44.065  InventoryUILoader: Successfully initialized InventoryUI  -  Client - InventoryUILoader:95
+  10:59:44.080  InventoryItemHandler: InventoryUI module found  -  Client - InventoryItemHandler:41
+  10:59:44.081  InventoryItemHandler: PlacementManager not found in SharedModule, creating it  -  Client - InventoryItemHandler:45
+  10:59:44.085  InventoryItemHandler: Successfully required PlacementManager module  -  Client - InventoryItemHandler:65
+  10:59:44.085  PlacementManager: Remote events setup completed  -  Client - PlacementManager:1882
+  10:59:44.086  InventoryItemHandler: Created PlacementManager and set up remote events  -  Client - InventoryItemHandler:80
+  10:59:44.086  InventoryItemHandler: PlacementManager is ready  -  Client - InventoryItemHandler:87
+  10:59:44.086  InventoryItemHandler: Hooked InventoryUI methods for debugging  -  Client - InventoryItemHandler:116
+  10:59:44.086  InventoryItemHandler: Successfully initialized  -  Client - InventoryItemHandler:495
+  10:59:44.086  InventoryItemHandler: Found existing templates:  -  Client - InventoryItemHandler:415
+  10:59:44.086    - Water (BrickColor=Bright blue, Material=Water, Transparency=0.30000001192092896)  -  Client - InventoryItemHandler:418
+  10:59:44.086    - Stone (BrickColor=Medium stone grey, Material=Slate, Transparency=0)  -  Client - InventoryItemHandler:418
+  10:59:44.086    - Concrete (BrickColor=Institutional white, Material=Concrete, Transparency=0)  -  Client - InventoryItemHandler:418
+  10:59:44.086    - Fire_Cube (BrickColor=Bright red, Material=Neon, Transparency=0)  -  Client - InventoryItemHandler:418
+  10:59:44.086    - Brick (BrickColor=Medium stone grey, Material=Brick, Transparency=0)  -  Client - InventoryItemHandler:418
+  10:59:44.086    - Grass_Cube (BrickColor=Bright green, Material=Grass, Transparency=0)  -  Client - InventoryItemHandler:418
+  10:59:44.086    - Glass (BrickColor=Toothpaste, Material=Glass, Transparency=0.5)  -  Client - InventoryItemHandler:418
+  10:59:44.087    - Glass_Cube (BrickColor=Toothpaste, Material=Glass, Transparency=0.5)  -  Client - InventoryItemHandler:418
+  10:59:44.087    - Concrete_Cube (BrickColor=Institutional white, Material=Concrete, Transparency=0)  -  Client - InventoryItemHandler:418
+  10:59:44.087    - Grass (BrickColor=Bright green, Material=Grass, Transparency=0)  -  Client - InventoryItemHandler:418
+  10:59:44.087    - Stone_Cube (BrickColor=Medium stone grey, Material=Slate, Transparency=0)  -  Client - InventoryItemHandler:418
+  10:59:44.087    - Sand (BrickColor=Brick yellow, Material=Sand, Transparency=0)  -  Client - InventoryItemHandler:418
+  10:59:44.087    - Brick_Cube (BrickColor=Medium stone grey, Material=Brick, Transparency=0)  -  Client - InventoryItemHandler:418
+  10:59:44.087    - Water_Cube (BrickColor=Bright blue, Material=Water, Transparency=0.30000001192092896)  -  Client - InventoryItemHandler:418
+  10:59:44.087    - Metal (BrickColor=Medium stone grey, Material=Metal, Transparency=0)  -  Client - InventoryItemHandler:418
+  10:59:44.088    - Fire (BrickColor=Bright red, Material=Neon, Transparency=0)  -  Client - InventoryItemHandler:418
+  10:59:44.088    - Metal_Cube (BrickColor=Medium stone grey, Material=Metal, Transparency=0)  -  Client - InventoryItemHandler:418
+  10:59:44.088    - Wood_Plank (BrickColor=Brown, Material=Wood, Transparency=0)  -  Client - InventoryItemHandler:418
+  10:59:44.088    - Sand_Cube (BrickColor=Brick yellow, Material=Sand, Transparency=0)  -  Client - InventoryItemHandler:418
+  10:59:44.089  InventoryItemHandler: Created missing Wood_Cube template  -  Client - InventoryItemHandler:459
+  10:59:44.089    - Wood_Cube (BrickColor=Brown, Material=Wood, Transparency=0)  -  Client - InventoryItemHandler:460
+  10:59:44.089  InventoryItemHandler: Found existing ItemTemplates folder with 20 items  -  Client - InventoryItemHandler:486
+  10:59:44.089  InventoryItemHandler: Set up inventory item interaction with PlacementManager  -  Client - InventoryItemHandler:353
+  10:59:44.089  InventoryItemHandler: Setup world item recall UI  -  Client - InventoryItemHandler:322
+  10:59:44.685  No CurrencyUI found, creating primary version  -  Client - init:268
+  10:59:44.686  Creating primary CurrencyUI...  -  Client - init:159
+  10:59:44.686  Primary CurrencyUI: Found UpdateBalance event, connecting...  -  Client - init:239
+  10:59:44.686  Primary CurrencyUI: Successfully connected to UpdateBalance event  -  Client - init:244
+  10:59:44.686  Primary CurrencyUI created successfully  -  Client - init:256
+  10:59:44.687   ▶ Primary CurrencyUI: Received balance update: 2000040 (x2)  -  Client - init:241
+  10:59:44.949  PlacementManager: Loading 25 placed items  -  Server - PlacementManager:1131
+  10:59:44.950  PlacementManager: Getting template for item: Stone_Cube  -  Server - PlacementManager:107
+  10:59:44.950  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.950    - Grass  -  Server - PlacementManager:157
+  10:59:44.950    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.950    - Stone  -  Server - PlacementManager:157
+  10:59:44.950    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.951    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.951    - Water  -  Server - PlacementManager:157
+  10:59:44.951    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.951    - Fire  -  Server - PlacementManager:157
+  10:59:44.951    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.951    - Brick  -  Server - PlacementManager:157
+  10:59:44.951    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.951    - Sand  -  Server - PlacementManager:157
+  10:59:44.951    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.951    - Concrete  -  Server - PlacementManager:157
+  10:59:44.951    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.951    - Metal  -  Server - PlacementManager:157
+  10:59:44.951    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.951    - Glass  -  Server - PlacementManager:157
+  10:59:44.951    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.951  PlacementManager: Found exact template match: Stone_Cube  -  Server - PlacementManager:163
+  10:59:44.952  PlacementManager: Getting template for item: Stone_Cube  -  Server - PlacementManager:107
+  10:59:44.952  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.952    - Grass  -  Server - PlacementManager:157
+  10:59:44.952    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.952    - Stone  -  Server - PlacementManager:157
+  10:59:44.952    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.952    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.952    - Water  -  Server - PlacementManager:157
+  10:59:44.952    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.953    - Fire  -  Server - PlacementManager:157
+  10:59:44.953    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.953    - Brick  -  Server - PlacementManager:157
+  10:59:44.953    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.953    - Sand  -  Server - PlacementManager:157
+  10:59:44.953    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.953    - Concrete  -  Server - PlacementManager:157
+  10:59:44.953    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.953    - Metal  -  Server - PlacementManager:157
+  10:59:44.954    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.954    - Glass  -  Server - PlacementManager:157
+  10:59:44.954    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.954  PlacementManager: Found exact template match: Stone_Cube  -  Server - PlacementManager:163
+  10:59:44.954  PlacementManager: Getting template for item: Stone_Cube  -  Server - PlacementManager:107
+  10:59:44.954  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.954    - Grass  -  Server - PlacementManager:157
+  10:59:44.955    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.955    - Stone  -  Server - PlacementManager:157
+  10:59:44.955    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.955    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.955    - Water  -  Server - PlacementManager:157
+  10:59:44.955    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.955    - Fire  -  Server - PlacementManager:157
+  10:59:44.955    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.955    - Brick  -  Server - PlacementManager:157
+  10:59:44.955    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.955    - Sand  -  Server - PlacementManager:157
+  10:59:44.955    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.956    - Concrete  -  Server - PlacementManager:157
+  10:59:44.956    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.956    - Metal  -  Server - PlacementManager:157
+  10:59:44.956    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.956    - Glass  -  Server - PlacementManager:157
+  10:59:44.956    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.956  PlacementManager: Found exact template match: Stone_Cube  -  Server - PlacementManager:163
+  10:59:44.957  PlacementManager: Getting template for item: Stone_Cube  -  Server - PlacementManager:107
+  10:59:44.957  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.957    - Grass  -  Server - PlacementManager:157
+  10:59:44.957    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.957    - Stone  -  Server - PlacementManager:157
+  10:59:44.957    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.957    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.958    - Water  -  Server - PlacementManager:157
+  10:59:44.958    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.958    - Fire  -  Server - PlacementManager:157
+  10:59:44.958    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.958    - Brick  -  Server - PlacementManager:157
+  10:59:44.958    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.959    - Sand  -  Server - PlacementManager:157
+  10:59:44.959    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.959    - Concrete  -  Server - PlacementManager:157
+  10:59:44.959    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.959    - Metal  -  Server - PlacementManager:157
+  10:59:44.960    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.960    - Glass  -  Server - PlacementManager:157
+  10:59:44.960    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.960  PlacementManager: Found exact template match: Stone_Cube  -  Server - PlacementManager:163
+  10:59:44.961  PlacementManager: Getting template for item: Stone_Cube  -  Server - PlacementManager:107
+  10:59:44.961  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.961    - Grass  -  Server - PlacementManager:157
+  10:59:44.961    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.961    - Stone  -  Server - PlacementManager:157
+  10:59:44.961    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.961    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.961    - Water  -  Server - PlacementManager:157
+  10:59:44.961    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.962    - Fire  -  Server - PlacementManager:157
+  10:59:44.962    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.962    - Brick  -  Server - PlacementManager:157
+  10:59:44.962    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.962    - Sand  -  Server - PlacementManager:157
+  10:59:44.962    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.963    - Concrete  -  Server - PlacementManager:157
+  10:59:44.963    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.963    - Metal  -  Server - PlacementManager:157
+  10:59:44.963    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.963    - Glass  -  Server - PlacementManager:157
+  10:59:44.963    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.963  PlacementManager: Found exact template match: Stone_Cube  -  Server - PlacementManager:163
+  10:59:44.964  PlacementManager: Getting template for item: Stone_Cube  -  Server - PlacementManager:107
+  10:59:44.964  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.964    - Grass  -  Server - PlacementManager:157
+  10:59:44.964    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.964    - Stone  -  Server - PlacementManager:157
+  10:59:44.964    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.964    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.964    - Water  -  Server - PlacementManager:157
+  10:59:44.965    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.965    - Fire  -  Server - PlacementManager:157
+  10:59:44.965    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.965    - Brick  -  Server - PlacementManager:157
+  10:59:44.965    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.965    - Sand  -  Server - PlacementManager:157
+  10:59:44.965    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.966    - Concrete  -  Server - PlacementManager:157
+  10:59:44.966    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.966    - Metal  -  Server - PlacementManager:157
+  10:59:44.966    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.967    - Glass  -  Server - PlacementManager:157
+  10:59:44.967    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.967  PlacementManager: Found exact template match: Stone_Cube  -  Server - PlacementManager:163
+  10:59:44.967  PlacementManager: Getting template for item: Stone_Cube  -  Server - PlacementManager:107
+  10:59:44.967  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.968    - Grass  -  Server - PlacementManager:157
+  10:59:44.968    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.968    - Stone  -  Server - PlacementManager:157
+  10:59:44.968    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.968    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.968    - Water  -  Server - PlacementManager:157
+  10:59:44.968    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.968    - Fire  -  Server - PlacementManager:157
+  10:59:44.969    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.969    - Brick  -  Server - PlacementManager:157
+  10:59:44.969    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.969    - Sand  -  Server - PlacementManager:157
+  10:59:44.969    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.970    - Concrete  -  Server - PlacementManager:157
+  10:59:44.970    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.970    - Metal  -  Server - PlacementManager:157
+  10:59:44.970    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.970    - Glass  -  Server - PlacementManager:157
+  10:59:44.970    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.970  PlacementManager: Found exact template match: Stone_Cube  -  Server - PlacementManager:163
+  10:59:44.970  PlacementManager: Getting template for item: Stone_Cube  -  Server - PlacementManager:107
+  10:59:44.971  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.971    - Grass  -  Server - PlacementManager:157
+  10:59:44.971    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.971    - Stone  -  Server - PlacementManager:157
+  10:59:44.971    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.971    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.971    - Water  -  Server - PlacementManager:157
+  10:59:44.972    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.972    - Fire  -  Server - PlacementManager:157
+  10:59:44.972    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.972    - Brick  -  Server - PlacementManager:157
+  10:59:44.972    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.972    - Sand  -  Server - PlacementManager:157
+  10:59:44.972    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.972    - Concrete  -  Server - PlacementManager:157
+  10:59:44.973    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.973    - Metal  -  Server - PlacementManager:157
+  10:59:44.973    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.973    - Glass  -  Server - PlacementManager:157
+  10:59:44.973    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.973  PlacementManager: Found exact template match: Stone_Cube  -  Server - PlacementManager:163
+  10:59:44.973  PlacementManager: Getting template for item: Stone_Cube  -  Server - PlacementManager:107
+  10:59:44.973  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.974    - Grass  -  Server - PlacementManager:157
+  10:59:44.974    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.974    - Stone  -  Server - PlacementManager:157
+  10:59:44.974    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.974    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.974    - Water  -  Server - PlacementManager:157
+  10:59:44.974    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.975    - Fire  -  Server - PlacementManager:157
+  10:59:44.975    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.975    - Brick  -  Server - PlacementManager:157
+  10:59:44.975    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.975    - Sand  -  Server - PlacementManager:157
+  10:59:44.976    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.976    - Concrete  -  Server - PlacementManager:157
+  10:59:44.976    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.976    - Metal  -  Server - PlacementManager:157
+  10:59:44.976    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.976    - Glass  -  Server - PlacementManager:157
+  10:59:44.977    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.977  PlacementManager: Found exact template match: Stone_Cube  -  Server - PlacementManager:163
+  10:59:44.977  PlacementManager: Getting template for item: Stone_Cube  -  Server - PlacementManager:107
+  10:59:44.977  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.977    - Grass  -  Server - PlacementManager:157
+  10:59:44.977    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.977    - Stone  -  Server - PlacementManager:157
+  10:59:44.977    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.978    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.978    - Water  -  Server - PlacementManager:157
+  10:59:44.978    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.978    - Fire  -  Server - PlacementManager:157
+  10:59:44.978    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.978    - Brick  -  Server - PlacementManager:157
+  10:59:44.979    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.979    - Sand  -  Server - PlacementManager:157
+  10:59:44.979    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.979    - Concrete  -  Server - PlacementManager:157
+  10:59:44.979    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.979    - Metal  -  Server - PlacementManager:157
+  10:59:44.979    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.979    - Glass  -  Server - PlacementManager:157
+  10:59:44.979    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.980  PlacementManager: Found exact template match: Stone_Cube  -  Server - PlacementManager:163
+  10:59:44.980  PlacementManager: Getting template for item: Stone_Cube  -  Server - PlacementManager:107
+  10:59:44.980  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.980    - Grass  -  Server - PlacementManager:157
+  10:59:44.980    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.980    - Stone  -  Server - PlacementManager:157
+  10:59:44.980    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.980    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.980    - Water  -  Server - PlacementManager:157
+  10:59:44.980    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.980    - Fire  -  Server - PlacementManager:157
+  10:59:44.980    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.980    - Brick  -  Server - PlacementManager:157
+  10:59:44.980    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.981    - Sand  -  Server - PlacementManager:157
+  10:59:44.981    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.981    - Concrete  -  Server - PlacementManager:157
+  10:59:44.981    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.981    - Metal  -  Server - PlacementManager:157
+  10:59:44.981    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.982    - Glass  -  Server - PlacementManager:157
+  10:59:44.982    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.982  PlacementManager: Found exact template match: Stone_Cube  -  Server - PlacementManager:163
+  10:59:44.982  PlacementManager: Getting template for item: Grass_Cube  -  Server - PlacementManager:107
+  10:59:44.983  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.983    - Grass  -  Server - PlacementManager:157
+  10:59:44.983    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.983    - Stone  -  Server - PlacementManager:157
+  10:59:44.983    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.983    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.983    - Water  -  Server - PlacementManager:157
+  10:59:44.983    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.984    - Fire  -  Server - PlacementManager:157
+  10:59:44.984    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.984    - Brick  -  Server - PlacementManager:157
+  10:59:44.984    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.984    - Sand  -  Server - PlacementManager:157
+  10:59:44.984    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.984    - Concrete  -  Server - PlacementManager:157
+  10:59:44.984    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.984    - Metal  -  Server - PlacementManager:157
+  10:59:44.985    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.985    - Glass  -  Server - PlacementManager:157
+  10:59:44.985    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.985  PlacementManager: Found exact template match: Grass_Cube  -  Server - PlacementManager:163
+  10:59:44.985  PlacementManager: Getting template for item: Grass_Cube  -  Server - PlacementManager:107
+  10:59:44.985  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.985    - Grass  -  Server - PlacementManager:157
+  10:59:44.986    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.986    - Stone  -  Server - PlacementManager:157
+  10:59:44.986    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.986    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.986    - Water  -  Server - PlacementManager:157
+  10:59:44.987    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.987    - Fire  -  Server - PlacementManager:157
+  10:59:44.987    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.987    - Brick  -  Server - PlacementManager:157
+  10:59:44.987    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.987    - Sand  -  Server - PlacementManager:157
+  10:59:44.987    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.987    - Concrete  -  Server - PlacementManager:157
+  10:59:44.987    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.988    - Metal  -  Server - PlacementManager:157
+  10:59:44.988    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.988    - Glass  -  Server - PlacementManager:157
+  10:59:44.988    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.988  PlacementManager: Found exact template match: Grass_Cube  -  Server - PlacementManager:163
+  10:59:44.988  PlacementManager: Getting template for item: Brick_Cube  -  Server - PlacementManager:107
+  10:59:44.988  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.989    - Grass  -  Server - PlacementManager:157
+  10:59:44.989    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.989    - Stone  -  Server - PlacementManager:157
+  10:59:44.989    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.989    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.989    - Water  -  Server - PlacementManager:157
+  10:59:44.989    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.990    - Fire  -  Server - PlacementManager:157
+  10:59:44.990    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.990    - Brick  -  Server - PlacementManager:157
+  10:59:44.990    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.990    - Sand  -  Server - PlacementManager:157
+  10:59:44.990    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.990    - Concrete  -  Server - PlacementManager:157
+  10:59:44.990    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.990    - Metal  -  Server - PlacementManager:157
+  10:59:44.991    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.991    - Glass  -  Server - PlacementManager:157
+  10:59:44.991    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.991  PlacementManager: Found exact template match: Brick_Cube  -  Server - PlacementManager:163
+  10:59:44.991  PlacementManager: Getting template for item: Brick_Cube  -  Server - PlacementManager:107
+  10:59:44.992  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.992    - Grass  -  Server - PlacementManager:157
+  10:59:44.992    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.992    - Stone  -  Server - PlacementManager:157
+  10:59:44.992    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.992    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.992    - Water  -  Server - PlacementManager:157
+  10:59:44.992    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.993    - Fire  -  Server - PlacementManager:157
+  10:59:44.993    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.993    - Brick  -  Server - PlacementManager:157
+  10:59:44.993    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.993    - Sand  -  Server - PlacementManager:157
+  10:59:44.993    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.993    - Concrete  -  Server - PlacementManager:157
+  10:59:44.993    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.993    - Metal  -  Server - PlacementManager:157
+  10:59:44.994    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.994    - Glass  -  Server - PlacementManager:157
+  10:59:44.994    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.994  PlacementManager: Found exact template match: Brick_Cube  -  Server - PlacementManager:163
+  10:59:44.994  PlacementManager: Getting template for item: Glass_Cube  -  Server - PlacementManager:107
+  10:59:44.994  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.994    - Grass  -  Server - PlacementManager:157
+  10:59:44.994    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.994    - Stone  -  Server - PlacementManager:157
+  10:59:44.995    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.995    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.995    - Water  -  Server - PlacementManager:157
+  10:59:44.995    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.995    - Fire  -  Server - PlacementManager:157
+  10:59:44.995    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.995    - Brick  -  Server - PlacementManager:157
+  10:59:44.996    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.996    - Sand  -  Server - PlacementManager:157
+  10:59:44.996    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.996    - Concrete  -  Server - PlacementManager:157
+  10:59:44.996    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.997    - Metal  -  Server - PlacementManager:157
+  10:59:44.997    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.997    - Glass  -  Server - PlacementManager:157
+  10:59:44.997    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.997  PlacementManager: Found exact template match: Glass_Cube  -  Server - PlacementManager:163
+  10:59:44.997  PlacementManager: Getting template for item: Glass_Cube  -  Server - PlacementManager:107
+  10:59:44.997  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:44.997    - Grass  -  Server - PlacementManager:157
+  10:59:44.997    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:44.997    - Stone  -  Server - PlacementManager:157
+  10:59:44.998    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:44.998    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:44.998    - Water  -  Server - PlacementManager:157
+  10:59:44.998    - Water_Cube  -  Server - PlacementManager:157
+  10:59:44.998    - Fire  -  Server - PlacementManager:157
+  10:59:44.998    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:44.998    - Brick  -  Server - PlacementManager:157
+  10:59:44.998    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:44.999    - Sand  -  Server - PlacementManager:157
+  10:59:44.999    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:44.999    - Concrete  -  Server - PlacementManager:157
+  10:59:44.999    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:44.999    - Metal  -  Server - PlacementManager:157
+  10:59:44.999    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:44.999    - Glass  -  Server - PlacementManager:157
+  10:59:44.999    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:44.999  PlacementManager: Found exact template match: Glass_Cube  -  Server - PlacementManager:163
+  10:59:45.000  PlacementManager: Getting template for item: Grass_Cube  -  Server - PlacementManager:107
+  10:59:45.000  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:45.000    - Grass  -  Server - PlacementManager:157
+  10:59:45.000    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:45.000    - Stone  -  Server - PlacementManager:157
+  10:59:45.000    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:45.000    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:45.000    - Water  -  Server - PlacementManager:157
+  10:59:45.000    - Water_Cube  -  Server - PlacementManager:157
+  10:59:45.001    - Fire  -  Server - PlacementManager:157
+  10:59:45.001    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:45.001    - Brick  -  Server - PlacementManager:157
+  10:59:45.001    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:45.001    - Sand  -  Server - PlacementManager:157
+  10:59:45.001    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:45.001    - Concrete  -  Server - PlacementManager:157
+  10:59:45.002    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:45.002    - Metal  -  Server - PlacementManager:157
+  10:59:45.002    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:45.002    - Glass  -  Server - PlacementManager:157
+  10:59:45.002    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:45.002  PlacementManager: Found exact template match: Grass_Cube  -  Server - PlacementManager:163
+  10:59:45.002  PlacementManager: Getting template for item: Grass_Cube  -  Server - PlacementManager:107
+  10:59:45.002  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:45.003    - Grass  -  Server - PlacementManager:157
+  10:59:45.003    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:45.003    - Stone  -  Server - PlacementManager:157
+  10:59:45.003    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:45.003    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:45.003    - Water  -  Server - PlacementManager:157
+  10:59:45.003    - Water_Cube  -  Server - PlacementManager:157
+  10:59:45.004    - Fire  -  Server - PlacementManager:157
+  10:59:45.004    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:45.004    - Brick  -  Server - PlacementManager:157
+  10:59:45.004    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:45.004    - Sand  -  Server - PlacementManager:157
+  10:59:45.004    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:45.005    - Concrete  -  Server - PlacementManager:157
+  10:59:45.005    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:45.005    - Metal  -  Server - PlacementManager:157
+  10:59:45.005    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:45.005    - Glass  -  Server - PlacementManager:157
+  10:59:45.005    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:45.005  PlacementManager: Found exact template match: Grass_Cube  -  Server - PlacementManager:163
+  10:59:45.005  PlacementManager: Getting template for item: Wood_Cube  -  Server - PlacementManager:107
+  10:59:45.006  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:45.006    - Grass  -  Server - PlacementManager:157
+  10:59:45.006    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:45.006    - Stone  -  Server - PlacementManager:157
+  10:59:45.006    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:45.006    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:45.006    - Water  -  Server - PlacementManager:157
+  10:59:45.006    - Water_Cube  -  Server - PlacementManager:157
+  10:59:45.006    - Fire  -  Server - PlacementManager:157
+  10:59:45.007    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:45.007    - Brick  -  Server - PlacementManager:157
+  10:59:45.007    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:45.007    - Sand  -  Server - PlacementManager:157
+  10:59:45.007    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:45.007    - Concrete  -  Server - PlacementManager:157
+  10:59:45.007    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:45.007    - Metal  -  Server - PlacementManager:157
+  10:59:45.007    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:45.008    - Glass  -  Server - PlacementManager:157
+  10:59:45.008    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:45.008  PlacementManager: Creating Wood_Cube from Wood_Plank  -  Server - PlacementManager:180
+  10:59:45.008  PlacementManager: Getting template for item: Wood_Cube  -  Server - PlacementManager:107
+  10:59:45.008  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:45.008    - Grass  -  Server - PlacementManager:157
+  10:59:45.008    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:45.009    - Stone  -  Server - PlacementManager:157
+  10:59:45.009    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:45.009    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:45.009    - Water  -  Server - PlacementManager:157
+  10:59:45.009    - Water_Cube  -  Server - PlacementManager:157
+  10:59:45.009    - Fire  -  Server - PlacementManager:157
+  10:59:45.009    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:45.009    - Brick  -  Server - PlacementManager:157
+  10:59:45.009    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:45.009    - Sand  -  Server - PlacementManager:157
+  10:59:45.010    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:45.010    - Concrete  -  Server - PlacementManager:157
+  10:59:45.010    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:45.010    - Metal  -  Server - PlacementManager:157
+  10:59:45.010    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:45.010    - Glass  -  Server - PlacementManager:157
+  10:59:45.010    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:45.010    - Wood_Cube  -  Server - PlacementManager:157
+  10:59:45.010  PlacementManager: Found exact template match: Wood_Cube  -  Server - PlacementManager:163
+  10:59:45.010  PlacementManager: Getting template for item: Wood_Plank  -  Server - PlacementManager:107
+  10:59:45.011  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:45.011    - Grass  -  Server - PlacementManager:157
+  10:59:45.011    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:45.011    - Stone  -  Server - PlacementManager:157
+  10:59:45.011    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:45.011    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:45.011    - Water  -  Server - PlacementManager:157
+  10:59:45.012    - Water_Cube  -  Server - PlacementManager:157
+  10:59:45.012    - Fire  -  Server - PlacementManager:157
+  10:59:45.012    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:45.012    - Brick  -  Server - PlacementManager:157
+  10:59:45.012    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:45.012    - Sand  -  Server - PlacementManager:157
+  10:59:45.012    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:45.012    - Concrete  -  Server - PlacementManager:157
+  10:59:45.013    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:45.013    - Metal  -  Server - PlacementManager:157
+  10:59:45.013    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:45.013    - Glass  -  Server - PlacementManager:157
+  10:59:45.013    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:45.013    - Wood_Cube  -  Server - PlacementManager:157
+  10:59:45.013  PlacementManager: Found exact template match: Wood_Plank  -  Server - PlacementManager:163
+  10:59:45.013  PlacementManager: Getting template for item: Wood_Plank  -  Server - PlacementManager:107
+  10:59:45.014  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:45.014    - Grass  -  Server - PlacementManager:157
+  10:59:45.014    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:45.014    - Stone  -  Server - PlacementManager:157
+  10:59:45.014    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:45.014    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:45.014    - Water  -  Server - PlacementManager:157
+  10:59:45.015    - Water_Cube  -  Server - PlacementManager:157
+  10:59:45.015    - Fire  -  Server - PlacementManager:157
+  10:59:45.015    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:45.015    - Brick  -  Server - PlacementManager:157
+  10:59:45.015    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:45.015    - Sand  -  Server - PlacementManager:157
+  10:59:45.016    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:45.016    - Concrete  -  Server - PlacementManager:157
+  10:59:45.016    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:45.016    - Metal  -  Server - PlacementManager:157
+  10:59:45.016    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:45.016    - Glass  -  Server - PlacementManager:157
+  10:59:45.017    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:45.017    - Wood_Cube  -  Server - PlacementManager:157
+  10:59:45.017  PlacementManager: Found exact template match: Wood_Plank  -  Server - PlacementManager:163
+  10:59:45.017  PlacementManager: Getting template for item: Wood_Plank  -  Server - PlacementManager:107
+  10:59:45.017  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:45.018    - Grass  -  Server - PlacementManager:157
+  10:59:45.018    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:45.018    - Stone  -  Server - PlacementManager:157
+  10:59:45.018    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:45.018    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:45.018    - Water  -  Server - PlacementManager:157
+  10:59:45.019    - Water_Cube  -  Server - PlacementManager:157
+  10:59:45.019    - Fire  -  Server - PlacementManager:157
+  10:59:45.019    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:45.019    - Brick  -  Server - PlacementManager:157
+  10:59:45.019    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:45.019    - Sand  -  Server - PlacementManager:157
+  10:59:45.019    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:45.020    - Concrete  -  Server - PlacementManager:157
+  10:59:45.020    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:45.020    - Metal  -  Server - PlacementManager:157
+  10:59:45.020    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:45.020    - Glass  -  Server - PlacementManager:157
+  10:59:45.020    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:45.020    - Wood_Cube  -  Server - PlacementManager:157
+  10:59:45.021  PlacementManager: Found exact template match: Wood_Plank  -  Server - PlacementManager:163
+  10:59:45.021  PlacementManager: Getting template for item: Grass_Cube  -  Server - PlacementManager:107
+  10:59:45.021  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  10:59:45.021    - Grass  -  Server - PlacementManager:157
+  10:59:45.021    - Grass_Cube  -  Server - PlacementManager:157
+  10:59:45.021    - Stone  -  Server - PlacementManager:157
+  10:59:45.021    - Stone_Cube  -  Server - PlacementManager:157
+  10:59:45.022    - Wood_Plank  -  Server - PlacementManager:157
+  10:59:45.022    - Water  -  Server - PlacementManager:157
+  10:59:45.022    - Water_Cube  -  Server - PlacementManager:157
+  10:59:45.022    - Fire  -  Server - PlacementManager:157
+  10:59:45.022    - Fire_Cube  -  Server - PlacementManager:157
+  10:59:45.022    - Brick  -  Server - PlacementManager:157
+  10:59:45.022    - Brick_Cube  -  Server - PlacementManager:157
+  10:59:45.022    - Sand  -  Server - PlacementManager:157
+  10:59:45.022    - Sand_Cube  -  Server - PlacementManager:157
+  10:59:45.022    - Concrete  -  Server - PlacementManager:157
+  10:59:45.022    - Concrete_Cube  -  Server - PlacementManager:157
+  10:59:45.023    - Metal  -  Server - PlacementManager:157
+  10:59:45.023    - Metal_Cube  -  Server - PlacementManager:157
+  10:59:45.023    - Glass  -  Server - PlacementManager:157
+  10:59:45.023    - Glass_Cube  -  Server - PlacementManager:157
+  10:59:45.023    - Wood_Cube  -  Server - PlacementManager:157
+  10:59:45.023  PlacementManager: Found exact template match: Grass_Cube  -  Server - PlacementManager:163
+  10:59:45.024  PlacementManager: Successfully loaded 25 items  -  Server - PlacementManager:1225
+  10:59:45.210  InventoryUILoader: Found inventory button, updating click handler  -  Client - InventoryUILoader:106
+  10:59:45.210  InventoryUILoader: Successfully updated inventory button click handler  -  Client - InventoryUILoader:129
+  10:59:45.304  MAIN INVENTORY BUTTON CLICKED - Directly calling Toggle()  -  Client - InventoryUILoader:122
+  10:59:45.304  InventoryItemHandler: InventoryUI.Toggle intercepted and called  -  Client - InventoryItemHandler:99
+  10:59:45.304  InventoryItemHandler: Fixed InventoryUI._isVisible to match actual state: false  -  Client - InventoryItemHandler:110
+  10:59:45.304  InventoryUI: Toggle called  -  Client - InventoryUI:575
+  10:59:45.304  InventoryUI: Toggle - current visibility state: false  -  Client - InventoryUI:601
+  10:59:45.305  InventoryUI: Toggle - showing inventory  -  Client - InventoryUI:611
+  10:59:45.305  InventoryItemHandler: InventoryUI.Toggle intercepted and called  -  Client - InventoryItemHandler:99
+  10:59:45.305  InventoryItemHandler: Fixed InventoryUI._isVisible to match actual state: false  -  Client - InventoryItemHandler:110
+  10:59:45.305  InventoryUI: Toggle called  -  Client - InventoryUI:575
+  10:59:45.305  InventoryUI: Toggle - current visibility state: false  -  Client - InventoryUI:601
+  10:59:45.306  InventoryUI: Toggle - showing inventory  -  Client - InventoryUI:611
+  10:59:45.332  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  10:59:45.332  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  10:59:45.333  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:45.333  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:45.333  GetInventory result for Xdjpearsonx : success= true items= 4 currency= 2000040  -  Server - init:415
+  10:59:45.333  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  10:59:45.333  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  10:59:45.333  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:45.333  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:45.333  GetInventory result for Xdjpearsonx : success= true items= 4 currency= 2000040  -  Server - init:415
+  10:59:45.333  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  10:59:45.333  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  10:59:45.333  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:45.333  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:45.333  GetInventory result for Xdjpearsonx : success= true items= 4 currency= 2000040  -  Server - init:415
+  10:59:45.367  InventoryUI: Retrieved inventory data: 4 items, Currency: 2000040  -  Client - InventoryUI:441
+  10:59:45.368  InventoryUI: Updated inventory with 4 items  -  Client - InventoryUI:570
+  10:59:45.368  InventoryItemHandler: InventoryUI.Show intercepted and called  -  Client - InventoryItemHandler:93
+  10:59:45.369  InventoryUI: Show function called  -  Client - InventoryUI:620
+  10:59:45.369  InventoryUI: Refreshing inventory data  -  Client - InventoryUI:649
+  10:59:45.369  InventoryUI: Retrieved inventory data: 4 items, Currency: 2000040  -  Client - InventoryUI:441
+  10:59:45.369  InventoryUI: Updated inventory with 4 items  -  Client - InventoryUI:570
+  10:59:45.369  InventoryItemHandler: InventoryUI.Show intercepted and called  -  Client - InventoryItemHandler:93
+  10:59:45.370  InventoryUI: Show function called  -  Client - InventoryUI:620
+  10:59:45.370  InventoryUI: Refreshing inventory data  -  Client - InventoryUI:649
+  10:59:45.382  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  10:59:45.383  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  10:59:45.383  InventoryUIModule not available, but data was retrieved successfully  -  Client - client_core:467
+  10:59:45.383  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:45.383  Retrieved 4 inventory items and 2000040 currency  -  Client - client_core:468
+  10:59:45.383  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:45.383  GetInventory result for Xdjpearsonx : success= true items= 4 currency= 2000040  -  Server - init:415
+  10:59:45.383  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  10:59:45.383  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  10:59:45.383  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:45.383  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:45.384  GetInventory result for Xdjpearsonx : success= true items= 4 currency= 2000040  -  Server - init:415
+  10:59:45.401  InventoryUI: Retrieved inventory data: 4 items, Currency: 2000040  -  Client - InventoryUI:441
+  10:59:45.403  InventoryUI: Updated inventory with 4 items  -  Client - InventoryUI:570
+  10:59:45.403  InventoryUI: Making inventory visible  -  Client - InventoryUI:653
+  10:59:45.403  InventoryUI: Inventory is now visible  -  Client - InventoryUI:664
+  10:59:45.416  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  10:59:45.416  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  10:59:45.416  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:45.416  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  10:59:45.416  GetInventory result for Xdjpearsonx : success= true items= 4 currency= 2000040  -  Server - init:415
+  10:59:45.416  InventoryUI: Retrieved inventory data: 4 items, Currency: 2000040  -  Client - InventoryUI:441
+  10:59:45.417  InventoryUI: Updated inventory with 4 items  -  Client - InventoryUI:570
+  10:59:45.417  InventoryUI: Making inventory visible  -  Client - InventoryUI:653
+  10:59:45.418  InventoryUI: Inventory is now visible  -  Client - InventoryUI:664
+  10:59:45.433  InventoryUI: Retrieved inventory data: 4 items, Currency: 2000040  -  Client - InventoryUI:441
+  10:59:45.434  InventoryUI: Updated inventory with 4 items  -  Client - InventoryUI:570
+  10:59:45.883  ModelDisplayRunner: Starting ModelDisplayUtil...  -  Server - ModelDisplayRunner:36
+  10:59:45.883  ModelDisplayUtil: Initializing...  -  Server - ModelDisplayUtil:264
+  10:59:45.883  ModelDisplayUtil: Capturing all static models...  -  Server - ModelDisplayUtil:126
+  10:59:45.911  ModelDisplayUtil: Captured 6 static models for tracking  -  Server - ModelDisplayUtil:143
+  10:59:45.911  ModelDisplayUtil: Now monitoring World_Items folder  -  Server - ModelDisplayUtil:252
+  10:59:45.911  
+=== INITIAL WORLD ITEMS STRUCTURE ===  -  Server - ModelDisplayUtil:255
+  10:59:45.912  📁 World_Items (Folder)  -  Server - ModelDisplayUtil:22
+  10:59:45.912    📁 Placed (Folder)  -  Server - ModelDisplayUtil:22
+  10:59:45.912   ▶     🧊 Brick_Cube_7768610061_1747625201 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.912   ▶     🧊 Glass_Cube_7768610061_1747625209 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.913   ▶     🧊 Grass_Cube_7768610061_1747625193 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.913   ▶     🧊 Grass_Cube_7768610061_1747625215 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.913      🧊 Grass_Cube_7768610061_1747670269 (Part)  -  Server - ModelDisplayUtil:79
+  10:59:45.913   ▶     🧊 Stone_Cube_7768610061_1747624737 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.914   ▶     🧊 Stone_Cube_7768610061_1747624747 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.914   ▶     🧊 Stone_Cube_7768610061_1747624755 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.914   ▶     🧊 Stone_Cube_7768610061_1747625120 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.914   ▶     🧊 Stone_Cube_7768610061_1747625170 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.914      🧊 Stone_Cube_7768610061_1747625187 (Part)  -  Server - ModelDisplayUtil:79
+  10:59:45.915   ▶     🧊 Wood_Cube_7768610061_1747625800 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.915      🧊 Wood_Plank_7768610061_1747626017 (Part)  -  Server - ModelDisplayUtil:79
+  10:59:45.915      🧊 Wood_Plank_7768610061_1747626290 (Part)  -  Server - ModelDisplayUtil:79
+  10:59:45.915      🧊 Wood_Plank_7768610061_1747626294 (Part)  -  Server - ModelDisplayUtil:79
+  10:59:45.915    📁 Static (Folder)  -  Server - ModelDisplayUtil:22
+  10:59:45.916      📁 Teleport Portals (Folder)  -  Server - ModelDisplayUtil:22
+  10:59:45.916        📋 PortalBlue (6 parts) [name=Teleport Portals] [ItemID=b41c9bef-04cf-414d-a91e-2a6ea1a000a9] [item=secondary] [Registered=true]   -  Server - ModelDisplayUtil:71
+  10:59:45.916        📋 PortalRed (6 parts) [name=Teleport Portals] [ItemID=c24c6b46-4e8d-4c42-a05d-274a0d2a90aa] [item=secondary] [Registered=true]   -  Server - ModelDisplayUtil:71
+  10:59:45.916        ❓ Script (Script)  -  Server - ModelDisplayUtil:81
+  10:59:45.917      📋 Classic House (568 parts) [ModelDisplayUtil_LastSeen=1747670385] [ModelDisplayUtil_Tracked=true] [ItemID=a6d8b4af-33dc-473e-8863-8082865ca29d] [Registered=true]   -  Server - ModelDisplayUtil:71
+  10:59:45.917      📋 Level 2 House (221 parts) [ModelDisplayUtil_LastSeen=1747670385] [ModelDisplayUtil_Tracked=true] [ItemID=6c84cf30-9030-4de9-a371-84e48b016c68] [Registered=true]   -  Server - ModelDisplayUtil:71
+  10:59:45.918      📋 Level 3 House (493 parts) [ModelDisplayUtil_LastSeen=1747670385] [ModelDisplayUtil_Tracked=true] [ItemID=f85a1576-94bc-4ae0-8ec3-1bde80e59785] [Registered=true]   -  Server - ModelDisplayUtil:71
+  10:59:45.919      📋 Rare House (960 parts) [ModelDisplayUtil_LastSeen=1747670385] [ModelDisplayUtil_Tracked=true] [ItemID=fe72a4d5-f538-4c94-880c-33c72d97f714] [Registered=true]   -  Server - ModelDisplayUtil:71
+  10:59:45.919      📋 Trampoline (6 parts) [ModelDisplayUtil_LastSeen=1747670385] [ModelDisplayUtil_Tracked=true] [ItemID=35547209-911a-4e23-9efc-bbad9447597b] [Registered=true]   -  Server - ModelDisplayUtil:71
+  10:59:45.919      📋 Trampoline (6 parts) [ModelDisplayUtil_LastSeen=1747670385] [ModelDisplayUtil_Tracked=true] [ItemID=89ba6262-6b75-4be8-9873-965e1349fa18] [Registered=true]   -  Server - ModelDisplayUtil:71
+  10:59:45.919  =====================================
+  -  Server - ModelDisplayUtil:257
+  10:59:45.919  ModelDisplayUtil: Initialization complete  -  Server - ModelDisplayUtil:310
+  10:59:45.919  ModelDisplayRunner: Setup complete  -  Server - ModelDisplayRunner:79
+  10:59:45.953  
+=== PERIODIC MODEL DISPLAY ===  -  Server - ModelDisplayRunner:46
+  10:59:45.953  📁 World_Items (Folder)  -  Server - ModelDisplayUtil:22
+  10:59:45.953    📁 Placed (Folder)  -  Server - ModelDisplayUtil:22
+  10:59:45.953   ▶     🧊 Brick_Cube_7768610061_1747625201 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.954   ▶     🧊 Glass_Cube_7768610061_1747625209 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.954   ▶     🧊 Grass_Cube_7768610061_1747625193 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.954   ▶     🧊 Grass_Cube_7768610061_1747625215 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.954      🧊 Grass_Cube_7768610061_1747670269 (Part)  -  Server - ModelDisplayUtil:79
+  10:59:45.954   ▶     🧊 Stone_Cube_7768610061_1747624737 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.954   ▶     🧊 Stone_Cube_7768610061_1747624747 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.954   ▶     🧊 Stone_Cube_7768610061_1747624755 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.955   ▶     🧊 Stone_Cube_7768610061_1747625120 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.955   ▶     🧊 Stone_Cube_7768610061_1747625170 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.955      🧊 Stone_Cube_7768610061_1747625187 (Part)  -  Server - ModelDisplayUtil:79
+  10:59:45.955   ▶     🧊 Wood_Cube_7768610061_1747625800 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  10:59:45.955      🧊 Wood_Plank_7768610061_1747626017 (Part)  -  Server - ModelDisplayUtil:79
+  10:59:45.955      🧊 Wood_Plank_7768610061_1747626290 (Part)  -  Server - ModelDisplayUtil:79
+  10:59:45.955      🧊 Wood_Plank_7768610061_1747626294 (Part)  -  Server - ModelDisplayUtil:79
+  10:59:45.956    📁 Static (Folder)  -  Server - ModelDisplayUtil:22
+  10:59:45.956      📁 Teleport Portals (Folder)  -  Server - ModelDisplayUtil:22
+  10:59:45.956        📋 PortalBlue (6 parts) [name=Teleport Portals] [ItemID=b41c9bef-04cf-414d-a91e-2a6ea1a000a9] [item=secondary] [Registered=true]   -  Server - ModelDisplayUtil:71
+  10:59:45.956        📋 PortalRed (6 parts) [name=Teleport Portals] [ItemID=c24c6b46-4e8d-4c42-a05d-274a0d2a90aa] [item=secondary] [Registered=true]   -  Server - ModelDisplayUtil:71
+  10:59:45.956        ❓ Script (Script)  -  Server - ModelDisplayUtil:81
+  10:59:45.957      📋 Classic House (568 parts) [ModelDisplayUtil_LastSeen=1747670385] [ModelDisplayUtil_Tracked=true] [ItemID=a6d8b4af-33dc-473e-8863-8082865ca29d] [Registered=true]   -  Server - ModelDisplayUtil:71
+  10:59:45.957      📋 Level 2 House (221 parts) [ModelDisplayUtil_LastSeen=1747670385] [ModelDisplayUtil_Tracked=true] [ItemID=6c84cf30-9030-4de9-a371-84e48b016c68] [Registered=true]   -  Server - ModelDisplayUtil:71
+  10:59:45.958      📋 Level 3 House (493 parts) [ModelDisplayUtil_LastSeen=1747670385] [ModelDisplayUtil_Tracked=true] [ItemID=f85a1576-94bc-4ae0-8ec3-1bde80e59785] [Registered=true]   -  Server - ModelDisplayUtil:71
+  10:59:45.958      📋 Rare House (960 parts) [ModelDisplayUtil_LastSeen=1747670385] [ModelDisplayUtil_Tracked=true] [ItemID=fe72a4d5-f538-4c94-880c-33c72d97f714] [Registered=true]   -  Server - ModelDisplayUtil:71
+  10:59:45.958      📋 Trampoline (6 parts) [ModelDisplayUtil_LastSeen=1747670385] [ModelDisplayUtil_Tracked=true] [ItemID=35547209-911a-4e23-9efc-bbad9447597b] [Registered=true]   -  Server - ModelDisplayUtil:71
+  10:59:45.958      📋 Trampoline (6 parts) [ModelDisplayUtil_LastSeen=1747670385] [ModelDisplayUtil_Tracked=true] [ItemID=89ba6262-6b75-4be8-9873-965e1349fa18] [Registered=true]   -  Server - ModelDisplayUtil:71
+  10:59:45.959  =============================
+  -  Server - ModelDisplayRunner:48
+  10:59:46.099  InventoryItemHandler: Found inventory button, adding additional backup connection  -  Client - InventoryItemHandler:129
+  10:59:46.684  DirectInventoryUI: Using external module implementation instead  -  Client - init:290
+  10:59:48.386  InventoryUI: Hide function called  -  Client - InventoryUI:669
+  10:59:48.386  InventoryUI: Found frame to hide  -  Client - InventoryUI:685
+  10:59:48.386  InventoryUI: Hide completed  -  Client - InventoryUI:704
+  10:59:48.669  InventoryUI: Frame hidden after tween  -  Client - InventoryUI:692
+  10:59:56.433  GetItemInfo received a table instead of string for itemType: table: 0xb5d9548ec6e2d85b  -  Client - FixItemTypes:210
+  10:59:56.433  Converted table itemType to string: Unknown_Item_d85b  -  Client - FixItemTypes:288
+  10:59:56.433  Added ADMIN_IDS to Constants  -  Client - FixItemTypes:312
+  10:59:56.433  Ensuring all Constants.ITEMS have proper price structure  -  Client - FixItemTypes:317
+  10:59:56.433  Missing item type in Constants.ITEMS: Unknown_Item_d85b  -  Client - FixItemTypes:395
+  10:59:56.433  Added missing item type to Constants.ITEMS: Unknown_Item_d85b  -  Client - FixItemTypes:406
+  10:59:56.451  CLIENT - Attempting to purchase Grass_Cube with 10 coins  -  Client - InteractionSystemModule_new:432
+  10:59:56.452  CLIENT - Firing PurchaseItem event to server with item: Workspace.Items.Basic.Grass_Cube Currency type: INGAME, Price: 10  -  Client - InteractionSystemModule_new:442
+  10:59:56.949  GetItemInfo received a table instead of string for itemType: table: 0xb5d9548ec6e2d85b  -  Client - FixItemTypes:210
+  10:59:56.950  Converted table itemType to string: Unknown_Item_d85b  -  Client - FixItemTypes:288
+  10:59:56.950  Ensuring all Constants.ITEMS have proper price structure  -  Client - FixItemTypes:317
+  10:59:58.500  GetItemInfo received a table instead of string for itemType: table: 0xb5d9548ec6e2d85b  -  Client - FixItemTypes:210
+  10:59:58.500  Converted table itemType to string: Unknown_Item_d85b  -  Client - FixItemTypes:288
+  10:59:58.500  Ensuring all Constants.ITEMS have proper price structure  -  Client - FixItemTypes:317
+  10:59:59.033  CLIENT - Attempting to purchase Stone_Cube with 5 coins  -  Client - InteractionSystemModule_new:432
+  10:59:59.033  CLIENT - Firing PurchaseItem event to server with item: Workspace.Items.Basic.Stone_Cube Currency type: INGAME, Price: 5  -  Client - InteractionSystemModule_new:442
+  10:59:59.516  GetItemInfo received a table instead of string for itemType: table: 0xb5d9548ec6e2d85b  -  Client - FixItemTypes:210
+  10:59:59.516  Converted table itemType to string: Unknown_Item_d85b  -  Client - FixItemTypes:288
+  10:59:59.516  Ensuring all Constants.ITEMS have proper price structure  -  Client - FixItemTypes:317
+  11:00:00.549  GetItemInfo received a table instead of string for itemType: table: 0xb5d9548ec6e2d85b  -  Client - FixItemTypes:210
+  11:00:00.550  Converted table itemType to string: Unknown_Item_d85b  -  Client - FixItemTypes:288
+  11:00:00.550  Ensuring all Constants.ITEMS have proper price structure  -  Client - FixItemTypes:317
+  11:00:02.599  GetItemInfo received a table instead of string for itemType: table: 0xb5d9548ec6e2d85b  -  Client - FixItemTypes:210
+  11:00:02.599  Converted table itemType to string: Unknown_Item_d85b  -  Client - FixItemTypes:288
+  11:00:02.599  Ensuring all Constants.ITEMS have proper price structure  -  Client - FixItemTypes:317
+  11:00:02.735  CLIENT - Attempting to purchase Fire_Cube with 5 coins  -  Client - InteractionSystemModule_new:432
+  11:00:02.735  CLIENT - Firing PurchaseItem event to server with item: Workspace.Items.Basic.Fire_Cube Currency type: INGAME, Price: 5  -  Client - InteractionSystemModule_new:442
+  11:00:03.101  GetItemInfo received a table instead of string for itemType: table: 0xb5d9548ec6e2d85b  -  Client - FixItemTypes:210
+  11:00:03.101  Converted table itemType to string: Unknown_Item_d85b  -  Client - FixItemTypes:288
+  11:00:03.101  Ensuring all Constants.ITEMS have proper price structure  -  Client - FixItemTypes:317
+  11:00:06.883  InventoryItemHandler: Inventory button clicked (from backup handler)  -  Client - InventoryItemHandler:132
+  11:00:06.883  InventoryItemHandler: Calling InventoryUI.Toggle directly  -  Client - InventoryItemHandler:134
+  11:00:06.883  InventoryItemHandler: InventoryUI.Toggle intercepted and called  -  Client - InventoryItemHandler:99
+  11:00:06.884  InventoryItemHandler: Fixed InventoryUI._isVisible to match actual state: false  -  Client - InventoryItemHandler:110
+  11:00:06.884  InventoryUI: Toggle called  -  Client - InventoryUI:575
+  11:00:06.884  InventoryUI: Toggle - current visibility state: false  -  Client - InventoryUI:601
+  11:00:06.884  InventoryUI: Toggle - showing inventory  -  Client - InventoryUI:611
+  11:00:06.884  MAIN INVENTORY BUTTON CLICKED - Directly calling Toggle()  -  Client - InventoryUILoader:122
+  11:00:06.884  InventoryItemHandler: InventoryUI.Toggle intercepted and called  -  Client - InventoryItemHandler:99
+  11:00:06.884  InventoryItemHandler: Fixed InventoryUI._isVisible to match actual state: false  -  Client - InventoryItemHandler:110
+  11:00:06.884  InventoryUI: Toggle called  -  Client - InventoryUI:575
+  11:00:06.884  InventoryUI: Toggle - current visibility state: false  -  Client - InventoryUI:601
+  11:00:06.885  InventoryUI: Toggle - showing inventory  -  Client - InventoryUI:611
+  11:00:06.885  InventoryItemHandler: InventoryUI.Toggle intercepted and called  -  Client - InventoryItemHandler:99
+  11:00:06.885  InventoryItemHandler: Fixed InventoryUI._isVisible to match actual state: false  -  Client - InventoryItemHandler:110
+  11:00:06.885  InventoryUI: Toggle called  -  Client - InventoryUI:575
+  11:00:06.885  InventoryUI: Toggle - current visibility state: false  -  Client - InventoryUI:601
+  11:00:06.885  InventoryUI: Toggle - showing inventory  -  Client - InventoryUI:611
+  11:00:06.915  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:06.916  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:06.916  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:06.916  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:06.916  GetInventory result for Xdjpearsonx : success= true items= 4 currency= 2000040  -  Server - init:415
+  11:00:06.916  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:06.916  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:06.917  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:06.917  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:06.917  GetInventory result for Xdjpearsonx : success= true items= 4 currency= 2000040  -  Server - init:415
+  11:00:06.917  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:06.917  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:06.917  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:06.917  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:06.917  GetInventory result for Xdjpearsonx : success= true items= 4 currency= 2000040  -  Server - init:415
+  11:00:06.917  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:06.918  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:06.918  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:06.918  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:06.918  GetInventory result for Xdjpearsonx : success= true items= 4 currency= 2000040  -  Server - init:415
+  11:00:06.932  InventoryUI: Retrieved inventory data: 4 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:06.933  InventoryUI: Updated inventory with 4 items  -  Client - InventoryUI:570
+  11:00:06.933  InventoryItemHandler: InventoryUI.Show intercepted and called  -  Client - InventoryItemHandler:93
+  11:00:06.933  InventoryUI: Show function called  -  Client - InventoryUI:620
+  11:00:06.934  InventoryUI: Refreshing inventory data  -  Client - InventoryUI:649
+  11:00:06.948  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:06.948  InventoryUI: Retrieved inventory data: 4 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:06.949  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:06.949  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:06.949  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:06.949  GetInventory result for Xdjpearsonx : success= true items= 4 currency= 2000040  -  Server - init:415
+  11:00:06.949  InventoryUI: Updated inventory with 4 items  -  Client - InventoryUI:570
+  11:00:06.950  InventoryItemHandler: InventoryUI.Show intercepted and called  -  Client - InventoryItemHandler:93
+  11:00:06.950  InventoryUI: Show function called  -  Client - InventoryUI:620
+  11:00:06.950  InventoryUI: Refreshing inventory data  -  Client - InventoryUI:649
+  11:00:06.950  InventoryUI: Retrieved inventory data: 4 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:06.951  InventoryUI: Updated inventory with 4 items  -  Client - InventoryUI:570
+  11:00:06.951  InventoryItemHandler: InventoryUI.Show intercepted and called  -  Client - InventoryItemHandler:93
+  11:00:06.951  InventoryUI: Show function called  -  Client - InventoryUI:620
+  11:00:06.951  InventoryUI: Refreshing inventory data  -  Client - InventoryUI:649
+  11:00:06.965  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:06.965  InventoryUIModule not available, but data was retrieved successfully  -  Client - client_core:467
+  11:00:06.965  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:06.965  Retrieved 4 inventory items and 2000040 currency  -  Client - client_core:468
+  11:00:06.965  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:06.965  InventoryUI: Retrieved inventory data: 4 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:06.966  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:06.966  GetInventory result for Xdjpearsonx : success= true items= 4 currency= 2000040  -  Server - init:415
+  11:00:06.966  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:06.966  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:06.966  InventoryUI: Updated inventory with 4 items  -  Client - InventoryUI:570
+  11:00:06.966  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:06.966  InventoryUI: Making inventory visible  -  Client - InventoryUI:653
+  11:00:06.967  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:06.967  InventoryUI: Inventory is now visible  -  Client - InventoryUI:664
+  11:00:06.967  GetInventory result for Xdjpearsonx : success= true items= 4 currency= 2000040  -  Server - init:415
+  11:00:07.000  InventoryUI: Retrieved inventory data: 4 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:07.001  InventoryUI: Updated inventory with 4 items  -  Client - InventoryUI:570
+  11:00:07.001  InventoryUI: Making inventory visible  -  Client - InventoryUI:653
+  11:00:07.001  InventoryUI: Inventory is now visible  -  Client - InventoryUI:664
+  11:00:07.001  InventoryUI: Retrieved inventory data: 4 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:07.002  InventoryUI: Updated inventory with 4 items  -  Client - InventoryUI:570
+  11:00:07.003  InventoryUI: Making inventory visible  -  Client - InventoryUI:653
+  11:00:07.003  InventoryUI: Inventory is now visible  -  Client - InventoryUI:664
+  11:00:07.015  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:07.015  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:07.015  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:07.015  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:07.016  GetInventory result for Xdjpearsonx : success= true items= 4 currency= 2000040  -  Server - init:415
+  11:00:07.033  InventoryUI: Retrieved inventory data: 4 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:07.034  InventoryUI: Updated inventory with 4 items  -  Client - InventoryUI:570
+  11:00:08.802  InventoryUI: Hide function called  -  Client - InventoryUI:669
+  11:00:08.802  InventoryUI: Found frame to hide  -  Client - InventoryUI:685
+  11:00:08.803  InventoryUI: Hide completed  -  Client - InventoryUI:704
+  11:00:08.916  InventoryItemHandler: Item selected from inventory: Brick_Cube  -  Client - InventoryItemHandler:333
+  11:00:08.916  InventoryItemHandler: Fixed movement for character  -  Client - InventoryItemHandler:160
+  11:00:08.916  InventoryItemHandler: Item count: 4  -  Client - InventoryItemHandler:340
+  11:00:08.917  PlacementManager: Recalling item Brick_Cube from inventory  -  Client - PlacementManager:2152
+  11:00:08.917  PlacementManager: Normalized item name from Brick_Cube to Brick_Cube  -  Client - PlacementManager:2156
+  11:00:08.917  PlacementManager: Showing item in hand: Brick_Cube  -  Client - PlacementManager:1889
+  11:00:08.917  PlacementManager: Created EquipSlot attachment on RightHand  -  Client - PlacementManager:1911
+  11:00:08.917  PlacementManager: Normalized item name: Brick_Cube  -  Client - PlacementManager:1921
+  11:00:08.918  PlacementManager: Found template using name variant: Brick_Cube  -  Client - PlacementManager:1942
+  11:00:08.918  PlacementManager: Using template: Brick_Cube for item: Brick_Cube  -  Client - PlacementManager:1999
+  11:00:08.918  PlacementManager: Setting up part for hand placement  -  Client - PlacementManager:2059
+  11:00:08.918  PlacementManager: Scaled down part by factor of 0.5773502795520422  -  Client - PlacementManager:2064
+  11:00:08.919  PlacementManager: Item part placed in hand successfully: Brick_Cube  -  Client - PlacementManager:2097
+  11:00:08.919  PlacementManager: Starting placement of item Brick_Cube  -  Client - PlacementManager:1373
+  11:00:08.919  PlacementManager: Creating preview item for: Brick_Cube  -  Client - PlacementManager:1414
+  11:00:08.919  PlacementManager: Found exact template match for preview: Brick_Cube  -  Client - PlacementManager:1425
+  11:00:09.084  InventoryUI: Frame hidden after tween  -  Client - InventoryUI:692
+  11:00:10.051  PlacementManager: Sending PlaceItem request for Brick_Cube  -  Client - PlacementManager:1696
+  11:00:10.083  PlacementManager: PlaceItem called by Xdjpearsonx for item Brick_Cube  -  Server - PlacementManager:271
+  11:00:10.083  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:10.083  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:10.083  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:10.084  PlacementManager: Got player data from ItemPurchaseHandler directly  -  Server - PlacementManager:911
+  11:00:10.084  PlacementManager: Getting template for item: Brick_Cube  -  Server - PlacementManager:107
+  11:00:10.084  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  11:00:10.084    - Grass  -  Server - PlacementManager:157
+  11:00:10.084    - Grass_Cube  -  Server - PlacementManager:157
+  11:00:10.084    - Stone  -  Server - PlacementManager:157
+  11:00:10.084    - Stone_Cube  -  Server - PlacementManager:157
+  11:00:10.084    - Wood_Plank  -  Server - PlacementManager:157
+  11:00:10.085    - Water  -  Server - PlacementManager:157
+  11:00:10.085    - Water_Cube  -  Server - PlacementManager:157
+  11:00:10.085    - Fire  -  Server - PlacementManager:157
+  11:00:10.085    - Fire_Cube  -  Server - PlacementManager:157
+  11:00:10.085    - Brick  -  Server - PlacementManager:157
+  11:00:10.085    - Brick_Cube  -  Server - PlacementManager:157
+  11:00:10.085    - Sand  -  Server - PlacementManager:157
+  11:00:10.085    - Sand_Cube  -  Server - PlacementManager:157
+  11:00:10.085    - Concrete  -  Server - PlacementManager:157
+  11:00:10.085    - Concrete_Cube  -  Server - PlacementManager:157
+  11:00:10.085    - Metal  -  Server - PlacementManager:157
+  11:00:10.085    - Metal_Cube  -  Server - PlacementManager:157
+  11:00:10.085    - Glass  -  Server - PlacementManager:157
+  11:00:10.085    - Glass_Cube  -  Server - PlacementManager:157
+  11:00:10.085    - Wood_Cube  -  Server - PlacementManager:157
+  11:00:10.085  PlacementManager: Found exact template match: Brick_Cube  -  Server - PlacementManager:163
+  11:00:10.086  PlacementManager: Template found for Brick_Cube  -  Server - PlacementManager:308
+  11:00:10.086    - BrickColor: Medium stone grey  -  Server - PlacementManager:310
+  11:00:10.086    - Material: Brick  -  Server - PlacementManager:311
+  11:00:10.086    - Transparency: 0  -  Server - PlacementManager:312
+  11:00:10.086  PlacementManager: Placed item appearance:  -  Server - PlacementManager:349
+  11:00:10.086    - BrickColor: Medium stone grey  -  Server - PlacementManager:350
+  11:00:10.086    - Material: Brick  -  Server - PlacementManager:351
+  11:00:10.086    - Transparency: 0  -  Server - PlacementManager:352
+  11:00:10.086  PlacementManager: Attempting to remove Brick_Cube from inventory of Xdjpearsonx  -  Server - PlacementManager:438
+  11:00:10.086  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:10.086  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:10.087  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:10.087  [ItemPurchaseHandler] SavePlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:10.087  [ItemPurchaseHandler] Saving data for: Xdjpearsonx Currency: 2000040 Inventory count: 3  -  Server - ItemPurchaseHandler:87
+  11:00:10.348  Saved player data for Xdjpearsonx  -  Server - ItemPurchaseHandler:199
+  11:00:10.349  [ItemPurchaseHandler] Removed 1 x Brick_Cube from Xdjpearsonx 's inventory  -  Server - ItemPurchaseHandler:415
+  11:00:10.349  PlacementManager: Successfully removed item using ItemPurchaseHandler directly  -  Server - PlacementManager:483
+  11:00:10.349  PlacementManager: Notified client of placed item: Brick_Cube  -  Server - PlacementManager:423
+  11:00:10.349  PlacementManager: Saving world data...  -  Server - PlacementManager:985
+  11:00:10.349  PlacementManager: Saving 26 placed items  -  Server - PlacementManager:1067
+  11:00:10.350  PlacementManager: PlaceItem result for Xdjpearsonx : true  -  Server - PlacementManager:1849
+  11:00:10.382  PlacementManager: Item placed successfully: Brick_Cube Brick_Cube_7768610061_1747670410  -  Client - PlacementManager:1869
+  11:00:10.515  DataService: Successfully saved data for WorldData WorldPlacedItems  -  Server - DataService:91
+  11:00:10.516  PlacementManager: World data saved successfully  -  Server - PlacementManager:1072
+  11:00:14.184  InventoryItemHandler: Inventory button clicked (from backup handler)  -  Client - InventoryItemHandler:132
+  11:00:14.185  InventoryItemHandler: Calling InventoryUI.Toggle directly  -  Client - InventoryItemHandler:134
+  11:00:14.185  InventoryItemHandler: InventoryUI.Toggle intercepted and called  -  Client - InventoryItemHandler:99
+  11:00:14.185  InventoryItemHandler: Fixed InventoryUI._isVisible to match actual state: false  -  Client - InventoryItemHandler:110
+  11:00:14.185  InventoryUI: Toggle called  -  Client - InventoryUI:575
+  11:00:14.185  InventoryUI: Toggle - current visibility state: false  -  Client - InventoryUI:601
+  11:00:14.185  InventoryUI: Toggle - showing inventory  -  Client - InventoryUI:611
+  11:00:14.185  MAIN INVENTORY BUTTON CLICKED - Directly calling Toggle()  -  Client - InventoryUILoader:122
+  11:00:14.186  InventoryItemHandler: InventoryUI.Toggle intercepted and called  -  Client - InventoryItemHandler:99
+  11:00:14.186  InventoryItemHandler: Fixed InventoryUI._isVisible to match actual state: false  -  Client - InventoryItemHandler:110
+  11:00:14.186  InventoryUI: Toggle called  -  Client - InventoryUI:575
+  11:00:14.186  InventoryUI: Toggle - current visibility state: false  -  Client - InventoryUI:601
+  11:00:14.186  InventoryUI: Toggle - showing inventory  -  Client - InventoryUI:611
+  11:00:14.186  InventoryItemHandler: InventoryUI.Toggle intercepted and called  -  Client - InventoryItemHandler:99
+  11:00:14.186  InventoryItemHandler: Fixed InventoryUI._isVisible to match actual state: false  -  Client - InventoryItemHandler:110
+  11:00:14.186  InventoryUI: Toggle called  -  Client - InventoryUI:575
+  11:00:14.187  InventoryUI: Toggle - current visibility state: false  -  Client - InventoryUI:601
+  11:00:14.187  InventoryUI: Toggle - showing inventory  -  Client - InventoryUI:611
+  11:00:14.215  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:14.216  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:14.216  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:14.216  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:14.216  GetInventory result for Xdjpearsonx : success= true items= 3 currency= 2000040  -  Server - init:415
+  11:00:14.216  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:14.216  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:14.216  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:14.216  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:14.217  GetInventory result for Xdjpearsonx : success= true items= 3 currency= 2000040  -  Server - init:415
+  11:00:14.217  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:14.217  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:14.217  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:14.217  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:14.217  GetInventory result for Xdjpearsonx : success= true items= 3 currency= 2000040  -  Server - init:415
+  11:00:14.217  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:14.217  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:14.217  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:14.217  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:14.217  GetInventory result for Xdjpearsonx : success= true items= 3 currency= 2000040  -  Server - init:415
+  11:00:14.248  InventoryUI: Retrieved inventory data: 3 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:14.249  InventoryUI: Updated inventory with 3 items  -  Client - InventoryUI:570
+  11:00:14.249  InventoryItemHandler: InventoryUI.Show intercepted and called  -  Client - InventoryItemHandler:93
+  11:00:14.249  InventoryUI: Show function called  -  Client - InventoryUI:620
+  11:00:14.249  InventoryUI: Refreshing inventory data  -  Client - InventoryUI:649
+  11:00:14.265  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:14.265  InventoryUI: Retrieved inventory data: 3 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:14.266  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:14.266  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:14.266  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:14.266  GetInventory result for Xdjpearsonx : success= true items= 3 currency= 2000040  -  Server - init:415
+  11:00:14.266  InventoryUI: Updated inventory with 3 items  -  Client - InventoryUI:570
+  11:00:14.266  InventoryItemHandler: InventoryUI.Show intercepted and called  -  Client - InventoryItemHandler:93
+  11:00:14.266  InventoryUI: Show function called  -  Client - InventoryUI:620
+  11:00:14.267  InventoryUI: Refreshing inventory data  -  Client - InventoryUI:649
+  11:00:14.282  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:14.282  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:14.282  InventoryUI: Retrieved inventory data: 3 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:14.282  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:14.282  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:14.282  GetInventory result for Xdjpearsonx : success= true items= 3 currency= 2000040  -  Server - init:415
+  11:00:14.283  InventoryUI: Updated inventory with 3 items  -  Client - InventoryUI:570
+  11:00:14.283  InventoryItemHandler: InventoryUI.Show intercepted and called  -  Client - InventoryItemHandler:93
+  11:00:14.283  InventoryUI: Show function called  -  Client - InventoryUI:620
+  11:00:14.283  InventoryUI: Refreshing inventory data  -  Client - InventoryUI:649
+  11:00:14.298  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:14.298  InventoryUIModule not available, but data was retrieved successfully  -  Client - client_core:467
+  11:00:14.298  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:14.298  Retrieved 3 inventory items and 2000040 currency  -  Client - client_core:468
+  11:00:14.298  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:14.298  InventoryUI: Retrieved inventory data: 3 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:14.298  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:14.299  GetInventory result for Xdjpearsonx : success= true items= 3 currency= 2000040  -  Server - init:415
+  11:00:14.299  InventoryUI: Updated inventory with 3 items  -  Client - InventoryUI:570
+  11:00:14.299  InventoryUI: Making inventory visible  -  Client - InventoryUI:653
+  11:00:14.299  InventoryUI: Inventory is now visible  -  Client - InventoryUI:664
+  11:00:14.316  InventoryUI: Retrieved inventory data: 3 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:14.316  InventoryUI: Updated inventory with 3 items  -  Client - InventoryUI:570
+  11:00:14.317  InventoryUI: Making inventory visible  -  Client - InventoryUI:653
+  11:00:14.317  InventoryUI: Inventory is now visible  -  Client - InventoryUI:664
+  11:00:14.332  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:14.332  InventoryUI: Retrieved inventory data: 3 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:14.332  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:14.332  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:14.332  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:14.333  GetInventory result for Xdjpearsonx : success= true items= 3 currency= 2000040  -  Server - init:415
+  11:00:14.333  InventoryUI: Updated inventory with 3 items  -  Client - InventoryUI:570
+  11:00:14.333  InventoryUI: Making inventory visible  -  Client - InventoryUI:653
+  11:00:14.333  InventoryUI: Inventory is now visible  -  Client - InventoryUI:664
+  11:00:14.348  InventoryUI: Retrieved inventory data: 3 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:14.349  InventoryUI: Updated inventory with 3 items  -  Client - InventoryUI:570
+  11:00:15.518  InventoryUI: Hide function called  -  Client - InventoryUI:669
+  11:00:15.519  InventoryUI: Found frame to hide  -  Client - InventoryUI:685
+  11:00:15.519  InventoryUI: Hide completed  -  Client - InventoryUI:704
+  11:00:15.633  InventoryItemHandler: Item selected from inventory: item_7  -  Client - InventoryItemHandler:333
+  11:00:15.633  InventoryItemHandler: Fixed movement for character  -  Client - InventoryItemHandler:160
+  11:00:15.633  InventoryItemHandler: Item count: 2  -  Client - InventoryItemHandler:340
+  11:00:15.633  PlacementManager: Recalling item item_7 from inventory  -  Client - PlacementManager:2152
+  11:00:15.633  PlacementManager: Normalized item name from item_7 to item_7  -  Client - PlacementManager:2156
+  11:00:15.634  PlacementManager: Showing item in hand: item_7  -  Client - PlacementManager:1889
+  11:00:15.634  PlacementManager: Normalized item name: item_7  -  Client - PlacementManager:1921
+  11:00:15.634  PlacementManager: No template found for item_7 - creating basic item  -  Client - PlacementManager:1964
+  11:00:15.634  PlacementManager: Setting up part for hand placement  -  Client - PlacementManager:2059
+  11:00:15.635  PlacementManager: Item part placed in hand successfully: item_7  -  Client - PlacementManager:2097
+  11:00:15.635  PlacementManager: Starting placement of item item_7  -  Client - PlacementManager:1373
+  11:00:15.635  PlacementManager: Creating fallback item data for: item_7  -  Client - PlacementManager:636
+  11:00:15.635  PlacementManager: Creating preview item for: item_7  -  Client - PlacementManager:1414
+  11:00:15.635  PlacementManager: No template found for item_7 - creating basic preview  -  Client - PlacementManager:1467
+  11:00:15.818  InventoryUI: Frame hidden after tween  -  Client - InventoryUI:692
+  11:00:15.965  
+=== PERIODIC MODEL DISPLAY ===  -  Server - ModelDisplayRunner:46
+  11:00:15.965  📁 World_Items (Folder)  -  Server - ModelDisplayUtil:22
+  11:00:15.965    📁 Placed (Folder)  -  Server - ModelDisplayUtil:22
+  11:00:15.966   ▶     🧊 Brick_Cube_7768610061_1747625201 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  11:00:15.966      🧊 Brick_Cube_7768610061_1747670410 (Part)  -  Server - ModelDisplayUtil:79
+  11:00:15.966   ▶     🧊 Glass_Cube_7768610061_1747625209 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  11:00:15.967   ▶     🧊 Grass_Cube_7768610061_1747625193 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  11:00:15.967   ▶     🧊 Grass_Cube_7768610061_1747625215 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  11:00:15.967      🧊 Grass_Cube_7768610061_1747670269 (Part)  -  Server - ModelDisplayUtil:79
+  11:00:15.967   ▶     🧊 Stone_Cube_7768610061_1747624737 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  11:00:15.967   ▶     🧊 Stone_Cube_7768610061_1747624747 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  11:00:15.968   ▶     🧊 Stone_Cube_7768610061_1747624755 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  11:00:15.968   ▶     🧊 Stone_Cube_7768610061_1747625120 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  11:00:15.968   ▶     🧊 Stone_Cube_7768610061_1747625170 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  11:00:15.969      🧊 Stone_Cube_7768610061_1747625187 (Part)  -  Server - ModelDisplayUtil:79
+  11:00:15.969   ▶     🧊 Wood_Cube_7768610061_1747625800 (Part) (x2)  -  Server - ModelDisplayUtil:79
+  11:00:15.969      🧊 Wood_Plank_7768610061_1747626017 (Part)  -  Server - ModelDisplayUtil:79
+  11:00:15.969      🧊 Wood_Plank_7768610061_1747626290 (Part)  -  Server - ModelDisplayUtil:79
+  11:00:15.969      🧊 Wood_Plank_7768610061_1747626294 (Part)  -  Server - ModelDisplayUtil:79
+  11:00:15.969    📁 Static (Folder)  -  Server - ModelDisplayUtil:22
+  11:00:15.969      📁 Teleport Portals (Folder)  -  Server - ModelDisplayUtil:22
+  11:00:15.969        📋 PortalBlue (6 parts) [name=Teleport Portals] [ItemID=b41c9bef-04cf-414d-a91e-2a6ea1a000a9] [item=secondary] [Registered=true]   -  Server - ModelDisplayUtil:71
+  11:00:15.969        📋 PortalRed (6 parts) [name=Teleport Portals] [ItemID=c24c6b46-4e8d-4c42-a05d-274a0d2a90aa] [item=secondary] [Registered=true]   -  Server - ModelDisplayUtil:71
+  11:00:15.969        ❓ Script (Script)  -  Server - ModelDisplayUtil:81
+  11:00:15.970      📋 Classic House (568 parts) [ModelDisplayUtil_LastSeen=1747670415] [ModelDisplayUtil_Tracked=true] [ItemID=a6d8b4af-33dc-473e-8863-8082865ca29d] [Registered=true]   -  Server - ModelDisplayUtil:71
+  11:00:15.970      📋 Level 2 House (221 parts) [ModelDisplayUtil_LastSeen=1747670415] [ModelDisplayUtil_Tracked=true] [ItemID=6c84cf30-9030-4de9-a371-84e48b016c68] [Registered=true]   -  Server - ModelDisplayUtil:71
+  11:00:15.971      📋 Level 3 House (493 parts) [ModelDisplayUtil_LastSeen=1747670415] [ModelDisplayUtil_Tracked=true] [ItemID=f85a1576-94bc-4ae0-8ec3-1bde80e59785] [Registered=true]   -  Server - ModelDisplayUtil:71
+  11:00:15.972      📋 Rare House (960 parts) [ModelDisplayUtil_LastSeen=1747670415] [ModelDisplayUtil_Tracked=true] [ItemID=fe72a4d5-f538-4c94-880c-33c72d97f714] [Registered=true]   -  Server - ModelDisplayUtil:71
+  11:00:15.972      📋 Trampoline (6 parts) [ModelDisplayUtil_LastSeen=1747670415] [ModelDisplayUtil_Tracked=true] [ItemID=35547209-911a-4e23-9efc-bbad9447597b] [Registered=true]   -  Server - ModelDisplayUtil:71
+  11:00:15.973      📋 Trampoline (6 parts) [ModelDisplayUtil_LastSeen=1747670385] [ModelDisplayUtil_Tracked=true] [ItemID=89ba6262-6b75-4be8-9873-965e1349fa18] [Registered=true]   -  Server - ModelDisplayUtil:71
+  11:00:15.973    🧊 Placed_Brick_Cube (Part)  -  Server - ModelDisplayUtil:79
+  11:00:15.973  =============================
+  -  Server - ModelDisplayRunner:48
+  11:00:17.269  PlacementManager: Sending PlaceItem request for item_7  -  Client - PlacementManager:1696
+  11:00:17.298  PlacementManager: PlaceItem called by Xdjpearsonx for item item_7  -  Server - PlacementManager:271
+  11:00:17.299  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:17.299  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:17.299  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:17.299  PlacementManager: Got player data from ItemPurchaseHandler directly  -  Server - PlacementManager:911
+  11:00:17.299  PlacementManager: Getting template for item: item_7  -  Server - PlacementManager:107
+  11:00:17.299  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  11:00:17.299    - Grass  -  Server - PlacementManager:157
+  11:00:17.299    - Grass_Cube  -  Server - PlacementManager:157
+  11:00:17.299    - Stone  -  Server - PlacementManager:157
+  11:00:17.300    - Stone_Cube  -  Server - PlacementManager:157
+  11:00:17.300    - Wood_Plank  -  Server - PlacementManager:157
+  11:00:17.300    - Water  -  Server - PlacementManager:157
+  11:00:17.300    - Water_Cube  -  Server - PlacementManager:157
+  11:00:17.300    - Fire  -  Server - PlacementManager:157
+  11:00:17.300    - Fire_Cube  -  Server - PlacementManager:157
+  11:00:17.300    - Brick  -  Server - PlacementManager:157
+  11:00:17.300    - Brick_Cube  -  Server - PlacementManager:157
+  11:00:17.300    - Sand  -  Server - PlacementManager:157
+  11:00:17.300    - Sand_Cube  -  Server - PlacementManager:157
+  11:00:17.300    - Concrete  -  Server - PlacementManager:157
+  11:00:17.301    - Concrete_Cube  -  Server - PlacementManager:157
+  11:00:17.301    - Metal  -  Server - PlacementManager:157
+  11:00:17.301    - Metal_Cube  -  Server - PlacementManager:157
+  11:00:17.301    - Glass  -  Server - PlacementManager:157
+  11:00:17.301    - Glass_Cube  -  Server - PlacementManager:157
+  11:00:17.301    - Wood_Cube  -  Server - PlacementManager:157
+  11:00:17.301  PlacementManager: No template found, creating basic template for: item_7  -  Server - PlacementManager:229
+  11:00:17.301  PlacementManager: Created new template: item_7  -  Server - PlacementManager:263
+  11:00:17.302  PlacementManager: Template found for item_7  -  Server - PlacementManager:308
+  11:00:17.302    - BrickColor: Medium stone grey  -  Server - PlacementManager:310
+  11:00:17.302    - Material: Concrete  -  Server - PlacementManager:311
+  11:00:17.302    - Transparency: 0  -  Server - PlacementManager:312
+  11:00:17.302  PlacementManager: Placed item appearance:  -  Server - PlacementManager:349
+  11:00:17.302    - BrickColor: Medium stone grey  -  Server - PlacementManager:350
+  11:00:17.302    - Material: Concrete  -  Server - PlacementManager:351
+  11:00:17.303    - Transparency: 0  -  Server - PlacementManager:352
+  11:00:17.303  PlacementManager: Attempting to remove item_7 from inventory of Xdjpearsonx  -  Server - PlacementManager:438
+  11:00:17.303  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:17.303  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:17.303  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:17.303  [ItemPurchaseHandler] SavePlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:17.303  [ItemPurchaseHandler] Saving data for: Xdjpearsonx Currency: 2000040 Inventory count: 2  -  Server - ItemPurchaseHandler:87
+  11:00:17.582  Saved player data for Xdjpearsonx  -  Server - ItemPurchaseHandler:199
+  11:00:17.582  [ItemPurchaseHandler] Removed 1 x item_7 from Xdjpearsonx 's inventory  -  Server - ItemPurchaseHandler:415
+  11:00:17.582  PlacementManager: Successfully removed item using ItemPurchaseHandler directly  -  Server - PlacementManager:483
+  11:00:17.583  PlacementManager: Notified client of placed item: item_7  -  Server - PlacementManager:423
+  11:00:17.583  PlacementManager: Saving world data...  -  Server - PlacementManager:985
+  11:00:17.583  PlacementManager: Saving 27 placed items  -  Server - PlacementManager:1067
+  11:00:17.584  PlacementManager: PlaceItem result for Xdjpearsonx : true  -  Server - PlacementManager:1849
+  11:00:17.599  PlacementManager: Item placed successfully: item_7 item_7_7768610061_1747670417  -  Client - PlacementManager:1869
+  11:00:17.732  DataService: Successfully saved data for WorldData WorldPlacedItems  -  Server - DataService:91
+  11:00:17.732  PlacementManager: World data saved successfully  -  Server - PlacementManager:1072
+  11:00:18.649  InventoryItemHandler: Inventory button clicked (from backup handler)  -  Client - InventoryItemHandler:132
+  11:00:18.649  InventoryItemHandler: Calling InventoryUI.Toggle directly  -  Client - InventoryItemHandler:134
+  11:00:18.649  InventoryItemHandler: InventoryUI.Toggle intercepted and called  -  Client - InventoryItemHandler:99
+  11:00:18.650  InventoryItemHandler: Fixed InventoryUI._isVisible to match actual state: false  -  Client - InventoryItemHandler:110
+  11:00:18.650  InventoryUI: Toggle called  -  Client - InventoryUI:575
+  11:00:18.650  InventoryUI: Toggle - current visibility state: false  -  Client - InventoryUI:601
+  11:00:18.650  InventoryUI: Toggle - showing inventory  -  Client - InventoryUI:611
+  11:00:18.650  MAIN INVENTORY BUTTON CLICKED - Directly calling Toggle()  -  Client - InventoryUILoader:122
+  11:00:18.650  InventoryItemHandler: InventoryUI.Toggle intercepted and called  -  Client - InventoryItemHandler:99
+  11:00:18.650  InventoryItemHandler: Fixed InventoryUI._isVisible to match actual state: false  -  Client - InventoryItemHandler:110
+  11:00:18.650  InventoryUI: Toggle called  -  Client - InventoryUI:575
+  11:00:18.650  InventoryUI: Toggle - current visibility state: false  -  Client - InventoryUI:601
+  11:00:18.651  InventoryUI: Toggle - showing inventory  -  Client - InventoryUI:611
+  11:00:18.651  InventoryItemHandler: InventoryUI.Toggle intercepted and called  -  Client - InventoryItemHandler:99
+  11:00:18.651  InventoryItemHandler: Fixed InventoryUI._isVisible to match actual state: false  -  Client - InventoryItemHandler:110
+  11:00:18.651  InventoryUI: Toggle called  -  Client - InventoryUI:575
+  11:00:18.651  InventoryUI: Toggle - current visibility state: false  -  Client - InventoryUI:601
+  11:00:18.651  InventoryUI: Toggle - showing inventory  -  Client - InventoryUI:611
+  11:00:18.682  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:18.682  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:18.682  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:18.682  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:18.682  GetInventory result for Xdjpearsonx : success= true items= 2 currency= 2000040  -  Server - init:415
+  11:00:18.682  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:18.683  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:18.683  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:18.683  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:18.683  GetInventory result for Xdjpearsonx : success= true items= 2 currency= 2000040  -  Server - init:415
+  11:00:18.683  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:18.683  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:18.683  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:18.683  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:18.684  GetInventory result for Xdjpearsonx : success= true items= 2 currency= 2000040  -  Server - init:415
+  11:00:18.684  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:18.684  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:18.684  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:18.684  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:18.684  GetInventory result for Xdjpearsonx : success= true items= 2 currency= 2000040  -  Server - init:415
+  11:00:18.715  InventoryUI: Retrieved inventory data: 2 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:18.715  InventoryUI: Updated inventory with 2 items  -  Client - InventoryUI:570
+  11:00:18.716  InventoryItemHandler: InventoryUI.Show intercepted and called  -  Client - InventoryItemHandler:93
+  11:00:18.716  InventoryUI: Show function called  -  Client - InventoryUI:620
+  11:00:18.716  InventoryUI: Refreshing inventory data  -  Client - InventoryUI:649
+  11:00:18.732  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:18.733  InventoryUI: Retrieved inventory data: 2 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:18.733  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:18.733  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:18.733  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:18.733  InventoryUI: Updated inventory with 2 items  -  Client - InventoryUI:570
+  11:00:18.733  GetInventory result for Xdjpearsonx : success= true items= 2 currency= 2000040  -  Server - init:415
+  11:00:18.733  InventoryItemHandler: InventoryUI.Show intercepted and called  -  Client - InventoryItemHandler:93
+  11:00:18.734  InventoryUI: Show function called  -  Client - InventoryUI:620
+  11:00:18.734  InventoryUI: Refreshing inventory data  -  Client - InventoryUI:649
+  11:00:18.734  InventoryUI: Retrieved inventory data: 2 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:18.734  InventoryUI: Updated inventory with 2 items  -  Client - InventoryUI:570
+  11:00:18.735  InventoryItemHandler: InventoryUI.Show intercepted and called  -  Client - InventoryItemHandler:93
+  11:00:18.735  InventoryUI: Show function called  -  Client - InventoryUI:620
+  11:00:18.735  InventoryUI: Refreshing inventory data  -  Client - InventoryUI:649
+  11:00:18.749  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:18.749  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:18.750  InventoryUIModule not available, but data was retrieved successfully  -  Client - client_core:467
+  11:00:18.750  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:18.750  Retrieved 2 inventory items and 2000040 currency  -  Client - client_core:468
+  11:00:18.750  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:18.750  InventoryUI: Retrieved inventory data: 2 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:18.750  GetInventory result for Xdjpearsonx : success= true items= 2 currency= 2000040  -  Server - init:415
+  11:00:18.750  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:18.751  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:18.751  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:18.751  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:18.751  InventoryUI: Updated inventory with 2 items  -  Client - InventoryUI:570
+  11:00:18.751  GetInventory result for Xdjpearsonx : success= true items= 2 currency= 2000040  -  Server - init:415
+  11:00:18.751  InventoryUI: Making inventory visible  -  Client - InventoryUI:653
+  11:00:18.751  InventoryUI: Inventory is now visible  -  Client - InventoryUI:664
+  11:00:18.781  InventoryUI: Retrieved inventory data: 2 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:18.782  InventoryUI: Updated inventory with 2 items  -  Client - InventoryUI:570
+  11:00:18.782  InventoryUI: Making inventory visible  -  Client - InventoryUI:653
+  11:00:18.783  InventoryUI: Inventory is now visible  -  Client - InventoryUI:664
+  11:00:18.799  GetInventory RemoteFunction called by player: Xdjpearsonx  -  Server - init:405
+  11:00:18.799  InventoryUI: Retrieved inventory data: 2 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:18.799  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:18.799  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:18.799  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:18.799  InventoryUI: Updated inventory with 2 items  -  Client - InventoryUI:570
+  11:00:18.799  GetInventory result for Xdjpearsonx : success= true items= 2 currency= 2000040  -  Server - init:415
+  11:00:18.799  InventoryUI: Making inventory visible  -  Client - InventoryUI:653
+  11:00:18.800  InventoryUI: Inventory is now visible  -  Client - InventoryUI:664
+  11:00:18.815  InventoryUI: Retrieved inventory data: 2 items, Currency: 2000040  -  Client - InventoryUI:441
+  11:00:18.815  InventoryUI: Updated inventory with 2 items  -  Client - InventoryUI:570
+  11:00:19.701  InventoryUI: Hide function called  -  Client - InventoryUI:669
+  11:00:19.701  InventoryUI: Found frame to hide  -  Client - InventoryUI:685
+  11:00:19.701  InventoryUI: Hide completed  -  Client - InventoryUI:704
+  11:00:19.815  InventoryItemHandler: Item selected from inventory: Wood_Plank  -  Client - InventoryItemHandler:333
+  11:00:19.815  InventoryItemHandler: Fixed movement for character  -  Client - InventoryItemHandler:160
+  11:00:19.815  InventoryItemHandler: Item count: 3  -  Client - InventoryItemHandler:340
+  11:00:19.816  PlacementManager: Recalling item Wood_Plank from inventory  -  Client - PlacementManager:2152
+  11:00:19.816  PlacementManager: Normalized item name from Wood_Plank to Wood_Plank  -  Client - PlacementManager:2156
+  11:00:19.816  PlacementManager: Showing item in hand: Wood_Plank  -  Client - PlacementManager:1889
+  11:00:19.816  PlacementManager: Normalized item name: Wood_Plank  -  Client - PlacementManager:1921
+  11:00:19.816  PlacementManager: Found template using name variant: Wood_Plank  -  Client - PlacementManager:1942
+  11:00:19.816  PlacementManager: Using template: Wood_Plank for item: Wood_Plank  -  Client - PlacementManager:1999
+  11:00:19.817  PlacementManager: Setting up part for hand placement  -  Client - PlacementManager:2059
+  11:00:19.817  PlacementManager: Scaled down part by factor of 0.5773502795520422  -  Client - PlacementManager:2064
+  11:00:19.817  PlacementManager: Item part placed in hand successfully: Wood_Plank  -  Client - PlacementManager:2097
+  11:00:19.817  PlacementManager: Starting placement of item Wood_Plank  -  Client - PlacementManager:1373
+  11:00:19.817  PlacementManager: Creating fallback item data for: Wood_Plank  -  Client - PlacementManager:636
+  11:00:19.817  PlacementManager: Creating preview item for: Wood_Plank  -  Client - PlacementManager:1414
+  11:00:19.818  PlacementManager: Found exact template match for preview: Wood_Plank  -  Client - PlacementManager:1425
+  11:00:20.001  InventoryUI: Frame hidden after tween  -  Client - InventoryUI:692
+  11:00:22.117  PlacementManager: Sending PlaceItem request for Wood_Plank  -  Client - PlacementManager:1696
+  11:00:22.148  PlacementManager: PlaceItem called by Xdjpearsonx for item Wood_Plank  -  Server - PlacementManager:271
+  11:00:22.148  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:22.149  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:22.149  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:22.149  PlacementManager: Got player data from ItemPurchaseHandler directly  -  Server - PlacementManager:911
+  11:00:22.149  PlacementManager: Getting template for item: Wood_Plank  -  Server - PlacementManager:107
+  11:00:22.149  PlacementManager: Available templates in ItemTemplates folder:  -  Server - PlacementManager:155
+  11:00:22.150    - Grass  -  Server - PlacementManager:157
+  11:00:22.150    - Grass_Cube  -  Server - PlacementManager:157
+  11:00:22.150    - Stone  -  Server - PlacementManager:157
+  11:00:22.150    - Stone_Cube  -  Server - PlacementManager:157
+  11:00:22.150    - Wood_Plank  -  Server - PlacementManager:157
+  11:00:22.150    - Water  -  Server - PlacementManager:157
+  11:00:22.150    - Water_Cube  -  Server - PlacementManager:157
+  11:00:22.150    - Fire  -  Server - PlacementManager:157
+  11:00:22.150    - Fire_Cube  -  Server - PlacementManager:157
+  11:00:22.150    - Brick  -  Server - PlacementManager:157
+  11:00:22.151    - Brick_Cube  -  Server - PlacementManager:157
+  11:00:22.151    - Sand  -  Server - PlacementManager:157
+  11:00:22.151    - Sand_Cube  -  Server - PlacementManager:157
+  11:00:22.151    - Concrete  -  Server - PlacementManager:157
+  11:00:22.151    - Concrete_Cube  -  Server - PlacementManager:157
+  11:00:22.151    - Metal  -  Server - PlacementManager:157
+  11:00:22.151    - Metal_Cube  -  Server - PlacementManager:157
+  11:00:22.151    - Glass  -  Server - PlacementManager:157
+  11:00:22.151    - Glass_Cube  -  Server - PlacementManager:157
+  11:00:22.151    - Wood_Cube  -  Server - PlacementManager:157
+  11:00:22.152    - item_7  -  Server - PlacementManager:157
+  11:00:22.152  PlacementManager: Found exact template match: Wood_Plank  -  Server - PlacementManager:163
+  11:00:22.152  PlacementManager: Template found for Wood_Plank  -  Server - PlacementManager:308
+  11:00:22.152    - BrickColor: Brown  -  Server - PlacementManager:310
+  11:00:22.152    - Material: Wood  -  Server - PlacementManager:311
+  11:00:22.152    - Transparency: 0  -  Server - PlacementManager:312
+  11:00:22.152  PlacementManager: Placed item appearance:  -  Server - PlacementManager:349
+  11:00:22.152    - BrickColor: Brown  -  Server - PlacementManager:350
+  11:00:22.153    - Material: Wood  -  Server - PlacementManager:351
+  11:00:22.153    - Transparency: 0  -  Server - PlacementManager:352
+  11:00:22.153  PlacementManager: Attempting to remove Wood_Plank from inventory of Xdjpearsonx  -  Server - PlacementManager:438
+  11:00:22.153  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:102
+  11:00:22.153  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:22.153  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:22.153  [ItemPurchaseHandler] SavePlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:87
+  11:00:22.153  [ItemPurchaseHandler] Saving data for: Xdjpearsonx Currency: 2000040 Inventory count: 1  -  Server - ItemPurchaseHandler:87
+  11:00:22.316  Saved player data for Xdjpearsonx  -  Server - ItemPurchaseHandler:199
+  11:00:22.316  [ItemPurchaseHandler] Removed 1 x Wood_Plank from Xdjpearsonx 's inventory  -  Server - ItemPurchaseHandler:415
+  11:00:22.316  PlacementManager: Successfully removed item using ItemPurchaseHandler directly  -  Server - PlacementManager:483
+  11:00:22.316  PlacementManager: Notified client of placed item: Wood_Plank  -  Server - PlacementManager:423
+  11:00:22.316  PlacementManager: Saving world data...  -  Server - PlacementManager:985
+  11:00:22.317  PlacementManager: Saving 28 placed items  -  Server - PlacementManager:1067
+  11:00:22.317  PlacementManager: PlaceItem result for Xdjpearsonx : true  -  Server - PlacementManager:1849
+  11:00:22.349  PlacementManager: Item placed successfully: Wood_Plank Wood_Plank_7768610061_1747670422  -  Client - PlacementManager:1869
+  11:00:22.481  DataService: Successfully saved data for WorldData WorldPlacedItems  -  Server - DataService:91
+  11:00:22.481  PlacementManager: World data saved successfully  -  Server - PlacementManager:1072

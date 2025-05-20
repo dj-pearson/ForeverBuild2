@@ -132,3 +132,648 @@ Now we will begin to examine the `src` directory, which contains the main codeba
 *   **Key Questions & Areas to Investigate:**
     *   Are there any implicit dependencies in the initialization order of the submodules?
 
+### src/shared/core/Constants.lua
+
+*   **Purpose:** Centralizes game-wide constants used across multiple modules.
+*   **Functionality:** Defines key values like costs, quantities, UI properties, and system behavior.
+*   **Observations:**
+    *   Constants are grouped by feature/system (Inventory, Currency, Item Placement, UI).
+    *   Configuration is centralized, supporting the goal of maintainability mentioned in the PRD.
+    *   The `ItemTypes` table seems to map to item categories in `Structure.txt`.
+*   **Improvement Suggestions:**
+    *   Consider moving to a JSON-based or data-driven configuration system for easier maintenance.
+    *   Add more comprehensive comments explaining the purpose and impact of each constant.
+    *   Consider using a namespacing system for constants (e.g., `UI.Colors.Background` rather than `UI_BACKGROUND_COLOR`).
+
+### src/shared/core/GameManager.lua
+
+*   **Purpose:** Central manager for game mechanics, orchestrating various subsystems.
+*   **Functionality:**
+    *   Handles player data storage and retrieval.
+    *   Manages inventory updates and persistence.
+    *   Processes item purchasing, placement, and interaction.
+    *   Interfaces with other manager modules to coordinate game systems.
+*   **Observations:**
+    *   Acts as the core "brain" of the game, connecting different subsystems.
+    *   Implements data persistence for player inventory and currency.
+    *   Uses DataStore2 for reliable data storage.
+    *   Contains a mix of direct game logic and delegation to other managers.
+*   **Key Questions & Areas to Investigate:**
+    *   The separation of responsibilities between GameManager and other managers seems unclear in some areas.
+    *   Error handling for data storage operations could be more robust.
+*   **Improvement Suggestions:**
+    *   Refactor to more clearly separate concerns - GameManager should orchestrate but delegate specific functionality.
+    *   Implement more comprehensive error handling and recovery for data operations.
+    *   Consider moving to a proper OOP pattern to better organize manager relationships.
+
+### src/shared/core/economy/CurrencyManager.lua
+
+*   **Purpose:** Manages in-game currency operations.
+*   **Functionality:**
+    *   Handles currency updates, transactions, and validation.
+    *   Provides functions for adding/removing currency and checking balances.
+    *   Interfaces with GameManager for persistence.
+*   **Observations:**
+    *   Simple and focused module with clear responsibilities.
+    *   Currently handles a single currency type, but seems designed to be extensible.
+    *   Transaction validation ensures players can't purchase items they can't afford.
+*   **Improvement Suggestions:**
+    *   Add transaction logging for audit purposes.
+    *   Consider implementing a currency exchange system if multiple currencies are planned.
+    *   Add rate limiting to prevent potential exploitation.
+
+### src/shared/core/economy/init.lua
+
+*   **Purpose:** Entry point for the economy subsystem.
+*   **Functionality:** Aggregates and exports the CurrencyManager and potentially other economy-related modules.
+*   **Observations:** 
+    *   Simple module that follows the pattern used across the codebase.
+    *   Currently only includes CurrencyManager, but provides structure for future expansion.
+*   **Improvement Suggestions:**
+    *   Document intended future additions to this module (e.g., premium currency, trading system).
+
+### src/shared/core/interaction/InteractionManager.lua
+
+*   **Purpose:** Manages interactions between players and game objects/items.
+*   **Functionality:**
+    *   Processes interaction requests from players.
+    *   Validates permissions and conditions for interactions.
+    *   Delegates to GameManager for actual effects of interactions.
+*   **Observations:**
+    *   Serves as a validation and processing layer for interaction requests.
+    *   Implements a permission system for interactions.
+    *   Works closely with the client-side InteractionSystem.
+*   **Key Questions & Areas to Investigate:**
+    *   The exact flow of interaction data from Structure.txt through to the interaction UI.
+*   **Improvement Suggestions:**
+    *   Consider implementing an interaction queue for high-traffic scenarios.
+    *   Add more contextual feedback for failed interactions.
+    *   Document the interaction lifecycle from client request to server processing.
+
+### src/shared/core/interaction/init.lua
+
+*   **Purpose:** Entry point for the interaction subsystem.
+*   **Functionality:** Similar to other init.lua files, aggregates and exports the InteractionManager.
+*   **Observations:** Follows the established pattern for module organization.
+
+### src/shared/core/inventory/InventoryManager.lua
+
+*   **Purpose:** Manages player inventories and item ownership.
+*   **Functionality:**
+    *   Tracks item ownership and quantities.
+    *   Provides functions for adding/removing items from inventory.
+    *   Handles inventory queries and validation.
+*   **Observations:**
+    *   Central to the item-based gameplay mechanics.
+    *   Works in conjunction with ItemManager for item definitions.
+    *   Interfaces with GameManager for persistence.
+*   **Improvement Suggestions:**
+    *   Implement inventory space limitations if applicable to gameplay.
+    *   Add item stacking and quantity management.
+    *   Consider adding inventory categories or sorting capabilities.
+
+### src/shared/core/inventory/ItemManager.lua
+
+*   **Purpose:** Defines and manages item data and properties.
+*   **Functionality:**
+    *   Loads and parses item definitions from Structure.txt.
+    *   Provides lookup functions for item properties.
+    *   Manages item categorization and relationships.
+*   **Observations:**
+    *   The bridge between raw data in Structure.txt and usable item objects.
+    *   Critical for the data-driven approach highlighted in the PRD.
+    *   Parsing logic for Structure.txt is crucial and potentially complex.
+*   **Key Questions & Areas to Investigate:**
+    *   The exact format and parsing mechanism for Structure.txt deserves careful examination.
+*   **Improvement Suggestions:**
+    *   Consider moving to a more structured data format (JSON/XML) for item definitions.
+    *   Implement caching for item lookups to improve performance.
+    *   Add validation for item definitions to catch data errors early.
+
+### src/shared/core/inventory/init.lua
+
+*   **Purpose:** Entry point for the inventory subsystem.
+*   **Functionality:** Aggregates and exports InventoryManager and ItemManager.
+*   **Observations:** Follows the established module organization pattern.
+
+### src/shared/core/placement/PlacementManager.lua
+
+*   **Purpose:** Manages the placement of items in the game world.
+*   **Functionality:**
+    *   Validates placement requests (collision, permissions, etc.).
+    *   Processes item placement and removal.
+    *   Manages the persistence of placed items.
+*   **Observations:**
+    *   Handles a core gameplay mechanic for a building/decorating game.
+    *   Includes spatial validation logic.
+    *   Works with the client-side placement preview system.
+*   **Improvement Suggestions:**
+    *   Implement a grid system for more precise placement.
+    *   Add placement templates or patterns for complex structures.
+    *   Consider surface detection for more intuitive placement.
+
+### src/shared/core/placement/init.lua
+
+*   **Purpose:** Entry point for the placement subsystem.
+*   **Functionality:** Aggregates and exports PlacementManager.
+*   **Observations:** Consistent with the module organization pattern.
+
+### src/shared/core/ui/CurrencyUI.lua
+
+*   **Purpose:** Handles the display and updating of currency information in the UI.
+*   **Functionality:**
+    *   Creates and updates currency display elements.
+    *   Animates currency changes for better user feedback.
+    *   Listens for currency update events.
+*   **Observations:**
+    *   Part of the split UI management strategy observed earlier.
+    *   Focused on a specific UI component rather than overall UI structure.
+    *   Contains both visual styling and functional logic.
+*   **Improvement Suggestions:**
+    *   Separate styling from functional logic.
+    *   Consider using a UI framework for more consistent styling.
+    *   Add currency formatting options for different display contexts.
+
+### src/client/Currency/CurrencyUI.lua
+
+*   **Purpose:** Client-specific implementation of currency UI elements.
+*   **Functionality:**
+    *   Creates and manages currency display elements in the client UI.
+    *   Updates in response to currency changes.
+    *   Provides visual feedback for currency transactions.
+*   **Observations:**
+    *   Overlaps somewhat with shared/core/ui/CurrencyUI.lua, suggesting potential code duplication.
+    *   Client-specific adaptations of the shared UI component.
+*   **Improvement Suggestions:**
+    *   Clarify the relationship between this and the shared CurrencyUI module.
+    *   Consider consolidating these UI components to reduce duplication.
+
+### src/client/interaction/InteractionSystem.lua
+
+*   **Purpose:** Client-side system for detecting and managing player interactions with game objects.
+*   **Functionality:**
+    *   Detects when players approach interactive objects.
+    *   Displays interaction prompts and UI elements.
+    *   Sends interaction requests to the server.
+*   **Observations:**
+    *   Forms the client half of the interaction system, paired with the server's InteractionManager.
+    *   Likely processes interaction data from Structure.txt for UI presentation.
+    *   Responsible for creating a responsive, intuitive interaction experience.
+*   **Improvement Suggestions:**
+    *   Implement interaction prioritization for overlapping interactive areas.
+    *   Add more visual feedback for interaction states.
+    *   Consider implementing an interaction history or favorites system.
+
+### src/shared/core/ui/InventoryUI.lua
+
+*   **Purpose:** Manages the inventory display and interaction interface.
+*   **Functionality:**
+    *   Creates and updates the inventory UI elements.
+    *   Handles item selection, information display, and actions.
+    *   Responds to inventory update events.
+*   **Observations:**
+    *   Complex UI component dealing with the player's item collection.
+    *   Likely interfaces with both InventoryManager and ItemManager.
+    *   May include scrolling, filtering, or categorization features.
+*   **Improvement Suggestions:**
+    *   Implement inventory filtering and sorting options.
+    *   Add drag-and-drop functionality for item management.
+    *   Consider a grid-based layout for more efficient space usage.
+
+### src/shared/core/ui/PlacedItemDialog.lua
+
+*   **Purpose:** Manages the dialog shown when interacting with items already placed in the world.
+*   **Functionality:**
+    *   Creates and displays item interaction options.
+    *   Processes user selections for placed item actions.
+    *   Communicates with the placement and interaction systems.
+*   **Observations:**
+    *   Specific UI component for a core gameplay interaction.
+    *   Likely works with both PlacementManager and InteractionManager.
+*   **Improvement Suggestions:**
+    *   Add more contextual actions based on item type.
+    *   Implement keyboard shortcuts for common actions.
+    *   Consider adding a history of recent interactions.
+
+### src/shared/core/ui/PurchaseDialog.lua
+
+*   **Purpose:** Manages the dialog for purchasing items.
+*   **Functionality:**
+    *   Displays item information, cost, and purchase options.
+    *   Validates purchase against player currency.
+    *   Processes purchase confirmations and cancellations.
+*   **Observations:**
+    *   Critical for the economy system of the game.
+    *   Interfaces with both CurrencyManager and ItemManager.
+    *   Needs to handle transaction failures gracefully.
+*   **Improvement Suggestions:**
+    *   Add purchase confirmation for expensive items.
+    *   Implement bulk purchase options.
+    *   Consider adding a "wishlist" feature for items players can't yet afford.
+
+### src/shared/core/ui/init.lua
+
+*   **Purpose:** Entry point for the UI subsystem.
+*   **Functionality:** Aggregates and exports all UI component modules.
+*   **Observations:** Follows the established module organization pattern.
+
+### src/server/Neon/NeonGlowManager.server.luau
+
+*   **Purpose:** Manages neon glow effects for certain items in the game.
+*   **Functionality:**
+    *   Creates and applies glow effects to appropriate objects.
+    *   Updates glow effects based on lighting conditions or other factors.
+    *   Optimizes glow effect processing for performance.
+*   **Observations:**
+    *   Visual enhancement feature, likely for specific item types.
+    *   Server-side management suggests centralized processing for consistency.
+    *   Uses the newer .luau extension, possibly indicating newer code.
+*   **Improvement Suggestions:**
+    *   Consider client-side processing for performance if appropriate.
+    *   Add configuration options for glow intensity and colors.
+    *   Implement level-of-detail scaling for glow effects at a distance.
+
+## Phase 3: Architectural Overview and Recommendations
+
+### Architecture Pattern Analysis
+
+The codebase follows a modular, manager-based architecture with clear separation between client and server responsibilities. Key characteristics include:
+
+1. **Central Manager Pattern:** Core functionality is divided into manager modules (GameManager, CurrencyManager, etc.) that handle specific game systems.
+
+2. **Shared Code Approach:** Most game logic is in shared modules used by both client and server, promoting consistency.
+
+3. **Hierarchical Module Organization:** Modules are organized in a nested structure (core/economy/CurrencyManager) with init.lua files serving as aggregators.
+
+4. **Remote Event Communication:** Client-server communication is managed through RemoteEvents and RemoteFunctions, typically created in server/init.server.lua.
+
+5. **Data-Driven Design:** Game content (items, interactions) is defined in external data (Structure.txt) and parsed by the code.
+
+### Identified Issues and Areas for Improvement
+
+1. **UI Management Inconsistency:** UI code is spread across StarterGui, client, and shared modules without clear separation of responsibilities.
+
+2. **Incomplete OOP Implementation:** Some code suggests a transition to OOP is in progress but not fully implemented.
+
+3. **Error Handling Gaps:** Error handling is inconsistent across modules, with some areas lacking robust error recovery.
+
+4. **Data Format Limitations:** Using a text-based format (Structure.txt) for complex game data may be less robust than structured formats like JSON.
+
+5. **Code Duplication:** Some functionality appears duplicated between modules (e.g., currency UI components).
+
+### High-Priority Recommendations
+
+1. **Consolidate UI Strategy:** Define a clear approach to UI management with documented responsibilities for each component.
+
+2. **Complete OOP Transition:** Fully implement OOP patterns for managers to improve code organization and maintainability.
+
+3. **Enhance Error Handling:** Implement consistent error handling across all modules, especially for critical operations like data storage.
+
+4. **Optimize Data Management:** Consider migrating to structured data formats and implementing caching for frequently accessed data.
+
+5. **Refactor Large Modules:** Break down complex modules (e.g., GameManager, client.lua) into smaller, more focused components.
+
+### Future Expansion Considerations
+
+1. **Multiplayer Scalability:** Review the current architecture for bottlenecks that might impact multiplayer performance.
+
+2. **Extensibility for New Features:** Ensure the manager-based system can accommodate new features listed in ToAdd.txt.
+
+3. **Performance Optimization:** Identify opportunities for performance improvement, especially for client-side responsiveness.
+
+4. **Cross-Game Compatibility:** Consider how the architecture might support future cross-game functionality or shared economies.
+
+## Phase 4: Dependency Analysis and Rojo Path Mapping
+
+### Module Hierarchy and Dependencies
+
+To ensure proper file paths when using Rojo/Argon for syncing to Roblox, here's a detailed analysis of module dependencies and initialization flow:
+
+#### Initialization Chain
+
+1. **Client Initialization:**
+   - `src/client/init.client.lua` is the main entry point for client-side logic
+   - It calls `SharedModule.Init()` from `src/shared/init.lua`
+   - It initializes UI modules from `shared.core.ui`
+   - It initializes `InteractionSystem` from `src/client/interaction/InteractionSystem.lua`
+
+2. **Server Initialization:**
+   - `src/server/init.server.lua` is the main entry point for server-side logic
+   - It also calls `SharedModule.Init()` from `src/shared/init.lua`
+   - It creates RemoteEvents and RemoteFunctions
+   - It initializes managers (`GameManager`, `CurrencyManager`, `InteractionManager`)
+
+3. **Shared Module Initialization:**
+   - `src/shared/init.lua` requires and exports all core modules
+   - Its `Init()` function calls initialization methods on all submodules
+   - The initialization order of submodules is significant for dependencies
+
+#### Module Dependencies Map
+
+| Module | Path | Dependencies |
+|--------|------|--------------|
+| **SharedModule** | `src/shared/init.lua` | Requires all core modules below |
+| **Constants** | `src/shared/core/Constants.lua` | No dependencies |
+| **GameManager** | `src/shared/core/GameManager.lua` | `Constants`, `InventoryManager`, `ItemManager`, `CurrencyManager` |
+| **CurrencyManager** | `src/shared/core/economy/CurrencyManager.lua` | `Constants` |
+| **Economy** | `src/shared/core/economy/init.lua` | `CurrencyManager` |
+| **InteractionManager** | `src/shared/core/interaction/InteractionManager.lua` | `Constants`, `GameManager` |
+| **Interaction** | `src/shared/core/interaction/init.lua` | `InteractionManager` |
+| **InventoryManager** | `src/shared/core/inventory/InventoryManager.lua` | `Constants`, `ItemManager` |
+| **ItemManager** | `src/shared/core/inventory/ItemManager.lua` | `Constants`, external data from `Structure.txt` |
+| **Inventory** | `src/shared/core/inventory/init.lua` | `InventoryManager`, `ItemManager` |
+| **PlacementManager** | `src/shared/core/placement/PlacementManager.lua` | `Constants`, `GameManager` |
+| **Placement** | `src/shared/core/placement/init.lua` | `PlacementManager` |
+| **CurrencyUI** (shared) | `src/shared/core/ui/CurrencyUI.lua` | `Constants`, `CurrencyManager` |
+| **InventoryUI** | `src/shared/core/ui/InventoryUI.lua` | `Constants`, `InventoryManager`, `ItemManager` |
+| **PlacedItemDialog** | `src/shared/core/ui/PlacedItemDialog.lua` | `Constants`, `PlacementManager` |
+| **PurchaseDialog** | `src/shared/core/ui/PurchaseDialog.lua` | `Constants`, `CurrencyManager`, `ItemManager` |
+| **UI** | `src/shared/core/ui/init.lua` | All UI modules above |
+| **InteractionSystem** | `src/client/interaction/InteractionSystem.lua` | `Constants`, `InteractionManager` |
+| **CurrencyUI** (client) | `src/client/Currency/CurrencyUI.lua` | `Constants`, `CurrencyManager`, shared `CurrencyUI` |
+| **NeonGlowManager** | `src/server/Neon/NeonGlowManager.server.luau` | Likely `PlacementManager` or `GameManager` |
+
+### Rojo Path Translation
+
+When using Rojo/Argon to sync this structure to Roblox, the paths are transformed according to the rules in `second.project.json`. Here's how the file paths translate:
+
+1. **Shared Modules:**
+   - Local: `src/shared/**`
+   - Roblox: `ReplicatedStorage.shared.**`
+   - Required via: `require(game:GetService("ReplicatedStorage").shared)`
+
+2. **Server Modules:**
+   - Local: `src/server/**`
+   - Roblox: `ServerScriptService.**`
+   - Not directly required by client scripts
+
+3. **Client Modules:**
+   - Local: `src/client/**`
+   - Roblox: `ReplicatedStorage.client.**` or `StarterPlayerScripts.**` (depends on configuration)
+   - Required via: `require(game:GetService("ReplicatedStorage").client)`
+
+4. **StarterGui:**
+   - Local: `src/StarterGui/**`
+   - Roblox: `StarterGui.**`
+   - Self-initializes on client startup
+
+### Current Rojo Configuration Analysis
+
+After examining the `second.project.json` file, here is the actual path mapping in your project:
+
+| Local Path | Roblox Path |
+|------------|-------------|
+| `src/shared` | `ReplicatedStorage.shared` |
+| `src/server` | `ServerScriptService.server` |
+| `src/client` | `StarterPlayer.StarterPlayerScripts.client` |
+| `src/StarterGui` | `StarterGui.StarterGui` |
+
+This configuration has a few differences from our recommendations:
+
+1. **Client Scripts Location:** 
+   - Your client scripts are placed in `StarterPlayerScripts.client` rather than in `ReplicatedStorage.client`
+   - This means that client scripts are only available to the client and not directly referenceable from server scripts
+
+2. **StarterGui Nesting:**
+   - Your configuration creates a nested `StarterGui.StarterGui` structure
+   - This could potentially cause issues with script references that expect StarterGui elements to be direct children of StarterGui
+
+3. **Missing Data File Configuration:**
+   - There's no explicit configuration for how data files like `Structure.txt` are handled
+
+### Required Adjustments
+
+Based on the current configuration and module dependencies, here are the necessary adjustments:
+
+1. **Correct Require Paths:**
+   * In shared modules:
+     ```lua
+     -- From a shared module to another shared module
+     local Constants = require(script.Parent.Constants)
+     
+     -- From a nested shared module to a higher-level shared module
+     local Constants = require(script.Parent.Parent.Constants)
+     ```
+
+   * In client scripts:
+     ```lua
+     -- To require a shared module from client
+     local SharedModule = require(game:GetService("ReplicatedStorage").shared)
+     
+     -- To require a client module from another client module
+     local InteractionSystem = require(script.Parent.interaction.InteractionSystem)
+     ```
+
+   * In server scripts:
+     ```lua
+     -- To require a shared module from server
+     local SharedModule = require(game:GetService("ReplicatedStorage").shared)
+     
+     -- To require a server module from another server module
+     local NeonGlowManager = require(script.Parent.Neon.NeonGlowManager)
+     ```
+
+2. **Data Files Solution:**
+   Add a configuration entry for `Structure.txt` like:
+
+   ```json
+   "ReplicatedStorage": {
+     "$className": "ReplicatedStorage",
+     "shared": {
+       "$path": "src/shared"
+     },
+     "GameData": {
+       "$className": "Folder",
+       "Structure": {
+         "$path": "Structure.txt"
+       }
+     }
+   }
+   ```
+
+   Then update the code that references this file:
+   ```lua
+   -- In ItemManager.lua
+   local structureData = game:GetService("ReplicatedStorage").GameData.Structure.Value
+   ```
+
+3. **StarterGui Path Correction:**
+   Consider flattening the StarterGui structure:
+
+   ```json
+   "StarterGui": {
+     "$className": "StarterGui",
+     "$path": "src/StarterGui"
+   }
+   ```
+
+### Special Consideration: Init Script Path Resolution
+
+You've identified a critical aspect of Rojo/Roblox path handling that needs special attention: the way `init` scripts transform folders into script objects in Roblox. This significantly affects how paths resolve and how scripts should reference each other.
+
+#### How Init Scripts Transform the Hierarchy
+
+When a folder contains an `init` script (e.g., `init.lua`, `init.server.lua`, or `init.client.lua`), Rojo converts the folder itself into a script object in Roblox, rather than creating a folder containing a script. This creates important considerations for module dependencies:
+
+1. **Folder Transformation Examples:**
+   - A folder `src/shared/core/` with an `init.lua` becomes `ReplicatedStorage.shared.core` in Roblox.
+   - Scripts inside `core` should be required as children of `core`, not as siblings to `init`.
+
+2. **Current Code Compliance:**
+   - Most of the code follows this pattern correctly, but some inconsistencies were found (e.g., direct sibling requires).
+
+3. **Recommendations:**
+   - Audit all init.lua files and their usage of `script.Parent` or similar patterns.
+   - Ensure all module references are compliant with the transformed hierarchy in Roblox.
+
+## Phase 5: Init File Path Analysis and Corrections
+
+After examining all init files and their dependencies, here are the findings and necessary corrections:
+
+### Current Path Usage Analysis
+
+1. **src/shared/init.lua**
+   - **Status:** ✅ CORRECT
+   - The file correctly uses `script.core.X` to reference child modules
+   - Correctly exports all modules in a structured table
+
+2. **src/server/init.server.lua**
+   - **Status:** ⚠️ PARTIAL ISSUES
+   - Correctly requires SharedModule via `ReplicatedStorage.shared`
+   - There's an inconsistency with InteractionManager:
+     ```lua
+     local InteractionManagerModule = SharedModule.Interaction.Manager
+     local interactionManager = InteractionManagerModule.new()
+     ```
+   - Should either consistently use constructor pattern across all managers or use module functions directly
+
+3. **src/client/init.client.lua**
+   - **Status:** ✅ CORRECT
+   - Correctly requires SharedModule via `ReplicatedStorage.shared`
+   - Correctly references client-side modules using `script.interaction.InteractionSystem`
+   - UI modules are properly initialized
+
+4. **src/StarterGui/init.client.lua**
+   - **Status:** ⚠️ PARTIAL ISSUES
+   - Correctly requires SharedModule via `ReplicatedStorage.shared`
+   - Creates OOP-style initialization but its init method isn't actually called in the file
+
+5. **Subsystem init.lua files**
+   - **Status:** ✅ CORRECT
+   - All subsystem init.lua files (UI, Economy, Interaction, Inventory, Placement)
+   - Use correct `script.ModuleName` pattern to reference child modules
+   - Return properly structured tables
+
+6. **Structure.txt Access**
+   - **Status:** ❌ ISSUE
+   - ItemManager.lua doesn't actually load from Structure.txt despite its importance in the dependency map
+   - Uses hardcoded examples instead of properly loading the data
+
+### Required Path Corrections
+
+1. **ItemManager.lua Structure.txt Integration**
+   - Need to update `ItemManager:LoadItems()` to properly load from Structure.txt
+   - Add Structure.txt to the Rojo configuration
+
+2. **Consistency in OOP Usage**
+   - The server initialization shows a mix of both OOP (`new()`) and module-style approaches
+   - Decide on one approach and apply consistently 
+
+3. **StarterGui Initialization**
+   - The StarterGui module creates an object but doesn't initialize it:
+   ```lua
+   -- This code doesn't appear in the file:
+   local starterGui = StarterGui.new()
+   starterGui:Init()
+   ```
+
+### Recommended Changes
+
+1. **Update src/shared/core/inventory/ItemManager.lua**
+   ```lua
+   function ItemManager:LoadItems()
+       -- Load structure from data file
+       local structureData = ""
+       
+       -- First try to load from GameData if configured in Rojo
+       local structureValue = ReplicatedStorage:FindFirstChild("GameData") and 
+                              ReplicatedStorage.GameData:FindFirstChild("Structure")
+       
+       if structureValue and structureValue.Value then
+           structureData = structureValue.Value
+       else
+           -- Fallback to loading from a ModuleScript if available
+           local structureModule = ReplicatedStorage:FindFirstChild("StructureData")
+           if structureModule then
+               structureData = require(structureModule)
+           else
+               warn("Structure data not found, using default items")
+               -- Use hardcoded defaults as currently implemented
+               self.items = {
+                   -- existing item definitions...
+               }
+               return
+           end
+       end
+       
+       -- Parse structure data
+       self:ParseStructureData(structureData)
+   end
+   
+   function ItemManager:ParseStructureData(data)
+       -- Implementation of structure data parsing
+       -- ...
+   end
+   ```
+
+2. **Update second.project.json**
+   ```json
+   "ReplicatedStorage": {
+     "$className": "ReplicatedStorage",
+     "shared": {
+       "$path": "src/shared"
+     },
+     "GameData": {
+       "$className": "Folder",
+       "Structure": {
+         "$path": "Structure.txt"
+       }
+     }
+   }
+   ```
+
+3. **Fix StarterGui Initialization in src/StarterGui/init.client.lua**
+   ```lua
+   -- Add at the end of the file:
+   local starterGui = StarterGui.new()
+   starterGui:Init()
+   ```
+
+4. **Standardize OOP Approach in src/server/init.server.lua**
+   - Either convert all managers to use the constructor pattern:
+   ```lua
+   local gameManager = SharedModule.GameManager.new()
+   gameManager:Initialize()
+   
+   local currencyManager = SharedModule.Economy.CurrencyManager.new()
+   currencyManager:Initialize()
+   
+   local interactionManager = SharedModule.Interaction.Manager.new()
+   interactionManager:Initialize()
+   ```
+   
+   - Or use the module approach for all:
+   ```lua
+   local GameManager = SharedModule.GameManager
+   local CurrencyManager = SharedModule.Economy.CurrencyManager
+   local InteractionManager = SharedModule.Interaction.Manager
+   
+   if GameManager.Initialize then GameManager.Initialize() end
+   if CurrencyManager.Initialize then CurrencyManager.Initialize() end
+   if InteractionManager.Initialize then InteractionManager.Initialize() end
+   ```
+
+### Path Resolution Summary
+
+After implementing these changes, your init scripts should have correct and consistent path resolution throughout the codebase, ensuring that all dependencies are properly loaded when transferred via Rojo/Argon.
+

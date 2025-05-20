@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"args": [
+				"-Command",
+				"Write-Host \"Cleaning up any previous fixed files...\" -ForegroundColor Yellow; if (Test-Path \"src\\client\\interaction\\InteractionSystemModule_fixed.lua\") { Remove-Item \"src\\client\\interaction\\InteractionSystemModule_fixed.lua\"; Write-Host \"Removed InteractionSystemModule_fixed.lua\" -ForegroundColor Green; } else { Write-Host \"InteractionSystemModule_fixed.lua not found, nothing to remove\" -ForegroundColor Cyan; }"
+			],
+			"command": "powershell.exe",
+			"isBackground": false,
+			"label": "Cleanup Previous Fixed Module",
+			"type": "shell"
+		}
+	]
+}

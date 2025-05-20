@@ -1,0 +1,794 @@
+-- ItemPurchaseHandler.lua
+-- Handles server-side processing of item purchases
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
+local DataStoreService = game:GetService("DataStoreService")
+
+-- Setup data store for player data
+local playerDataStore = DataStoreService:GetDataStore("PlayerData_v1")
+
+-- Import shared modules with fallback
+print("ItemPurchaseHandler: Attempting to require shared module")
+local SharedModule
+local Constants
+
+local success, errorMessage = pcall(function()
+    SharedModule = require(ReplicatedStorage:WaitForChild("shared", 5))
+    Constants = SharedModule.Constants
+    return true
+end)
+
+if not success then
+    warn("ItemPurchaseHandler: Failed to require SharedModule:", errorMessage)
+    print("ItemPurchaseHandler: Creating minimal SharedModule fallback")
+    -- Create minimal fallback for Constants
+    Constants = {
+        CURRENCY = {
+            INGAME = "Coins",
+            ROBUX = "Robux",
+            STARTING_CURRENCY = 100,
+            PRODUCTS = {
+                {id = "coins_1000", name = "1,000 Coins", coins = 1000, robux = 75, bonusCoins = 0, assetId = 3285357280}
+            }
+        },
+        TIER_PRODUCTS = {
+            BASIC = {id = "tier_basic", assetId = 3285357280, robux = 5}
+        }
+    }
+    SharedModule = {
+        Constants = Constants
+    }
+else
+    print("ItemPurchaseHandler: Successfully required SharedModule")
+end
+
+-- Remote events
+local remotes = ReplicatedStorage:WaitForChild("Remotes")
+local purchaseItemEvent = remotes:FindFirstChild("PurchaseItem") 
+local addToInventoryEvent = remotes:FindFirstChild("AddToInventory")
+local updateBalanceEvent = remotes:FindFirstChild("UpdateBalance")
+
+-- Create remote events if they don't exist
+if not purchaseItemEvent then
+    purchaseItemEvent = Instance.new("RemoteEvent")
+    purchaseItemEvent.Name = "PurchaseItem"
+    purchaseItemEvent.Parent = remotes
+end
+
+if not addToInventoryEvent then
+    addToInventoryEvent = Instance.new("RemoteEvent")
+    addToInventoryEvent.Name = "AddToInventory"
+    addToInventoryEvent.Parent = remotes
+end
+
+if not updateBalanceEvent then
+    updateBalanceEvent = Instance.new("RemoteEvent")
+    updateBalanceEvent.Name = "UpdateBalance"
+    updateBalanceEvent.Parent = remotes
+end
+
+-- Debug settings
+local DEBUG_MODE = true
+local function debugLog(...)
+    if DEBUG_MODE then
+        print("[ItemPurchaseHandler]", ...)
+    end
+end
+
+-- Module table
+local ItemPurchaseHandler = {}
+
+-- Initialize player data
+local playerData = {}
+
+-- Function to get or create player data
+function ItemPurchaseHandler:GetPlayerData(player)
+    print("ItemPurchaseHandler: GetPlayerData called for", player.Name)
+    
+    -- Make sure player exists
+    if not player or not player.Parent then
+        warn("ItemPurchaseHandler: Invalid player in GetPlayerData")
+        return false, nil
+    end
+    
+    -- Get the player's data
+    local success, playerData = pcall(function()
+        return self:LoadPlayerData(player)
+    end)
+    
+    if success and playerData then
+        -- Ensure inventory exists
+        if not playerData.inventory then
+            playerData.inventory = {}
+        end
+        
+        -- Add mock items for testing in studio if inventory is empty
+        if #playerData.inventory == 0 and game:GetService("RunService"):IsStudio() then
+            print("ItemPurchaseHandler: Adding test items to empty inventory in Studio")
+            
+            -- Add some test items
+            local testItems = {
+                { id = "Grass_Cube", name = "Grass Cube", count = 5 },
+                { id = "Stone_Cube", name = "Stone Cube", count = 5 },
+                { id = "Wood_Plank", name = "Wood Plank", count = 5 },
+                { id = "Brick_Cube", name = "Brick Cube", count = 5 },
+                { id = "Water_Cube", name = "Water Cube", count = 3 },
+                { id = "Glass_Cube", name = "Glass Cube", count = 3 }
+            }
+            
+            for _, item in ipairs(testItems) do
+                table.insert(playerData.inventory, item)
+            end
+        end
+        
+        return true, playerData
+    else
+        warn("ItemPurchaseHandler: Failed to get player data:", playerData)
+        return false, nil
+    end
+end
+
+-- Load player data from DataStore or create new data if none exists
+function ItemPurchaseHandler:LoadPlayerData(player)
+    debugLog("LoadPlayerData called for:", player.Name)
+    
+    -- Check if we already have data in memory
+    if playerData[player.UserId] then
+        debugLog("Using cached data for:", player.Name)
+        return playerData[player.UserId]
+    end
+    
+    -- Try to load data from DataStore
+        local success, result = pcall(function()
+            return playerDataStore:GetAsync("Player_" .. player.UserId)
+        end)
+    
+    local data
+        
+        if success and result then
+        debugLog("Loaded data from DataStore for:", player.Name)
+        data = result
+    else
+        debugLog("Creating new data for:", player.Name)
+        -- Create new data with default values
+        data = {
+            currency = Constants.CURRENCY.STARTING_CURRENCY or 100,
+            inventory = {}
+        }
+    end
+    
+    -- Cache the data
+    playerData[player.UserId] = data
+    
+    return data
+end
+
+-- Save player data
+function ItemPurchaseHandler:SavePlayerData(player)
+    debugLog("SavePlayerData called for:", player.Name)
+    local data = playerData[player.UserId]
+    if not data then
+        debugLog("No data to save for:", player.Name)
+        return
+    end
+    
+    -- Debug the data before saving
+    debugLog("Saving data for:", player.Name, "Currency:", data.currency, "Inventory count:", #data.inventory)
+    
+    local success, errorMessage = pcall(function()
+        playerDataStore:SetAsync("Player_" .. player.UserId, data)
+    end)
+    
+    if success then
+        print("Saved player data for " .. player.Name)
+    else
+        warn("Failed to save player data for " .. player.Name .. ": " .. errorMessage)
+    end
+end
+
+-- Update client UI with current balance
+function ItemPurchaseHandler:UpdateClientBalance(player)
+    local success, data = self:GetPlayerData(player)
+    if not success or not data then
+        warn("UpdateClientBalance: Failed to get player data for", player.Name)
+        return
+    end
+    
+    -- Fire event to update client UI
+    if updateBalanceEvent then
+        updateBalanceEvent:FireClient(player, data.currency)
+        print("💰 CURRENCY UPDATE for " .. player.Name .. ": " .. data.currency .. " coins")
+    else
+        warn("UpdateBalanceEvent is nil, cannot update currency UI")
+    end
+end
+
+-- Process in-game currency purchase
+function ItemPurchaseHandler:ProcessCurrencyPurchase(player, item, price)
+    local success, data = self:GetPlayerData(player)
+    if not success or not data then
+        warn("ProcessCurrencyPurchase: Failed to get player data for", player.Name)
+        return false, "Failed to access player data"
+    end
+    
+    print("ProcessCurrencyPurchase - Player:", player.Name, "Item:", item.Name, "Price:", price, "Current Currency:", data.currency)
+    
+    -- Check if player is an admin for free purchases
+    if self:IsAdmin(player) then
+        print("Admin detected: Free purchase granted for " .. player.Name)
+        
+        -- Add the item to the player's inventory without charging
+        self:AddItemToInventory(player, item)
+        
+        -- Save the data
+        self:SavePlayerData(player)
+        
+        return true, "Admin free purchase of " .. item.Name
+    end
+    
+    -- Check if player can afford the item
+    if data.currency < price then
+        print("Purchase failed: Not enough currency. Has:", data.currency, "Needs:", price)
+        return false, "Not enough " .. Constants.CURRENCY.INGAME .. " to purchase this item."
+    end
+    
+    -- Deduct the cost
+    data.currency = data.currency - price
+    print("Purchase successful! New currency balance:", data.currency)
+    
+    -- Add the item to the player's inventory
+    self:AddItemToInventory(player, item)
+    
+    -- Re-log the player data to verify inventory was added
+    debugLog("After purchase - Player:", player.Name, "Currency:", data.currency, "Inventory items:", #data.inventory)
+    
+    -- Save the data after purchase
+    self:SavePlayerData(player)
+    
+    -- Update client UI with new balance
+    self:UpdateClientBalance(player)
+    
+    return true, "Successfully purchased " .. item.Name .. " for " .. price .. " " .. Constants.CURRENCY.INGAME
+end
+
+-- Process Robux purchase (Developer Product)
+function ItemPurchaseHandler:ProcessRobuxPurchase(player, item, productId)
+    -- This would be handled through MarketplaceService.ProcessReceipt
+    -- For now, we'll simulate this process
+    
+    -- Check if player is an admin for free purchases
+    if self:IsAdmin(player) then
+        print("Admin detected: Free Robux purchase granted for " .. player.Name)
+        
+        -- Add the item to the player's inventory without charging
+        local success = self:AddItemToInventory(player, item)
+        if not success then
+            return false, "Failed to add item to inventory"
+        end
+        
+        -- Save the data
+        self:SavePlayerData(player)
+        
+        return true, "Admin free purchase of " .. item.Name
+    end
+    
+    -- Add the item to the player's inventory
+    local success = self:AddItemToInventory(player, item)
+    if not success then
+        return false, "Failed to add item to inventory"
+    end
+    
+    -- Save the data after purchase
+    self:SavePlayerData(player)
+    
+    return true, "Successfully purchased " .. item.Name .. " with Robux"
+end
+
+-- Check if player is an admin
+function ItemPurchaseHandler:IsAdmin(player)
+    -- Hardcoded admin IDs for emergency use
+    local hardcodedAdmins = {
+        3246397734, -- Default Roblox test account ID
+        5329862  -- Just an example ID, replace with real one
+    }
+    
+    -- Check using hardcoded admin IDs first (for emergency access)
+    for _, adminId in ipairs(hardcodedAdmins) do
+        if player and player.UserId and adminId == player.UserId then
+            print("IsAdmin: Direct match found with hardcoded ID! PlayerID:", player.UserId)
+            return true
+        end
+    end
+    
+    -- Check by UserId
+    if Constants and Constants.ADMIN_IDS then
+        print("IsAdmin: Checking against Constants.ADMIN_IDS table")
+        for _, adminId in ipairs(Constants.ADMIN_IDS) do
+            if player and player.UserId and adminId == player.UserId then
+                print("IsAdmin: Match found in Constants.ADMIN_IDS! PlayerID:", player.UserId)
+                return true
+            end
+        end
+    else
+        print("IsAdmin: Constants.ADMIN_IDS is nil or not a table")
+    end
+    
+    -- Check by Name
+    if Constants and Constants.isAdminPlayerName and player and player.Name then
+        if Constants.isAdminPlayerName(player.Name) then
+            return true
+        end
+    end
+    
+    return false
+end
+
+-- Function to fire inventory update event to client
+function ItemPurchaseHandler:FireInventoryUpdateEvent(player)
+    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+    if not remotes then return end
+    
+    local updateInventoryEvent = remotes:FindFirstChild("UpdateInventory")
+    if not updateInventoryEvent then
+        updateInventoryEvent = Instance.new("RemoteEvent")
+        updateInventoryEvent.Name = "UpdateInventory"
+        updateInventoryEvent.Parent = remotes
+        print("ItemPurchaseHandler: Created UpdateInventory RemoteEvent")
+    end
+    
+    -- Get player inventory
+    local inventoryData = self:GetPlayerInventory(player)
+    
+    -- Fire event to update client
+    updateInventoryEvent:FireClient(player, inventoryData)
+    print("ItemPurchaseHandler: Fired inventory update to client for", player.Name)
+    
+    return true
+end
+
+-- Add an item to player's inventory
+function ItemPurchaseHandler:AddItemToInventory(player, item)
+    local success, data = self:GetPlayerData(player)
+    if not success or not data then
+        warn("AddItemToInventory: Failed to get player data for", player.Name)
+        return false
+    end
+    
+    -- Create an inventory item entry
+    local itemName = typeof(item) == "string" and item or item.Name
+    local itemId = typeof(item) == "string" and item or (item:GetAttribute("ItemID") or item.Name:gsub(" ", "_"))
+    
+    -- Normalize item ID (replace spaces with underscores)
+    local normalizedItemId = itemId:gsub(" ", "_")
+    
+    -- Check if this item already exists in inventory
+    local existingItem = nil
+    for i, invItem in ipairs(data.inventory) do
+        -- Check against both normalized and original IDs
+        if (invItem.id == itemId or invItem.id == normalizedItemId or 
+            invItem.name == itemId or invItem.name == normalizedItemId) then
+            existingItem = invItem
+            break
+        end
+    end
+    
+    if existingItem then
+        -- Item already exists in inventory, increment count
+        existingItem.count = (existingItem.count or 1) + 1
+        print("ItemPurchaseHandler: Incremented count for existing item", itemId, "new count:", existingItem.count)
+    else
+        -- Create a new inventory entry
+        local inventoryItem = {
+            name = itemName,
+            id = normalizedItemId,
+            tier = self:GetItemTier(itemName),
+            count = 1  -- Initialize count to 1
+        }
+        
+        table.insert(data.inventory, inventoryItem)
+        print("ItemPurchaseHandler: Added new item to inventory:", normalizedItemId)
+    end
+    
+    self:SavePlayerData(player, data)
+    self:FireInventoryUpdateEvent(player)
+    return true
+end
+
+-- Get item tier based on item name or folder
+function ItemPurchaseHandler:GetItemTier(itemName)
+    -- Same logic as client-side to determine tier
+    local cleanName = itemName:gsub("[_]", ""):lower()
+    
+    if cleanName:find("basic") then
+        return "BASIC"
+    elseif cleanName:find("level1") then
+        return "LEVEL_1"
+    elseif cleanName:find("level2") then
+        return "LEVEL_2"
+    elseif cleanName:find("secondary") then
+        return "SECONDARY"
+    elseif cleanName:find("rare") and cleanName:find("drop") then
+        return "RARE_DROP"
+    elseif cleanName:find("rare") then
+        return "RARE"
+    elseif cleanName:find("exclusive") then
+        return "EXCLUSIVE"
+    elseif cleanName:find("weapon") then
+        return "WEAPONS"
+    elseif cleanName:find("free") then
+        return "FREE_ITEMS"
+    end
+    
+    return "BASIC"
+end
+
+-- Handle MarketplaceService.ProcessReceipt
+local function processReceipt(receiptInfo)
+    local player = Players:GetPlayerByUserId(receiptInfo.PlayerId)
+    if not player then
+        -- Player likely left the game
+        return Enum.ProductPurchaseDecision.NotProcessedYet
+    end
+    
+    -- Find the corresponding product
+    local productId = receiptInfo.ProductId
+    local matchingTier = nil
+    
+    -- Ensure Constants.TIER_PRODUCTS exists
+    if not Constants.TIER_PRODUCTS then
+        warn("Constants.TIER_PRODUCTS is nil in processReceipt, creating fallback")
+        Constants.TIER_PRODUCTS = {
+            BASIC = {id = "tier_basic", assetId = 3284930147, robux = 5},
+            LEVEL_1 = {id = "tier_level1", assetId = 3284930700, robux = 10},
+            LEVEL_2 = {id = "tier_level2", assetId = 3284930700, robux = 25}
+        }
+    end
+    
+    -- Find which tier this product belongs to
+    for tier, productInfo in pairs(Constants.TIER_PRODUCTS) do
+        if productInfo.assetId == productId then
+            matchingTier = tier
+            break
+        end
+    end
+    
+    if matchingTier then
+        -- Note: In a real implementation, you would need to find which specific item
+        -- the player was trying to purchase with Robux, using a queue system or similar
+        debugLog("Product purchased for tier:", matchingTier)
+        
+        -- Give player some currency as a temporary implementation
+        local data = ItemPurchaseHandler:GetPlayerData(player)
+        local tierValue = 0
+        
+        -- Calculate reward based on tier
+        if matchingTier == "BASIC" then
+            tierValue = 50
+        elseif matchingTier == "LEVEL_1" then
+            tierValue = 100
+        elseif matchingTier == "LEVEL_2" then
+            tierValue = 250
+        elseif matchingTier == "RARE" then
+            tierValue = 500
+        else
+            tierValue = 100 -- Default reward
+        end
+        
+        data.currency = data.currency + tierValue
+        debugLog("Added", tierValue, "coins to", player.Name, "for tier product:", matchingTier)
+        
+        -- Save player data after purchase
+        ItemPurchaseHandler:SavePlayerData(player)
+        
+        -- Update client UI with new balance
+        ItemPurchaseHandler:UpdateClientBalance(player)
+        
+        -- Return that the purchase was successful
+        return Enum.ProductPurchaseDecision.PurchaseGranted
+    end
+    
+    -- Otherwise try to match with currency products
+    if not Constants.CURRENCY.PRODUCTS then
+        Constants.CURRENCY.PRODUCTS = {
+            {id = "coins_1000", name = "1,000 Coins", coins = 1000, robux = 75, bonusCoins = 0, assetId = 1472807192}
+        }
+    end
+    
+    for _, product in ipairs(Constants.CURRENCY.PRODUCTS) do
+        if product.assetId == productId then
+            -- Add coins to player account
+            local data = ItemPurchaseHandler:GetPlayerData(player)
+            data.currency = data.currency + (product.coins + (product.bonusCoins or 0))
+            
+            debugLog("Added", product.coins + (product.bonusCoins or 0), "coins to", player.Name)
+            
+            -- Save player data after purchase
+            ItemPurchaseHandler:SavePlayerData(player)
+            
+            -- Update client UI with new balance
+            ItemPurchaseHandler:UpdateClientBalance(player)
+            
+            -- Return that the purchase was successful
+            return Enum.ProductPurchaseDecision.PurchaseGranted
+        end
+    end
+    
+    -- Product not recognized
+    return Enum.ProductPurchaseDecision.NotProcessedYet
+end
+
+-- Get player inventory
+function ItemPurchaseHandler:GetPlayerInventory(player)
+    debugLog("GetPlayerInventory called for:", player.Name)
+    
+    local success, data = self:GetPlayerData(player)
+    if not success or not data then
+        debugLog("No data found for player:", player.Name)
+        return {
+            success = false,
+            message = "Could not load player data",
+            inventory = {},
+            currency = 0
+        }
+    end
+    
+    -- Debug output to help diagnose issues
+    debugLog("Raw player data:", data)
+    debugLog("Player UserId:", player.UserId)
+    debugLog("Inventory count:", #data.inventory)
+    debugLog("Currency:", data.currency)
+    
+    -- Make sure inventory is a table
+    if type(data.inventory) ~= "table" then
+        debugLog("Inventory is not a table, creating empty inventory")
+        data.inventory = {}
+    end
+    
+    -- Validate and fix inventory items if needed
+    local validatedInventory = {}
+    for i, item in ipairs(data.inventory) do
+        -- Check if the item has the required fields
+        if type(item) == "table" and item.name then
+            -- Make sure all required fields exist
+            local validItem = {
+                name = item.name,
+                id = item.id or ("item_" .. i),
+                tier = item.tier or self:GetItemTier(item.name),
+                count = item.count or 1
+            }
+            table.insert(validatedInventory, validItem)
+            debugLog("Validated inventory item:", validItem.name, "ID:", validItem.id, "Tier:", validItem.tier)
+        else
+            debugLog("Skipping invalid inventory item at index", i, ":", item)
+        end
+    end
+    
+    print("Getting inventory for " .. player.Name .. ": " .. #validatedInventory .. " items, " .. data.currency .. " currency")
+    
+    return {
+        success = true,
+        inventory = validatedInventory,
+        currency = data.currency
+    }
+end
+
+-- Function to remove an item from a player's inventory
+function ItemPurchaseHandler:RemoveFromInventory(player, itemId, quantity)
+    quantity = quantity or 1  -- Default to removing 1 item if not specified
+    
+    print("ItemPurchaseHandler: RemoveFromInventory called for", player.Name, "item:", itemId, "quantity:", quantity)
+    
+    local success, playerData = self:GetPlayerData(player)
+    if not success or not playerData or not playerData.inventory then
+        warn("ItemPurchaseHandler: Failed to get player data for", player.Name)
+        return false
+    end
+    
+    -- Normalize itemId (replace spaces with underscores)
+    local normalizedItemId = itemId:gsub(" ", "_")
+    
+    -- Find the item in the inventory
+    local found = false
+    for i, item in ipairs(playerData.inventory) do
+        -- Check using various formats to ensure we find the item
+        if item.id == itemId or 
+           item.id == normalizedItemId or
+           item.name == itemId or
+           item.name == normalizedItemId then
+            
+            -- Get current count or default to 1
+            local currentCount = item.count or 1
+            
+            -- Decrement count by specified quantity
+            if currentCount <= quantity then
+                -- If removing all or more than available, remove the entire entry
+                table.remove(playerData.inventory, i)
+                print("ItemPurchaseHandler: Removed item completely from inventory:", itemId)
+            else
+                -- Otherwise just reduce the count
+                item.count = currentCount - quantity
+                print("ItemPurchaseHandler: Decreased count for", itemId, "new count:", item.count)
+            end
+            
+            found = true
+            break
+        end
+    end
+    
+    if found then
+        self:SavePlayerData(player, playerData)
+        self:FireInventoryUpdateEvent(player)
+        return true
+    else
+        warn("ItemPurchaseHandler: Item", itemId, "not found in inventory")
+        return false
+    end
+end
+
+-- Get player data in a format compatible with PlacementManager
+function ItemPurchaseHandler:GetPlayerDataForPlacement(player)
+    print("ItemPurchaseHandler: GetPlayerDataForPlacement called for", player.Name)
+    
+    -- Make sure player exists
+    if not player or not player.Parent then
+        warn("ItemPurchaseHandler: Invalid player in GetPlayerDataForPlacement")
+        return nil
+    end
+    
+    -- Get the player's data using original method
+    local success, playerData = self:GetPlayerData(player)
+    
+    if not success or not playerData then
+        warn("ItemPurchaseHandler: Failed to get player data for", player.Name)
+        -- Return an empty data structure
+        return {
+            inventory = {},
+            currency = 0
+        }
+    end
+    
+    -- Ensure inventory exists
+    if not playerData.inventory then
+        playerData.inventory = {}
+    end
+    
+    -- Add mock items for testing in studio if inventory is empty
+    if #playerData.inventory == 0 and game:GetService("RunService"):IsStudio() then
+        print("ItemPurchaseHandler: Adding test items to empty inventory in Studio")
+        
+        -- Add some test items
+        local testItems = {
+            { id = "Grass_Cube", name = "Grass Cube", count = 5 },
+            { id = "Stone_Cube", name = "Stone Cube", count = 5 },
+            { id = "Wood_Plank", name = "Wood Plank", count = 5 },
+            { id = "Brick_Cube", name = "Brick Cube", count = 5 },
+            { id = "Water_Cube", name = "Water Cube", count = 3 },
+            { id = "Glass_Cube", name = "Glass Cube", count = 3 }
+        }
+        
+        for _, item in ipairs(testItems) do
+            table.insert(playerData.inventory, item)
+        end
+    end
+    
+    return playerData
+end
+
+-- Initialize the handler
+function ItemPurchaseHandler:Initialize()
+    -- Set up MarketplaceService callback
+    MarketplaceService.ProcessReceipt = processReceipt
+    
+    -- Connect player join event to send initial balance
+    Players.PlayerAdded:Connect(function(player)
+        -- Load player data
+        local success, data = self:GetPlayerData(player)
+        
+        -- Send initial balance to client
+        self:UpdateClientBalance(player)
+        
+        if success and data then
+        print("Sent initial balance to " .. player.Name .. ": " .. data.currency)
+        else
+            print("Initial player data load failed for " .. player.Name)
+        end
+    end)
+    
+    -- Connect player leave event to save data
+    Players.PlayerRemoving:Connect(function(player)
+        self:SavePlayerData(player)
+    end)
+    
+    -- Handle purchase events from clients
+    purchaseItemEvent.OnServerEvent:Connect(function(player, item, currencyType, price)
+        if not player or not item then return end
+        
+        local success, message
+        
+        -- Process the purchase based on currency type
+        if currencyType == "INGAME" then
+            success, message = self:ProcessCurrencyPurchase(player, item, price)
+        elseif currencyType == "ROBUX" then
+            -- This would normally go through MarketplaceService.ProcessReceipt
+            -- But we can also handle it here for developer products
+            local tier = self:GetItemTier(item.Name)
+            local productInfo = Constants.TIER_PRODUCTS[tier]
+            
+            if productInfo then
+                success, message = self:ProcessRobuxPurchase(player, item, productInfo.assetId)
+            else
+                success, message = false, "No product information found for this item."
+            end
+        else
+            success, message = false, "Invalid currency type"
+        end
+        
+        -- Notify the client of the result
+        purchaseItemEvent:FireClient(player, success, message, {
+            name = item.Name,
+            price = price,
+            currencyType = currencyType
+        })
+    end)
+    
+    debugLog("ItemPurchaseHandler initialized")
+end
+
+function ItemPurchaseHandler:AddCurrencyToAdmins(amount)
+    amount = amount or 1000000
+    for _, player in ipairs(Players:GetPlayers()) do
+        if self:IsAdmin(player) then
+            local success, data = self:GetPlayerData(player)
+            if success and data then
+                data.currency = (data.currency or 0) + amount
+                self:SavePlayerData(player)
+                self:UpdateClientBalance(player)
+                print("Added " .. amount .. " coins to admin account: " .. player.Name)
+            end
+        end
+    end
+end
+
+-- Chat command handler for admin currency
+Players.PlayerAdded:Connect(function(player)
+    player.Chatted:Connect(function(message)
+        if message:lower() == "/addadmincurrency" then
+            print("ItemPurchaseHandler: Command triggered by player:", player.Name, "with ID:", player.UserId)
+            
+            -- Check if player is an admin with detailed logging
+            local isAdmin = ItemPurchaseHandler:IsAdmin(player)
+            print("ItemPurchaseHandler: isAdmin result:", isAdmin)
+            
+            if isAdmin then
+                ItemPurchaseHandler:AddCurrencyToAdmins(1000000)
+                print("Admin currency command executed by: " .. player.Name)
+            else
+                print("Non-admin player attempted to use admin command: " .. player.Name)
+            end
+        end
+    end)
+end)
+
+-- Also connect to existing players when the script loads
+for _, player in ipairs(Players:GetPlayers()) do
+    player.Chatted:Connect(function(message)
+        if message:lower() == "/addadmincurrency" then
+            print("ItemPurchaseHandler: Command triggered by existing player:", player.Name, "with ID:", player.UserId)
+            
+            -- Check if player is an admin with detailed logging
+            local isAdmin = ItemPurchaseHandler:IsAdmin(player)
+            print("ItemPurchaseHandler: isAdmin result:", isAdmin)
+            
+            if isAdmin then
+                ItemPurchaseHandler:AddCurrencyToAdmins(1000000)
+                print("Admin currency command executed by: " .. player.Name)
+            else
+                print("Non-admin player attempted to use admin command: " .. player.Name)
+            end
+        end
+    end)
+end
+
+return ItemPurchaseHandler
