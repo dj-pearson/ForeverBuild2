@@ -6,21 +6,15 @@ local Constants = require(script.Parent.Parent.Constants)
 
 local InventoryUI = {}
 
--- UI Constants
-local INVENTORY_SIZE = UDim2.new(0, 600, 0, 400)
-local INVENTORY_POSITION = UDim2.new(0.5, -300, 0.5, -200)
-local ANIMATION_DURATION = 0.3
-local ITEM_SIZE = UDim2.new(0, 100, 0, 120)
-local ITEMS_PER_ROW = 5
-local ITEM_PADDING = 10
+-- UI Constants are now in Constants.lua
 
 -- Create the inventory UI
 local function createInventory(parent)
     local inventory = Instance.new("Frame")
     inventory.Name = "InventoryUI"
-    inventory.Size = INVENTORY_SIZE
-    inventory.Position = INVENTORY_POSITION
-    inventory.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    inventory.Size = UDim2.new(0, 600, 0, 400) -- Retaining size for now, can be moved to Constants
+    inventory.Position = UDim2.new(0.5, -300, 0.5, -200) -- Retaining position for now, can be moved to Constants
+    inventory.BackgroundColor3 = Constants.UI.Colors.Background -- Updated
     inventory.BorderSizePixel = 0
     inventory.Visible = false
     inventory.Parent = parent
@@ -37,7 +31,7 @@ local function createInventory(parent)
     shadow.Position = UDim2.new(0, -10, 0, -10)
     shadow.BackgroundTransparency = 1
     shadow.Image = "rbxassetid://5554236805"
-    shadow.ImageColor3 = Color3.new(0, 0, 0)
+    shadow.ImageColor3 = Constants.UI.Colors.Text -- Updated (or a darker variant)
     shadow.ImageTransparency = 0.6
     shadow.ScaleType = Enum.ScaleType.Slice
     shadow.SliceCenter = Rect.new(23, 23, 277, 277)
@@ -49,7 +43,7 @@ local function createInventory(parent)
     titleBar.Name = "TitleBar"
     titleBar.Size = UDim2.new(1, 0, 0, 50)
     titleBar.Position = UDim2.new(0, 0, 0, 0)
-    titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    titleBar.BackgroundColor3 = Constants.UI.Colors.Text -- Updated
     titleBar.BorderSizePixel = 0
     titleBar.Parent = inventory
     
@@ -62,10 +56,10 @@ local function createInventory(parent)
     title.Size = UDim2.new(1, -100, 1, 0)
     title.Position = UDim2.new(0, 20, 0, 0)
     title.BackgroundTransparency = 1
-    title.Font = Enum.Font.GothamBold
+    title.Font = Constants.UI.Fonts.Title.Font -- Updated
     title.Text = "Inventory"
-    title.TextSize = 24
-    title.TextColor3 = Color3.new(1, 1, 1)
+    title.TextSize = Constants.UI.Fonts.Title.Size -- Updated
+    title.TextColor3 = Constants.UI.Colors.Background -- Updated
     title.TextXAlignment = Enum.TextXAlignment.Left
     title.Parent = titleBar
     
@@ -74,10 +68,10 @@ local function createInventory(parent)
     currency.Size = UDim2.new(0, 100, 1, 0)
     currency.Position = UDim2.new(1, -120, 0, 0)
     currency.BackgroundTransparency = 1
-    currency.Font = Enum.Font.GothamBold
+    currency.Font = Constants.UI.Fonts.Default.Font -- Updated
     currency.Text = "0"
-    currency.TextSize = 20
-    currency.TextColor3 = Color3.fromRGB(255, 215, 0)
+    currency.TextSize = Constants.UI.Fonts.Default.Size -- Updated
+    currency.TextColor3 = Constants.UI.Colors.Accent -- Updated
     currency.TextXAlignment = Enum.TextXAlignment.Right
     currency.Parent = titleBar
     
@@ -85,11 +79,11 @@ local function createInventory(parent)
     closeButton.Name = "CloseButton"
     closeButton.Size = UDim2.new(0, 30, 0, 30)
     closeButton.Position = UDim2.new(1, -40, 0, 10)
-    closeButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    closeButton.Font = Enum.Font.GothamBold
+    closeButton.BackgroundColor3 = Constants.UI.Colors.Error -- Updated
+    closeButton.Font = Constants.UI.Fonts.Button.Font -- Updated
     closeButton.Text = "X"
-    closeButton.TextSize = 18
-    closeButton.TextColor3 = Color3.new(1, 1, 1)
+    closeButton.TextSize = Constants.UI.Fonts.Button.Size -- Updated
+    closeButton.TextColor3 = Constants.UI.Colors.Background -- Updated
     closeButton.Parent = titleBar
     
     local closeCorner = Instance.new("UICorner")
@@ -110,8 +104,8 @@ local function createInventory(parent)
     
     -- Create grid layout
     local gridLayout = Instance.new("UIGridLayout")
-    gridLayout.CellSize = ITEM_SIZE
-    gridLayout.CellPadding = UDim2.new(0, ITEM_PADDING, 0, ITEM_PADDING)
+    gridLayout.CellSize = UDim2.new(0, 100, 0, 120) -- Retaining size for now, can be moved to Constants
+    gridLayout.CellPadding = UDim2.new(0, 10, 0, 10) -- Retaining padding for now, can be moved to Constants
     gridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
     gridLayout.VerticalAlignment = Enum.VerticalAlignment.Top
     gridLayout.Parent = itemsContainer
@@ -123,8 +117,8 @@ end
 local function createItemButton(itemName, itemData, quantity)
     local button = Instance.new("TextButton")
     button.Name = itemName
-    button.Size = ITEM_SIZE
-    button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    button.Size = UDim2.new(0, 100, 0, 120) -- Retaining size for now, can be moved to Constants
+    button.BackgroundColor3 = Constants.UI.Colors.Text -- Updated (or a lighter shade from Constants)
     button.AutoButtonColor = false
     
     -- Add corner radius
@@ -147,10 +141,10 @@ local function createItemButton(itemName, itemData, quantity)
     name.Size = UDim2.new(1, -20, 0, 20)
     name.Position = UDim2.new(0, 10, 0, 80)
     name.BackgroundTransparency = 1
-    name.Font = Enum.Font.GothamBold
+    name.Font = Constants.UI.Fonts.Default.Font -- Updated
     name.Text = itemName
-    name.TextSize = 14
-    name.TextColor3 = Color3.new(1, 1, 1)
+    name.TextSize = 14 -- Consider adjusting or making a constant
+    name.TextColor3 = Constants.UI.Colors.Background -- Updated
     name.TextTruncate = Enum.TextTruncate.AtEnd
     name.Parent = button
     
@@ -160,22 +154,22 @@ local function createItemButton(itemName, itemData, quantity)
     quantityLabel.Size = UDim2.new(1, -20, 0, 20)
     quantityLabel.Position = UDim2.new(0, 10, 0, 100)
     quantityLabel.BackgroundTransparency = 1
-    quantityLabel.Font = Enum.Font.Gotham
+    quantityLabel.Font = Constants.UI.Fonts.Default.Font -- Updated
     quantityLabel.Text = "x" .. quantity
-    quantityLabel.TextSize = 14
-    quantityLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    quantityLabel.TextSize = 14 -- Consider adjusting or making a constant
+    quantityLabel.TextColor3 = Constants.UI.Colors.Secondary -- Updated
     quantityLabel.Parent = button
     
     -- Hover effect
     button.MouseEnter:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+        TweenService:Create(button, TweenInfo.new(Constants.UI.BUTTON_HOVER_DURATION), { -- Updated
+            BackgroundColor3 = Constants.UI.Colors.Primary -- Example hover color, adjust as needed
         }):Play()
     end)
     
     button.MouseLeave:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        TweenService:Create(button, TweenInfo.new(Constants.UI.BUTTON_HOVER_DURATION), { -- Updated
+            BackgroundColor3 = Constants.UI.Colors.Text -- Back to original item button color
         }):Play()
     end)
     
@@ -196,12 +190,12 @@ function InventoryUI.Initialize(parent)
 end
 
 -- Update inventory display
-function InventoryUI.UpdateInventory(inventory, currency)
+function InventoryUI.UpdateInventory(inventoryData, currencyAmount) -- Renamed for clarity
     local ui = InventoryUI._inventory
     if not ui then return end
     
     -- Update currency
-    ui.TitleBar.Currency.Text = tostring(currency or 0)
+    ui.TitleBar.Currency.Text = tostring(currencyAmount or 0)
     
     -- Clear existing items
     local container = ui.ItemsContainer
@@ -213,7 +207,7 @@ function InventoryUI.UpdateInventory(inventory, currency)
     
     -- Add items
     local itemCount = 0
-    for itemName, quantity in pairs(inventory) do
+    for itemName, quantity in pairs(inventoryData) do
         if quantity > 0 then
             local itemData = Constants.ITEMS[itemName]
             if itemData then
@@ -233,8 +227,12 @@ function InventoryUI.UpdateInventory(inventory, currency)
     end
     
     -- Update canvas size
-    local rows = math.ceil(itemCount / ITEMS_PER_ROW)
-    container.CanvasSize = UDim2.new(0, 0, 0, rows * (ITEM_SIZE.Y.Offset + ITEM_PADDING) + ITEM_PADDING)
+    -- Consider moving ITEM_SIZE and ITEM_PADDING to Constants.UI if they are to be standardized
+    local itemSizeY = 120 -- Placeholder, ideally from Constants.UI.Item.Size.Y
+    local itemPadding = 10 -- Placeholder, ideally from Constants.UI.Item.Padding
+    local itemsPerRow = 5 -- Placeholder, ideally from Constants.UI.Inventory.ItemsPerRow
+    local rows = math.ceil(itemCount / itemsPerRow)
+    container.CanvasSize = UDim2.new(0, 0, 0, rows * (itemSizeY + itemPadding) + itemPadding)
 end
 
 -- Show the inventory
@@ -243,10 +241,10 @@ function InventoryUI.Show()
     if not inventory then return end
     
     inventory.Visible = true
-    inventory.BackgroundTransparency = 1
+    inventory.BackgroundTransparency = 1 -- Start fully transparent for fade-in
     
-    local showTween = TweenService:Create(inventory, TweenInfo.new(ANIMATION_DURATION), {
-        BackgroundTransparency = 0
+    local showTween = TweenService:Create(inventory, TweenInfo.new(Constants.UI.DIALOG_ANIMATION_DURATION), { -- Updated
+        BackgroundTransparency = 0 -- Fade to opaque (original visibility was 0)
     })
     showTween:Play()
 end
@@ -256,7 +254,7 @@ function InventoryUI.Hide()
     local inventory = InventoryUI._inventory
     if not inventory then return end
     
-    local hideTween = TweenService:Create(inventory, TweenInfo.new(ANIMATION_DURATION), {
+    local hideTween = TweenService:Create(inventory, TweenInfo.new(Constants.UI.DIALOG_ANIMATION_DURATION), { -- Updated
         BackgroundTransparency = 1
     })
     
@@ -267,4 +265,4 @@ function InventoryUI.Hide()
     hideTween:Play()
 end
 
-return InventoryUI 
+return InventoryUI

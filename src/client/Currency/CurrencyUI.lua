@@ -42,7 +42,7 @@ function CurrencyUI:CreateUI()
     mainFrame.Size = UDim2.new(0, 200, 0, 50)
     mainFrame.Position = UDim2.new(1, -220, 0, 20)
     mainFrame.BackgroundTransparency = 0.5
-    mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    mainFrame.BackgroundColor3 = Constants.UI.Colors.Text -- Updated
     mainFrame.BorderSizePixel = 0
     mainFrame.Parent = screenGui
     
@@ -61,9 +61,9 @@ function CurrencyUI:CreateUI()
     balanceLabel.Size = UDim2.new(1, -50, 1, 0)
     balanceLabel.Position = UDim2.new(0, 50, 0, 0)
     balanceLabel.BackgroundTransparency = 1
-    balanceLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    balanceLabel.TextSize = 24
-    balanceLabel.Font = Enum.Font.GothamBold
+    balanceLabel.TextColor3 = Constants.UI.Colors.Background -- Updated
+    balanceLabel.TextSize = Constants.UI.Fonts.Title.Size -- Updated
+    balanceLabel.Font = Constants.UI.Fonts.Title.Font -- Updated
     balanceLabel.Text = "0"
     balanceLabel.TextXAlignment = Enum.TextXAlignment.Left
     balanceLabel.Parent = mainFrame
@@ -73,11 +73,11 @@ function CurrencyUI:CreateUI()
     purchaseButton.Name = "PurchaseButton"
     purchaseButton.Size = UDim2.new(0, 100, 0, 30)
     purchaseButton.Position = UDim2.new(1, -110, 1, 10)
-    purchaseButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    purchaseButton.BackgroundColor3 = Constants.UI.Colors[Constants.UI.ButtonStyles.Primary.BackgroundColor] -- Updated
     purchaseButton.BorderSizePixel = 0
-    purchaseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    purchaseButton.TextSize = 18
-    purchaseButton.Font = Enum.Font.GothamBold
+    purchaseButton.TextColor3 = Constants.UI.Colors.Background -- Updated (for contrast)
+    purchaseButton.TextSize = Constants.UI.Fonts.Button.Size -- Updated
+    purchaseButton.Font = Constants.UI.Fonts.Button.Font -- Updated
     purchaseButton.Text = "Buy Coins"
     purchaseButton.Parent = mainFrame
     
@@ -110,7 +110,7 @@ function CurrencyUI:ShowPurchaseMenu()
     purchaseMenu.Name = "PurchaseMenu"
     purchaseMenu.Size = UDim2.new(0, 300, 0, 400)
     purchaseMenu.Position = UDim2.new(0.5, -150, 0.5, -200)
-    purchaseMenu.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    purchaseMenu.BackgroundColor3 = Constants.UI.Colors.Text -- Updated
     purchaseMenu.BorderSizePixel = 0
     purchaseMenu.Parent = self.ui
     
@@ -119,9 +119,9 @@ function CurrencyUI:ShowPurchaseMenu()
     title.Name = "Title"
     title.Size = UDim2.new(1, 0, 0, 50)
     title.BackgroundTransparency = 1
-    title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    title.TextSize = 24
-    title.Font = Enum.Font.GothamBold
+    title.TextColor3 = Constants.UI.Colors.Background -- Updated
+    title.TextSize = Constants.UI.Fonts.Title.Size -- Updated
+    title.Font = Constants.UI.Fonts.Title.Font -- Updated
     title.Text = "Purchase Coins"
     title.Parent = purchaseMenu
     
@@ -130,11 +130,11 @@ function CurrencyUI:ShowPurchaseMenu()
     closeButton.Name = "CloseButton"
     closeButton.Size = UDim2.new(0, 30, 0, 30)
     closeButton.Position = UDim2.new(1, -40, 0, 10)
-    closeButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    closeButton.BackgroundColor3 = Constants.UI.Colors.Error -- Updated
     closeButton.BorderSizePixel = 0
-    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closeButton.TextSize = 20
-    closeButton.Font = Enum.Font.GothamBold
+    closeButton.TextColor3 = Constants.UI.Colors.Background -- Updated
+    closeButton.TextSize = Constants.UI.Fonts.Button.Size -- Updated
+    closeButton.Font = Constants.UI.Fonts.Button.Font -- Updated
     closeButton.Text = "X"
     closeButton.Parent = purchaseMenu
     
@@ -158,7 +158,7 @@ function CurrencyUI:CreatePurchaseOption(product, yOffset)
     option.Name = "Option_" .. product.id
     option.Size = UDim2.new(1, -40, 0, 70)
     option.Position = UDim2.new(0, 20, 0, yOffset)
-    option.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    option.BackgroundColor3 = Constants.UI.Colors.Text -- Updated (Consider a lighter variant or new constant if too dark)
     option.BorderSizePixel = 0
     
     -- Create coin amount
@@ -166,9 +166,9 @@ function CurrencyUI:CreatePurchaseOption(product, yOffset)
     coinAmount.Name = "CoinAmount"
     coinAmount.Size = UDim2.new(0.6, 0, 1, 0)
     coinAmount.BackgroundTransparency = 1
-    coinAmount.TextColor3 = Color3.fromRGB(255, 255, 255)
-    coinAmount.TextSize = 20
-    coinAmount.Font = Enum.Font.GothamBold
+    coinAmount.TextColor3 = Constants.UI.Colors.Background -- Updated
+    coinAmount.TextSize = Constants.UI.Fonts.Button.Size -- Updated
+    coinAmount.Font = Constants.UI.Fonts.Button.Font -- Updated
     coinAmount.Text = tostring(product.coins) .. " Coins"
     coinAmount.TextXAlignment = Enum.TextXAlignment.Left
     coinAmount.Parent = option
@@ -179,9 +179,9 @@ function CurrencyUI:CreatePurchaseOption(product, yOffset)
     price.Size = UDim2.new(0.4, 0, 1, 0)
     price.Position = UDim2.new(0.6, 0, 0, 0)
     price.BackgroundTransparency = 1
-    price.TextColor3 = Color3.fromRGB(255, 255, 255)
-    price.TextSize = 20
-    price.Font = Enum.Font.GothamBold
+    price.TextColor3 = Constants.UI.Colors.Background -- Updated
+    price.TextSize = Constants.UI.Fonts.Button.Size -- Updated
+    price.Font = Constants.UI.Fonts.Button.Font -- Updated
     price.Text = tostring(product.robux) .. " R$"
     price.TextXAlignment = Enum.TextXAlignment.Right
     price.Parent = option
@@ -189,13 +189,13 @@ function CurrencyUI:CreatePurchaseOption(product, yOffset)
     -- Create purchase button
     local purchaseButton = Instance.new("TextButton")
     purchaseButton.Name = "PurchaseButton"
-    purchaseButton.Size = UDim2.new(1, 0, 0, 30)
-    purchaseButton.Position = UDim2.new(0, 0, 1, 10)
-    purchaseButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    purchaseButton.Size = UDim2.new(1, 0, 0, 30) -- Size might need adjustment if text is larger
+    purchaseButton.Position = UDim2.new(0, 0, 1, 10) 
+    purchaseButton.BackgroundColor3 = Constants.UI.Colors[Constants.UI.ButtonStyles.Primary.BackgroundColor] -- Updated
     purchaseButton.BorderSizePixel = 0
-    purchaseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    purchaseButton.TextSize = 18
-    purchaseButton.Font = Enum.Font.GothamBold
+    purchaseButton.TextColor3 = Constants.UI.Colors.Background -- Updated (for contrast)
+    purchaseButton.TextSize = Constants.UI.Fonts.Button.Size -- Updated
+    purchaseButton.Font = Constants.UI.Fonts.Button.Font -- Updated
     purchaseButton.Text = "Purchase"
     purchaseButton.Parent = option
     
@@ -212,4 +212,4 @@ function CurrencyUI:PurchaseCoins(productId)
     MarketplaceService:PromptProductPurchase(self.player, productId)
 end
 
-return CurrencyUI 
+return CurrencyUI

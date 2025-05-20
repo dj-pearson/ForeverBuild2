@@ -2,7 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
 
-local Constants = require(script.Parent.Parent.Parent.core.Constants)
+local Constants = require(script.Parent.Parent.Constants) -- Updated path
 
 local CurrencyUI = {}
 CurrencyUI.__index = CurrencyUI
@@ -38,7 +38,7 @@ function CurrencyUI:CreateUI()
     frame.Name = "MainFrame"
     frame.Size = UDim2.new(0, 200, 0, 50)
     frame.Position = UDim2.new(1, -220, 0, 20)
-    frame.BackgroundColor3 = Constants.UI_COLORS.SECONDARY
+    frame.BackgroundColor3 = Constants.UI.Colors.Text -- Updated
     frame.BorderSizePixel = 0
     frame.Parent = screenGui
     
@@ -57,9 +57,9 @@ function CurrencyUI:CreateUI()
     balanceLabel.Size = UDim2.new(0, 100, 1, 0)
     balanceLabel.Position = UDim2.new(0, 50, 0, 0)
     balanceLabel.BackgroundTransparency = 1
-    balanceLabel.TextColor3 = Constants.UI_COLORS.TEXT
-    balanceLabel.TextSize = 18
-    balanceLabel.Font = Enum.Font.GothamBold
+    balanceLabel.TextColor3 = Constants.UI.Colors.Background -- Updated
+    balanceLabel.TextSize = Constants.UI.Fonts.Default.Size -- Updated
+    balanceLabel.Font = Constants.UI.Fonts.Default.Font -- Updated
     balanceLabel.Text = "0"
     balanceLabel.Parent = frame
     
@@ -68,11 +68,11 @@ function CurrencyUI:CreateUI()
     purchaseButton.Name = "PurchaseButton"
     purchaseButton.Size = UDim2.new(0, 30, 0, 30)
     purchaseButton.Position = UDim2.new(1, -40, 0.5, -15)
-    purchaseButton.BackgroundColor3 = Constants.UI_COLORS.PRIMARY
+    purchaseButton.BackgroundColor3 = Constants.UI.Colors[Constants.UI.ButtonStyles.Primary.BackgroundColor] -- Updated
     purchaseButton.Text = "+"
-    purchaseButton.TextColor3 = Constants.UI_COLORS.TEXT
-    purchaseButton.TextSize = 20
-    purchaseButton.Font = Enum.Font.GothamBold
+    purchaseButton.TextColor3 = Constants.UI.Colors.Background -- Updated
+    purchaseButton.TextSize = Constants.UI.Fonts.Button.Size -- Updated
+    purchaseButton.Font = Constants.UI.Fonts.Button.Font -- Updated
     purchaseButton.Parent = frame
     
     self.ui = screenGui
@@ -103,7 +103,7 @@ function CurrencyUI:ShowPurchaseMenu()
     menu.Name = "PurchaseMenu"
     menu.Size = UDim2.new(0, 300, 0, 400)
     menu.Position = UDim2.new(0.5, -150, 0.5, -200)
-    menu.BackgroundColor3 = Constants.UI_COLORS.SECONDARY
+    menu.BackgroundColor3 = Constants.UI.Colors.Text -- Updated
     menu.BorderSizePixel = 0
     menu.Parent = self.ui
     
@@ -112,11 +112,11 @@ function CurrencyUI:ShowPurchaseMenu()
     closeButton.Name = "CloseButton"
     closeButton.Size = UDim2.new(0, 30, 0, 30)
     closeButton.Position = UDim2.new(1, -40, 0, 10)
-    closeButton.BackgroundColor3 = Constants.UI_COLORS.ERROR
+    closeButton.BackgroundColor3 = Constants.UI.Colors.Error -- Updated
     closeButton.Text = "X"
-    closeButton.TextColor3 = Constants.UI_COLORS.TEXT
-    closeButton.TextSize = 20
-    closeButton.Font = Enum.Font.GothamBold
+    closeButton.TextColor3 = Constants.UI.Colors.Background -- Updated
+    closeButton.TextSize = Constants.UI.Fonts.Button.Size -- Updated
+    closeButton.Font = Constants.UI.Fonts.Button.Font -- Updated
     closeButton.Parent = menu
     
     -- Create purchase options
@@ -126,11 +126,11 @@ function CurrencyUI:ShowPurchaseMenu()
         option.Name = "Option_" .. product.id
         option.Size = UDim2.new(0, 260, 0, 60)
         option.Position = UDim2.new(0.5, -130, 0, yOffset)
-        option.BackgroundColor3 = Constants.UI_COLORS.PRIMARY
+        option.BackgroundColor3 = Constants.UI.Colors[Constants.UI.ButtonStyles.Primary.BackgroundColor] -- Updated
         option.Text = string.format("%d Coins - %d Robux", product.coins, product.robux)
-        option.TextColor3 = Constants.UI_COLORS.TEXT
-        option.TextSize = 18
-        option.Font = Enum.Font.GothamBold
+        option.TextColor3 = Constants.UI.Colors.Background -- Updated
+        option.TextSize = Constants.UI.Fonts.Button.Size -- Updated
+        option.Font = Constants.UI.Fonts.Button.Font -- Updated
         option.Parent = menu
         
         option.MouseButton1Click:Connect(function()
@@ -146,4 +146,4 @@ function CurrencyUI:ShowPurchaseMenu()
     end)
 end
 
-return CurrencyUI 
+return CurrencyUI

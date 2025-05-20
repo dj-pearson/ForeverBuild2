@@ -36,14 +36,6 @@ local Constants = {
         }
     },
     
-    -- UI
-    UI_COLORS = {
-        PRIMARY = Color3.fromRGB(0, 170, 255),
-        SECONDARY = Color3.fromRGB(40, 40, 40),
-        TEXT = Color3.fromRGB(255, 255, 255),
-        ERROR = Color3.fromRGB(255, 50, 50)
-    },
-    
     -- Game Settings
     GAME = {
         MAX_INVENTORY_SLOTS = 50,
@@ -118,7 +110,47 @@ local Constants = {
     UI = {
         DIALOG_ANIMATION_DURATION = 0.3,
         BUTTON_HOVER_DURATION = 0.2,
-        ERROR_DISPLAY_DURATION = 2
+        ERROR_DISPLAY_DURATION = 2,
+
+        -- Color Palette
+        Colors = {
+            Primary = Color3.fromRGB(52, 152, 219), -- Blue
+            Secondary = Color3.fromRGB(46, 204, 113), -- Green
+            Accent = Color3.fromRGB(230, 126, 34), -- Orange
+            Background = Color3.fromRGB(236, 240, 241), -- Light Gray
+            Text = Color3.fromRGB(44, 62, 80), -- Dark Gray
+            Error = Color3.fromRGB(231, 76, 60) -- Red
+        },
+
+        -- Font Styles
+        Fonts = {
+            Default = {
+                Font = Enum.Font.SourceSans,
+                Size = 18
+            },
+            Title = {
+                Font = Enum.Font.SourceSansBold,
+                Size = 24
+            },
+            Button = {
+                Font = Enum.Font.SourceSansSemibold,
+                Size = 20
+            }
+        },
+
+        -- Button Styles
+        ButtonStyles = {
+            Primary = {
+                BackgroundColor = "Primary", -- Refers to Colors.Primary
+                TextColor = "Text",
+                HoverColor = Color3.fromRGB(41, 128, 185) -- Darker Blue
+            },
+            Secondary = {
+                BackgroundColor = "Secondary", -- Refers to Colors.Secondary
+                TextColor = "Text",
+                HoverColor = Color3.fromRGB(39, 174, 96) -- Darker Green
+            }
+        }
     }
 }
 
