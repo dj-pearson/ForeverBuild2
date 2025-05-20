@@ -43,8 +43,8 @@ Constants.CURRENCY = {
     DAILY_BONUS = 100, -- Daily login bonus
     WEEKLY_BONUS = 500, -- Weekly login bonus
     MONTHLY_BONUS = 2000, -- Monthly login bonus
-    STARTING_COINS = 100, -- Added for client and most scripts
-    STARTING_CURRENCY = 100, -- Added for server/GameManager
+    STARTING_COINS = 2000000, -- Starting coins for client
+    STARTING_CURRENCY = 2000000, -- Starting currency for server/GameManager
 
     PRODUCTS = {
         {id = "coins_1000", name = "1,000 Coins", coins = 1000, robux = 75, bonusCoins = 0, assetId = 3285357280, description = "Get started with a handy pack of 1,000 coins!"},
@@ -262,6 +262,38 @@ Constants.TIER_PRODUCTS = {
     EXCLUSIVE = {id = "tier_exclusive", assetId = 3285387781, robux = 1000},
     WEAPONS = {id = "tier_weapons", assetId = 3285387781, robux = 500},
     RARE_DROP = {id = "tier_rare_drop", assetId = 3285387781, robux = 800}
+}
+
+-- UI Configuration
+Constants.UI = {
+    Colors = {
+        Background = Color3.fromRGB(40, 40, 40),
+        Text = Color3.fromRGB(255, 255, 255),
+        Primary = Color3.fromRGB(0, 170, 255),
+        Secondary = Color3.fromRGB(60, 60, 60),
+        Accent = Color3.fromRGB(255, 170, 0)
+    },
+    Fonts = {
+        Title = {
+            Font = Enum.Font.GothamBold,
+            Size = 24
+        },
+        Default = {
+            Font = Enum.Font.Gotham,
+            Size = 18
+        },
+        Button = {
+            Font = Enum.Font.GothamBold,
+            Size = 18
+        }
+    },
+    ButtonStyles = {
+        Primary = {
+            BackgroundColor = "Primary",
+            HoverColor = Color3.fromRGB(0, 140, 235)
+        }
+    },
+    BUTTON_HOVER_DURATION = 0.2
 }
 
 return Constants

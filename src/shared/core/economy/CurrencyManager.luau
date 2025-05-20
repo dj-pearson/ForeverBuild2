@@ -118,6 +118,15 @@ function CurrencyManager:LoadPlayerBalance(player)
     
     if success and result then
         self.playerBalances[player.UserId] = result
+    else
+        -- Initialize with correct balance if loading fails
+        self.playerBalances[player.UserId] = {
+            coins = 2000000, -- Set to 2 million coins
+            lastRewardTime = os.time(),
+            lastDailyBonus = 0,
+            lastWeeklyBonus = 0,
+            lastMonthlyBonus = 0
+        }
     end
 end
 
