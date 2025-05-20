@@ -494,36 +494,6 @@ end
 -- PurchaseItem
 local purchaseItemRemote = Remotes:FindFirstChild("PurchaseItem")
 if purchaseItemRemote and ItemPurchaseHandler then
-    purchaseItemRemote.OnServerEvent:Connect(function(player, itemId, quantity)
-        print("server.init: PurchaseItem remote event called by", player.Name, "for item", itemId, "quantity:", quantity or 1)
-        
-        quantity = quantity or 1
-        
-        if not ItemPurchaseHandler.AddToInventory then
-            warn("server.init: ItemPurchaseHandler.AddToInventory function not found")
-            return
-        end
-        
-        -- Get item data
-        local itemData = {}
-        if SharedModule and SharedModule.Constants and SharedModule.Constants.ITEMS then
-            itemData = SharedModule.Constants.ITEMS[itemId] or { Name = itemId, Price = 10 }
-        else
-            itemData = { Name = itemId, Price = 10 }
-        end
-        
-        -- Process the purchase
-        local success, message = ItemPurchaseHandler:ProcessCurrencyPurchase(player, itemData, itemData.Price or 10)
-        
-        -- Notify player of purchase result
-        local notifyRemote = Remotes:FindFirstChild("NotifyPlayer")
-        if notifyRemote then
-            notifyRemote:FireClient(player, message or (success and "Item purchased!" or "Purchase failed!"))
-        end
-        
-        print("server.init: PurchaseItem result for player", player.Name, ":", success, message)
-    end)
-    
     print("server.init: Connected PurchaseItem remote event handler")
 end
 
@@ -558,19 +528,6 @@ if pickupItemRemote and InventoryManager then
         else
             Remotes.NotifyPlayer:FireClient(player, "Failed to pick up " .. itemId)
         end
-    end)
-end
-
--- AddToInventory
-local addToInventoryRemote = Remotes:FindFirstChild("AddToInventory")
-if addToInventoryRemote and InventoryManager then
-    addToInventoryRemote.OnServerEvent:Connect(function(player, itemId)
-        if not InventoryManager.AddItemToInventory then
-            warn("server.init: InventoryManager.AddItemToInventory function not found")
-            return
-        end
-        
-        InventoryManager:AddItemToInventory(player, itemId)
     end)
 end
 
@@ -676,7 +633,7 @@ local function setupItemTemplates()
             { name = "Wood_Plank", color = BrickColor.new("Brown"), transparency = 0, material = Enum.Material.Wood },
             { name = "Water_Cube", color = BrickColor.new("Bright blue"), transparency = 0.3, material = Enum.Material.Water },
             { name = "Fire_Cube", color = BrickColor.new("Bright red"), transparency = 0, material = Enum.Material.Neon },
-            { name = "Brick_Cube", color = BrickColor.new("Brick red"), transparency = 0, material = Enum.Material.Brick },
+            { name = "Brick_Cube", color = BrickColor.new("Reddish brown"), transparency = 0, material = Enum.Material.Brick },
             { name = "Sand_Cube", color = BrickColor.new("Brick yellow"), transparency = 0, material = Enum.Material.Sand },
             { name = "Concrete_Cube", color = BrickColor.new("Institutional white"), transparency = 0, material = Enum.Material.Concrete },
             { name = "Metal_Cube", color = BrickColor.new("Medium grey"), transparency = 0, material = Enum.Material.Metal },

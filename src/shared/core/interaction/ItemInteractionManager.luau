@@ -84,7 +84,6 @@ function ItemInteractionManager:SetupRemotes()
     self:CreateRemoteEvent(remotesFolder, "CloneItem")
     self:CreateRemoteEvent(remotesFolder, "DestroyItem")
     self:CreateRemoteEvent(remotesFolder, "ChangeItemColor")
-    self:CreateRemoteEvent(remotesFolder, "AddToInventory")
     self:CreateRemoteEvent(remotesFolder, "RemoveFromInventory")
     self:CreateRemoteEvent(remotesFolder, "NotifyPlayer")
     
@@ -164,10 +163,6 @@ function ItemInteractionManager:ConnectRemoteEvents()
     
     self.remotes.ChangeItemColor.OnServerEvent:Connect(function(player, itemGuid, newColor)
         self:HandleChangeItemColor(player, itemGuid, newColor)
-    end)
-    
-    self.remotes.AddToInventory.OnServerEvent:Connect(function(player, itemName)
-        self:AddItemToInventory(player, itemName)
     end)
     
     self.remotes.RemoveFromInventory.OnServerEvent:Connect(function(player, itemName)
@@ -420,9 +415,17 @@ function ItemInteractionManager:HandlePlaceItem(player, itemName, position, rota
         worldFolder.Parent = workspace
     end
     
+    -- Ensure Placed folder exists
+    local placedFolder = worldFolder:FindFirstChild("Placed")
+    if not placedFolder then
+        placedFolder = Instance.new("Folder")
+        placedFolder.Name = "Placed"
+        placedFolder.Parent = worldFolder
+    end
+    
     -- Position and rotate the item
     newItem:SetPrimaryPartCFrame(CFrame.new(position) * CFrame.Angles(0, rotation, 0))
-    newItem.Parent = worldFolder
+    newItem.Parent = placedFolder
     
     -- Track the placed item
     self.placedItems[newItem:GetAttribute("guid")] = {

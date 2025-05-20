@@ -126,42 +126,6 @@ Constants.UI_COLORS = {
 }
 
 Constants.ITEMS = {
-    ["Basic"] = {
-        icon = "rbxassetid://3284930147",
-        description = "A red cube.",
-        tier = "BASIC",
-        price = {INGAME = 5, ROBUX = 5}
-    },
-    ["Level_1"] = {
-        icon = "rbxassetid://3284930700",
-        description = "A Level 1 item.",
-        tier = "LEVEL_1",
-        price = {INGAME = 10, ROBUX = 10}
-    },
-    ["Level_2"] = {
-        icon = "rbxassetid://3284930700",
-        description = "A Level 2 item.",
-        tier = "LEVEL_2",
-        price = {INGAME = 25, ROBUX = 25}
-    },
-    ["Secondary"] = {
-        icon = "rbxassetid://3284930700",
-        description = "A Secondary Item.",
-        tier = "SECONDARY",
-        price = {INGAME = 15, ROBUX = 15}
-    },
-    ["Rare"] = {
-        icon = "rbxassetid://3284930992",
-        description = "A rare Item.",
-        tier = "RARE",
-        price = {INGAME = 100, ROBUX = 100}
-    },
-    ["Exclusive"] = {
-        icon = "rbxassetid://3284931476",
-        description = "An exclusive Item.",
-        tier = "EXCLUSIVE",
-        price = {INGAME = 1000, ROBUX = 1000}
-    },
     ["Weapons"] = {
         icon = "rbxassetid://3284931476",
         description = "A weapon item.",

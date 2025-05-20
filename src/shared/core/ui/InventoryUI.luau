@@ -496,14 +496,12 @@ function InventoryUI.UpdateInventory(inventory, currency)
                 -- Ensure the item has an id or name
                 local itemName = item.id or item.name
                 if itemName then
-                    -- Get item quantity (count), default to 1 if not specified
-                    local quantity = item.count or 1
-                    
+                    -- Get item quantity (count), fallback to quantity, default to 1 if not specified
+                    local quantity = item.count or item.quantity or 1
                     -- Skip if quantity is 0
                     if quantity <= 0 then
                         continue
                     end
-                    
                     -- Clean up display name
                     local displayName = itemName
                     displayName = displayName:gsub("_", " ")
@@ -511,25 +509,21 @@ function InventoryUI.UpdateInventory(inventory, currency)
                     displayName = displayName:gsub("  ", " ")
                     displayName = displayName:gsub("^%s+", "")
                     displayName = displayName:gsub("%s+$", "")
-                    
                     -- Capitalize first letter of each word
                     displayName = displayName:gsub("(%a)([%w_']*)", function(first, rest)
                         return first:upper() .. rest:lower()
                     end)
-                    
                     -- Get item info (icon, tier, etc.)
+                    local icon = (Constants.ITEMS[itemName] and Constants.ITEMS[itemName].icon) or item.icon or nil
                     local itemInfo = {
-                        icon = nil,
+                        icon = icon,
                         tier = item.tier or "COMMON"
                     }
-                    
                     -- Create the button and add it to the container
                     local button = createItemButton(displayName, itemInfo, quantity)
                     button.Parent = container
-                    
                     -- Store the original itemName for use in callbacks
                     button:SetAttribute("originalItemName", itemName)
-                    
                     -- Set up click handler
                     button.MouseButton1Click:Connect(function()
                         if InventoryUI.OnItemSelected then
@@ -540,17 +534,14 @@ function InventoryUI.UpdateInventory(inventory, currency)
                                 displayName = displayName,
                                 count = quantity
                             }
-                            
                             -- Hide the inventory UI after selecting an item
                             InventoryUI.Hide()
-                            
                             -- Call the callback with a slight delay to ensure UI is hidden first
                             task.delay(0.1, function()
                                 InventoryUI.OnItemSelected(itemName, itemData)
                             end)
                         end
                     end)
-                    
                     itemCount = itemCount + 1
                 end
             end

@@ -77,6 +77,8 @@ local function initialize()
             sharedModule.PlacementManager = placement.new(sharedModule)
             -- Setup remote events instead of calling Initialize
             sharedModule.PlacementManager:SetupRemoteEvents()
+            -- Cache remote events for client-side usage
+            sharedModule.PlacementManager:CacheRemoteEvents()
             print("InventoryItemHandler: Created PlacementManager and set up remote events")
         else
             warn("InventoryItemHandler: Failed to create PlacementManager")
@@ -221,95 +223,77 @@ local function setupWorldItemRecall(sharedModule)
     corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = button
     
-    -- Track what item we're looking at
-    local hoveredItem = nil
+    -- Track what item we're selecting
+    local selectedItem = nil
+    local selectedHighlight = nil
     
-    -- Mouse update function
-    local function updateHoveredItem()
-        local mouse = player:GetMouse()
-        
-        -- Cast ray from mouse
-        local ray = workspace.CurrentCamera:ScreenPointToRay(mouse.X, mouse.Y)
-        local raycastParams = RaycastParams.new()
-        raycastParams.FilterType = Enum.RaycastFilterType.Include
-        
-        -- Check in both World_Items AND PlacedItems folders
-        local worldItems = workspace:FindFirstChild("World_Items")
-        local placedItems = workspace:FindFirstChild("PlacedItems")
-        local itemFolders = {}
-        
-        if worldItems and worldItems:FindFirstChild("Placed") then
-            table.insert(itemFolders, worldItems.Placed)
+    -- Helper to clear selection
+    local function clearSelection()
+        if selectedHighlight then
+            selectedHighlight:Destroy()
+            selectedHighlight = nil
         end
-        
-        if placedItems then
-            table.insert(itemFolders, placedItems)
-        end
-        
-        if #itemFolders == 0 then
-            hoveredItem = nil
-            button.Visible = false
-            return
-        end
-        
-        raycastParams.FilterDescendantsInstances = itemFolders
-        
-        local raycastResult = workspace:Raycast(ray.Origin, ray.Direction * 100, raycastParams)
-        if raycastResult then
-            -- Check if we hit a placed item and traverse up to find parent in folder
-            local item = raycastResult.Instance
-            
-            -- Find the parent that's directly under one of our item folders
-            while item do
-                local parent = item.Parent
-                for _, folder in ipairs(itemFolders) do
-                    if parent == folder then
-                        -- Found direct child of an items folder
-                        if item:GetAttribute("owner") == player.UserId or 
-                          (typeof(item:GetAttribute("owner")) == "string" and item:GetAttribute("owner") == tostring(player.UserId)) then
-                            hoveredItem = item
-                            button.Visible = true
-                            return
-                        end
-                        break
-                    end
-                end
-                
-                -- Move up one level
-                if item.Parent ~= workspace then
-                    item = item.Parent
-                else
-                    break
-                end
-            end
-        end
-        
-        -- No valid item found
-        hoveredItem = nil
+        selectedItem = nil
         button.Visible = false
     end
     
-    -- Connect mouse movement
-    game:GetService("RunService").RenderStepped:Connect(updateHoveredItem)
+    -- Mouse click handler to select world items
+    local userInputService = game:GetService("UserInputService")
+    userInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local mouse = player:GetMouse()
+            local target = mouse.Target
+            if not target then
+                clearSelection()
+                return
+            end
+            -- Traverse up to find a placed item with instanceId
+            local item = target
+            while item and item ~= workspace do
+                if item:GetAttribute("instanceId") and (item:GetAttribute("owner") == player.UserId or tostring(item:GetAttribute("owner")) == tostring(player.UserId)) then
+                    -- Select this item
+                    selectedItem = item
+                    button.Visible = true
+                    -- Add highlight
+                    if selectedHighlight then selectedHighlight:Destroy() end
+                    selectedHighlight = Instance.new("Highlight")
+                    selectedHighlight.FillColor = Color3.fromRGB(255, 255, 0)
+                    selectedHighlight.OutlineColor = Color3.fromRGB(255, 255, 0)
+                    selectedHighlight.FillTransparency = 0.5
+                    selectedHighlight.OutlineTransparency = 0
+                    selectedHighlight.Adornee = item
+                    selectedHighlight.Parent = item
+                    return
+                end
+                item = item.Parent
+            end
+            -- If clicked elsewhere, clear selection
+            clearSelection()
+        elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+            -- Right click to clear selection
+            clearSelection()
+        end
+    end)
     
     -- Connect recall button click
     button.MouseButton1Click:Connect(function()
-        if hoveredItem then
-            print("InventoryItemHandler: Recalling world item:", hoveredItem.Name)
-            
+        if selectedItem then
+            print("InventoryItemHandler: Recalling world item:", selectedItem.Name)
+            local instanceId = selectedItem:GetAttribute("instanceId")
+            if not instanceId then
+                warn("InventoryItemHandler: Selected item has no instanceId!")
+                return
+            end
             -- Fire server to recall the item
             local remotes = ReplicatedStorage:FindFirstChild("Remotes")
             if remotes then
                 local recallItemRemote = remotes:FindFirstChild("RecallItem")
                 if recallItemRemote then
-                    -- Fix character movement before recall
                     fixPlayerMovement(player.Character)
-                    
-                    recallItemRemote:FireServer(hoveredItem.Name)
-                    
-                    -- Hide the button
-                    button.Visible = false
-                    hoveredItem = nil
+                    recallItemRemote:FireServer(instanceId)
+                    -- Hide the button and clear selection
+                    clearSelection()
                 else
                     warn("InventoryItemHandler: RecallItem remote not found")
                 end
@@ -319,7 +303,7 @@ local function setupWorldItemRecall(sharedModule)
         end
     end)
     
-    print("InventoryItemHandler: Setup world item recall UI")
+    print("InventoryItemHandler: Setup world item recall UI (click-to-select)")
     return true
 end
 
@@ -370,7 +354,7 @@ local function setupItemTemplates()
             { name = "Wood_Cube", color = BrickColor.new("Brown"), transparency = 0, material = Enum.Material.Wood },
             { name = "Water_Cube", color = BrickColor.new("Bright blue"), transparency = 0.3, material = Enum.Material.Water },
             { name = "Fire_Cube", color = BrickColor.new("Bright red"), transparency = 0, material = Enum.Material.Neon },
-            { name = "Brick_Cube", color = BrickColor.new("Brick red"), transparency = 0, material = Enum.Material.Brick },
+            { name = "Brick_Cube", color = BrickColor.new("Reddish brown"), transparency = 0, material = Enum.Material.Brick },
             { name = "Sand_Cube", color = BrickColor.new("Brick yellow"), transparency = 0, material = Enum.Material.Sand },
             { name = "Concrete_Cube", color = BrickColor.new("Institutional white"), transparency = 0, material = Enum.Material.Concrete },
             { name = "Metal_Cube", color = BrickColor.new("Medium grey"), transparency = 0, material = Enum.Material.Metal },

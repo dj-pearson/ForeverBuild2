@@ -569,43 +569,4 @@ function ItemInteractionManager:IsAdmin(player)
     return false
 end
 
--- Place an item in the world
-function ItemInteractionManager:PlaceItem(player, itemId, position, rotation)
-    -- This would typically create a new item in the world from the player's inventory
-    -- For now, we'll just create a simple part
-    
-    local worldItems = workspace:FindFirstChild("World_Items")
-    if not worldItems then
-        worldItems = Instance.new("Folder")
-        worldItems.Name = "World_Items"
-        worldItems.Parent = workspace
-    end
-    
-    -- Create a new part
-    local part = Instance.new("Part")
-    part.Name = "Placed_" .. itemId
-    part.Size = Vector3.new(2, 2, 2)
-    part.Position = position
-    part.Anchored = true
-    part.CanCollide = true
-    part:SetAttribute("ItemID", HttpService:GenerateGUID(false))
-    part:SetAttribute("Owner", player.UserId)
-    part:SetAttribute("Registered", true)
-    part.Parent = worldItems
-    
-    -- Register the new item
-    self.itemRegistry[part:GetAttribute("ItemID")] = {
-        instance = part,
-        name = part.Name,
-        type = "world",
-        owner = player.UserId,
-        canMove = true,
-        canRotate = true,
-        canClone = true,
-        canDestroy = true
-    }
-    
-    self:NotifyPlayer(player, "Successfully placed the item")
-end
-
 return ItemInteractionManager 

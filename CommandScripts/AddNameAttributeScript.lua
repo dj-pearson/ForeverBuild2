@@ -1,48 +1,72 @@
 --[[
     AddNameAttributeScript.lua
-    This script traverses the Items folder and adds a 'name' attribute to each model
-    based on its parent folder name while preserving the existing 'item' attribute
+    This script traverses both Workspace.Items and ServerStorage.Items and assigns attributes:
+    - name: Parent folder name
+    - item: Model name or default
+    - assetId: From Constants.ITEMS if matching, otherwise default
+    - tier: From Constants.ITEMS if matching, otherwise 'BASIC'
+    - priceIngame: From Constants.ITEMS if matching, otherwise 0
+    - priceRobux: From Constants.ITEMS if matching, otherwise 0
+    - description: From Constants.ITEMS if matching, otherwise 'No description available.'
 ]]
 
--- Get the Items folder in Workspace
-local itemsFolder = game.Workspace:FindFirstChild("Items")
+local Constants = require(game:GetService("ReplicatedStorage").shared.core.Constants)
 
-if not itemsFolder then
-    error("Could not find Items folder in Workspace")
+local function processFolder(folder, folderName)
+    local totalProcessed = 0
+    local totalUpdated = 0
+
+    local function processModels(folder, folderName)
+        for _, child in ipairs(folder:GetChildren()) do
+            if child:IsA("Model") then
+                totalProcessed = totalProcessed + 1
+                local modelName = child.Name
+                local itemData = Constants.ITEMS[modelName] or Constants.ITEMS["Unknown_Item"]
+
+                -- Assign attributes
+                child:SetAttribute("name", folderName)
+                child:SetAttribute("item", modelName)
+                child:SetAttribute("assetId", itemData.icon or "rbxassetid://3284930147") -- Default generic ID
+                child:SetAttribute("tier", itemData.tier or "BASIC")
+                child:SetAttribute("priceIngame", itemData.price.INGAME or 0)
+                child:SetAttribute("priceRobux", itemData.price.ROBUX or 0)
+                child:SetAttribute("description", itemData.description or "No description available.")
+
+                totalUpdated = totalUpdated + 1
+                print("Updated model: " .. modelName .. " in folder: " .. folderName)
+            elseif child:IsA("Folder") then
+                processModels(child, child.Name)
+            end
+        end
+    end
+
+    processModels(folder, folderName)
+    return totalProcessed, totalUpdated
+end
+
+local workspaceItems = game.Workspace:FindFirstChild("Items")
+local serverStorageItems = game:GetService("ServerStorage"):FindFirstChild("Items")
+
+if not workspaceItems and not serverStorageItems then
+    error("Could not find Items folder in Workspace or ServerStorage")
     return
 end
 
 local totalProcessed = 0
 local totalUpdated = 0
 
--- Function to recursively process models
-local function processModels(folder, folderName)
-    -- Process all children in this folder
-    for _, child in ipairs(folder:GetChildren()) do
-        -- If it's a Model
-        if child:IsA("Model") then
-            totalProcessed = totalProcessed + 1
-            
-            -- Check if it already has the attribute
-            local currentNameAttribute = child:GetAttribute("name")
-            
-            -- Add the name attribute based on parent folder
-            child:SetAttribute("name", folderName)
-            
-            if currentNameAttribute ~= folderName then
-                totalUpdated = totalUpdated + 1
-                print("Updated model: " .. child.Name .. " with name attribute: " .. folderName)
-            end
-            
-        -- If it's a Folder, recursively process with its name
-        elseif child:IsA("Folder") then
-            processModels(child, child.Name)
-        end
-    end
+if workspaceItems then
+    local processed, updated = processFolder(workspaceItems, "Workspace.Items")
+    totalProcessed = totalProcessed + processed
+    totalUpdated = totalUpdated + updated
 end
 
-print("Starting attribute update process...")
-processModels(itemsFolder, "Items")
+if serverStorageItems then
+    local processed, updated = processFolder(serverStorageItems, "ServerStorage.Items")
+    totalProcessed = totalProcessed + processed
+    totalUpdated = totalUpdated + updated
+end
+
 print("Attribute update completed!")
 print("Total models processed: " .. totalProcessed)
 print("Total models updated: " .. totalUpdated) 

@@ -242,6 +242,11 @@ function DataService:SaveAllData()
     print("DataService: Auto-save completed")
 end
 
+-- GetData method (alias for LoadData for compatibility)
+function DataService:GetData(storeName, key)
+    return self:LoadData(storeName, key)
+end
+
 -- Initialize and register with SharedModule
 function DataService:Initialize(sharedModule)
     print("DataService: Initializing...")
@@ -255,4 +260,4 @@ function DataService:Initialize(sharedModule)
     return self
 end
 
-return DataService 
+return DataService

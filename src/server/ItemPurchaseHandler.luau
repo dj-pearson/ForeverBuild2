@@ -91,6 +91,9 @@ end
 -- Module table
 local ItemPurchaseHandler = {}
 
+-- Store remotes reference
+ItemPurchaseHandler.remotes = remotes
+
 -- Initialize player data
 local playerData = {}
 
@@ -457,7 +460,18 @@ function ItemPurchaseHandler:ProcessCurrencyPurchase(player, item, price)
     -- Update client UI with new balance
     self:UpdateClientBalance(player)
     
-    return true, "Successfully purchased " .. item.Name .. " for " .. price .. " " .. Constants.CURRENCY.INGAME
+    return true, "Successfully purchased " .. tostring(item.Name) .. " for " .. tostring(price) .. " " .. tostring(Constants.CURRENCY.INGAME)
+end
+
+-- Add a ProcessPurchase function that expects an itemId (string)
+function ItemPurchaseHandler:ProcessPurchase(player, itemId)
+    -- Look up the item definition (you may need to adjust this lookup to your item catalog)
+    local item = { Name = itemId, id = itemId, price = 10 } -- Default fallback
+    if SharedModule and SharedModule.Constants and SharedModule.Constants.ITEMS and SharedModule.Constants.ITEMS[itemId] then
+        item = SharedModule.Constants.ITEMS[itemId]
+    end
+    local price = item.price or 10
+    return self:ProcessCurrencyPurchase(player, item, price)
 end
 
 -- Initialize the handler
@@ -506,6 +520,50 @@ function ItemPurchaseHandler:Initialize()
         self:SetupAdminCommands(player)
     end
     
+    -- Connect Remote Events for inventory operations
+    if purchaseItemEvent then
+        purchaseItemEvent.OnServerEvent:Connect(function(player, itemArg)
+            print("[ItemPurchaseHandler] PurchaseItem event received from", player.Name, "for item", tostring(itemArg))
+            local itemId = itemArg
+            if typeof(itemArg) == "Instance" then
+                itemId = itemArg.Name
+            elseif typeof(itemArg) == "table" and itemArg.id then
+                itemId = itemArg.id
+            end
+            local success, message = ItemPurchaseHandler:ProcessPurchase(player, itemId)
+            -- Optionally notify the client of the purchase result
+            if remotes:FindFirstChild("PurchaseResult") then
+                remotes.PurchaseResult:FireClient(player, success, message)
+            end
+        end)
+        print("[ItemPurchaseHandler] Connected PurchaseItem event")
+    end
+    
+    if addToInventoryEvent then
+        addToInventoryEvent.OnServerEvent:Connect(function(player, itemData)
+            print("[ItemPurchaseHandler] AddToInventory event received from", player.Name)
+            local itemId = typeof(itemData) == "table" and itemData.id or itemData
+            local quantity = typeof(itemData) == "table" and itemData.quantity or 1
+            self:AddToInventory(player, itemId, quantity)
+        end)
+        print("[ItemPurchaseHandler] Connected AddToInventory event")
+    end
+    
+    -- Set up GetInventory RemoteFunction if it doesn't exist
+    local getInventoryFunction = remotes:FindFirstChild("GetInventory")
+    if not getInventoryFunction then
+        getInventoryFunction = Instance.new("RemoteFunction")
+        getInventoryFunction.Name = "GetInventory"
+        getInventoryFunction.Parent = remotes
+        print("[ItemPurchaseHandler] Created GetInventory RemoteFunction")
+    end
+    
+    -- Connect GetInventory function
+    getInventoryFunction.OnServerInvoke = function(player)
+        print("GetInventory RemoteFunction called by player:", player.Name)
+        return self:GetPlayerInventory(player)
+    end
+    
     print("[ItemPurchaseHandler] Module initialized successfully")
 end
 
@@ -544,9 +602,22 @@ end
 function ItemPurchaseHandler:GetPlayerInventory(player)
     local data = self:GetPlayerData(player)
     if data then
+        -- Map inventory to use 'count' for quantity
+        local inventory = {}
+        for _, item in ipairs(data.inventory or {}) do
+            local newItem = {}
+            for k, v in pairs(item) do
+                newItem[k] = v
+            end
+            -- Map 'quantity' to 'count' for UI compatibility
+            if newItem.quantity then
+                newItem.count = newItem.quantity
+            end
+            table.insert(inventory, newItem)
+        end
         return {
             success = true,
-            inventory = data.inventory or {},
+            inventory = inventory,
             currency = data.currency or 0,
             message = "Inventory and currency fetched successfully"
         }
@@ -564,4 +635,3 @@ end
 ItemPurchaseHandler:Initialize()
 
 return ItemPurchaseHandler
-

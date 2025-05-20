@@ -248,19 +248,6 @@ if pickupItemRemote and InventoryManager then
     end)
 end
 
--- AddToInventory
-local addToInventoryRemote = Remotes:FindFirstChild("AddToInventory")
-if addToInventoryRemote and InventoryManager then
-    addToInventoryRemote.OnServerEvent:Connect(function(player, itemId)
-        if not InventoryManager.AddItemToInventory then
-            warn("server.init: InventoryManager.AddItemToInventory function not found")
-            return
-        end
-        
-        InventoryManager:AddItemToInventory(player, itemId)
-    end)
-end
-
 -- CloneItem
 local cloneItemRemote = Remotes:FindFirstChild("CloneItem")
 if cloneItemRemote and PlacementManager then
