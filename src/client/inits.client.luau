@@ -155,6 +155,7 @@ end
 print("Client initialization completed successfully")
 
 -- Direct Currency UI Creation as fallback
+--[[ -- Removing this entire block to prevent inits.client.luau from creating its own CurrencyUI
 local function createDirectCurrencyUI()
     print("Creating primary CurrencyUI...")
     
@@ -266,19 +267,20 @@ task.spawn(function()
     local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
     if not playerGui:FindFirstChild("CurrencyUI") then
         print("No CurrencyUI found, creating primary version")
-        createDirectCurrencyUI()
+        -- createDirectCurrencyUI() -- No longer calling this
+        print("[MODIFIED] inits.client.luau will NOT create its own CurrencyUI. Relying on SharedModule.CurrencyUI.")
     else
-        print("CurrencyUI already exists, checking if it needs updating")
-        
+        print("[MODIFIED] CurrencyUI already exists. inits.client.luau will NOT attempt to replace it.")
         -- Check if it has the new structure with title label
-        local mainFrame = playerGui.CurrencyUI:FindFirstChild("MainFrame")
-        if mainFrame and not mainFrame:FindFirstChild("TitleLabel") then
-            print("Found older version of CurrencyUI, replacing with updated version")
-            playerGui.CurrencyUI:Destroy()
-            createDirectCurrencyUI()
-        end
+        -- local mainFrame = playerGui.CurrencyUI:FindFirstChild("MainFrame")
+        -- if mainFrame and not mainFrame:FindFirstChild("TitleLabel") then
+        -- print("Found older version of CurrencyUI, replacing with updated version")
+        -- playerGui.CurrencyUI:Destroy()
+        -- createDirectCurrencyUI()
+        -- end
     end
 end)
+--]]
 
 -- Direct Inventory UI Implementation
 local function createDirectInventoryUI()

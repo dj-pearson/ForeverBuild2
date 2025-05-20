@@ -119,12 +119,6 @@ Constants.ITEM_PROPERTIES = {
     MAX_COLOR_CHANGES = 5 -- Maximum number of color changes allowed
 }
 
-Constants.UI_COLORS = {
-    PRIMARY = Color3.fromRGB(0, 170, 255),
-    SECONDARY = Color3.fromRGB(40, 40, 40),
-    TEXT = Color3.fromRGB(255, 255, 255)
-}
-
 Constants.ITEMS = {
     ["Weapons"] = {
         icon = "rbxassetid://3284931476",
@@ -267,33 +261,52 @@ Constants.TIER_PRODUCTS = {
 -- UI Configuration
 Constants.UI = {
     Colors = {
-        Background = Color3.fromRGB(40, 40, 40),
-        Text = Color3.fromRGB(255, 255, 255),
-        Primary = Color3.fromRGB(0, 170, 255),
-        Secondary = Color3.fromRGB(60, 60, 60),
-        Accent = Color3.fromRGB(255, 170, 0)
+        Background = Color3.fromRGB(30, 30, 30), -- Darker background
+        Text = Color3.fromRGB(240, 240, 240),   -- Slightly off-white text
+        Primary = Color3.fromRGB(0, 122, 204),  -- Roblox Studio Blue
+        Secondary = Color3.fromRGB(80, 80, 80), -- Darker Secondary for buttons
+        Accent = Color3.fromRGB(255, 170, 0), -- Orange accent
+        Error = Color3.fromRGB(200, 50, 50),  -- Red for errors/destructive actions
+        Success = Color3.fromRGB(70, 180, 70) -- Green for success
     },
     Fonts = {
         Title = {
             Font = Enum.Font.GothamBold,
-            Size = 24
+            Size = 22 -- Slightly smaller title
         },
         Default = {
             Font = Enum.Font.Gotham,
-            Size = 18
+            Size = 16
         },
         Button = {
             Font = Enum.Font.GothamBold,
-            Size = 18
+            Size = 16
         }
     },
     ButtonStyles = {
         Primary = {
             BackgroundColor = "Primary",
-            HoverColor = Color3.fromRGB(0, 140, 235)
+            TextColor = "Text",
+            HoverColor = Color3.fromRGB(0, 100, 180) -- Darker Primary hover
+        },
+        Secondary = {
+            BackgroundColor = "Secondary",
+            TextColor = "Text",
+            HoverColor = Color3.fromRGB(100, 100, 100) -- Lighter Secondary hover
+        },
+        Accent = { -- For consistency, define Accent style here too
+            BackgroundColor = "Accent",
+            TextColor = "Background", -- Or "Text" if preferred against orange
+            HoverColor = Color3.fromRGB(230, 150, 0) -- Darker Accent hover
+        },
+        Error = { -- For consistency, define Error style here too
+            BackgroundColor = "Error",
+            TextColor = "Text",
+            HoverColor = Color3.fromRGB(180, 30, 30) -- Darker Error hover
         }
     },
-    BUTTON_HOVER_DURATION = 0.2
+    BUTTON_HOVER_DURATION = 0.15, -- Slightly faster hover
+    DIALOG_ANIMATION_DURATION = 0.25 -- Animation speed for dialogs
 }
 
 return Constants

@@ -15,7 +15,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- Import shared modules
 local SharedModule = require(ReplicatedStorage:WaitForChild("shared"))
 local Constants = SharedModule.Constants
-local LazyLoadModules = SharedModule.LazyLoadModules
+-- local LazyLoadModules = SharedModule.LazyLoadModules -- Retained, might be used elsewhere
 
 -- Remote events
 local remotes = ReplicatedStorage:WaitForChild("Remotes")
@@ -23,7 +23,7 @@ local purchaseItemEvent = remotes:WaitForChild("PurchaseItem")
 local addToInventoryEvent = remotes:WaitForChild("AddToInventory")
 
 -- Debug settings
-local DEBUG_MODE = false
+local DEBUG_MODE = false -- Set to true for detailed logs
 local function debugLog(...)
     if DEBUG_MODE then
         print("[InteractionSystem]", ...)
@@ -31,10 +31,10 @@ local function debugLog(...)
 end
 
 -- Constants for interaction
-local INTERACTION_DISTANCE = 8 -- How close player needs to be to interact
-local INTERACTION_CHECK_INTERVAL = 0.5 -- How often to check for nearby interactables
-local FADE_IN_DURATION = 0.3 -- Duration of fade in animation
-local FADE_OUT_DURATION = 0.2 -- Duration of fade out animation
+local INTERACTION_DISTANCE = Constants.INTERACTION_SETTINGS and Constants.INTERACTION_SETTINGS.DISTANCE or 8
+local INTERACTION_CHECK_INTERVAL = Constants.INTERACTION_SETTINGS and Constants.INTERACTION_SETTINGS.CHECK_INTERVAL or 0.5
+local FADE_IN_DURATION = Constants.UI and Constants.UI.DIALOG_ANIMATION_DURATION or 0.3
+local FADE_OUT_DURATION = Constants.UI and Constants.UI.DIALOG_ANIMATION_DURATION and Constants.UI.DIALOG_ANIMATION_DURATION * 0.66 or 0.2
 
 -- Module table
 local InteractionSystem = {}
@@ -71,8 +71,8 @@ function InteractionSystem:CreateUI()
     mainFrame.Name = "MainFrame"
     mainFrame.Size = UDim2.new(0, 300, 0, 150)
     mainFrame.Position = UDim2.new(0.5, -150, 0.75, 0)
-    mainFrame.BackgroundColor3 = Constants.UI_COLORS.SECONDARY
-    mainFrame.BackgroundTransparency = 0.2
+    mainFrame.BackgroundColor3 = Constants.UI.Colors.Background
+    mainFrame.BackgroundTransparency = Constants.UI.Colors.BackgroundTransparency or 0.2
     mainFrame.BorderSizePixel = 0
     mainFrame.Visible = false
     mainFrame.Parent = screenGui
@@ -88,9 +88,9 @@ function InteractionSystem:CreateUI()
     itemNameLabel.Size = UDim2.new(1, 0, 0, 30)
     itemNameLabel.Position = UDim2.new(0, 0, 0, 10)
     itemNameLabel.BackgroundTransparency = 1
-    itemNameLabel.Font = Enum.Font.GothamBold
-    itemNameLabel.TextColor3 = Constants.UI_COLORS.PRIMARY
-    itemNameLabel.TextSize = 18
+    itemNameLabel.Font = Constants.UI.Fonts.Title.Font
+    itemNameLabel.TextColor3 = Constants.UI.Colors.Primary
+    itemNameLabel.TextSize = Constants.UI.Fonts.Title.Size
     itemNameLabel.Text = "Item Name"
     itemNameLabel.Parent = mainFrame
     
@@ -100,9 +100,9 @@ function InteractionSystem:CreateUI()
     descriptionLabel.Size = UDim2.new(1, -20, 0, 40)
     descriptionLabel.Position = UDim2.new(0, 10, 0, 40)
     descriptionLabel.BackgroundTransparency = 1
-    descriptionLabel.Font = Enum.Font.Gotham
-    descriptionLabel.TextColor3 = Constants.UI_COLORS.TEXT
-    descriptionLabel.TextSize = 14
+    descriptionLabel.Font = Constants.UI.Fonts.Default.Font
+    descriptionLabel.TextColor3 = Constants.UI.Colors.Text
+    descriptionLabel.TextSize = Constants.UI.Fonts.Default.Size
     descriptionLabel.TextWrapped = true
     descriptionLabel.Text = "Item description goes here"
     descriptionLabel.Parent = mainFrame
@@ -113,9 +113,9 @@ function InteractionSystem:CreateUI()
     priceLabel.Size = UDim2.new(1, -20, 0, 20)
     priceLabel.Position = UDim2.new(0, 10, 0, 80)
     priceLabel.BackgroundTransparency = 1
-    priceLabel.Font = Enum.Font.GothamSemibold
-    priceLabel.TextColor3 = Color3.fromRGB(255, 215, 0) -- Gold color for price
-    priceLabel.TextSize = 16
+    priceLabel.Font = Constants.UI.Fonts.Default.Font
+    priceLabel.TextColor3 = Constants.UI.Colors.Accent
+    priceLabel.TextSize = Constants.UI.Fonts.Default.Size
     priceLabel.Text = "Price: 100 Coins"
     priceLabel.Parent = mainFrame
     
@@ -124,11 +124,11 @@ function InteractionSystem:CreateUI()
     purchaseCoinsButton.Name = "PurchaseCoinsButton"
     purchaseCoinsButton.Size = UDim2.new(0.45, 0, 0, 30)
     purchaseCoinsButton.Position = UDim2.new(0.05, 0, 0, 110)
-    purchaseCoinsButton.BackgroundColor3 = Constants.UI_COLORS.PRIMARY
+    purchaseCoinsButton.BackgroundColor3 = Constants.UI.Colors[Constants.UI.ButtonStyles.Primary.BackgroundColor]
     purchaseCoinsButton.Text = "Buy with Coins"
-    purchaseCoinsButton.TextColor3 = Constants.UI_COLORS.TEXT
-    purchaseCoinsButton.Font = Enum.Font.GothamBold
-    purchaseCoinsButton.TextSize = 14
+    purchaseCoinsButton.TextColor3 = Constants.UI.Colors[Constants.UI.ButtonStyles.Primary.TextColor]
+    purchaseCoinsButton.Font = Constants.UI.Fonts.Button.Font
+    purchaseCoinsButton.TextSize = Constants.UI.Fonts.Button.Size
     purchaseCoinsButton.Parent = mainFrame
     
     -- Add corner radius to coins button
@@ -141,11 +141,11 @@ function InteractionSystem:CreateUI()
     purchaseRobuxButton.Name = "PurchaseRobuxButton"
     purchaseRobuxButton.Size = UDim2.new(0.45, 0, 0, 30)
     purchaseRobuxButton.Position = UDim2.new(0.5, 0, 0, 110)
-    purchaseRobuxButton.BackgroundColor3 = Color3.fromRGB(0, 176, 111) -- Robux green
+    purchaseRobuxButton.BackgroundColor3 = Constants.UI.Colors.Success
     purchaseRobuxButton.Text = "Buy with Robux"
-    purchaseRobuxButton.TextColor3 = Constants.UI_COLORS.TEXT
-    purchaseRobuxButton.Font = Enum.Font.GothamBold
-    purchaseRobuxButton.TextSize = 14
+    purchaseRobuxButton.TextColor3 = Constants.UI.Colors.Text
+    purchaseRobuxButton.Font = Constants.UI.Fonts.Button.Font
+    purchaseRobuxButton.TextSize = Constants.UI.Fonts.Button.Size
     purchaseRobuxButton.Parent = mainFrame
     
     -- Add corner radius to Robux button
@@ -159,9 +159,9 @@ function InteractionSystem:CreateUI()
     instructionLabel.Size = UDim2.new(1, 0, 0, 20)
     instructionLabel.Position = UDim2.new(0, 0, 1, 10)
     instructionLabel.BackgroundTransparency = 1
-    instructionLabel.Font = Enum.Font.Gotham
-    instructionLabel.TextColor3 = Constants.UI_COLORS.TEXT
-    instructionLabel.TextSize = 14
+    instructionLabel.Font = Constants.UI.Fonts.Default.Font
+    instructionLabel.TextColor3 = Constants.UI.Colors.Text
+    instructionLabel.TextSize = Constants.UI.Fonts.Default.Size
     instructionLabel.Text = "Press E to interact"
     instructionLabel.Parent = mainFrame
     
@@ -199,7 +199,6 @@ function InteractionSystem:ShowInteractionUI(item)
     
     -- Get item information
     local itemName = item.Name
-    local itemModel = item
     local itemTier = self:GetItemTier(itemName)
     local itemInfo = self:GetItemInfo(itemName)
     
@@ -213,38 +212,49 @@ function InteractionSystem:ShowInteractionUI(item)
     self.ui.descriptionLabel.Text = itemInfo.description or "No description available"
     
     -- Set price information with fallbacks
-    -- Make sure price exists and has the correct structure
     if not itemInfo.price then
         itemInfo.price = {
-            INGAME = Constants.ITEM_PRICES and Constants.ITEM_PRICES.BASIC and Constants.ITEM_PRICES.BASIC.INGAME or 5,
-            ROBUX = Constants.ITEM_PRICES and Constants.ITEM_PRICES.BASIC and Constants.ITEM_PRICES.BASIC.ROBUX or 5
+            INGAME = Constants.ITEM_PRICES 
+                and Constants.ITEM_PRICES.BASIC 
+                and Constants.ITEM_PRICES.BASIC.INGAME 
+                or 5,
+            ROBUX = Constants.ITEM_PRICES 
+                and Constants.ITEM_PRICES.BASIC 
+                and Constants.ITEM_PRICES.BASIC.ROBUX 
+                or 5
         }
     end
     
-    -- Ensure prices are never zero (for display purposes)
     local ingamePrice = math.max(itemInfo.price.INGAME or 5, 5)
     local robuxPrice = math.max(itemInfo.price.ROBUX or 5, 5)
     
-    -- Use emojis for better display
     local coinEmoji = "💰"
-    local robuxEmoji = "💎"
+    local robuxEmoji = Constants.UI.Emojis and Constants.UI.Emojis.Robux or "💎"
     
+    -- Ensure Constants.CURRENCY.INGAME exists or provide a fallback
+    local ingameCurrencyName = Constants.CURRENCY and Constants.CURRENCY.INGAME or "Coins"
+
     self.ui.priceLabel.Text = string.format("Price: %s %d %s or %s %d Robux", 
-        coinEmoji, ingamePrice, Constants.CURRENCY.INGAME, robuxEmoji, robuxPrice)
+        coinEmoji, ingamePrice, ingameCurrencyName, robuxEmoji, robuxPrice)
     
     -- Update button text
     self.ui.purchaseCoinsButton.Text = string.format("%s Buy with %d %s", 
-        coinEmoji, ingamePrice, Constants.CURRENCY.INGAME)
+        coinEmoji, ingamePrice, ingameCurrencyName)
     self.ui.purchaseRobuxButton.Text = string.format("%s Buy with %d Robux", 
         robuxEmoji, robuxPrice)
     
+    -- Ensure button visibility if they were hidden
+    self.ui.purchaseCoinsButton.Visible = true
+    self.ui.purchaseRobuxButton.Visible = true
+
     -- Store the current target with the updated prices
     self.currentTarget = {
         item = item,
         itemName = itemName,
         tier = itemTier,
         ingamePrice = ingamePrice,
-        robuxPrice = robuxPrice
+        robuxPrice = robuxPrice,
+        itemInfo = itemInfo
     }
     
     -- Show the UI with animation
@@ -609,48 +619,42 @@ end
 
 -- Initialize the interaction system
 function InteractionSystem:Initialize()
-    if self.initialized then return end
-    
-    -- Create UI
-    self:CreateUI()
-    
-    -- Set up update loop
-    spawn(function()
+    debugLog("Initializing InteractionSystem...")
+    if self.initialized then
+        debugLog("Already initialized.")
+        return
+    end
+
+    self:CreateUI() -- Ensure UI is created on initialization
+
+    -- Check for admin status (example, replace with your actual admin check)
+    -- This might involve checking a group, a DataStore value, or a list of UserIds
+    -- For simplicity, using the Constants.isAdminPlayerName
+    self.isAdmin = Constants.isAdminPlayerName(player.Name)
+    if self.isAdmin then
+        debugLog("Player is an admin.")
+    end
+
+    -- Start checking for nearby interactables
+    task.spawn(function()
         while true do
             self:Update()
-            wait(INTERACTION_CHECK_INTERVAL)
+            task.wait(INTERACTION_CHECK_INTERVAL)
         end
     end)
     
-    -- Connect input events
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        self:HandleInput(input, gameProcessed)
-    end)
-    
-    -- Setup for MarketplaceService purchases
-    MarketplaceService.PromptProductPurchaseFinished:Connect(function(userId, productId, purchased)
-        if purchased and self.currentTarget then
-            -- This is just the local confirmation, the actual item awarding is handled server-side
-            debugLog("Product purchase completed")
+    -- Connect to input events for interaction
+    UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+        if gameProcessedEvent then return end
+        if input.KeyCode == Enum.KeyCode.E then
+            if self.currentTarget and self.ui and self.ui.mainFrame.Visible then
+                self:InteractWithTarget()
+            end
         end
     end)
-    
-    -- Connect to server events
-    purchaseItemEvent.OnClientEvent:Connect(function(success, message, itemData)
-        if success then
-            -- Show success notification
-            debugLog("Purchase successful:", message)
-            
-            -- Hide the interaction UI after successful purchase
-            self:HideInteractionUI()
-        else
-            -- Show error notification
-            warn("Purchase failed:", message)
-        end
-    end)
-    
+
     self.initialized = true
-    debugLog("Interaction System initialized")
+    debugLog("InteractionSystem Initialized.")
 end
 
 -- Return the module

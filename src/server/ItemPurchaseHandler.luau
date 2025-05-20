@@ -60,6 +60,7 @@ local remotes = ReplicatedStorage:WaitForChild("Remotes")
 local purchaseItemEvent = remotes:FindFirstChild("PurchaseItem") 
 local addToInventoryEvent = remotes:FindFirstChild("AddToInventory")
 local updateBalanceEvent = remotes:FindFirstChild("UpdateBalance")
+local purchaseResultEvent = remotes:FindFirstChild("PurchaseResult")
 
 -- Create remote events if they don't exist
 if not purchaseItemEvent then
@@ -78,6 +79,13 @@ if not updateBalanceEvent then
     updateBalanceEvent = Instance.new("RemoteEvent")
     updateBalanceEvent.Name = "UpdateBalance"
     updateBalanceEvent.Parent = remotes
+end
+
+if not purchaseResultEvent then
+    purchaseResultEvent = Instance.new("RemoteEvent")
+    purchaseResultEvent.Name = "PurchaseResult"
+    purchaseResultEvent.Parent = remotes
+    print("[ItemPurchaseHandler] Created PurchaseResult RemoteEvent")
 end
 
 -- Debug settings
@@ -465,13 +473,30 @@ end
 
 -- Add a ProcessPurchase function that expects an itemId (string)
 function ItemPurchaseHandler:ProcessPurchase(player, itemId)
-    -- Look up the item definition (you may need to adjust this lookup to your item catalog)
-    local item = { Name = itemId, id = itemId, price = 10 } -- Default fallback
+    local itemDefinition = nil
+    local price = 10 -- Default price
+
     if SharedModule and SharedModule.Constants and SharedModule.Constants.ITEMS and SharedModule.Constants.ITEMS[itemId] then
-        item = SharedModule.Constants.ITEMS[itemId]
+        itemDefinition = SharedModule.Constants.ITEMS[itemId]
+        if typeof(itemDefinition) == "table" then
+            price = itemDefinition.Price or itemDefinition.price or price -- Check for Price (capital P) or price (lowercase p)
+        else
+            -- If itemDefinition is not a table, it might be a direct price or something else.
+            -- For now, we assume it implies the default price if not a table with a price field.
+            print("[ItemPurchaseHandler] Warning: Item definition for ''' .. itemId .. ''' in Constants.ITEMS is not a table. Using default price.")
+        end
+    else
+        print("[ItemPurchaseHandler] Warning: Item ''' .. itemId .. ''' not found in Constants.ITEMS. Using default price and name.")
     end
-    local price = item.price or 10
-    return self:ProcessCurrencyPurchase(player, item, price)
+
+    -- Construct an item object to pass, ensuring Name is always the itemId string
+    local itemToProcess = {
+        Name = itemId, -- Always use the simple string itemId as the Name
+        id = itemId,
+        Price = price -- Store the determined price
+    }
+
+    return self:ProcessCurrencyPurchase(player, itemToProcess, price)
 end
 
 -- Initialize the handler
@@ -524,16 +549,33 @@ function ItemPurchaseHandler:Initialize()
     if purchaseItemEvent then
         purchaseItemEvent.OnServerEvent:Connect(function(player, itemArg)
             print("[ItemPurchaseHandler] PurchaseItem event received from", player.Name, "for item", tostring(itemArg))
-            local itemId = itemArg
+            
+            local simpleItemId = itemArg -- Default to itemArg if it's already a simple name
+            
             if typeof(itemArg) == "Instance" then
-                itemId = itemArg.Name
+                simpleItemId = itemArg.Name -- If it's an instance, just use its Name
+            elseif typeof(itemArg) == "string" then
+                -- Extract the base name from a path string like "Workspace.Items.Basic.Grass_Cube"
+                local pathParts = string.split(itemArg, ".") -- Use string.split
+                simpleItemId = pathParts[#pathParts] -- Get the last part
             elseif typeof(itemArg) == "table" and itemArg.id then
-                itemId = itemArg.id
+                simpleItemId = itemArg.id -- If it's a table with an id, use that
+            else
+                warn("[ItemPurchaseHandler] Could not determine simple item ID from itemArg:", itemArg)
+                if purchaseResultEvent then
+                     purchaseResultEvent:FireClient(player, false, "Invalid item data received by server.")
+                end
+                return -- Stop processing if we can't get a valid ID
             end
-            local success, message = ItemPurchaseHandler:ProcessPurchase(player, itemId)
-            -- Optionally notify the client of the purchase result
-            if remotes:FindFirstChild("PurchaseResult") then
-                remotes.PurchaseResult:FireClient(player, success, message)
+
+            print("[ItemPurchaseHandler] Extracted simpleItemId:", simpleItemId)
+            local success, message = ItemPurchaseHandler:ProcessPurchase(player, simpleItemId)
+            
+            -- Notify the client of the purchase result
+            if purchaseResultEvent then
+                purchaseResultEvent:FireClient(player, success, message)
+            else
+                warn("[ItemPurchaseHandler] PurchaseResult RemoteEvent still not found after attempting to create.")
             end
         end)
         print("[ItemPurchaseHandler] Connected PurchaseItem event")
