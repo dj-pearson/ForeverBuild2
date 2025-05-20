@@ -71,7 +71,7 @@ function InteractionSystem:CreateUI()
     mainFrame.Name = "MainFrame"
     mainFrame.Size = UDim2.new(0, 300, 0, 150)
     mainFrame.Position = UDim2.new(0.5, -150, 0.75, 0)
-    mainFrame.BackgroundColor3 = Constants.UI.Colors.Background
+    mainFrame.BackgroundColor3 = Constants.UI.Colors.BackgroundSecondary
     mainFrame.BackgroundTransparency = Constants.UI.Colors.BackgroundTransparency or 0.2
     mainFrame.BorderSizePixel = 0
     mainFrame.Visible = false
@@ -89,7 +89,7 @@ function InteractionSystem:CreateUI()
     itemNameLabel.Position = UDim2.new(0, 0, 0, 10)
     itemNameLabel.BackgroundTransparency = 1
     itemNameLabel.Font = Constants.UI.Fonts.Title.Font
-    itemNameLabel.TextColor3 = Constants.UI.Colors.Primary
+    itemNameLabel.TextColor3 = Constants.UI.Colors.TextPrimary
     itemNameLabel.TextSize = Constants.UI.Fonts.Title.Size
     itemNameLabel.Text = "Item Name"
     itemNameLabel.Parent = mainFrame
@@ -100,9 +100,9 @@ function InteractionSystem:CreateUI()
     descriptionLabel.Size = UDim2.new(1, -20, 0, 40)
     descriptionLabel.Position = UDim2.new(0, 10, 0, 40)
     descriptionLabel.BackgroundTransparency = 1
-    descriptionLabel.Font = Constants.UI.Fonts.Default.Font
-    descriptionLabel.TextColor3 = Constants.UI.Colors.Text
-    descriptionLabel.TextSize = Constants.UI.Fonts.Default.Size
+    descriptionLabel.Font = Constants.UI.Fonts.Body.Font
+    descriptionLabel.TextColor3 = Constants.UI.Colors.TextSecondary
+    descriptionLabel.TextSize = Constants.UI.Fonts.Body.Size
     descriptionLabel.TextWrapped = true
     descriptionLabel.Text = "Item description goes here"
     descriptionLabel.Parent = mainFrame
@@ -113,9 +113,9 @@ function InteractionSystem:CreateUI()
     priceLabel.Size = UDim2.new(1, -20, 0, 20)
     priceLabel.Position = UDim2.new(0, 10, 0, 80)
     priceLabel.BackgroundTransparency = 1
-    priceLabel.Font = Constants.UI.Fonts.Default.Font
-    priceLabel.TextColor3 = Constants.UI.Colors.Accent
-    priceLabel.TextSize = Constants.UI.Fonts.Default.Size
+    priceLabel.Font = Constants.UI.Fonts.Body.Font
+    priceLabel.TextColor3 = Constants.UI.Colors.ThemeAccent
+    priceLabel.TextSize = Constants.UI.Fonts.Body.Size
     priceLabel.Text = "Price: 100 Coins"
     priceLabel.Parent = mainFrame
     
@@ -143,7 +143,7 @@ function InteractionSystem:CreateUI()
     purchaseRobuxButton.Position = UDim2.new(0.5, 0, 0, 110)
     purchaseRobuxButton.BackgroundColor3 = Constants.UI.Colors.Success
     purchaseRobuxButton.Text = "Buy with Robux"
-    purchaseRobuxButton.TextColor3 = Constants.UI.Colors.Text
+    purchaseRobuxButton.TextColor3 = Constants.UI.Colors.TextOnPrimary
     purchaseRobuxButton.Font = Constants.UI.Fonts.Button.Font
     purchaseRobuxButton.TextSize = Constants.UI.Fonts.Button.Size
     purchaseRobuxButton.Parent = mainFrame
@@ -159,9 +159,9 @@ function InteractionSystem:CreateUI()
     instructionLabel.Size = UDim2.new(1, 0, 0, 20)
     instructionLabel.Position = UDim2.new(0, 0, 1, 10)
     instructionLabel.BackgroundTransparency = 1
-    instructionLabel.Font = Constants.UI.Fonts.Default.Font
-    instructionLabel.TextColor3 = Constants.UI.Colors.Text
-    instructionLabel.TextSize = Constants.UI.Fonts.Default.Size
+    instructionLabel.Font = Constants.UI.Fonts.Caption.Font
+    instructionLabel.TextColor3 = Constants.UI.Colors.TextSecondary
+    instructionLabel.TextSize = Constants.UI.Fonts.Caption.Size
     instructionLabel.Text = "Press E to interact"
     instructionLabel.Parent = mainFrame
     

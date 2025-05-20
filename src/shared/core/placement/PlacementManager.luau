@@ -6,18 +6,17 @@ local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 
-local isServer = RunService:IsServer()
-
-local PlacementManager = {}
-PlacementManager.__index = PlacementManager
-
 -- Configuration
 local PLACED_ITEMS_FOLDER_NAME = "World_Items" -- Use the existing World_Items folder
 local MAX_PLACEMENT_DISTANCE = 20
 local GRID_SIZE = 1 -- For grid snapping
 
+local PlacementManager = {}
+PlacementManager.__index = PlacementManager
+
 -- Initialize the PlacementManager
 function PlacementManager.new(sharedModule)
+    print("--- PLACEMENT MANAGER .new() CALLED ---") -- TOP LEVEL MARKER
     local self = setmetatable({}, PlacementManager)
     
     self.shared = sharedModule
@@ -39,7 +38,16 @@ function PlacementManager.new(sharedModule)
     }
     
     -- Setup the world folder for placed items
-    if isServer then
+    if RunService:IsClient() then -- MODIFIED: Check IsClient first
+        -- Client-side properties
+        self.previewItem = nil
+        self.isPlacing = false
+        self.selectedItem = nil
+        
+        -- Cache remote events on the client
+        print("--- PLACEMENT MANAGER CLIENT CONSTRUCTOR REACHED (IsClient == true) ---") -- MARKER
+        self:CacheRemoteEvents()
+    else -- Assume server if not client
         -- First look for the main World_Items folder
         self.worldFolder = Workspace:FindFirstChild(PLACED_ITEMS_FOLDER_NAME)
         if not self.worldFolder then
@@ -84,11 +92,6 @@ function PlacementManager.new(sharedModule)
         -- Note: The following initialization is now moved to the Initialize method:
         -- - ConnectPlayerEvents()
         -- - LoadWorldData()
-    else
-        -- Client-side properties
-        self.previewItem = nil
-        self.isPlacing = false
-        self.selectedItem = nil
     end
     
     return self
@@ -96,7 +99,7 @@ end
 
 -- Initialize the PlacementManager
 function PlacementManager:Initialize()
-    if not isServer then return false end
+    if RunService:IsClient() then return false end
     
     print("PlacementManager: Initialize called")
     
@@ -177,7 +180,7 @@ function PlacementManager:GetItemTemplate(itemId)
     local templates = ReplicatedStorage:FindFirstChild("ItemTemplates")
     if not templates then
         -- Try to create templates folder on server if missing
-        if isServer then
+        if RunService:IsServer() then
             print("PlacementManager: ItemTemplates folder not found, creating it")
             templates = Instance.new("Folder")
             templates.Name = "ItemTemplates"
@@ -337,7 +340,7 @@ end
 
 -- Server: Place an item in the world and persist it
 function PlacementManager:PlaceItem(player, itemId, position, rotation)
-    if not isServer then return false end
+    if RunService:IsClient() then return false end
     
     print("PlacementManager: PlaceItem called by", player.Name, "for item", itemId)
     
@@ -474,7 +477,7 @@ end
 
 -- Server: Remove an item from the player's inventory
 function PlacementManager:RemoveFromInventory(player, itemId, quantity)
-    if not isServer then return false end
+    if RunService:IsClient() then return false end
     
     quantity = quantity or 1  -- Default to 1 if not specified
     print("PlacementManager: Attempting to remove", quantity, "x", itemId, "from inventory of", player.Name)
@@ -633,6 +636,7 @@ end
 
 -- Server: Get item data from Constants
 function PlacementManager:GetItemData(itemId)
+    -- This function can be called by both server and client, so no specific IsServer/IsClient check at the start
     if not self.Constants then
         warn("PlacementManager: Constants not available, creating fallback")
         self.Constants = {
@@ -715,7 +719,7 @@ end
 
 -- Server: Create an item in the world
 function PlacementManager:CreateWorldItem(itemId, position, rotation)
-    if not isServer then return nil end
+    if RunService:IsClient() then return nil end
     
     print("PlacementManager: Creating world item for:", itemId)
     
@@ -931,7 +935,7 @@ function PlacementManager:FindItemByInstanceId(instanceId)
     
     -- Check if we have a placed items folder to search
     if not self.placedFolder then
-        if isServer then
+        if RunService:IsServer() then
             -- Create the folder if it doesn't exist on the server
             self.placedFolder = game.Workspace:FindFirstChild("PlacedItems") or Instance.new("Folder")
             self.placedFolder.Name = "PlacedItems"
@@ -955,7 +959,7 @@ end
 
 -- Server: Get player data from appropriate manager
 function PlacementManager:GetPlayerData(player)
-    if not isServer then return nil end
+    if RunService:IsClient() then return nil end
     
     -- Try multiple ways to get player data for better compatibility
     
@@ -1079,7 +1083,7 @@ end
 
 -- Server: Save world data to DataStore
 function PlacementManager:SaveWorldData()
-    if not isServer then return false end
+    if RunService:IsClient() then return false end
     
     print("PlacementManager: Saving world data...")
     
@@ -1102,8 +1106,10 @@ function PlacementManager:SaveWorldData()
                     instanceId = instanceId,
                     itemId = item:GetAttribute("itemId"),
                     owner = item:GetAttribute("owner") or tonumber(playerId),
-                    position = item:IsA("Model") and item.PrimaryPart and item.PrimaryPart.Position or item.Position,
-                    rotation = item:IsA("Model") and item.PrimaryPart and item.PrimaryPart.Orientation or item.Orientation,
+                    -- MODIFIED: Store position as a table
+                    position = if item:IsA("Model") and item.PrimaryPart then { X = item.PrimaryPart.Position.X, Y = item.PrimaryPart.Position.Y, Z = item.PrimaryPart.Position.Z } else { X = item.Position.X, Y = item.Position.Y, Z = item.Position.Z },
+                    -- MODIFIED: Store rotation as a table
+                    rotation = if item:IsA("Model") and item.PrimaryPart then { X = item.PrimaryPart.Orientation.X, Y = item.PrimaryPart.Orientation.Y, Z = item.PrimaryPart.Orientation.Z } else { X = item.Orientation.X, Y = item.Orientation.Y, Z = item.Orientation.Z },
                     placedTime = item:GetAttribute("placedTime") or os.time(),
                 }
                 
@@ -1132,8 +1138,10 @@ function PlacementManager:SaveWorldData()
                         instanceId = instanceId,
                         itemId = item:GetAttribute("itemId"),
                         owner = item:GetAttribute("owner"),
-                        position = item:IsA("Model") and item.PrimaryPart and item.PrimaryPart.Position or item.Position,
-                        rotation = item:IsA("Model") and item.PrimaryPart and item.PrimaryPart.Orientation or item.Orientation,
+                        -- MODIFIED: Store position as a table
+                        position = if item:IsA("Model") and item.PrimaryPart then { X = item.PrimaryPart.Position.X, Y = item.PrimaryPart.Position.Y, Z = item.PrimaryPart.Position.Z } else { X = item.Position.X, Y = item.Position.Y, Z = item.Position.Z },
+                        -- MODIFIED: Store rotation as a table
+                        rotation = if item:IsA("Model") and item.PrimaryPart then { X = item.PrimaryPart.Orientation.X, Y = item.PrimaryPart.Orientation.Y, Z = item.PrimaryPart.Orientation.Z } else { X = item.Orientation.X, Y = item.Orientation.Y, Z = item.Orientation.Z },
                         placedTime = item:GetAttribute("placedTime") or os.time(),
                     }
                     
@@ -1158,7 +1166,7 @@ end
 
 -- Server: Load world data from DataStore
 function PlacementManager:LoadWorldData()
-    if not isServer then return false end
+    if RunService:IsClient() then return false end
     
     print("PlacementManager: Loading world data...")
     
@@ -1197,22 +1205,20 @@ function PlacementManager:LoadWorldData()
                 
                 -- Convert position from table to Vector3 if needed
                 local position = itemData.position
-                if typeof(position) ~= "Vector3" then
-                    position = Vector3.new(position.X or position.x or 0, position.Y or position.y or 0, position.Z or position.z or 0)
-                end
+                -- MODIFIED: Always convert from table format
+                local posVec = Vector3.new(position.X or position.x or 0, position.Y or position.y or 0, position.Z or position.z or 0)
                 
                 -- Convert rotation from table to Vector3 if needed
-                local rotation = itemData.rotation or Vector3.new(0, 0, 0)
-                if typeof(rotation) ~= "Vector3" then
-                    rotation = Vector3.new(rotation.X or rotation.x or 0, rotation.Y or rotation.y or 0, rotation.Z or rotation.z or 0)
-                end
+                local rotation = itemData.rotation or {X=0, Y=0, Z=0} -- Ensure rotation table exists
+                -- MODIFIED: Always convert from table format
+                local rotVec = Vector3.new(rotation.X or rotation.x or 0, rotation.Y or rotation.y or 0, rotation.Z or rotation.z or 0)
                 
                 -- Position and anchor the item
                 if placedItem:IsA("Model") and placedItem.PrimaryPart then
-                    placedItem:SetPrimaryPartCFrame(CFrame.new(position) * CFrame.fromEulerAnglesXYZ(
-                        math.rad(rotation.X), 
-                        math.rad(rotation.Y), 
-                        math.rad(rotation.Z)
+                    placedItem:SetPrimaryPartCFrame(CFrame.new(posVec) * CFrame.fromEulerAnglesXYZ(
+                        math.rad(rotVec.X), 
+                        math.rad(rotVec.Y), 
+                        math.rad(rotVec.Z)
                     ))
                     
                     -- Set all parts to anchored
@@ -1223,10 +1229,10 @@ function PlacementManager:LoadWorldData()
                         end
                     end
                 elseif placedItem:IsA("BasePart") then
-                    placedItem.CFrame = CFrame.new(position) * CFrame.fromEulerAnglesXYZ(
-                        math.rad(rotation.X), 
-                        math.rad(rotation.Y), 
-                        math.rad(rotation.Z)
+                    placedItem.CFrame = CFrame.new(posVec) * CFrame.fromEulerAnglesXYZ(
+                        math.rad(rotVec.X), 
+                        math.rad(rotVec.Y), 
+                        math.rad(rotVec.Z)
                     )
                     placedItem.Anchored = true
                     placedItem.CanCollide = true
@@ -1258,7 +1264,7 @@ end
 
 -- Connect to player leaving event
 function PlacementManager:ConnectPlayerEvents()
-    if not isServer then return end
+    if RunService:IsClient() then return end
     
     print("PlacementManager: Connecting player events")
     
@@ -1303,7 +1309,7 @@ end
 
 -- Server: Recall an item from the world back to player's inventory
 function PlacementManager:RecallItem(player, instanceId)
-    if not isServer then return false end
+    if RunService:IsClient() then return false end
     
     print("PlacementManager: Recalling item", instanceId, "for player", player.Name)
     
@@ -1359,7 +1365,7 @@ end
 
 -- Server: Add an item to player's inventory
 function PlacementManager:AddToInventory(player, itemId, quantity)
-    if not isServer then return false end
+    if RunService:IsClient() then return false end
     quantity = quantity or 1 -- Default to 1 if not specified
     print("PlacementManager: Adding", quantity, "x", itemId, "to inventory of", player.Name)
 
@@ -1387,7 +1393,7 @@ end
 
 -- Server: Delete an item from the world
 function PlacementManager:DeleteItem(player, instanceId)
-    if not isServer then return false end
+    if RunService:IsClient() then return false end
     
     print("PlacementManager: Deleting item", instanceId, "for player", player.Name)
     
@@ -1435,7 +1441,7 @@ end
 
 -- Server: Update an item's position or rotation
 function PlacementManager:UpdateItem(player, instanceId, position, rotation)
-    if not isServer then return false end
+    if RunService:IsClient() then return false end
     
     print("PlacementManager: Updating item", instanceId, "for player", player.Name)
     
@@ -1509,9 +1515,9 @@ end
 
 -- Client: Start the item placement process
 function PlacementManager:StartPlacing(itemId)
-    if isServer then return false end
+    if RunService:IsServer() then return false end
     
-    print("PlacementManager: Starting placement for item:", itemId)
+    print("PlacementManager: Client StartPlacing for item:", itemId) -- MARKER
     
     -- Clear any existing preview item
     self:ClearItemFromHand()
@@ -1566,11 +1572,12 @@ function PlacementManager:StartPlacing(itemId)
                 end
                 
                 -- Request server to place the item
+                print("PlacementManager: StartPlacing - About to fire PlaceItem. self.remotes.PlaceItem is:", self.remotes and self.remotes.PlaceItem or "nil_remotes_or_placeitem") -- MARKER
                 if self.remotes and self.remotes.PlaceItem then
                     self.remotes.PlaceItem:FireServer(self.selectedItem, position, rotation)
                     print("PlacementManager: Requested server to place item:", self.selectedItem)
                 else
-                    warn("PlacementManager: Cannot place item - remote event not found")
+                    warn("PlacementManager: Cannot place item - remote event not found. self.remotes table:", self.remotes, "self.remotes.PlaceItem:", self.remotes and self.remotes.PlaceItem or "nil") -- MARKER
                 end
                 
                 -- Clean up
@@ -1613,7 +1620,7 @@ end
 
 -- Client: Create a preview item for placement
 function PlacementManager:CreatePreviewItem(itemId)
-    if isServer then return nil end
+    if RunService:IsServer() then return nil end
     
     print("PlacementManager: Creating preview item for:", itemId)
     
@@ -1668,7 +1675,7 @@ end
 
 -- Client: Update the preview item position and appearance based on mouse position
 function PlacementManager:UpdatePlacementPreview()
-    if isServer or not self.isPlacing or not self.previewItem then return end
+    if RunService:IsServer() or not self.isPlacing or not self.previewItem then return end
     
     local player = Players.LocalPlayer
     local mouse = player:GetMouse()
@@ -1759,7 +1766,7 @@ end
 
 -- Client: Show an item in the player's hand for inspection
 function PlacementManager:ShowItemInHand(itemId)
-    if isServer then return false end
+    if RunService:IsServer() then return false end
     
     print("PlacementManager: Showing item in hand:", itemId)
     
@@ -1891,7 +1898,7 @@ end
 
 -- Client: Recall an item from inventory to show in hand
 function PlacementManager:RecallItemFromInventory(itemId)
-    if isServer then return false end
+    if RunService:IsServer() then return false end
     
     print("PlacementManager: Recalling item from inventory:", itemId)
     
@@ -1945,7 +1952,7 @@ end
 
 -- Client: Clear any displayed item from hand
 function PlacementManager:ClearItemFromHand()
-    if isServer then return end
+    if RunService:IsServer() then return end
     
     if self.handItem then
         print("PlacementManager: Clearing item from hand:", self.handItem.Name)
@@ -2003,7 +2010,7 @@ function PlacementManager:SetupRemoteEvents()
         self.remotes[eventName] = event
     end
     
-    if isServer then
+    if RunService:IsServer() then
         -- Connect server-side event handlers
         self.remotes.PlaceItem.OnServerEvent:Connect(function(player, itemId, position, rotation)
             self:PlaceItem(player, itemId, position, rotation)
@@ -2048,14 +2055,21 @@ end
 
 -- Client: Cache remote events
 function PlacementManager:CacheRemoteEvents()
-    if isServer then return end
+    if RunService:IsServer() then return end
     
-    print("PlacementManager: Caching remote events")
+    print("PlacementManager: Caching remote events --- MARKER ---") -- MARKER
     
-    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-    if not remotes then
-        warn("PlacementManager: Remotes folder not found")
-        return false
+    local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
+    if not remotesFolder then
+        warn("PlacementManager: Remotes folder not found initially during CacheRemoteEvents. Waiting...") -- MARKER
+        remotesFolder = ReplicatedStorage:WaitForChild("Remotes", 10) -- Wait up to 10 seconds
+        if not remotesFolder then
+            warn("PlacementManager: Remotes folder STILL not found after WaitForChild(10). Cannot cache remotes.") -- MARKER
+            return false
+        end
+        print("PlacementManager: Remotes folder found after WaitForChild.") -- MARKER
+    else
+        print("PlacementManager: Remotes folder found immediately.") -- MARKER
     end
     
     -- Cache all required remote events
@@ -2070,17 +2084,92 @@ function PlacementManager:CacheRemoteEvents()
         "ItemDeleted"
     }
     
+    self.remotes = self.remotes or {} -- Ensure self.remotes is initialized (should be by .new)
+    local allEventsCached = true
+
     for _, eventName in ipairs(events) do
-        local event = remotes:FindFirstChild(eventName)
+        local event = remotesFolder:FindFirstChild(eventName)
+        if not event then
+            warn("PlacementManager: Event '"..eventName.."' not found initially in Remotes folder. Waiting for it (5s)...") -- MARKER
+            event = remotesFolder:WaitForChild(eventName, 5) -- Wait up to 5 seconds for the specific event
+            if not event then
+                warn("PlacementManager: FAILED to find remote event after wait: " .. eventName) -- MARKER
+                allEventsCached = false
+            else
+                print("PlacementManager: Found event '"..eventName.."' after WaitForChild.") -- MARKER
+            end
+        end
+
         if event and event:IsA("RemoteEvent") then
             self.remotes[eventName] = event
-            print("PlacementManager: Cached remote event:", eventName)
+            print("PlacementManager: Successfully cached remote event: " .. eventName) -- MARKER
+        elseif event then
+            warn("PlacementManager: Found instance named '"..eventName.."' but it's not a RemoteEvent. Type: "..event:GetFullName() .. " is a " .. event.ClassName) -- MARKER
+            allEventsCached = false
         else
-            warn("PlacementManager: Failed to cache remote event:", eventName)
+            -- This case is covered by the "FAILED to find" warning above if WaitForChild also failed
+            if not remotesFolder:FindFirstChild(eventName) then -- Double check if it really failed
+                 allEventsCached = false
+            end
         end
     end
     
-    return true
+    if not allEventsCached then
+        warn("PlacementManager: CacheRemoteEvents - Not all remote events were cached successfully.") -- MARKER
+    else
+        print("PlacementManager: CacheRemoteEvents - All expected remote events appear to be cached.") -- MARKER
+    end
+    return allEventsCached
+end
+
+-- Placeholder for handling a CLONE item request (server-side)
+function PlacementManager:HandleCloneItemRequest(player, itemInstance, cost, originalItemId)
+    print(string.format("PlacementManager:HandleCloneItemRequest called for item: %s by player %s (cost: %s, originalId: %s)", itemInstance.Name, player.Name, tostring(cost), originalItemId))
+    -- TODO: Implement actual cloning logic: create new instance, assign new instanceId, place in world, save.
+    return {success = true, message = string.format("Clone action for %s received. Cost: %s. (Not fully implemented)", itemInstance.Name, cost)}
+end
+
+-- Placeholder for handling a MOVE item request (server-side)
+function PlacementManager:HandleMoveItemRequest(player, itemInstance, cost, originalItemId, newPosition, newRotation)
+    print(string.format("PlacementManager:HandleMoveItemRequest called for item: %s by player %s (cost: %s, originalId: %s)", itemInstance.Name, player.Name, tostring(cost), originalItemId))
+    -- Access newPosition and newRotation if they are passed and valid
+    if newPosition then print("  New Position:", newPosition.X, newPosition.Y, newPosition.Z) end
+    if newRotation then print("  New Rotation:", newRotation.X, newRotation.Y, newRotation.Z) end
+    -- TODO: Implement actual move logic: update itemInstance's CFrame, save.
+    return {success = true, message = string.format("Move action for %s received. Cost: %s. (Not fully implemented)", itemInstance.Name, cost)}
+end
+
+-- Placeholder for handling a COSTED RECALL item request (server-side)
+-- This is different from the free RecallItem which is initiated by InventoryItemHandler
+function PlacementManager:HandleCostedRecallItemRequest(player, itemInstance, cost, originalItemId)
+    print(string.format("PlacementManager:HandleCostedRecallItemRequest called for item: %s by player %s (cost: %s, originalId: %s)", itemInstance.Name, player.Name, tostring(cost), originalItemId))
+    -- TODO: Implement actual recall logic (similar to existing RecallItem but ensures cost was processed)
+    -- This might involve re-using parts of the existing RecallItem logic but ensuring item ownership and world state are correct.
+    -- It should destroy the itemInstance from the world and add to player's inventory via ItemPurchaseHandler.
+    local success, message = self:RecallItem(player, itemInstance.Name) -- Use existing RecallItem for now, assuming instanceId is the name here.
+    if success then
+        return {success = true, message = string.format("Item %s recalled to inventory for %s %s.", originalItemId, cost, SharedModule.Constants.CURRENCY.INGAME or "coins")}
+    else
+        return {success = false, message = string.format("Failed to recall %s. %s", originalItemId, message or "")}
+    end
+end
+
+-- Placeholder for handling a DESTROY item request (server-side)
+function PlacementManager:HandleDestroyItemRequest(player, itemInstance, cost, originalItemId)
+    print(string.format("PlacementManager:HandleDestroyItemRequest called for item: %s by player %s (cost: %s, originalId: %s)", itemInstance.Name, player.Name, tostring(cost), originalItemId))
+    -- TODO: Implement actual destroy logic: remove itemInstance from world, save world state.
+    -- Player pays a fee to destroy it.
+    itemInstance:Destroy()
+    self:SaveWorldData() -- Ensure change is persisted
+    return {success = true, message = string.format("Item %s destroyed. You were charged %s %s.", originalItemId, cost, SharedModule.Constants.CURRENCY.INGAME or "coins")}
+end
+
+-- Placeholder for handling a ROTATE item request (server-side)
+function PlacementManager:HandleRotateItemRequest(player, itemInstance, cost, originalItemId, rotationParameters)
+    print(string.format("PlacementManager:HandleRotateItemRequest called for item: %s by player %s (cost: %s, originalId: %s)", itemInstance.Name, player.Name, tostring(cost), originalItemId))
+    if rotationParameters then print("  Rotation Parameters:", rotationParameters) end
+    -- TODO: Implement actual rotation logic: update itemInstance's CFrame/Orientation, save.
+    return {success = true, message = string.format("Rotate action for %s received. Cost: %s. (Not fully implemented)", itemInstance.Name, cost)}
 end
 
 return PlacementManager

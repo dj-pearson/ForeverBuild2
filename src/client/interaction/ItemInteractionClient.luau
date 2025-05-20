@@ -120,14 +120,17 @@ function ItemInteractionClient:SetupRemotes()
     -- Cache remote events
     self:CacheRemoteEvent(remotesFolder, "PurchaseItem")
     self:CacheRemoteEvent(remotesFolder, "PlaceItem")
-    self:CacheRemoteEvent(remotesFolder, "MoveItem")
-    self:CacheRemoteEvent(remotesFolder, "RotateItem")
-    self:CacheRemoteEvent(remotesFolder, "CloneItem")
-    self:CacheRemoteEvent(remotesFolder, "DestroyItem")
     self:CacheRemoteEvent(remotesFolder, "ChangeItemColor")
     self:CacheRemoteEvent(remotesFolder, "AddToInventory")
     self:CacheRemoteEvent(remotesFolder, "RemoveFromInventory")
     self:CacheRemoteEvent(remotesFolder, "NotifyPlayer")
+
+    -- New Item Action Request Events
+    self:CacheRemoteEvent(remotesFolder, "RequestCloneItem")
+    self:CacheRemoteEvent(remotesFolder, "RequestMoveItem")
+    self:CacheRemoteEvent(remotesFolder, "RequestRecallItem")
+    self:CacheRemoteEvent(remotesFolder, "RequestDestroyItem")
+    self:CacheRemoteEvent(remotesFolder, "RequestRotateItem")
     
     -- Connect to notifications
     if self.remotes.NotifyPlayer then
@@ -165,6 +168,64 @@ function ItemInteractionClient:SetupUI()
     -- Load the catalog UI, inventory UI and world item UI modules
     -- These would typically be loaded from the SharedModule
     self:LoadUIModules()
+
+    -- Initialize PlacedItemDialog and set up its action handler
+    local PlacedItemDialog = SharedModule.PlacedItemDialog -- Assuming it's loaded via SharedModule
+    if PlacedItemDialog and PlacedItemDialog.Initialize then
+        local playerGui = player:WaitForChild("PlayerGui")
+        local screenGui = playerGui:FindFirstChild("PlacedItemDialogUI") 
+        if not screenGui then
+            screenGui = Instance.new("ScreenGui")
+            screenGui.Name = "PlacedItemDialogUI" 
+            screenGui.Parent = playerGui
+        end
+        PlacedItemDialog.Initialize(screenGui)
+
+        PlacedItemDialog.OnActionSelected = function(itemId, actionKey, itemInstance, actualCost)
+            print(string.format("ItemInteractionClient: PlacedItemDialog.OnActionSelected - ItemID: %s, ActionKey: %s, Cost: %d", 
+                tostring(itemId), tostring(actionKey), actualCost))
+
+            local instanceId = itemInstance and itemInstance:GetAttribute("instanceId")
+            if not instanceId then
+                warn("ItemInteractionClient: Cannot perform action - itemInstance is nil or missing instanceId attribute.")
+                self:ShowNotification("Error: Could not identify the selected item.", "Error")
+                return
+            end
+
+            -- Placeholder for client-side currency check - replace with actual currency check
+            local currentPlayerCurrency = 10000 -- TODO: Get this from CurrencyManager or GameManager
+            if currentPlayerCurrency < actualCost then
+                self:ShowNotification(string.format("Not enough coins for %s (Cost: %d)", Constants.ITEM_ACTIONS[actionKey].name, actualCost), "Error")
+                return
+            end
+
+            if actionKey == "clone" and self.remotes.RequestCloneItem then
+                -- For clone, we'd ideally also need a target position from the player.
+                -- For now, server can place it nearby or require a second step.
+                self:ShowNotification(string.format("Requesting clone for %s...", itemInstance.Name), "Info")
+                self.remotes.RequestCloneItem:FireServer(instanceId, actualCost)
+            elseif actionKey == "move" and self.remotes.RequestMoveItem then
+                -- Move would require a new placement system interaction
+                self:ShowNotification("Move action selected. (Full implementation pending placement system integration)", "Info")
+                -- self.remotes.RequestMoveItem:FireServer(instanceId, actualCost, newPosition, newRotation) 
+            elseif actionKey == "recall" and self.remotes.RequestRecallItem then
+                self:ShowNotification(string.format("Requesting recall for %s...", itemInstance.Name), "Info")
+                self.remotes.RequestRecallItem:FireServer(instanceId, actualCost)
+            elseif actionKey == "destroy" and self.remotes.RequestDestroyItem then
+                self:ShowNotification(string.format("Requesting destroy for %s...", itemInstance.Name), "Info")
+                self.remotes.RequestDestroyItem:FireServer(instanceId, actualCost)
+            elseif actionKey == "rotate" and self.remotes.RequestRotateItem then
+                 -- Rotate might also need a sub-UI for direction/angle
+                self:ShowNotification("Rotate action selected. (Full implementation pending)", "Info")
+                -- self.remotes.RequestRotateItem:FireServer(instanceId, actualCost, rotationParameters)
+            else
+                warn("ItemInteractionClient: Unknown or unhandled actionKey:", actionKey)
+                self:ShowNotification("Unknown action: " .. actionKey, "Error")
+            end
+        end
+    else
+        warn("ItemInteractionClient: PlacedItemDialog module not found or not initialized correctly in SharedModule.")
+    end
 end
 
 function ItemInteractionClient:CreateNotificationUI()
@@ -256,221 +317,49 @@ function ItemInteractionClient:LoadUIModules()
     end
 end
 
--- Create UI for interacting with placed world items
+-- Create UI for interacting with placed world items (This function becomes largely OBSOLETE)
+-- We keep it for now in case any part is reused, but PlacedItemDialog takes over its main role.
 function ItemInteractionClient:CreateWorldItemUI()
-    local playerGui = player:WaitForChild("PlayerGui")
-    
-    -- Create ScreenGui
-    self.worldItemUI = Instance.new("ScreenGui")
-    self.worldItemUI.Name = "WorldItemUI"
-    self.worldItemUI.ResetOnSpawn = false
-    self.worldItemUI.Enabled = false
-    self.worldItemUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    self.worldItemUI.Parent = playerGui
-    
-    -- Create main frame
-    local frame = Instance.new("Frame")
-    frame.Name = "MainFrame"
-    frame.Size = UDim2.new(0, 400, 0, 300)
-    frame.Position = UDim2.new(0.5, -200, 0.5, -150)
-    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-    frame.BorderSizePixel = 0
-    frame.Parent = self.worldItemUI
-    
-    -- Add rounded corners
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = frame
-    
-    -- Title bar
-    local titleBar = Instance.new("Frame")
-    titleBar.Name = "TitleBar"
-    titleBar.Size = UDim2.new(1, 0, 0, 50)
-    titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-    titleBar.BorderSizePixel = 0
-    titleBar.Parent = frame
-    
-    local titleCorner = Instance.new("UICorner")
-    titleCorner.CornerRadius = UDim.new(0, 8)
-    titleCorner.Parent = titleBar
-    
-    -- Title text
-    local titleText = Instance.new("TextLabel")
-    titleText.Name = "TitleText"
-    titleText.Size = UDim2.new(1, -20, 1, 0)
-    titleText.Position = UDim2.new(0, 10, 0, 0)
-    titleText.BackgroundTransparency = 1
-    titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleText.TextSize = 24
-    titleText.Font = Enum.Font.GothamBold
-    titleText.Text = "Item Interaction"
-    titleText.TextXAlignment = Enum.TextXAlignment.Left
-    titleText.Parent = titleBar
-    
-    -- Close button
-    local closeButton = Instance.new("TextButton")
-    closeButton.Name = "CloseButton"
-    closeButton.Size = UDim2.new(0, 40, 0, 40)
-    closeButton.Position = UDim2.new(1, -45, 0, 5)
-    closeButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-    closeButton.BorderSizePixel = 0
-    closeButton.Text = "X"
-    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closeButton.TextSize = 20
-    closeButton.Font = Enum.Font.GothamBold
-    closeButton.Parent = titleBar
-    
-    local closeCorner = Instance.new("UICorner")
-    closeCorner.CornerRadius = UDim.new(0, 8)
-    closeCorner.Parent = closeButton
-    
-    -- Connect close button
-    closeButton.MouseButton1Click:Connect(function()
-        self:HideInteractionUI()
-    end)
-    
-    -- Create a scroll frame for interaction buttons
-    local scrollFrame = Instance.new("ScrollingFrame")
-    scrollFrame.Name = "InteractionsFrame"
-    scrollFrame.Size = UDim2.new(1, -40, 1, -70)
-    scrollFrame.Position = UDim2.new(0, 20, 0, 60)
-    scrollFrame.BackgroundTransparency = 1
-    scrollFrame.BorderSizePixel = 0
-    scrollFrame.ScrollBarThickness = 6
-    scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(0, 170, 255)
-    scrollFrame.Parent = frame
-    
-    -- Add a UIListLayout for organizing buttons
-    local listLayout = Instance.new("UIListLayout")
-    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    listLayout.Padding = UDim.new(0, 10)
-    listLayout.Parent = scrollFrame
-    
-    -- Update scrolling frame content size when list layout changes
-    listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y)
-    end)
+    print("ItemInteractionClient: CreateWorldItemUI is now mostly handled by PlacedItemDialog. This function can be deprecated.")
 end
 
+-- This function becomes OBSOLETE as PlacedItemDialog handles its own UI creation and button logic.
 function ItemInteractionClient:ShowInteractionUI(itemGuid)
-    -- Get available interactions from server
-    local interactions = self:GetAvailableInteractions(itemGuid)
-    if #interactions == 0 then
-        self:ShowNotification("No interactions available for this item")
-        return
+    print("ItemInteractionClient: ShowInteractionUI is DEPRECATED. Use PlacedItemDialog.Show(...) directly.")
+    -- ... (original content of ShowInteractionUI - can be removed) ...
+    -- As a quick redirect for now, though this isn't ideal:
+    local targetItem = nil -- We need to get the actual item instance here based on itemGuid
+    -- This is problematic because itemGuid might not be enough to get the instance directly here.
+    -- The calling code in InteractWithWorldItem should pass the instance.
+    -- For now, this will likely not work correctly until InteractWithWorldItem is fully refactored.
+    if self.currentTarget and self.currentTarget:GetAttribute("guid") == itemGuid then
+        targetItem = self.currentTarget
     end
-    
-    -- Get reference to the interactions frame
-    local scrollFrame = self.worldItemUI.MainFrame.InteractionsFrame
-    
-    -- Clear existing buttons
-    for _, child in ipairs(scrollFrame:GetChildren()) do
-        if child:IsA("TextButton") then
-            child:Destroy()
-        end
+
+    if targetItem then
+        local itemId = targetItem:GetAttribute("itemId") or targetItem.Name
+        local itemName = (Constants.ITEMS[itemId] and Constants.ITEMS[itemId].name) or itemId
+        SharedModule.PlacedItemDialog.Show(itemId, itemName, targetItem)
+    else
+        warn("ItemInteractionClient: Deprecated ShowInteractionUI called without a valid target for itemGuid:", itemGuid)
     end
-    
-    -- Create interaction buttons
-    for i, interaction in ipairs(interactions) do
-        local button = Instance.new("TextButton")
-        button.Name = interaction
-        button.Size = UDim2.new(1, 0, 0, 50)
-        button.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-        button.BorderSizePixel = 0
-        button.Text = interaction:sub(1, 1):upper() .. interaction:sub(2)
-        button.TextColor3 = Color3.fromRGB(255, 255, 255)
-        button.TextSize = 18
-        button.Font = Enum.Font.GothamBold
-        button.LayoutOrder = i
-        button.Parent = scrollFrame
-        
-        -- Add rounded corners
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, 8)
-        corner.Parent = button
-        
-        -- Add icon and cost
-        local cost = 0
-        if interaction == "move" then
-            cost = Constants.ITEM_ACTIONS.move.cost
-        elseif interaction == "rotate" then
-            cost = Constants.ITEM_ACTIONS.rotate.cost
-        elseif interaction == "clone" then
-            cost = Constants.ITEM_ACTIONS.clone.cost
-        elseif interaction == "destroy" then
-            cost = Constants.ITEM_ACTIONS.destroy.cost
-        end
-        
-        -- Display cost if applicable
-        if cost > 0 then
-            local costLabel = Instance.new("TextLabel")
-            costLabel.Name = "CostLabel"
-            costLabel.Size = UDim2.new(0, 80, 0, 30)
-            costLabel.Position = UDim2.new(1, -90, 0.5, -15)
-            costLabel.BackgroundTransparency = 0.5
-            costLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-            costLabel.BorderSizePixel = 0
-            costLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-            costLabel.Text = cost .. " coins"
-            costLabel.TextSize = 14
-            costLabel.Font = Enum.Font.Gotham
-            costLabel.Parent = button
-            
-            local costCorner = Instance.new("UICorner")
-            costCorner.CornerRadius = UDim.new(0, 4)
-            costCorner.Parent = costLabel
-        end
-        
-        -- Connect button click to handle interaction
-        button.MouseButton1Click:Connect(function()
-            self:HandleInteraction(itemGuid, interaction)
-        end)
-    end
-    
-    -- Update the scrolling frame canvas size
-    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, scrollFrame.UIListLayout.AbsoluteContentSize.Y)
-    
-    -- Show the UI
-    self.worldItemUI.Enabled = true
-    
-    -- Save current item GUID
-    self.currentItemGuid = itemGuid
 end
 
 function ItemInteractionClient:HideInteractionUI()
-    self.worldItemUI.Enabled = false
-    self.currentItemGuid = nil
+    -- This would now call PlacedItemDialog.Hide() if that was the active UI.
+    -- If other custom UIs were managed by this, they'd be hidden here.
+    SharedModule.PlacedItemDialog.Hide() 
+    -- self.worldItemUI.Enabled = false -- If self.worldItemUI was a separate container
+    -- self.currentItemGuid = nil
+    print("ItemInteractionClient: HideInteractionUI called, now defers to PlacedItemDialog.Hide()")
 end
 
+-- HandleInteraction is also largely superseded by PlacedItemDialog.OnActionSelected
+-- We might keep it if there are other interaction pathways.
 function ItemInteractionClient:HandleInteraction(itemGuid, interaction)
-    -- Hide the UI first
-    self:HideInteractionUI()
-    
-    -- Process different interaction types
-    if interaction == "move" then
-        self:ShowNotification("Starting move interaction...")
-        -- This would call a function to start a drag/move interaction
-    elseif interaction == "rotate" then
-        self:ShowNotification("Starting rotation interaction...")
-        -- This would call a function to start a rotation interface
-    elseif interaction == "clone" then
-        -- Send clone request to server
-        pcall(function()
-            if self.remotes.CloneItem then
-                self.remotes.CloneItem:FireServer(itemGuid)
-            end
-        end)
-    elseif interaction == "destroy" then
-        -- Send destroy request to server
-        pcall(function()
-            if self.remotes.DestroyItem then
-                self.remotes.DestroyItem:FireServer(itemGuid)
-            end
-        end)
-    elseif interaction == "changeColor" then
-        self:ShowNotification("Starting color change interaction...")
-        -- This would open a color picker UI
-    end
+    print(string.format("ItemInteractionClient: HandleInteraction (itemGuid: %s, interaction: %s) - Likely DEPRECATED", tostring(itemGuid), tostring(interaction)))
+    -- This logic is now primarily within PlacedItemDialog.OnActionSelected
+    -- ... (original content - can be significantly reduced or removed) ...
 end
 
 function ItemInteractionClient:SetupInputHandling()
@@ -684,17 +573,21 @@ function ItemInteractionClient:TryInteract()
     
     if isStoreItem then
         -- Handle store item interaction
-        local itemName = self.currentTarget.Name:gsub("_", " ")
+        -- local itemName = self.currentTarget.Name:gsub("_", " ") -- Corrected potential error if Name is not a string
+        local itemName = self.currentTarget.Name
+        if type(itemName) == "string" then
+            itemName = itemName:gsub("_", " ")
+        end
         self:InteractWithStoreItem(self.currentTarget)
     else
         -- Handle world item interaction
-        self:InteractWithWorldItem(self.currentTarget)
+        self:InteractWithWorldItem(self.currentTarget) -- This will now call PlacedItemDialog.Show
     end
     
     -- Clear flags and target after short delay
     task.delay(0.2, function()
         self.isInteracting = false
-        self.currentTarget = nil
+        -- self.currentTarget = nil -- Don't clear currentTarget here, PlacedItemDialog might still need it or hide might clear it.
     end)
 end
 
@@ -710,48 +603,74 @@ function ItemInteractionClient:InteractWithStoreItem(target)
     
     -- Check if the item is in the catalog
     local itemData
-    pcall(function()
+    local success, result = pcall(function() -- Wrapped pcall for safety
         if self.remotes.GetItemData then
-            itemData = self.remotes.GetItemData:InvokeServer(itemName)
+            return self.remotes.GetItemData:InvokeServer(itemName)
         end
+        return nil
     end)
     
-    if not itemData then
-        self:ShowNotification("Error: Item data not found")
+    if not success or not result then
+        self:ShowNotification("Error: Item data not found or error fetching. " .. (success == false and tostring(result) or ""), "Error")
         return
     end
+    itemData = result
     
     -- Show catalog UI for this item
-    self:ShowCatalogUI(itemName)
+    if self.ShowCatalogUI then -- Check if function exists
+        self:ShowCatalogUI(itemName)
+    else
+        warn("ItemInteractionClient: self.ShowCatalogUI is not defined.")
+    end
 end
 
 function ItemInteractionClient:InteractWithWorldItem(target)
-    -- Get the item GUID from attributes
-    local itemGuid = target:GetAttribute("guid")
-    if not itemGuid then
-        self:ShowNotification("Error: Item ID not found")
+    if not target then
+        self:ShowNotification("Error: No target item to interact with.", "Error")
         return
     end
-    
-    -- Show world item UI
-    self:ShowWorldItemUI(itemGuid)
-end
 
-function ItemInteractionClient:GetAvailableInteractions(itemGuid)
-    -- Get available interactions from server
-    local interactions = {}
-    
-    pcall(function()
-        if self.remotes.GetAvailableInteractions then
-            interactions = self.remotes.GetAvailableInteractions:InvokeServer(itemGuid)
-        end
-    end)
-    
-    -- If server call fails, return default interactions
-    if #interactions == 0 then
-        interactions = {"move", "rotate", "clone", "destroy"}
+    local itemId = target:GetAttribute("itemId") or target.Name -- Prefer itemId attribute
+    local itemName = (Constants.ITEMS[itemId] and Constants.ITEMS[itemId].name) or itemId
+    local instanceId = target:GetAttribute("instanceId") -- Get instanceId for actions
+
+    if not instanceId then
+         warn("ItemInteractionClient: Target item " .. target.Name .. " is missing 'instanceId' attribute. Cannot show action dialog.")
+         self:ShowNotification("Cannot perform actions on this item (missing ID).", "Error")
+         return
     end
     
+    print(string.format("ItemInteractionClient: Interacting with world item. Name: %s, ItemID: %s, InstanceID: %s", target.Name, itemId, instanceId))
+
+    if SharedModule and SharedModule.PlacedItemDialog and SharedModule.PlacedItemDialog.Show then
+        SharedModule.PlacedItemDialog.Show(itemId, itemName, target) -- Pass the actual 'target' instance
+    else
+        warn("ItemInteractionClient: PlacedItemDialog or its Show method not available via SharedModule.")
+        self:ShowNotification("Interaction menu is currently unavailable.", "Error")
+        -- Fallback: The old self:ShowWorldItemUI(itemGuid) is deprecated and likely won't work as intended.
+        -- local itemGuid = target:GetAttribute("guid") -- old way
+        -- if itemGuid then self:ShowWorldItemUI(itemGuid) end
+    end
+end
+
+function ItemInteractionClient:GetAvailableInteractions(itemGuidOrInstance)
+    local itemInstance = nil
+    if typeof(itemGuidOrInstance) == "Instance" then
+        itemInstance = itemGuidOrInstance
+    elseif typeof(itemGuidOrInstance) == "string" then
+        -- This path is problematic as we need the instance for price.
+        -- We'd have to find the instance by GUID from the world.
+        warn("GetAvailableInteractions called with GUID, this is not ideal for dynamic costs.")
+    end
+
+    local interactions = {}
+    -- This function's role changes. PlacedItemDialog now builds its actions directly from Constants.ITEM_ACTIONS
+    -- This function might be used by other systems if they need a list of raw action keys.
+    for actionKey, _ in pairs(Constants.ITEM_ACTIONS) do
+        table.insert(interactions, actionKey)
+    end
+    
+    print("ItemInteractionClient: GetAvailableInteractions returning: ", table.concat(interactions, ", "))
     return interactions
 end
 

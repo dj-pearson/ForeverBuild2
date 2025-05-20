@@ -14,7 +14,7 @@ local function createDialog(parent)
     dialog.Name = "PurchaseDialog"
     dialog.Size = UDim2.new(0, 400, 0, 350) -- Adjusted height for new title bar and spacing
     dialog.Position = UDim2.new(0.5, -200, 0.5, -175) -- Adjusted for new size
-    dialog.BackgroundColor3 = Constants.UI.Colors.Background -- Updated
+    dialog.BackgroundColor3 = Constants.UI.Colors.BackgroundSecondary -- Updated (was Background)
     dialog.BorderSizePixel = 0
     dialog.Visible = false
     dialog.Parent = parent
@@ -29,7 +29,7 @@ local function createDialog(parent)
     shadow.Position = UDim2.new(0, -10, 0, -10)
     shadow.BackgroundTransparency = 1
     shadow.Image = "rbxassetid://5554236805"
-    shadow.ImageColor3 = Constants.UI.Colors.Text -- Updated
+    shadow.ImageColor3 = Constants.UI.Colors.BackgroundPrimary -- Updated (was Text, using a dark shadow)
     shadow.ImageTransparency = 0.6
     shadow.ScaleType = Enum.ScaleType.Slice
     shadow.SliceCenter = Rect.new(23, 23, 277, 277)
@@ -41,7 +41,7 @@ local function createDialog(parent)
     titleBar.Name = "TitleBar"
     titleBar.Size = UDim2.new(1, 0, 0, 50)
     titleBar.Position = UDim2.new(0, 0, 0, 0)
-    titleBar.BackgroundColor3 = Constants.UI.Colors.Text -- Updated
+    titleBar.BackgroundColor3 = Constants.UI.Colors.ThemePrimary -- Updated (was Text, now using a theme color)
     titleBar.BorderSizePixel = 0
     titleBar.Parent = dialog
 
@@ -56,7 +56,7 @@ local function createDialog(parent)
     title.BackgroundTransparency = 1
     title.Font = Constants.UI.Fonts.Title.Font -- Updated
     title.TextSize = Constants.UI.Fonts.Title.Size -- Updated
-    title.TextColor3 = Constants.UI.Colors.Background -- Updated
+    title.TextColor3 = Constants.UI.Colors.TextOnPrimary -- Updated (was Background)
     title.TextXAlignment = Enum.TextXAlignment.Left
     title.Parent = titleBar
     
@@ -68,7 +68,7 @@ local function createDialog(parent)
     itemInfo.BackgroundTransparency = 1
     itemInfo.Font = Constants.UI.Fonts.Default.Font -- Updated
     itemInfo.TextSize = Constants.UI.Fonts.Default.Size -- Updated
-    itemInfo.TextColor3 = Constants.UI.Colors.Text -- Updated
+    itemInfo.TextColor3 = Constants.UI.Colors.TextPrimary -- Updated (was Text)
     itemInfo.TextWrapped = true
     itemInfo.TextYAlignment = Enum.TextYAlignment.Top
     itemInfo.Parent = dialog
@@ -81,7 +81,7 @@ local function createDialog(parent)
     price.BackgroundTransparency = 1
     price.Font = Constants.UI.Fonts.Button.Font -- Updated
     price.TextSize = Constants.UI.Fonts.Button.Size -- Updated
-    price.TextColor3 = Constants.UI.Colors.Accent -- Updated
+    price.TextColor3 = Constants.UI.Colors.ThemeAccent -- Updated (was Accent)
     price.TextXAlignment = Enum.TextXAlignment.Left
     price.Parent = dialog
     
@@ -97,11 +97,11 @@ local function createDialog(parent)
     minusButton.Name = "MinusButton"
     minusButton.Size = UDim2.new(0, 40, 1, 0)
     minusButton.Position = UDim2.new(0, 0, 0, 0)
-    minusButton.BackgroundColor3 = Constants.UI.Colors.Text -- Updated
+    minusButton.BackgroundColor3 = Constants.UI.Colors.BackgroundTertiary -- Updated (was Text)
     minusButton.Font = Constants.UI.Fonts.Button.Font -- Updated
     minusButton.Text = "-"
     minusButton.TextSize = Constants.UI.Fonts.Button.Size -- Updated
-    minusButton.TextColor3 = Constants.UI.Colors.Background -- Updated
+    minusButton.TextColor3 = Constants.UI.Colors.TextPrimary -- Updated (was Background)
     minusButton.Parent = quantityFrame
     
     local quantityLabel = Instance.new("TextLabel")
@@ -112,7 +112,7 @@ local function createDialog(parent)
     quantityLabel.Font = Constants.UI.Fonts.Button.Font -- Updated
     quantityLabel.Text = "1"
     quantityLabel.TextSize = Constants.UI.Fonts.Button.Size -- Updated
-    quantityLabel.TextColor3 = Constants.UI.Colors.Text -- Updated
+    quantityLabel.TextColor3 = Constants.UI.Colors.TextPrimary -- Updated (was Text)
     quantityLabel.TextXAlignment = Enum.TextXAlignment.Center
     quantityLabel.Parent = quantityFrame
     
@@ -120,11 +120,11 @@ local function createDialog(parent)
     plusButton.Name = "PlusButton"
     plusButton.Size = UDim2.new(0, 40, 1, 0)
     plusButton.Position = UDim2.new(1, -40, 0, 0)
-    plusButton.BackgroundColor3 = Constants.UI.Colors.Text -- Updated
+    plusButton.BackgroundColor3 = Constants.UI.Colors.BackgroundTertiary -- Updated (was Text)
     plusButton.Font = Constants.UI.Fonts.Button.Font -- Updated
     plusButton.Text = "+"
     plusButton.TextSize = Constants.UI.Fonts.Button.Size -- Updated
-    plusButton.TextColor3 = Constants.UI.Colors.Background -- Updated
+    plusButton.TextColor3 = Constants.UI.Colors.TextPrimary -- Updated (was Background)
     plusButton.Parent = quantityFrame
     
     local btnCorner = Instance.new("UICorner") btnCorner.CornerRadius = UDim.new(0,4) btnCorner.Parent = minusButton
@@ -136,8 +136,8 @@ local function createDialog(parent)
         button.MouseEnter:Connect(function() TweenService:Create(button, TweenInfo.new(Constants.UI.BUTTON_HOVER_DURATION), {BackgroundColor3 = hoverColor}):Play() end)
         button.MouseLeave:Connect(function() TweenService:Create(button, TweenInfo.new(Constants.UI.BUTTON_HOVER_DURATION), {BackgroundColor3 = originalColor}):Play() end)
     end
-    setupButtonHover(minusButton, Constants.UI.Colors.Primary)
-    setupButtonHover(plusButton, Constants.UI.Colors.Primary)
+    setupButtonHover(minusButton, Constants.UI.Colors.ThemePrimary) -- Updated (was Primary)
+    setupButtonHover(plusButton, Constants.UI.Colors.ThemePrimary) -- Updated (was Primary)
 
     -- Buttons Frame
     local buttonFrame = Instance.new("Frame")
@@ -151,25 +151,25 @@ local function createDialog(parent)
     cancelButton.Name = "CancelButton"
     cancelButton.Size = UDim2.new(0.5, -5, 1, 0) -- Half width with padding
     cancelButton.Position = UDim2.new(0, 0, 0, 0)
-    cancelButton.BackgroundColor3 = Constants.UI.Colors.Text -- Updated
+    cancelButton.BackgroundColor3 = Constants.UI.Colors.BackgroundTertiary -- Updated (was Text)
     cancelButton.Font = Constants.UI.Fonts.Button.Font -- Updated
     cancelButton.Text = "Cancel"
     cancelButton.TextSize = Constants.UI.Fonts.Button.Size -- Updated
-    cancelButton.TextColor3 = Constants.UI.Colors.Background -- Updated
+    cancelButton.TextColor3 = Constants.UI.Colors.TextPrimary -- Updated (was Background)
     cancelButton.Parent = buttonFrame
-    setupButtonHover(cancelButton, Constants.UI.Colors.Secondary) -- Example hover
+    setupButtonHover(cancelButton, Constants.UI.Colors.ThemeSecondary) -- Updated (was Secondary)
 
     local purchaseButton = Instance.new("TextButton")
     purchaseButton.Name = "PurchaseButton"
     purchaseButton.Size = UDim2.new(0.5, -5, 1, 0) -- Half width with padding
     purchaseButton.Position = UDim2.new(0.5, 5, 0, 0)
-    purchaseButton.BackgroundColor3 = Constants.UI.Colors[Constants.UI.ButtonStyles.Primary.BackgroundColor] -- Updated
+    purchaseButton.BackgroundColor3 = Constants.UI.Colors[Constants.UI.ButtonStyles.Primary.BackgroundColor] -- This should be correct if ButtonStyles.Primary.BackgroundColor is "ThemePrimary"
     purchaseButton.Font = Constants.UI.Fonts.Button.Font -- Updated
     purchaseButton.Text = "Purchase"
     purchaseButton.TextSize = Constants.UI.Fonts.Button.Size -- Updated
-    purchaseButton.TextColor3 = Constants.UI.Colors.Background -- Updated for contrast
+    purchaseButton.TextColor3 = Constants.UI.Colors[Constants.UI.ButtonStyles.Primary.TextColor] -- Updated (was Background, now TextOnPrimary)
     purchaseButton.Parent = buttonFrame
-    setupButtonHover(purchaseButton, Constants.UI.ButtonStyles.Primary.HoverColor)
+    setupButtonHover(purchaseButton, Constants.UI.ButtonStyles.Primary.HoverBackgroundColor) -- Updated (was HoverColor)
 
     local cancelCorner = btnCorner:Clone() cancelCorner.Parent = cancelButton
     local purchaseCorner = btnCorner:Clone() purchaseCorner.Parent = purchaseButton
@@ -187,7 +187,7 @@ function PurchaseDialog.Initialize(parent)
     -- local currentItem = nil -- Handled by currentItemName_PurchaseDialog
     local onPurchaseCallback = nil -- Renamed for clarity
     
-    originalItemInfoColor_PurchaseDialog = Constants.UI.Colors.Text -- Store default color
+    originalItemInfoColor_PurchaseDialog = Constants.UI.Colors.TextPrimary -- Store default color (was Text)
 
     local function updatePriceDisplay()
         if not currentItemName_PurchaseDialog then return end

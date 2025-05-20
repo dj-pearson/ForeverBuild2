@@ -176,6 +176,126 @@ local function initDataService()
     end
 end
 
+-- Helper function to process item action requests with costs
+local function processItemActionRequest(player, instanceId, actionKey, remotes, sharedModule, itemPurchaseHandler, placementManager, actionSpecificLogic)
+    local Constants = sharedModule.Constants
+    local NotifyPlayer = remotes.NotifyPlayer
+
+    -- 1. Get Item Instance
+    local worldItemsFolder = Workspace:FindFirstChild("World_Items")
+    if not worldItemsFolder then
+        warn("server.init: World_Items folder not found.")
+        NotifyPlayer:FireClient(player, "Error: World item storage not found.")
+        return false, nil -- Indicate failure, no specific message from action logic
+    end
+    local placedFolder = worldItemsFolder:FindFirstChild("Placed")
+    if not placedFolder then
+        warn("server.init: World_Items/Placed folder not found.")
+        NotifyPlayer:FireClient(player, "Error: Placed item storage not found.")
+        return false, nil
+    end
+    local itemInstance = placedFolder:FindFirstChild(instanceId)
+
+    if not itemInstance then
+        warn(string.format("server.init: processItemActionRequest (%s) - Could not find item instance: %s", actionKey, instanceId))
+        NotifyPlayer:FireClient(player, "Error: Could not find the specified item.")
+        return false, nil
+    end
+
+    -- 2. Get itemId and priceIngame from attributes
+    local originalItemId = itemInstance:GetAttribute("itemId")
+    local priceIngame = itemInstance:GetAttribute("priceIngame")
+
+    if not originalItemId or type(priceIngame) ~= "number" then
+        warn(string.format("server.init: processItemActionRequest (%s) - Missing itemId or invalid priceIngame attribute on instance: %s. ItemID: %s, PriceIngame: %s", actionKey, instanceId, tostring(originalItemId), tostring(priceIngame)))
+        NotifyPlayer:FireClient(player, "Error: Item information is incomplete for this action.")
+        return false, nil
+    end
+
+    -- 3. Calculate Action Cost
+    local actionInfo = Constants.ITEM_ACTIONS[actionKey:lower()] -- actionKey should be "clone", "move" etc.
+    if not actionInfo then
+        warn(string.format("server.init: processItemActionRequest (%s) - Action '%s' not defined in Constants.ITEM_ACTIONS.", actionKey, actionKey:lower()))
+        NotifyPlayer:FireClient(player, "Error: This action (" .. actionKey .. ") is not configured correctly.")
+        return false, nil
+    end
+    local actualCost = math.ceil(priceIngame * (actionInfo.costMultiplier or 0))
+
+    local actionDisplayName = actionInfo.name or actionKey:sub(1,1):upper()..actionKey:sub(2) -- Use defined name or capitalize actionKey
+
+    -- 4. Currency Check & Deduction
+    if not itemPurchaseHandler then
+        warn(string.format("server.init: processItemActionRequest (%s) - ItemPurchaseHandler not available.", actionKey))
+        NotifyPlayer:FireClient(player, "Error: Currency service is currently unavailable.")
+        return false, nil
+    end
+
+    local playerData = itemPurchaseHandler:GetPlayerData(player)
+    if not playerData then
+        NotifyPlayer:FireClient(player, "Error: Unable to retrieve your player data.")
+        return false, nil
+    end
+
+    if playerData.currency < actualCost then
+        NotifyPlayer:FireClient(player, string.format("You need %d %s for %s. You currently have %d.", actualCost, (Constants.CURRENCY.INGAME or "coins"), actionDisplayName, playerData.currency))
+        return false, nil
+    end
+
+    if actualCost > 0 then
+        playerData.currency = playerData.currency - actualCost
+        itemPurchaseHandler:SavePlayerData(player)
+        itemPurchaseHandler:UpdateClientBalance(player)
+        NotifyPlayer:FireClient(player, string.format("Charged %d %s for %s.", actualCost, (Constants.CURRENCY.INGAME or "coins"), actionDisplayName))
+    else
+        NotifyPlayer:FireClient(player, string.format("%s is free for this item.", actionDisplayName))
+    end
+
+    -- 5. Call action-specific logic
+    if actionSpecificLogic then
+        local successCall, resultFromLogic = pcall(function()
+            return actionSpecificLogic(player, itemInstance, actualCost, originalId) -- Must return {success=bool, message=string}
+        end)
+
+        if not successCall or not resultFromLogic or type(resultFromLogic) ~= "table" then
+            warn(string.format("server.init: processItemActionRequest (%s) - Error or invalid return from actionSpecificLogic: %s", actionKey, tostring(resultFromLogic)))
+            if actualCost > 0 then -- REFUND if charged
+                playerData.currency = playerData.currency + actualCost
+                itemPurchaseHandler:SavePlayerData(player)
+                itemPurchaseHandler:UpdateClientBalance(player)
+                NotifyPlayer:FireClient(player, string.format("%s failed. Cost of %d %s refunded.", actionDisplayName, actualCost, (Constants.CURRENCY.INGAME or "coins")))
+            else
+                 NotifyPlayer:FireClient(player, string.format("An error occurred while processing %s.", actionDisplayName))
+            end
+            return false, nil -- No specific message from a failed/malformed actionSpecificLogic
+        end
+        
+        -- actionSpecificLogic executed, resultFromLogic is its return {success, message}
+        if resultFromLogic.message and resultFromLogic.message ~= "" then NotifyPlayer:FireClient(player, resultFromLogic.message) end
+
+        if not resultFromLogic.success and actualCost > 0 then -- If action failed AND cost was deducted, refund
+            -- Check if already refunded by a more specific error message
+            if not (resultFromLogic.message and string.find(resultFromLogic.message:lower(), "refunded")) then
+                playerData.currency = playerData.currency + actualCost
+                itemPurchaseHandler:SavePlayerData(player)
+                itemPurchaseHandler:UpdateClientBalance(player)
+                NotifyPlayer:FireClient(player, string.format("%s failed. Cost of %d %s refunded.", actionDisplayName, actualCost, (Constants.CURRENCY.INGAME or "coins")))
+            end
+        end
+        return resultFromLogic.success, resultFromLogic.message
+    else
+        warn(string.format("server.init: processItemActionRequest (%s) - No actionSpecificLogic provided.", actionKey))
+        if actualCost > 0 then -- REFUND if charged
+            playerData.currency = playerData.currency + actualCost
+            itemPurchaseHandler:SavePlayerData(player)
+            itemPurchaseHandler:UpdateClientBalance(player)
+            NotifyPlayer:FireClient(player, string.format("Action '%s' not implemented. Cost refunded.", actionDisplayName))
+        else
+             NotifyPlayer:FireClient(player, string.format("Action '%s' is not implemented.", actionDisplayName))
+        end
+        return false, nil
+    end
+end
+
 -- Add after SharedModule initialization but before other managers
 local dataServiceSuccess = initDataService()
 if dataServiceSuccess then
@@ -240,86 +360,76 @@ end
 PlacementManager = nil
 local function initPlacementManager()
     print("server.init: Initializing PlacementManager...")
-    
-    -- Check if PlacementManager is already available in SharedModule
-    if SharedModule.PlacementManager then
-        print("server.init: Using existing PlacementManager from SharedModule")
-        PlacementManager = SharedModule.PlacementManager
-        return true
-    end
-    
-    -- Try multiple paths to find the PlacementManager module
-    local placementModule
-    
-    -- Try from ReplicatedStorage
-    local success = pcall(function()
-        placementModule = ReplicatedStorage.shared.core.placement.PlacementManager
-        print("server.init: Found PlacementManager at", placementModule:GetFullName())
-    end)
-    
-    if not success or not placementModule then
-        -- Try relative path from script
-        success = pcall(function()
-            local sharedFolder = script.Parent.Parent:FindFirstChild("shared")
-            if sharedFolder then
-                local corePath = sharedFolder:FindFirstChild("core")
-                if corePath then
-                    local placementPath = corePath:FindFirstChild("placement")
-                    if placementPath then
-                        placementModule = placementPath:FindFirstChild("PlacementManager")
-                        if placementModule then
-                            print("server.init: Found PlacementManager at relative path", placementModule:GetFullName())
-                        end
-                    end
-                end
-            end
+
+    if SharedModule.PlacementManager and type(SharedModule.PlacementManager) == "table" and SharedModule.PlacementManager.new then
+        print("server.init: Found PlacementManager module in SharedModule. Attempting to create new instance.")
+        local newInstance
+        local success, newInstance = pcall(function()
+            return SharedModule.PlacementManager.new(SharedModule) -- Call .new()
         end)
+
+        if not success or not newInstance then
+            warn("server.init: Failed to create PlacementManager instance from SharedModule.PlacementManager.new():", newInstance)
+            return false
+        end
+        
+        PlacementManager = newInstance
+        print("server.init: Successfully created PlacementManager instance via SharedModule.PlacementManager.new()")
+
+    else
+        warn("server.init: PlacementManager module (or its .new method) not found in SharedModule or is not a table.")
+        -- Fallback to trying to require it directly (original complex path)
+        -- This section can be simplified or removed if SharedModule always provides the module table
+        local placementModulePath
+        local pathSuccess = pcall(function()
+            placementModulePath = ReplicatedStorage.shared.core.placement.PlacementManager
+            print("server.init: (Fallback) Found PlacementManager path at", placementModulePath:GetFullName())
+        end)
+
+        if not pathSuccess or not placementModulePath then
+            warn("server.init: (Fallback) PlacementManager module path not found in ReplicatedStorage.")
+            return false
+        end
+
+        local moduleFunc
+        local requireSuccess, moduleFunc = pcall(function()
+            return require(placementModulePath)
+        end)
+
+        if not requireSuccess or not moduleFunc then
+            warn("server.init: (Fallback) Failed to require PlacementManager:", moduleFunc)
+            return false
+        end
+
+        print("server.init: (Fallback) Creating new PlacementManager instance")
+        local fallbackInstance
+        local createSuccess, fallbackInstance = pcall(function()
+            return moduleFunc.new(SharedModule)
+        end)
+
+        if not createSuccess or not fallbackInstance then
+            warn("server.init: (Fallback) Failed to create PlacementManager instance:", fallbackInstance)
+            return false
+        end
+        PlacementManager = fallbackInstance
     end
     
-    if not placementModule then
-        warn("server.init: PlacementManager module not found in any expected location")
-        return false
-    end
-    
-    -- Try to require the module
-    local moduleFunc
-    success, moduleFunc = pcall(function()
-        return require(placementModule)
-    end)
-    
-    if not success or not moduleFunc then
-        warn("server.init: Failed to require PlacementManager:", moduleFunc)
-        return false
-    end
-    
-    -- Create and initialize the PlacementManager
-    print("server.init: Creating new PlacementManager instance")
-    local newInstance
-    success, newInstance = pcall(function()
-        return moduleFunc.new(SharedModule)
-    end)
-    
-    if not success or not newInstance then
-        warn("server.init: Failed to create PlacementManager instance:", newInstance)
-        return false
-    end
-    
-    PlacementManager = newInstance
-    
-    -- Initialize the PlacementManager
-    success = pcall(function()
+    -- Initialize the PlacementManager instance
+    local initSuccess = pcall(function()
         PlacementManager:Initialize()
     end)
     
-    if not success then
-        warn("server.init: Failed to initialize PlacementManager")
+    if not initSuccess then
+        warn("server.init: Failed to initialize PlacementManager instance")
         return false
     end
     
-    -- Register with SharedModule
-    SharedModule.PlacementManager = PlacementManager
+    -- Register the INSTANCE with SharedModule, replacing the module table if necessary for consistency
+    -- However, it's generally better if SharedModule stores module tables, and consumers create instances.
+    -- For now, let's assume consumers will get the instance from here if they need it.
+    -- SharedModule.PlacementManagerInstance = PlacementManager -- Optional: if other server scripts need the instance
     
-    print("server.init: PlacementManager initialized successfully")
+    print("server.init: PlacementManager instance initialized successfully")
     return true
 end
 
@@ -595,6 +705,7 @@ end)
 local recallItemRemote = Remotes:FindFirstChild("RecallItem")
 if recallItemRemote and PlacementManager then
     recallItemRemote.OnServerEvent:Connect(function(player, instanceId)
+        print("--- SERVER INIT: RecallItem.OnServerEvent FIRED for instanceId: " .. tostring(instanceId) .. " by player: " .. player.Name .. " ---") -- DEBUG MARKER
         if not PlacementManager.RecallItem then
             warn("server.init: PlacementManager.RecallItem function not found")
             return
@@ -673,3 +784,126 @@ end
 
 -- Call the setup function to ensure templates exist
 setupItemTemplates()
+
+-- Create a function to safely get or create a RemoteEvent
+local function getOrCreateRemoteEvent(name, parent)
+    local event = parent:FindFirstChild(name)
+    if not event or not event:IsA("RemoteEvent") then
+        if event then event:Destroy() end -- Remove if wrong type
+        event = Instance.new("RemoteEvent")
+        event.Name = name
+        event.Parent = parent
+        print(string.format("server.init: Created new RemoteEvent: %s in %s", name, parent:GetFullName()))
+    else
+        print(string.format("server.init: Using existing RemoteEvent: %s in %s", name, parent:GetFullName()))
+    end
+    return event
+end
+
+-- Create a function to safely get or create a RemoteFunction
+local function getOrCreateRemoteFunction(name, parent)
+    local functionRemote = parent:FindFirstChild(name)
+    if not functionRemote or not functionRemote:IsA("RemoteFunction") then
+        if functionRemote then functionRemote:Destroy() end -- Remove if wrong type
+        functionRemote = Instance.new("RemoteFunction")
+        functionRemote.Name = name
+        functionRemote.Parent = parent
+        print(string.format("server.init: Created new RemoteFunction: %s in %s", name, parent:GetFullName()))
+    else
+        print(string.format("server.init: Using existing RemoteFunction: %s in %s", name, parent:GetFullName()))
+    end
+    return functionRemote
+end
+
+-- Placeholder handlers for new item action requests
+local requestCloneItemRemote = getOrCreateRemoteEvent("RequestCloneItem", Remotes)
+local requestMoveItemRemote = getOrCreateRemoteEvent("RequestMoveItem", Remotes)
+local requestRecallItemRemote = getOrCreateRemoteEvent("RequestRecallItem", Remotes) -- Note: This is for COSTED recall
+local requestDestroyItemRemote = getOrCreateRemoteEvent("RequestDestroyItem", Remotes)
+local requestRotateItemRemote = getOrCreateRemoteEvent("RequestRotateItem", Remotes)
+
+if requestCloneItemRemote then
+    requestCloneItemRemote.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
+        print(string.format("--- SERVER INIT: RequestCloneItem RECEIVED from %s for instanceId: %s, clientCost: %s ---", player.Name, tostring(instanceId), tostring(clientCalculatedCost)))
+        processItemActionRequest(player, instanceId, "clone", Remotes, SharedModule, ItemPurchaseHandler, PlacementManager,
+            function(p, inst, cost, originalId) -- This is actionSpecificLogic
+                if PlacementManager and PlacementManager.HandleCloneItemRequest then
+                    return PlacementManager:HandleCloneItemRequest(p, inst, cost, originalId) -- Must return {success=bool, message=string}
+                end
+                return {success = false, message = "Clone service is currently unavailable."}
+            end
+        )
+    end)
+    print("server.init: Connected RequestCloneItem remote event")
+end
+
+if requestMoveItemRemote then
+    requestMoveItemRemote.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost, newPosition, newRotation)
+        print(string.format("--- SERVER INIT: RequestMoveItem RECEIVED from %s for instanceId: %s, clientCost: %s ---", player.Name, tostring(instanceId), tostring(clientCalculatedCost)))
+        processItemActionRequest(player, instanceId, "move", Remotes, SharedModule, ItemPurchaseHandler, PlacementManager,
+            function(p, inst, cost, originalId)
+                if PlacementManager and PlacementManager.HandleMoveItemRequest then
+                    -- TODO: Pass newPosition, newRotation to HandleMoveItemRequest when implemented
+                    return PlacementManager:HandleMoveItemRequest(p, inst, cost, originalId, newPosition, newRotation)
+                end
+                return {success = false, message = "Move service is currently unavailable."}
+            end
+        )
+    end)
+    print("server.init: Connected RequestMoveItem remote event")
+end
+
+-- IMPORTANT: This is a NEW remote for recalling with a cost. The existing "RecallItem" is used by InventoryItemHandler for free recalls.
+if requestRecallItemRemote then 
+    requestRecallItemRemote.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
+        print(string.format("--- SERVER INIT: RequestRecallItem (COSTED) RECEIVED from %s for instanceId: %s, clientCost: %s ---", player.Name, tostring(instanceId), tostring(clientCalculatedCost)))
+        processItemActionRequest(player, instanceId, "recall", Remotes, SharedModule, ItemPurchaseHandler, PlacementManager,
+            function(p, inst, cost, originalId)
+                if PlacementManager and PlacementManager.HandleCostedRecallItemRequest then
+                    return PlacementManager:HandleCostedRecallItemRequest(p, inst, cost, originalId)
+                end
+                return {success = false, message = "Costed recall service is currently unavailable."}
+            end
+        )
+    end)
+    print("server.init: Connected RequestRecallItem (COSTED) remote event")
+end
+
+if requestDestroyItemRemote then
+    requestDestroyItemRemote.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
+        print(string.format("--- SERVER INIT: RequestDestroyItem RECEIVED from %s for instanceId: %s, clientCost: %s ---", player.Name, tostring(instanceId), tostring(clientCalculatedCost)))
+        processItemActionRequest(player, instanceId, "destroy", Remotes, SharedModule, ItemPurchaseHandler, PlacementManager,
+            function(p, inst, cost, originalId)
+                if PlacementManager and PlacementManager.HandleDestroyItemRequest then
+                    return PlacementManager:HandleDestroyItemRequest(p, inst, cost, originalId)
+                end
+                return {success = false, message = "Destroy service is currently unavailable."}
+            end
+        )
+    end)
+    print("server.init: Connected RequestDestroyItem remote event")
+end
+
+if requestRotateItemRemote then
+    requestRotateItemRemote.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost, rotationParameters) 
+        print(string.format("--- SERVER INIT: RequestRotateItem RECEIVED from %s for instanceId: %s, clientCost: %s ---", player.Name, tostring(instanceId), tostring(clientCalculatedCost)))
+        processItemActionRequest(player, instanceId, "rotate", Remotes, SharedModule, ItemPurchaseHandler, PlacementManager,
+            function(p, inst, cost, originalId)
+                if PlacementManager and PlacementManager.HandleRotateItemRequest then
+                    -- TODO: Pass rotationParameters when implemented
+                    return PlacementManager:HandleRotateItemRequest(p, inst, cost, originalId, rotationParameters)
+                end
+                return {success = false, message = "Rotate service is currently unavailable."}
+            end
+        )
+    end)
+    print("server.init: Connected RequestRotateItem remote event")
+end
+
+-- Ensure the older, potentially non-prefixed remotes are also available if anything still uses them
+-- Though the goal is to standardize on the 'Request' prefix for these client-initiated actions
+getOrCreateRemoteEvent("CloneItem", Remotes)
+getOrCreateRemoteEvent("MoveItem", Remotes)
+-- getOrCreateRemoteEvent("RecallItem", Remotes) -- This one is explicitly handled by PlacementManager and its event is created there, and also connected above (line 585)
+getOrCreateRemoteEvent("DestroyItem", Remotes)
+getOrCreateRemoteEvent("RotateItem", Remotes)

@@ -40,53 +40,35 @@ local function initialize()
     
     print("InventoryItemHandler: InventoryUI module found")
     
-    -- Create PlacementManager if needed
-    if not sharedModule.PlacementManager then
-        print("InventoryItemHandler: PlacementManager not found in SharedModule, creating it")
+    -- Get the PlacementManager module table from SharedModule
+    local PlacementManagerModule = sharedModule.PlacementManager
+    
+    if PlacementManagerModule and type(PlacementManagerModule) == "table" and PlacementManagerModule.new then
+        print("InventoryItemHandler: PlacementManager module found in SharedModule. Creating new client instance.")
+        -- Create a new instance for this handler
+        local pmInstance = PlacementManagerModule.new(sharedModule)
         
-        -- Try to require PlacementManager
-        local placement
-        local placementModule = shared:FindFirstChild("core")
-        
-        if placementModule then
-            placementModule = placementModule:FindFirstChild("placement")
-            if placementModule then
-                placementModule = placementModule:FindFirstChild("PlacementManager")
-            end
-        end
-        
-        if placementModule then
-            local success, result = pcall(function()
-                return require(placementModule)
-            end)
-            
-            if success then
-                placement = result
-                print("InventoryItemHandler: Successfully required PlacementManager module")
-            else
-                warn("InventoryItemHandler: Failed to require PlacementManager:", result)
-                return false
-            end
+        -- It's crucial that the client calls CacheRemoteEvents on its instance
+        -- SetupRemoteEvents is server-side, CacheRemoteEvents is for client
+        if pmInstance.CacheRemoteEvents then 
+            pmInstance:CacheRemoteEvents() 
+            print("InventoryItemHandler: Called CacheRemoteEvents on new PlacementManager instance.")
         else
-            warn("InventoryItemHandler: PlacementManager module not found")
-            return false
+            warn("InventoryItemHandler: Newly created PlacementManager instance does NOT have CacheRemoteEvents method!")
         end
-        
-        -- Create PlacementManager
-        if placement then
-            sharedModule.PlacementManager = placement.new(sharedModule)
-            -- Setup remote events instead of calling Initialize
-            sharedModule.PlacementManager:SetupRemoteEvents()
-            -- Cache remote events for client-side usage
-            sharedModule.PlacementManager:CacheRemoteEvents()
-            print("InventoryItemHandler: Created PlacementManager and set up remote events")
-        else
-            warn("InventoryItemHandler: Failed to create PlacementManager")
-            return false
-        end
+
+        -- Store this specific instance for use within InventoryItemHandler if needed, 
+        -- or ensure it's passed to where it's used. 
+        -- For now, we assume the main purpose is that its .new() and CacheRemoteEvents get called.
+        -- If other functions in this file need to call PlacementManager methods, they should use pmInstance.
+        sharedModule.PlacementManagerClientInstance = pmInstance -- Or a more specific local variable
+
+    else
+        warn("InventoryItemHandler: PlacementManager module (or its .new method) not found in SharedModule or is not a table. Placement will likely fail.")
+        return false
     end
     
-    print("InventoryItemHandler: PlacementManager is ready")
+    print("InventoryItemHandler: PlacementManager initialization logic executed.")
     
     -- Connect to inventory UI completion
     if sharedModule.InventoryUI and sharedModule.InventoryUI.Show then
@@ -199,7 +181,7 @@ end
 
 -- Setup UI for recalling items from the world back to inventory
 local function setupWorldItemRecall(sharedModule)
-    local PlacementManager = sharedModule.PlacementManager
+    local PlacementManager = sharedModule.PlacementManagerClientInstance
     
     -- Create the recall button (for placed items)
     local gui = Instance.new("ScreenGui")
@@ -310,7 +292,7 @@ end
 -- Connect inventory item click to placement system
 local function setupInventoryItemInteraction(sharedModule)
     local InventoryUI = sharedModule.InventoryUI
-    local PlacementManager = sharedModule.PlacementManager
+    local PlacementManager = sharedModule.PlacementManagerClientInstance
     
     -- Set up the OnItemSelected callback in InventoryUI
     InventoryUI.OnItemSelected = function(itemName, itemData)
