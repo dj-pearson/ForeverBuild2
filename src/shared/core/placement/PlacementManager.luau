@@ -11,6 +11,20 @@ local PLACED_ITEMS_FOLDER_NAME = "World_Items" -- Use the existing World_Items f
 local MAX_PLACEMENT_DISTANCE = 20
 local GRID_SIZE = 1 -- For grid snapping
 
+-- Attempt to require UniqueItemIdAssigner
+local UniqueItemIdAssigner
+if RunService:IsServer() then
+    local success, result = pcall(function()
+        return require(game:GetService("ServerScriptService").server.UniqueItemIdAssigner)
+    end)
+    if success then
+        UniqueItemIdAssigner = result
+        print("PlacementManager: Successfully required UniqueItemIdAssigner")
+    else
+        warn("PlacementManager: Failed to require UniqueItemIdAssigner:", result)
+    end
+end
+
 local PlacementManager = {}
 PlacementManager.__index = PlacementManager
 
@@ -119,7 +133,13 @@ function PlacementManager:Initialize()
     self:SetupRemoteEvents()
     
     -- Connect player events for saving
-    self:ConnectPlayerEvents()
+    local success, err = pcall(function()
+        self:ConnectPlayerEvents()
+    end)
+
+    if not success then
+        warn("[PlacementManager] Failed to connect player events: " .. tostring(err))
+    end
     
     -- Load world data from DataStore
     task.spawn(function()
@@ -129,6 +149,28 @@ function PlacementManager:Initialize()
     
     print("PlacementManager: Initialization completed")
     return true
+end
+
+function PlacementManager:ConnectPlayerEvents()
+    print("[PlacementManager] ConnectPlayerEvents method called. Player events should now be connected.")
+    
+    -- TODO: Implement or verify the actual player event connection logic here.
+    -- This might involve connecting to Players.PlayerAdded, Players.PlayerRemoving,
+    -- or setting up other player-specific event listeners.
+    -- Example:
+    -- local PlayersService = game:GetService("Players")
+    -- if PlayersService then
+    --     self._playerAddedConn = PlayersService.PlayerAdded:Connect(function(player)
+    --         print("[PlacementManager] PlayerAdded: " .. player.Name)
+    --         -- self:OnPlayerAdded(player) -- Call your specific handler
+    --     end)
+    --     self._playerRemovingConn = PlayersService.PlayerRemoving:Connect(function(player)
+    --         print("[PlacementManager] PlayerRemoving: " .. player.Name)
+    --         -- self:OnPlayerRemoving(player) -- Call your specific handler
+    --     end)
+    -- else
+    --     warn("[PlacementManager] Players service not available for ConnectPlayerEvents.")
+    -- end
 end
 
 -- Helper: Recursively search for a template in a folder and its subfolders
@@ -424,6 +466,11 @@ function PlacementManager:PlaceItem(player, itemId, position, rotation)
         placedItem:SetAttribute("priceIngame", 0) -- Default to 0 if not found
         warn("PlacementManager: Could not find priceIngame for", normalizedItemId, "in Constants.ITEMS. Defaulting to 0.")
     end
+
+    -- Assign UniqueItemId if the assigner is available
+    if UniqueItemIdAssigner and UniqueItemIdAssigner.assignIdToNewItem then
+        UniqueItemIdAssigner.assignIdToNewItem(placedItem)
+    end
     
     -- Position and anchor the item
     if placedItem:IsA("Model") and placedItem.PrimaryPart then
@@ -495,248 +542,6 @@ function PlacementManager:PlaceItem(player, itemId, position, rotation)
     end)
     
     return true, placedItem
-end
-
--- Server: Remove an item from the player's inventory
-function PlacementManager:RemoveFromInventory(player, itemId, quantity)
-    if RunService:IsClient() then return false end
-    
-    quantity = quantity or 1  -- Default to 1 if not specified
-    print("PlacementManager: Attempting to remove", quantity, "x", itemId, "from inventory of", player.Name)
-    
-    -- Find the server ItemPurchaseHandler
-    local ItemPurchaseHandler = nil
-    
-    -- Try with ItemPurchaseHandler.lua in ServerScriptService
-    local success1, result1 = pcall(function()
-        return require(game:GetService("ServerScriptService").server.ItemPurchaseHandler)
-    end)
-    
-    if success1 then
-        ItemPurchaseHandler = result1
-    else
-        -- Try direct path lookup
-        local serverFolder = game:GetService("ServerScriptService"):FindFirstChild("server")
-        if serverFolder then
-            local itemPurchaseModule = serverFolder:FindFirstChild("ItemPurchaseHandler")
-            if itemPurchaseModule then
-                local success2, result2 = pcall(function()
-                    return require(itemPurchaseModule)
-                end)
-                if success2 then
-                    ItemPurchaseHandler = result2
-                end
-            end
-        end
-        
-        -- Try loading from server folder directly
-        if not ItemPurchaseHandler then
-            local success3, result3 = pcall(function()
-                return require(game:GetService("ServerScriptService").ItemPurchaseHandler)
-            end)
-            if success3 then
-                ItemPurchaseHandler = result3
-            end
-        end
-    end
-    
-    -- 1. Try the direct ItemPurchaseHandler first (most reliable method)
-    if ItemPurchaseHandler and ItemPurchaseHandler.RemoveFromInventory then
-        local success, result = pcall(function()
-            return ItemPurchaseHandler:RemoveFromInventory(player, itemId, quantity)
-        end)
-        
-        if success and result then
-            print("PlacementManager: Successfully removed", quantity, "x", itemId, "using ItemPurchaseHandler directly")
-    return true
-        end
-    end
-    
-    -- 2. Try with ItemPurchaseHandler through SharedModule
-    if self.shared and self.shared.ItemPurchaseHandler and 
-       self.shared.ItemPurchaseHandler.RemoveFromInventory then
-        local success, result = pcall(function()
-            return self.shared.ItemPurchaseHandler:RemoveFromInventory(player, itemId, quantity)
-        end)
-        
-        if success and result then
-            print("PlacementManager: Successfully removed", quantity, "x", itemId, "using SharedModule.ItemPurchaseHandler")
-            return true
-        end
-    end
-    
-    -- 3. Try with InventoryManager if available
-    local InventoryManager = self.shared and self.shared.InventoryManager
-    if not InventoryManager then
-        -- Try to find InventoryManager in ServerStorage or other locations
-        local success, result = pcall(function()
-            return require(game:GetService("ServerStorage").server.InventoryManager)
-        end)
-        
-        if success then
-            InventoryManager = result
-            print("PlacementManager: Found InventoryManager in ServerStorage")
-        end
-    end
-    
-    if InventoryManager and InventoryManager.RemoveItem then
-        local success, result = pcall(function()
-            return InventoryManager:RemoveItem(player, itemId, quantity)
-        end)
-        
-        if success and result then
-            print("PlacementManager: Successfully removed", quantity, "x", itemId, "using InventoryManager")
-            return true
-        end
-    end
-    
-    -- 4. Last resort - manually update player data
-    local playerData = self:GetPlayerData(player)
-    if playerData and playerData.inventory then
-        local normalizedItemId = itemId:gsub(" ", "_")
-        local found = false
-        
-        for i, item in ipairs(playerData.inventory) do
-            if (item.id and (item.id == itemId or item.id == normalizedItemId)) or
-               (item.name and (item.name == itemId or item.name == normalizedItemId)) then
-                
-                -- Check if the item uses count or quantity property
-                local currentCount = item.quantity or item.count or 1
-                
-                if currentCount <= quantity then
-                    -- Remove the entire item
-                    table.remove(playerData.inventory, i)
-                    print("PlacementManager: Manually removed entire item from inventory (had", currentCount, "items)")
-                else
-                    -- Reduce quantity
-                    if item.quantity ~= nil then
-                        item.quantity = currentCount - quantity
-                        print("PlacementManager: Reduced item.quantity from", currentCount, "to", item.quantity)
-                    elseif item.count ~= nil then
-                        item.count = currentCount - quantity
-                        print("PlacementManager: Reduced item.count from", currentCount, "to", item.count)
-                    end
-                end
-                
-                found = true
-                print("PlacementManager: Manually removed item from player data")
-                
-                -- Save the updated player data
-                if ItemPurchaseHandler and ItemPurchaseHandler.SavePlayerData then
-                    ItemPurchaseHandler:SavePlayerData(player, playerData)
-                end
-                
-            break
-        end
-    end
-    
-        if found then
-            -- Still fire the remote event so the client is notified
-            local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-            if remotes and remotes:FindFirstChild("RemoveFromInventory") then
-                pcall(function()
-                    remotes.RemoveFromInventory:FireClient(player, itemId, 1)
-                end)
-            end
-    return true
-        end
-    end
-    
-    -- 5. RemoteEvent as absolute last resort
-    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-    if remotes and remotes:FindFirstChild("RemoveFromInventory") then
-        pcall(function()
-            remotes.RemoveFromInventory:FireClient(player, itemId, 1)
-        end)
-        print("PlacementManager: Sent RemoveFromInventory event to client")
-        return true
-    end
-    
-    warn("PlacementManager: Failed to remove item from inventory")
-    return false
-end
-
--- Server: Get item data from Constants
-function PlacementManager:GetItemData(itemId)
-    -- This function can be called by both server and client, so no specific IsServer/IsClient check at the start
-    if not self.Constants then
-        warn("PlacementManager: Constants not available, creating fallback")
-        self.Constants = {
-            ITEMS = {}
-        }
-    end
-    
-    if not self.Constants.ITEMS then
-        warn("PlacementManager: Constants.ITEMS not available, creating fallback")
-        self.Constants.ITEMS = {}
-        
-        -- Add basic items to Constants.ITEMS as fallback
-        local basicItems = {"Grass_Cube", "Stone_Cube", "Brick_Cube", "Wood_Cube", "Glass_Cube", "Water_Cube"}
-        for _, itemName in ipairs(basicItems) do
-            self.Constants.ITEMS[itemName] = {
-                name = itemName,
-                price = {INGAME = 10, ROBUX = 10},
-                description = "A basic building block",
-                tier = "BASIC",
-                category = "Building"
-            }
-        end
-    end
-    
-    -- Normalize the item ID (replace spaces with underscores)
-    local normalizedItemId = itemId:gsub(" ", "_")
-    
-    -- Try direct lookup with original ID
-    if self.Constants.ITEMS[itemId] then
-        return self.Constants.ITEMS[itemId]
-    end
-    
-    -- Try with normalized ID
-    if normalizedItemId ~= itemId and self.Constants.ITEMS[normalizedItemId] then
-        print("PlacementManager: Found item using normalized ID:", normalizedItemId)
-        return self.Constants.ITEMS[normalizedItemId]
-    end
-    
-    -- Try case-insensitive lookup with both original and normalized IDs
-    for key, data in pairs(self.Constants.ITEMS) do
-        if key:lower() == itemId:lower() or key:lower() == normalizedItemId:lower() then
-            print("PlacementManager: Found item using case-insensitive match:", key)
-            return data
-        end
-    end
-    
-    -- Try with suffix variations (with and without _Cube)
-    local tryWithCube = normalizedItemId
-    if not normalizedItemId:lower():find("_cube$") then
-        tryWithCube = normalizedItemId .. "_Cube"
-    end
-    
-    if self.Constants.ITEMS[tryWithCube] then
-        print("PlacementManager: Found item by adding _Cube suffix:", tryWithCube)
-        return self.Constants.ITEMS[tryWithCube]
-    end
-    
-    for key, data in pairs(self.Constants.ITEMS) do
-        if key:lower() == tryWithCube:lower() then
-            print("PlacementManager: Found item using case-insensitive match with _Cube suffix:", key)
-            return data
-        end
-    end
-    
-    -- Last resort: Create an item entry for this ID
-    print("PlacementManager: Creating fallback item data for:", normalizedItemId)
-    local newItemData = {
-        name = normalizedItemId,
-        price = {INGAME = 10, ROBUX = 10},
-        description = "A building item",
-        tier = "BASIC",
-        category = "Building"
-    }
-    
-    -- Save to Constants for future use
-    self.Constants.ITEMS[normalizedItemId] = newItemData
-    
-    return newItemData
 end
 
 -- Server: Create an item in the world
@@ -940,6 +745,11 @@ function PlacementManager:CreateWorldItem(itemId, position, rotation)
     -- Add attributes for tracking
     item:SetAttribute("item_type", normalizedItemId)
     item:SetAttribute("placed_at", os.time())
+
+    -- Assign UniqueItemId if the assigner is available
+    if UniqueItemIdAssigner and UniqueItemIdAssigner.assignIdToNewItem then
+        UniqueItemIdAssigner.assignIdToNewItem(item)
+    end
     
     -- Add to world folder
     item.Parent = self.placedFolder
@@ -1233,9 +1043,29 @@ function PlacementManager:LoadWorldData()
                     warn(string.format("PlacementManager:LoadWorldData: No item definition found in Constants.ITEMS for itemId: %s. InstanceId: %s. Using stored/default values.", itemData.itemId, itemData.instanceId))
                 end
 
+                -- Attempt to derive itemId if it\'s nil from loaded data
+                local loadedItemId = itemData.itemId
+                if not loadedItemId and itemData.instanceId then
+                    -- Try to derive from instanceId (e.g., "Fire_Cube_userid_time")
+                    -- Regex: captures characters before the first underscore, then matches an underscore, 
+                    -- then captures characters before the next underscore, then matches an underscore,
+                    -- then captures the rest. We want the first part.
+                    -- More robust: capture up to the last two underscore-separated parts.
+                    local basePart = itemData.instanceId:match("^(.*)_([^_]+)_[^_]+$")
+                    if basePart then
+                        print(string.format("PlacementManager:LoadWorldData: itemId was nil for instanceId \'%s\'. Derived base \'%s\' as itemId.", itemData.instanceId, basePart))
+                        loadedItemId = basePart
+                    else
+                        warn(string.format("PlacementManager:LoadWorldData: itemId was nil for instanceId \'%s\' and could not be derived reliably.", itemData.instanceId))
+                    end
+                end
+                if not loadedItemId then
+                     warn(string.format("PlacementManager:LoadWorldData: itemId remains nil for instanceId \'%s\'. This item may not function correctly.", itemData.instanceId))
+                end
+
                 -- Set attributes, prioritizing Constants definition
                 placedItem:SetAttribute("instanceId", itemData.instanceId) -- This MUST come from saved data
-                placedItem:SetAttribute("itemId", itemData.itemId) -- This also MUST come from saved data
+                placedItem:SetAttribute("itemId", loadedItemId) -- This also MUST come from saved data (or derived if was nil)
                 placedItem:SetAttribute("owner", itemData.owner) -- This also MUST come from saved data
                 placedItem:SetAttribute("placedTime", itemData.placedTime or os.time())
                 placedItem:SetAttribute("persistent", true) -- All loaded items are persistent
@@ -1253,6 +1083,18 @@ function PlacementManager:LoadWorldData()
                     -- Try to use stored price, or default to 0 if not present
                     placedItem:SetAttribute("priceIngame", itemData.priceIngame or 0) 
                     warn(string.format("PlacementManager:LoadWorldData: Using stored priceIngame %s for %s as itemDef was not found.", tostring(itemData.priceIngame or 0), itemData.itemId))
+                end
+
+                -- Assign UniqueItemId if the assigner is available AND it wasn\'t already loaded
+                -- (The UniqueItemIdAssigner\'s initial scan should handle items already in Workspace.Items)
+                -- However, for items loaded *by this function*, we ensure they get an ID if they don\'t have one.
+                if UniqueItemIdAssigner and UniqueItemIdAssigner.assignIdToNewItem then
+                    if placedItem:GetAttribute("UniqueItemId") == nil then
+                         UniqueItemIdAssigner.assignIdToNewItem(placedItem)
+                         print(string.format("PlacementManager:LoadWorldData: Assigned UniqueItemId to loaded item \'%s\' (InstanceID: %s) as it was missing.", placedItem.Name, itemData.instanceId))
+                    else
+                        print(string.format("PlacementManager:LoadWorldData: Loaded item \'%s\' (InstanceID: %s) already has UniqueItemId: %s.", placedItem.Name, itemData.instanceId, tostring(placedItem:GetAttribute("UniqueItemId"))))
+                    end
                 end
                 
                 -- Convert position from table to Vector3 if needed
@@ -1314,134 +1156,246 @@ function PlacementManager:LoadWorldData()
     return true
 end
 
--- Connect to player leaving event
-function PlacementManager:ConnectPlayerEvents()
-    if RunService:IsClient() then return end
-    
-    print("PlacementManager: Connecting player events")
-    
-    -- Handle player joining
-    Players.PlayerAdded:Connect(function(player)
-        print("PlacementManager: Player joined:", player.Name)
-        
-        -- Create entry for player if this is their first join
-        if not self.placedItemsByPlayer[player.UserId] then
-            self.placedItemsByPlayer[player.UserId] = {}
-        end
-    end)
-    
-    -- Handle player leaving - save their data
-    Players.PlayerRemoving:Connect(function(player)
-        print("PlacementManager: Player leaving:", player.Name)
-        
-        -- Save world data when a player leaves to ensure their changes are preserved
-        task.spawn(function()
-            self:SaveWorldData()
-        end)
-    end)
-    
-    -- Initialize entries for existing players
-    for _, player in ipairs(Players:GetPlayers()) do
-        if not self.placedItemsByPlayer[player.UserId] then
-            self.placedItemsByPlayer[player.UserId] = {}
-        end
-    end
-    
-    -- Setup periodic auto-save (every 5 minutes)
-    task.spawn(function()
-        while true do
-            task.wait(300) -- 5 minutes
-            print("PlacementManager: Running periodic world data save")
-            self:SaveWorldData()
-        end
-    end)
-    
-    return true
-end
-
--- Server: Recall an item from the world back to player's inventory
-function PlacementManager:RecallItem(player, instanceId)
-    print("--- UNIQUE MARKER 272727: PLACEMENT MANAGER RecallItem ENTERED ---") -- NEW UNIQUE MARKER
+-- Server: Remove an item from the player's inventory
+function PlacementManager:RemoveFromInventory(player, itemId, quantity)
     if RunService:IsClient() then return false end
     
-    print("PlacementManager: Recalling item", instanceId, "for player", player.Name)
+    quantity = quantity or 1  -- Default to 1 if not specified
+    print("PlacementManager: Attempting to remove", quantity, "x", itemId, "from inventory of", player.Name)
     
-    -- Find the item by instanceId
-    local item = self:FindItemByInstanceId(instanceId)
-    if not item then
-        warn("PlacementManager: Cannot recall - item not found:", instanceId)
-        return false
-    end
+    -- Find the server ItemPurchaseHandler
+    local ItemPurchaseHandler = nil
     
-    -- Check if player owns the item
-    local ownerId = item:GetAttribute("owner")
-    if ownerId ~= player.UserId then
-        warn("PlacementManager: Player", player.Name, "does not own item", instanceId)
-        return false
-    end
+    -- Try with ItemPurchaseHandler.lua in ServerScriptService
+    local success1, result1 = pcall(function()
+        return require(game:GetService("ServerScriptService").server.ItemPurchaseHandler)
+    end)
     
-    -- Get the item ID
-    local itemId = item:GetAttribute("itemId")
-    if not itemId then
-        warn("PlacementManager: Item has no itemId attribute:", instanceId)
-        return false
-    end
-    
-    -- Remove from player's placed items list
-    if self.placedItemsByPlayer[player.UserId] then
-        for i, id in ipairs(self.placedItemsByPlayer[player.UserId]) do
-            if id == instanceId then
-                table.remove(self.placedItemsByPlayer[player.UserId], i)
-                break
+    if success1 then
+        ItemPurchaseHandler = result1
+    else
+        -- Try direct path lookup
+        local serverFolder = game:GetService("ServerScriptService"):FindFirstChild("server")
+        if serverFolder then
+            local itemPurchaseModule = serverFolder:FindFirstChild("ItemPurchaseHandler")
+            if itemPurchaseModule then
+                local success2, result2 = pcall(function()
+                    return require(itemPurchaseModule)
+                end)
+                if success2 then
+                    ItemPurchaseHandler = result2
+                end
+            end
+        end
+        
+        -- Try loading from server folder directly
+        if not ItemPurchaseHandler then
+            local success3, result3 = pcall(function()
+                return require(game:GetService("ServerScriptService").ItemPurchaseHandler)
+            end)
+            if success3 then
+                ItemPurchaseHandler = result3
             end
         end
     end
     
-    -- Destroy the item from the world
-    item:Destroy()
-    
-    -- Add the item back to the player's inventory
-    self:AddToInventory(player, itemId, 1)
-    
-    -- Notify the client
-    if self.remotes.ItemRecalled then
-        self.remotes.ItemRecalled:FireClient(player, itemId)
-    end
-    
-    -- Save world data after recall
-    task.spawn(function()
-        self:SaveWorldData()
-    end)
-    
-    return true
-end
-
--- Server: Add an item to player's inventory
-function PlacementManager:AddToInventory(player, itemId, quantity)
-    if RunService:IsClient() then return false end
-    quantity = quantity or 1 -- Default to 1 if not specified
-    print("PlacementManager: Adding", quantity, "x", itemId, "to inventory of", player.Name)
-
-    -- Only use ItemPurchaseHandler
-    local ItemPurchaseHandler = nil
-    local success1, result1 = pcall(function()
-        return require(game:GetService("ServerScriptService").server.ItemPurchaseHandler)
-    end)
-    if success1 then
-        ItemPurchaseHandler = result1
-    end
-    if ItemPurchaseHandler and ItemPurchaseHandler.AddToInventory then
+    -- 1. Try the direct ItemPurchaseHandler first (most reliable method)
+    if ItemPurchaseHandler and ItemPurchaseHandler.RemoveFromInventory then
         local success, result = pcall(function()
-            return ItemPurchaseHandler:AddToInventory(player, itemId, quantity)
+            return ItemPurchaseHandler:RemoveFromInventory(player, itemId, quantity)
         end)
-        print("[DEBUG] Tried ItemPurchaseHandler:AddToInventory, success:", success, "result:", result)
+        
         if success and result then
-            print("PlacementManager: Successfully added", quantity, "x", itemId, "using ItemPurchaseHandler.AddToInventory")
+            print("PlacementManager: Successfully removed", quantity, "x", itemId, "using ItemPurchaseHandler directly")
+    return true
+        end
+    end
+    
+    -- 2. Try with ItemPurchaseHandler through SharedModule
+    if self.shared and self.shared.ItemPurchaseHandler and 
+       self.shared.ItemPurchaseHandler.RemoveFromInventory then
+        local success, result = pcall(function()
+            return self.shared.ItemPurchaseHandler:RemoveFromInventory(player, itemId, quantity)
+        end)
+        
+        if success and result then
+            print("PlacementManager: Successfully removed", quantity, "x", itemId, "using SharedModule.ItemPurchaseHandler")
             return true
         end
     end
-    warn("PlacementManager: Failed to add item to inventory via ItemPurchaseHandler")
+    
+    -- 3. Try with InventoryManager if available
+    local InventoryManager = self.shared and self.shared.InventoryManager
+    if not InventoryManager then
+        -- Try to find InventoryManager in ServerStorage or other locations
+        local success, result = pcall(function()
+            return require(game:GetService("ServerStorage").server.InventoryManager)
+        end)
+        
+        if success then
+            InventoryManager = result
+            print("PlacementManager: Found InventoryManager in ServerStorage")
+        end
+    end
+    
+    if InventoryManager and InventoryManager.RemoveItem then
+        local success, result = pcall(function()
+            return InventoryManager:RemoveItem(player, itemId, quantity)
+        end)
+        
+        if success and result then
+            print("PlacementManager: Successfully removed", quantity, "x", itemId, "using InventoryManager")
+            return true
+        end
+    end
+    
+    -- 4. Last resort - manually update player data
+    local playerData = self:GetPlayerData(player)
+    if playerData and playerData.inventory then
+        local normalizedItemId = itemId:gsub(" ", "_")
+        local found = false
+        
+        for i, item in ipairs(playerData.inventory) do
+            if (item.id and (item.id == itemId or item.id == normalizedItemId)) or
+               (item.name and (item.name == itemId or item.name == normalizedItemId)) then
+                
+                -- Check if the item uses count or quantity property
+                local currentCount = item.quantity or item.count or 1
+                
+                if currentCount <= quantity then
+                    -- Remove the entire item
+                    table.remove(playerData.inventory, i)
+                    print("PlacementManager: Manually removed entire item from inventory (had", currentCount, "items)")
+                else
+                    -- Reduce quantity
+                    if item.quantity ~= nil then
+                        item.quantity = currentCount - quantity
+                        print("PlacementManager: Reduced item.quantity from", currentCount, "to", item.quantity)
+                    elseif item.count ~= nil then
+                        item.count = currentCount - quantity
+                        print("PlacementManager: Reduced item.count from", currentCount, "to", item.count)
+                    end
+                end
+                
+                found = true
+                print("PlacementManager: Manually removed item from player data")
+                
+                -- Save the updated player data
+                if ItemPurchaseHandler and ItemPurchaseHandler.SavePlayerData then
+                    ItemPurchaseHandler:SavePlayerData(player, playerData)
+                end
+                
+            break
+        end
+    end
+    
+        if found then
+            -- Still fire the remote event so the client is notified
+            local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+            if remotes and remotes:FindFirstChild("RemoveFromInventory") then
+                pcall(function()
+                    remotes.RemoveFromInventory:FireClient(player, itemId, 1)
+                end)
+            end
+    return true
+        end
+    end
+    
+    -- 5. RemoteEvent as absolute last resort
+    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+    if remotes and remotes:FindFirstChild("RemoveFromInventory") then
+        pcall(function()
+            remotes.RemoveFromInventory:FireClient(player, itemId, 1)
+        end)
+        print("PlacementManager: Sent RemoveFromInventory event to client")
+        return true
+    end
+    
+    warn("PlacementManager: Failed to remove item from inventory")
     return false
+end
+
+-- Server: Get item data from Constants
+function PlacementManager:GetItemData(itemId)
+    -- This function can be called by both server and client, so no specific IsServer/IsClient check at the start
+    if not self.Constants then
+        warn("PlacementManager: Constants not available, creating fallback")
+        self.Constants = {
+            ITEMS = {}
+        }
+    end
+    
+    if not self.Constants.ITEMS then
+        warn("PlacementManager: Constants.ITEMS not available, creating fallback")
+        self.Constants.ITEMS = {}
+        
+        -- Add basic items to Constants.ITEMS as fallback
+        local basicItems = {"Grass_Cube", "Stone_Cube", "Brick_Cube", "Wood_Cube", "Glass_Cube", "Water_Cube"}
+        for _, itemName in ipairs(basicItems) do
+            self.Constants.ITEMS[itemName] = {
+                name = itemName,
+                price = {INGAME = 10, ROBUX = 10},
+                description = "A basic building block",
+                tier = "BASIC",
+                category = "Building"
+            }
+        end
+    end
+    
+    -- Normalize the item ID (replace spaces with underscores)
+    local normalizedItemId = itemId:gsub(" ", "_")
+    
+    -- Try direct lookup with original ID
+    if self.Constants.ITEMS[itemId] then
+        return self.Constants.ITEMS[itemId]
+    end
+    
+    -- Try with normalized ID
+    if normalizedItemId ~= itemId and self.Constants.ITEMS[normalizedItemId] then
+        print("PlacementManager: Found item using normalized ID:", normalizedItemId)
+        return self.Constants.ITEMS[normalizedItemId]
+    end
+    
+    -- Try case-insensitive lookup with both original and normalized IDs
+    for key, data in pairs(self.Constants.ITEMS) do
+        if key:lower() == itemId:lower() or key:lower() == normalizedItemId:lower() then
+            print("PlacementManager: Found item using case-insensitive match:", key)
+            return data
+        end
+    end
+    
+    -- Try with suffix variations (with and without _Cube)
+    local tryWithCube = normalizedItemId
+    if not normalizedItemId:lower():find("_cube$") then
+        tryWithCube = normalizedItemId .. "_Cube"
+    end
+    
+    if self.Constants.ITEMS[tryWithCube] then
+        print("PlacementManager: Found item by adding _Cube suffix:", tryWithCube)
+        return self.Constants.ITEMS[tryWithCube]
+    end
+    
+    for key, data in pairs(self.Constants.ITEMS) do
+        if key:lower() == tryWithCube:lower() then
+            print("PlacementManager: Found item using case-insensitive match with _Cube suffix:", key)
+            return data
+        end
+    end
+    
+    -- Last resort: Create an item entry for this ID
+    print("PlacementManager: Creating fallback item data for:", normalizedItemId)
+    local newItemData = {
+        name = normalizedItemId,
+        price = {INGAME = 10, ROBUX = 10},
+        description = "A building item",
+        tier = "BASIC",
+        category = "Building"
+    }
+    
+    -- Save to Constants for future use
+    self.Constants.ITEMS[normalizedItemId] = newItemData
+    
+    return newItemData
 end
 
 -- Server: Delete an item from the world
@@ -2192,6 +2146,11 @@ function PlacementManager:HandleCloneItemRequest(player, itemInstance, cost, ori
     newItem:SetAttribute("owner", player.UserId)
     newItem:SetAttribute("placedTime", os.time())
     newItem:SetAttribute("persistent", true)
+
+    -- Assign UniqueItemId if the assigner is available
+    if UniqueItemIdAssigner and UniqueItemIdAssigner.assignIdToNewItem then
+        UniqueItemIdAssigner.assignIdToNewItem(newItem)
+    end
     
     local originalCFrame
     if itemInstance:IsA("Model") and itemInstance.PrimaryPart then

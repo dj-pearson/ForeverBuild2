@@ -126,11 +126,11 @@ function ItemInteractionClient:SetupRemotes()
     self:CacheRemoteEvent(remotesFolder, "NotifyPlayer")
 
     -- New Item Action Request Events
-    self:CacheRemoteEvent(remotesFolder, "RequestCloneItem")
-    self:CacheRemoteEvent(remotesFolder, "RequestMoveItem")
-    self:CacheRemoteEvent(remotesFolder, "RequestRecallItem")
-    self:CacheRemoteEvent(remotesFolder, "RequestDestroyItem")
-    self:CacheRemoteEvent(remotesFolder, "RequestRotateItem")
+    self:CacheRemoteEvent(remotesFolder, "CloneItem") -- Renamed from RequestCloneItem
+    self:CacheRemoteEvent(remotesFolder, "MoveItem") -- Renamed from RequestMoveItem
+    self:CacheRemoteEvent(remotesFolder, "RecallItem") -- Renamed from RequestRecallItem (Note: Server might not have this yet)
+    self:CacheRemoteEvent(remotesFolder, "DestroyItem") -- Renamed from RequestDestroyItem
+    self:CacheRemoteEvent(remotesFolder, "RotateItem") -- Renamed from RequestRotateItem
     
     -- Connect to notifications
     if self.remotes.NotifyPlayer then
@@ -199,25 +199,25 @@ function ItemInteractionClient:SetupUI()
                 return
             end
 
-            if actionKey == "clone" and self.remotes.RequestCloneItem then
+            if actionKey == "clone" and self.remotes.CloneItem then -- Renamed from self.remotes.RequestCloneItem
                 -- For clone, we'd ideally also need a target position from the player.
                 -- For now, server can place it nearby or require a second step.
                 self:ShowNotification(string.format("Requesting clone for %s...", itemInstance.Name), "Info")
-                self.remotes.RequestCloneItem:FireServer(instanceId, actualCost)
-            elseif actionKey == "move" and self.remotes.RequestMoveItem then
+                self.remotes.CloneItem:FireServer(instanceId, actualCost) -- Renamed from self.remotes.RequestCloneItem
+            elseif actionKey == "move" and self.remotes.MoveItem then -- Renamed from self.remotes.RequestMoveItem
                 -- Move would require a new placement system interaction
                 self:ShowNotification("Move action selected. (Full implementation pending placement system integration)", "Info")
-                -- self.remotes.RequestMoveItem:FireServer(instanceId, actualCost, newPosition, newRotation) 
-            elseif actionKey == "recall" and self.remotes.RequestRecallItem then
+                -- self.remotes.MoveItem:FireServer(instanceId, actualCost, newPosition, newRotation) -- Renamed from self.remotes.RequestMoveItem
+            elseif actionKey == "recall" and self.remotes.RecallItem then -- Renamed from self.remotes.RequestRecallItem
                 self:ShowNotification(string.format("Requesting recall for %s...", itemInstance.Name), "Info")
-                self.remotes.RequestRecallItem:FireServer(instanceId, actualCost)
-            elseif actionKey == "destroy" and self.remotes.RequestDestroyItem then
+                self.remotes.RecallItem:FireServer(instanceId, actualCost) -- Renamed from self.remotes.RequestRecallItem
+            elseif actionKey == "destroy" and self.remotes.DestroyItem then -- Renamed from self.remotes.RequestDestroyItem
                 self:ShowNotification(string.format("Requesting destroy for %s...", itemInstance.Name), "Info")
-                self.remotes.RequestDestroyItem:FireServer(instanceId, actualCost)
-            elseif actionKey == "rotate" and self.remotes.RequestRotateItem then
+                self.remotes.DestroyItem:FireServer(instanceId, actualCost) -- Renamed from self.remotes.RequestDestroyItem
+            elseif actionKey == "rotate" and self.remotes.RotateItem then -- Renamed from self.remotes.RequestRotateItem
                  -- Rotate might also need a sub-UI for direction/angle
                 self:ShowNotification("Rotate action selected. (Full implementation pending)", "Info")
-                -- self.remotes.RequestRotateItem:FireServer(instanceId, actualCost, rotationParameters)
+                -- self.remotes.RotateItem:FireServer(instanceId, actualCost, rotationParameters) -- Renamed from self.remotes.RequestRotateItem
             else
                 warn("ItemInteractionClient: Unknown or unhandled actionKey:", actionKey)
                 self:ShowNotification("Unknown action: " .. actionKey, "Error")

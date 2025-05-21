@@ -323,6 +323,14 @@ Constants.ITEMS = {
         price = Constants.ITEM_PRICES.RARE,
         priceIngame = Constants.ITEM_PRICES.RARE.INGAME
     },
+    ["Rare_Modern_Door"] = {
+        name = "Rare Modern Door",
+        icon = "rbxassetid://0", -- Placeholder icon, replace with actual ID
+        description = "A rare modern door.",
+        tier = "RARE",
+        price = Constants.ITEM_PRICES.RARE,
+        priceIngame = Constants.ITEM_PRICES.RARE.INGAME
+    },
     ["Level_3_Dining_Table"] = {
         name = "Level 3 Dining Table",
         icon = "rbxassetid://0", -- Placeholder icon

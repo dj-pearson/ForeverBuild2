@@ -415,12 +415,12 @@ local function initPlacementManager()
     end
     
     -- Initialize the PlacementManager instance
-    local initSuccess = pcall(function()
+    local initSuccess, initError = pcall(function()
         PlacementManager:Initialize()
     end)
     
     if not initSuccess then
-        warn("server.init: Failed to initialize PlacementManager instance")
+        warn(string.format("server.init: Failed to initialize PlacementManager instance. Error: %s", tostring(initError))) -- MODIFIED TO INCLUDE ERROR
         return false
     end
     
