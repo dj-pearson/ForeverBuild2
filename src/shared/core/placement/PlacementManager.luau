@@ -2309,24 +2309,54 @@ end
 
 -- Placeholder for handling a DESTROY item request (server-side)
 function PlacementManager:HandleDestroyItemRequest(player, itemInstance, cost, originalItemId)
-    print(string.format("PlacementManager:HandleDestroyItemRequest called for item: %s by player %s (cost: %s, originalId: %s)", itemInstance.Name, player.Name, tostring(cost), originalItemId))
+    -- Log entry point and initial parameters
+    local pName = (player and player.Name) or "UnknownPlayer"
+    local iName = (itemInstance and itemInstance.Name) or "UnknownItemInstance"
+    local cValue = cost or "UnknownCost"
+    local oItemId = originalItemId or "UnknownOriginalItemId"
+    print(string.format("PlacementManager:HandleDestroyItemRequest ENTERED. Player: %s, ItemInstance Name: %s, Cost: %s, OriginalItemId: %s", tostring(pName), tostring(iName), tostring(cValue), tostring(oItemId)))
 
     if not itemInstance or not itemInstance.Parent then
+        print("PlacementManager:HandleDestroyItemRequest - itemInstance or parent is nil. Returning error.")
         return {success = false, message = "Item to destroy not found or invalid."}
     end
-        
-    local success = self:DeleteItem(player, itemInstance:GetAttribute("instanceId") or itemInstance.Name)
+    
+    print("PlacementManager:HandleDestroyItemRequest - Proceeding to DeleteItem.")
+    local instanceIdToDel = (itemInstance and itemInstance:GetAttribute("instanceId")) or (itemInstance and itemInstance.Name) or "UnknownInstanceIdForDelete"
+    print(string.format("PlacementManager:HandleDestroyItemRequest - Calling DeleteItem with Player: %s, InstanceID: %s", tostring(pName), tostring(instanceIdToDel)))
+    
+    local success = self:DeleteItem(player, instanceIdToDel)
+    print(string.format("PlacementManager:HandleDestroyItemRequest - DeleteItem returned: %s", tostring(success)))
 
     if success then
+        print("PlacementManager:HandleDestroyItemRequest - DeleteItem was successful.")
         local currencyName = "coins" -- Default currency name
         if self.Constants and self.Constants.CURRENCY and self.Constants.CURRENCY.INGAME then
             currencyName = self.Constants.CURRENCY.INGAME
+            if currencyName == nil then
+                print("PlacementManager:HandleDestroyItemRequest - WARNING: self.Constants.CURRENCY.INGAME was nil, falling back to 'coins'.")
+                currencyName = "coins"
+            end
+        else
+            print("PlacementManager:HandleDestroyItemRequest - self.Constants.CURRENCY.INGAME not found, using default 'coins'.")
         end
-        -- Debug print
-        print(string.format("DEBUG: originalItemId: %s, cost: %s, currencyName: %s", tostring(originalItemId), tostring(cost), tostring(currencyName)))
-        return {success = true, message = string.format("Item %s destroyed. You were charged %s %s.", tostring(originalItemId), tostring(cost), tostring(currencyName))}
+        
+        -- Values for the success message
+        local msg_originalItemId = tostring(originalItemId or "NilOriginalId")
+        local msg_cost = tostring(cost or "NilCost")
+        local msg_currencyName = tostring(currencyName or "NilCurrency")
+
+        print(string.format("PlacementManager:HandleDestroyItemRequest - Formatting success message with: originalItemId='%s', cost='%s', currencyName='%s'", msg_originalItemId, msg_cost, msg_currencyName))
+        local successMessage = string.format("Item %s destroyed. You were charged %s %s.", msg_originalItemId, msg_cost, msg_currencyName)
+        print(string.format("PlacementManager:HandleDestroyItemRequest - Success message created: %s", successMessage))
+        return {success = true, message = successMessage}
     else
-        return {success = false, message = string.format("Failed to destroy %s.", tostring(originalItemId))}
+        print("PlacementManager:HandleDestroyItemRequest - DeleteItem failed.")
+        local msg_originalItemId_fail = tostring(originalItemId or "NilOriginalIdForFailMsg")
+        print(string.format("PlacementManager:HandleDestroyItemRequest - Formatting fail message with: originalItemId='%s'", msg_originalItemId_fail))
+        local failMessage = string.format("Failed to destroy %s.", msg_originalItemId_fail)
+        print(string.format("PlacementManager:HandleDestroyItemRequest - Fail message created: %s", failMessage))
+        return {success = false, message = failMessage}
     end
 end
 
