@@ -21,6 +21,18 @@ function PlacementManager.new(sharedModule)
     
     self.shared = sharedModule
     self.Constants = sharedModule.Constants
+    
+    -- Ensure CURRENCY and INGAME are initialized to prevent errors
+    if not self.Constants then
+        self.Constants = {}
+    end
+    if not self.Constants.CURRENCY then
+        self.Constants.CURRENCY = {}
+    end
+    if not self.Constants.CURRENCY.INGAME then
+        self.Constants.CURRENCY.INGAME = "coins" -- Default currency name
+    end
+    
     self.remotes = {}
     
     -- Add a lookup table for numeric/generic item IDs to template names
@@ -2306,9 +2318,15 @@ function PlacementManager:HandleDestroyItemRequest(player, itemInstance, cost, o
     local success = self:DeleteItem(player, itemInstance:GetAttribute("instanceId") or itemInstance.Name)
 
     if success then
-        return {success = true, message = string.format("Item %s destroyed. You were charged %s %s.", originalItemId, cost, self.Constants.CURRENCY.INGAME or "coins")}
+        local currencyName = "coins" -- Default currency name
+        if self.Constants and self.Constants.CURRENCY and self.Constants.CURRENCY.INGAME then
+            currencyName = self.Constants.CURRENCY.INGAME
+        end
+        -- Debug print
+        print(string.format("DEBUG: originalItemId: %s, cost: %s, currencyName: %s", tostring(originalItemId), tostring(cost), tostring(currencyName)))
+        return {success = true, message = string.format("Item %s destroyed. You were charged %s %s.", tostring(originalItemId), tostring(cost), tostring(currencyName))}
     else
-        return {success = false, message = string.format("Failed to destroy %s.", originalItemId)}
+        return {success = false, message = string.format("Failed to destroy %s.", tostring(originalItemId))}
     end
 end
 
