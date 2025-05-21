@@ -644,20 +644,19 @@ end
 -- CloneItem
 local cloneItemRemote = Remotes:FindFirstChild("CloneItem")
 if cloneItemRemote and PlacementManager then
-    cloneItemRemote.OnServerEvent:Connect(function(player, itemId)
-        if not PlacementManager.CloneItem then
-            print("Creating dummy CloneItem handler")
-            Remotes.NotifyPlayer:FireClient(player, "Cloning not implemented yet")
-            return
-        end
-        
-        local success = PlacementManager:CloneItem(player, itemId)
-        if success then
-            Remotes.NotifyPlayer:FireClient(player, "Cloned " .. itemId)
-        else
-            Remotes.NotifyPlayer:FireClient(player, "Failed to clone " .. itemId)
-        end
+    cloneItemRemote.OnServerEvent:Connect(function(player, instanceId) -- Assuming instanceId is passed
+        print(string.format("--- SERVER INIT: CloneItem (Standard) RECEIVED from %s for instanceId: %s ---", player.Name, tostring(instanceId)))
+        processItemActionRequest(player, instanceId, "clone", Remotes, SharedModule, ItemPurchaseHandler, PlacementManager,
+            function(p, inst, cost, originalItemId) -- p is player, inst is itemInstance
+                if PlacementManager and PlacementManager.HandleCloneItemRequest then
+                    -- As with recall, HandleCloneItemRequest might need to be aware that currency is handled by processItemActionRequest.
+                    return PlacementManager:HandleCloneItemRequest(p, inst, cost, originalItemId)
+                end
+                return {success = false, message = "Clone (standard) service is currently unavailable."}
+            end
+        )
     end)
+    print("server.init: Connected CloneItem remote event (now routed through processItemActionRequest to HandleCloneItemRequest)")
 end
 
 -- Player events
@@ -705,18 +704,20 @@ end)
 local recallItemRemote = Remotes:FindFirstChild("RecallItem")
 if recallItemRemote and PlacementManager then
     recallItemRemote.OnServerEvent:Connect(function(player, instanceId)
-        print("--- UNIQUE MARKER 171717: SERVER INIT RecallItem.OnServerEvent ENTERED ---") -- NEW UNIQUE MARKER
-        print("--- SERVER INIT: RecallItem.OnServerEvent FIRED for instanceId: " .. tostring(instanceId) .. " by player: " .. player.Name .. " ---") -- DEBUG MARKER
-        if not PlacementManager.RecallItem then
-            warn("server.init: PlacementManager.RecallItem function not found")
-            return
-        end
-        
-        local success = PlacementManager:RecallItem(player, instanceId)
-        print("server.init: RecallItem result for player", player.Name, ":", success)
+        print(string.format("--- SERVER INIT: RecallItem (Standard) RECEIVED from %s for instanceId: %s ---", player.Name, tostring(instanceId)))
+        processItemActionRequest(player, instanceId, "recall", Remotes, SharedModule, ItemPurchaseHandler, PlacementManager,
+            function(p, inst, cost, originalItemId) -- p is player, inst is itemInstance
+                if PlacementManager and PlacementManager.HandleCostedRecallItemRequest then
+                    -- HandleCostedRecallItemRequest is expected to handle inventory addition and currency (which processItemActionRequest already did for cost part)
+                    -- So, HandleCostedRecallItemRequest might need adjustment if it also tries to deduct currency.
+                    -- For now, we pass the cost, but it might be ignored or used for refund logic by HandleCostedRecallItemRequest.
+                    return PlacementManager:HandleCostedRecallItemRequest(p, inst, cost, originalItemId) 
+                end
+                return {success = false, message = "Recall (standard) service is currently unavailable."}
+            end
+        )
     end)
-    
-    print("server.init: Connected RecallItem remote event")
+    print("server.init: Connected RecallItem remote event (now routed through processItemActionRequest to HandleCostedRecallItemRequest)")
 end
 
 print("Server initialization completed successfully")

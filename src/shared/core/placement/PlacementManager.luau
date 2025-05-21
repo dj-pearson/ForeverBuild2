@@ -1420,11 +1420,12 @@ function PlacementManager:DeleteItem(player, instanceId)
         return false
     end
     
-    -- Remove from player's placed items list if they own it
-    if ownerId == player.UserId and self.placedItemsByPlayer[player.UserId] then
-        for i, id in ipairs(self.placedItemsByPlayer[player.UserId]) do
-            if id == instanceId then
-                table.remove(self.placedItemsByPlayer[player.UserId], i)
+    -- Remove from the actual owner's placed items list
+    if ownerId and self.placedItemsByPlayer and self.placedItemsByPlayer[ownerId] then
+        for i, id_in_list in ipairs(self.placedItemsByPlayer[ownerId]) do
+            if id_in_list == instanceId then
+                table.remove(self.placedItemsByPlayer[ownerId], i)
+                print(string.format("PlacementManager: Removed instanceId %s from placedItemsByPlayer for ownerId %s.", instanceId, tostring(ownerId)))
                 break
             end
         end
@@ -1438,7 +1439,7 @@ function PlacementManager:DeleteItem(player, instanceId)
         self.remotes.ItemDeleted:FireClient(player, instanceId)
     end
     
-    -- Save world data after deletion
+    -- Save world data after deletion (non-blocking)
     task.spawn(function()
         self:SaveWorldData()
     end)
@@ -2127,7 +2128,7 @@ end
 
 -- Placeholder for handling a CLONE item request (server-side)
 function PlacementManager:HandleCloneItemRequest(player, itemInstance, cost, originalItemId)
-    print(string.format("PlacementManager:HandleCloneItemRequest called for item: %s by player %s (cost: %s, originalId: %s)", itemInstance.Name, player.Name, tostring(cost), originalItemId))
+    print(string.format("PlacementManager:HandleCloneItemRequest CALLED for item: %s by player %s (cost: %s, originalId: %s)", tostring(itemInstance and itemInstance.Name), tostring(player and player.Name), tostring(cost), tostring(originalItemId)))
     
     if not itemInstance or not itemInstance.Parent then
         return {success = false, message = "Original item not found or invalid."}
@@ -2135,58 +2136,54 @@ function PlacementManager:HandleCloneItemRequest(player, itemInstance, cost, ori
 
     local template = self:GetItemTemplate(originalItemId)
     if not template then
-        return {success = false, message = string.format("Template for '%s' not found.", originalItemId)}
+        return {success = false, message = string.format("Template for '%s' not found.", tostring(originalItemId))}
     end
 
     local newItem = template:Clone()
     local newInstanceId = originalItemId .. "_" .. player.UserId .. "_" .. tostring(os.time()) .. "_clone"
     
     newItem:SetAttribute("instanceId", newInstanceId)
-    newItem:SetAttribute("itemId", originalItemId)
+    newItem:SetAttribute("itemId", originalItemId) 
     newItem:SetAttribute("owner", player.UserId)
-    newItem:SetAttribute("placedTime", os.time())
-    newItem:SetAttribute("persistent", true)
-
-    -- Assign UniqueItemId if the assigner is available
-    if UniqueItemIdAssigner and UniqueItemIdAssigner.assignIdToNewItem then
-        UniqueItemIdAssigner.assignIdToNewItem(newItem)
-    end
+    newItem:SetAttribute("creator", player.UserId) 
+    newItem:SetAttribute("IsPlaced", true)
     
-    local originalCFrame
-    if itemInstance:IsA("Model") and itemInstance.PrimaryPart then
-        originalCFrame = itemInstance.PrimaryPart.CFrame
-    elseif itemInstance:IsA("BasePart") then
-        originalCFrame = itemInstance.CFrame
-    else
-        return {success = false, message = "Original item has no CFrame."}
-    end
-
-    local size = Vector3.new(2,2,2) -- default
-    if newItem:IsA("Model") and newItem.PrimaryPart then size = newItem.PrimaryPart.Size elseif newItem:IsA("BasePart") then size = newItem.Size end
-    local offset = originalCFrame.RightVector * (size.X + 0.5) 
-    local newCFrame = originalCFrame * CFrame.new(offset)
-
-    if newItem:IsA("Model") and newItem.PrimaryPart then
-        newItem:SetPrimaryPartCFrame(newCFrame)
-        for _, part in pairs(newItem:GetDescendants()) do
-            if part:IsA("BasePart") then part.Anchored = true; part.CanCollide = true end
+    local itemInfo = self.Constants.ITEMS[originalItemId]
+    if itemInfo then
+        for k, v in pairs(itemInfo) do
+            if k ~= "func" and k ~= "script" and k~="OnPlaced" and k~="OnRemoved" and k~="OnCloned" then
+                newItem:SetAttribute(k, v)
+            end
         end
-    elseif newItem:IsA("BasePart") then
-        newItem.CFrame = newCFrame
-        newItem.Anchored = true
-        newItem.CanCollide = true
     end
     
-    newItem.Parent = self.placedFolder
+    newItem.Parent = self.WorldItemsPlacedFolder
+    self:_trackItem(newItem, player.UserId)
     
-    if not self.placedItemsByPlayer[player.UserId] then
-        self.placedItemsByPlayer[player.UserId] = {}
+    if itemInfo and itemInfo.OnCloned then
+        pcall(itemInfo.OnCloned, newItem, player, itemInstance)
     end
-    table.insert(self.placedItemsByPlayer[player.UserId], newInstanceId)
-    
+
     self:SaveWorldData()
     
-    return {success = true, message = string.format("Item %s cloned for %s %s. New item ID: %s", originalItemId, cost, self.Constants.CURRENCY.INGAME or "coins", newInstanceId)}
+    local final_s_originalItemId = tostring(originalItemId)
+    local final_s_cost = tostring(cost)
+    local final_s_newInstanceId = tostring(newInstanceId)
+    
+    local currency_for_message_clone
+    local raw_ingame_currency_value = self.Constants.CURRENCY.INGAME
+    print(string.format("HandleCloneItemRequest DEBUG: raw_ingame_currency_value is '%s' (type: %s)", tostring(raw_ingame_currency_value), type(raw_ingame_currency_value)))
+
+    if type(raw_ingame_currency_value) == "string" and raw_ingame_currency_value ~= "" then
+        currency_for_message_clone = raw_ingame_currency_value
+    else
+        currency_for_message_clone = "coins" -- Default
+    end
+    print(string.format("HandleCloneItemRequest DEBUG: currency_for_message_clone decided as '%s'", currency_for_message_clone))
+
+    local message = string.format("Item %s cloned for %s %s. New item ID: %s", final_s_originalItemId, final_s_cost, currency_for_message_clone, final_s_newInstanceId)
+    print("HandleCloneItemRequest DEBUG: Success message prepared: " .. message)
+    return {success = true, message = message, newItemInstanceId = newInstanceId, newItem = newItem}
 end
 
 -- Placeholder for handling a MOVE item request (server-side)
@@ -2251,19 +2248,80 @@ end
 
 -- Placeholder for handling a COSTED RECALL item request (server-side)
 function PlacementManager:HandleCostedRecallItemRequest(player, itemInstance, cost, originalItemId)
-    print(string.format("PlacementManager:HandleCostedRecallItemRequest called for item: %s by player %s (cost: %s, originalId: %s)", itemInstance.Name, player.Name, tostring(cost), originalItemId))
-    
+    print(string.format("PlacementManager:HandleCostedRecallItemRequest CALLED for item: %s by player %s (cost: %s, originalItemId: %s)", tostring(itemInstance and itemInstance.Name), tostring(player and player.Name), tostring(cost), tostring(originalItemId)))
+
     if not itemInstance or not itemInstance.Parent then
         return {success = false, message = "Item to recall not found or invalid."}
     end
-    
-    local success, message = self:RecallItem(player, itemInstance.Name) 
-    
-    if success then
-        return {success = true, message = string.format("Item %s recalled to inventory for %s %s.", originalItemId, cost, self.Constants.CURRENCY.INGAME or "coins")}
-    else
-        return {success = false, message = message or string.format("Failed to recall %s.", originalItemId)}
+
+    if not originalItemId then 
+        return {success = false, message = "Cannot recall item: Original ItemID is missing."}
     end
+
+    -- 1. Add item back to inventory
+    local ItemPurchaseHandler = self.shared and self.shared.ItemPurchaseHandler
+    if not ItemPurchaseHandler then
+        local successRequire, requiredModule = pcall(require, ServerScriptService.ItemPurchaseHandler)
+        if successRequire then ItemPurchaseHandler = requiredModule end
+    end
+
+    if ItemPurchaseHandler then
+        print("HandleCostedRecallItemRequest DEBUG: Attempting to add item to inventory via ItemPurchaseHandler: ", originalItemId)
+        local successAdd, resultAdd = pcall(ItemPurchaseHandler.AddToInventory, ItemPurchaseHandler, player, originalItemId, 1)
+        if not successAdd or not resultAdd then
+            local errMessage = resultAdd or "Unknown error adding item to inventory."
+            print("HandleCostedRecallItemRequest WARNING: Failed to add item to inventory via ItemPurchaseHandler: " .. tostring(errMessage))
+            -- Proceeding with recall even if inventory add fails, but this is a warning.
+        else
+            print("HandleCostedRecallItemRequest DEBUG: Successfully added item to inventory via ItemPurchaseHandler.")
+        end
+    else
+        warn("HandleCostedRecallItemRequest WARNING: ItemPurchaseHandler module not found. Cannot add item to inventory.")
+        -- Decide if this is a fatal error for recall. For now, let's allow recall to proceed.
+        -- return {success = false, message = "System error: ItemPurchaseHandler not available."}
+    end
+    
+    -- 2. Remove item from world (using existing DeleteItem logic but without cost/refund)
+    local uniqueItemId = itemInstance:GetAttribute("UniqueItemId")
+    if uniqueItemId then
+        self.ItemsByUniqueId[uniqueItemId] = nil
+    end
+    local ownerId = itemInstance:GetAttribute("owner")
+    if ownerId and self.ItemsByOwner[ownerId] then
+        local items = self.ItemsByOwner[ownerId]
+        for i, id in ipairs(items) do
+            if id == uniqueItemId then
+                table.remove(items, i)
+                break
+            end
+        end
+    end
+    local instanceId = itemInstance:GetAttribute("instanceId")
+    if instanceId then
+         self.ItemsByInstanceId[instanceId] = nil
+    end
+    
+    itemInstance:Destroy()
+    self:SaveWorldData() 
+    print(string.format("PlacementManager:HandleCostedRecallItemRequest - Item %s (InstanceID: %s) destroyed and removed from tracking.", tostring(originalItemId), tostring(instanceId)))
+
+    local final_s_originalItemId_recall = tostring(originalItemId)
+    local final_s_cost_recall = tostring(cost)
+
+    local currency_for_message_recall
+    local raw_ingame_currency_value_recall = self.Constants.CURRENCY.INGAME
+    print(string.format("HandleCostedRecallItemRequest DEBUG: raw_ingame_currency_value_recall is '%s' (type: %s)", tostring(raw_ingame_currency_value_recall), type(raw_ingame_currency_value_recall)))
+
+    if type(raw_ingame_currency_value_recall) == "string" and raw_ingame_currency_value_recall ~= "" then
+        currency_for_message_recall = raw_ingame_currency_value_recall
+    else
+        currency_for_message_recall = "coins" -- Default
+    end
+    print(string.format("HandleCostedRecallItemRequest DEBUG: currency_for_message_recall decided as '%s'", currency_for_message_recall))
+    
+    local message_recall = string.format("Item %s recalled for %s %s. Added back to inventory.", final_s_originalItemId_recall, final_s_cost_recall, currency_for_message_recall)
+    print("HandleCostedRecallItemRequest DEBUG: Success message prepared: " .. message_recall)
+    return {success = true, message = message_recall, recalledItemId = originalItemId}
 end
 
 -- Placeholder for handling a DESTROY item request (server-side)
