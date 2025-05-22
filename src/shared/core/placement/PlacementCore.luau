@@ -11,6 +11,9 @@ local Workspace = game:GetService("Workspace")
 local ItemTemplateManager = require(script.Parent.modules.ItemTemplateManager)
 local PreviewManager = require(script.Parent.modules.PreviewManager)
 local PlacementValidator = require(script.Parent.modules.PlacementValidator)
+local ItemDataManager = require(script.Parent.modules.ItemDataManager)
+local RemoteEventManager = require(script.Parent.modules.RemoteEventManager)
+local MovementManager = require(script.Parent.modules.MovementManager)
 
 local PlacementCore = {}
 PlacementCore.__index = PlacementCore
@@ -24,6 +27,9 @@ function PlacementCore.new(sharedModule)
     self.itemTemplateManager = ItemTemplateManager.new()
     self.previewManager = PreviewManager.new(self.itemTemplateManager)
     self.validator = PlacementValidator.new()
+    self.itemDataManager = ItemDataManager.new(sharedModule)
+    self.remoteEventManager = RemoteEventManager.new()
+    self.movementManager = MovementManager.new(self.validator, self.remoteEventManager)
     
     -- Store shared module reference
     self.sharedModule = sharedModule
