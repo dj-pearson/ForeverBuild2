@@ -90,6 +90,8 @@ local modulePaths = {
     -- Placement
     PlacementManager = script.Parent.core and script.Parent.core:FindFirstChild("placement") and 
                        script.Parent.core.placement:FindFirstChild("PlacementManager"),
+    PlacementCore = script.Parent.core and script.Parent.core:FindFirstChild("placement") and 
+                   script.Parent.core.placement:FindFirstChild("PlacementCore"),
     
     -- Economy
     CurrencyManager = script.Parent.core and script.Parent.core:FindFirstChild("economy") and 
