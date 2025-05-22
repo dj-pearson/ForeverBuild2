@@ -198,51 +198,66 @@ local function processItemActionRequest(player, instanceId, actionKey, remotes, 
     end
 
     local itemInstance = nil
-    -- Primary search: Iterate through children and check the "instanceId" attribute.
-    if placedFolder then
-        print(string.format("server.init: processItemActionRequest - Looking for item with instanceId '%s' in %s (%d children)", 
-            instanceId, placedFolder:GetFullName(), #placedFolder:GetChildren()))
-            
-        for _, child in ipairs(placedFolder:GetChildren()) do
-            local idAttribute = child:GetAttribute("instanceId")
-            if idAttribute and idAttribute == instanceId then
-                itemInstance = child
-                print(string.format("server.init: processItemActionRequest - Found item '%s' by instanceId attribute", child.Name))
-                break
-            end
-        end
-    end
-
-    -- Search by UniqueItemId if instanceId is not found
-    if not itemInstance then
-        print("server.init: processItemActionRequest - Trying to find by UniqueItemId attribute")
-        for _, child in ipairs(placedFolder:GetChildren()) do
-            local uniqueId = child:GetAttribute("UniqueItemId")
-            if uniqueId and tostring(uniqueId) == instanceId then
-                itemInstance = child
-                print(string.format("server.init: processItemActionRequest - Found item '%s' by UniqueItemId attribute", child.Name))
-                break
-            end
-        end
-    end
-
-    -- Search by name as last resort
-    if not itemInstance then
-        -- Primary attribute search failed, log this and attempt fallback.
-        local primarySearchFailedMsg = string.format("server.init: processItemActionRequest (%s) - Primary lookup: Could not find item by instanceId attribute '%s'.", actionKey, instanceId)
-        
-        -- Fallback search: Try to find by name (original behavior).
-        if placedFolder then
-            itemInstance = placedFolder:FindFirstChild(instanceId)
-        end
-
-        if not itemInstance then
-            warn(primarySearchFailedMsg .. " Fallback lookup by name also failed. Item not found.")
-            NotifyPlayer:FireClient(player, "Error: Could not find the specified item.")
-            return false, nil
+    
+    -- First check if PlacementManager has a dedicated function to find items
+    if placementManager and placementManager.FindItemByInstanceId then
+        print(string.format("server.init: processItemActionRequest - Using PlacementManager.FindItemByInstanceId to find '%s'", instanceId))
+        itemInstance = placementManager:FindItemByInstanceId(instanceId)
+        if itemInstance then
+            print(string.format("server.init: processItemActionRequest - PlacementManager.FindItemByInstanceId found item: %s", itemInstance:GetFullName()))
         else
-            -- Found by name (fallback), but not by attribute. This is worth noting.
-            warn(primarySearchFailedMsg .. string.format(" Found by name '%s' (fallback). This might indicate inconsistent item naming or attribute setting.", instanceId))
+            print("server.init: processItemActionRequest - PlacementManager.FindItemByInstanceId did not find the item, falling back to manual search")
+        end
+    end
+    
+    -- If not found through PlacementManager, do a manual search
+    if not itemInstance then
+        -- Primary search: Iterate through children and check the "instanceId" attribute.
+        if placedFolder then
+            print(string.format("server.init: processItemActionRequest - Looking for item with instanceId '%s' in %s (%d children)", 
+                instanceId, placedFolder:GetFullName(), #placedFolder:GetChildren()))
+                
+            for _, child in ipairs(placedFolder:GetChildren()) do
+                local idAttribute = child:GetAttribute("instanceId")
+                if idAttribute and idAttribute == instanceId then
+                    itemInstance = child
+                    print(string.format("server.init: processItemActionRequest - Found item '%s' by instanceId attribute", child.Name))
+                    break
+                end
+            end
+        end
+
+        -- Search by UniqueItemId if instanceId is not found
+        if not itemInstance then
+            print("server.init: processItemActionRequest - Trying to find by UniqueItemId attribute")
+            for _, child in ipairs(placedFolder:GetChildren()) do
+                local uniqueId = child:GetAttribute("UniqueItemId")
+                if uniqueId and tostring(uniqueId) == instanceId then
+                    itemInstance = child
+                    print(string.format("server.init: processItemActionRequest - Found item '%s' by UniqueItemId attribute", child.Name))
+                    break
+                end
+            end
+        end
+
+        -- Search by name as last resort
+        if not itemInstance then
+            -- Primary attribute search failed, log this and attempt fallback.
+            local primarySearchFailedMsg = string.format("server.init: processItemActionRequest (%s) - Primary lookup: Could not find item by instanceId attribute '%s'.", actionKey, instanceId)
+            
+            -- Fallback search: Try to find by name (original behavior).
+            if placedFolder then
+                itemInstance = placedFolder:FindFirstChild(instanceId)
+            end
+
+            if not itemInstance then
+                warn(primarySearchFailedMsg .. " Fallback lookup by name also failed. Item not found.")
+                NotifyPlayer:FireClient(player, "Error: Could not find the specified item.")
+                return false, nil
+            else
+                -- Found by name (fallback), but not by attribute. This is worth noting.
+                warn(primarySearchFailedMsg .. string.format(" Found by name '%s' (fallback). This might indicate inconsistent item naming or attribute setting.", instanceId))
+            end
         end
     end
 
@@ -699,22 +714,43 @@ if pickupItemRemote and InventoryManager then
     end)
 end
 
--- CloneItem
-local cloneItemRemote = Remotes:FindFirstChild("CloneItem")
-if cloneItemRemote and PlacementManager then
-    cloneItemRemote.OnServerEvent:Connect(function(player, instanceId) -- Assuming instanceId is passed
-        print(string.format("--- SERVER INIT: CloneItem (Standard) RECEIVED from %s for instanceId: %s ---", player.Name, tostring(instanceId)))
+-- Ensure the older, potentially non-prefixed remotes are also available if anything still uses them
+-- Though the goal is to standardize on the 'Request' prefix for these client-initiated actions
+local cloneItemRemote = getOrCreateRemoteEvent("CloneItem", Remotes)
+local moveItemRemote = getOrCreateRemoteEvent("MoveItem", Remotes)
+-- getOrCreateRemoteEvent("RecallItem", Remotes) -- This one is explicitly handled by PlacementManager and its event is created there, and also connected above (line 585)
+local destroyItemRemote = getOrCreateRemoteEvent("DestroyItem", Remotes)
+local rotateItemRemote = getOrCreateRemoteEvent("RotateItem", Remotes)
+
+-- Connect handlers for legacy remotes to ensure they work the same as the Request prefixed ones
+if cloneItemRemote then
+    cloneItemRemote.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
+        print(string.format("--- SERVER INIT: LEGACY CloneItem RECEIVED from %s for instanceId: %s, clientCost: %s ---", player.Name, tostring(instanceId), tostring(clientCalculatedCost)))
         processItemActionRequest(player, instanceId, "clone", Remotes, SharedModule, ItemPurchaseHandler, PlacementManager,
-            function(p, inst, cost, originalItemId) -- p is player, inst is itemInstance
+            function(p, inst, cost, originalId)
                 if PlacementManager and PlacementManager.HandleCloneItemRequest then
-                    -- As with recall, HandleCloneItemRequest might need to be aware that currency is handled by processItemActionRequest.
-                    return PlacementManager:HandleCloneItemRequest(p, inst, cost, originalItemId)
+                    return PlacementManager:HandleCloneItemRequest(p, inst, cost, originalId)
                 end
-                return {success = false, message = "Clone (standard) service is currently unavailable."}
+                return {success = false, message = "Clone service is currently unavailable."}
             end
         )
     end)
-    print("server.init: Connected CloneItem remote event (now routed through processItemActionRequest to HandleCloneItemRequest)")
+    print("server.init: Connected legacy CloneItem remote event handler")
+end
+
+if destroyItemRemote then
+    destroyItemRemote.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
+        print(string.format("--- SERVER INIT: LEGACY DestroyItem RECEIVED from %s for instanceId: %s, clientCost: %s ---", player.Name, tostring(instanceId), tostring(clientCalculatedCost)))
+        processItemActionRequest(player, instanceId, "destroy", Remotes, SharedModule, ItemPurchaseHandler, PlacementManager,
+            function(p, inst, cost, originalId)
+                if PlacementManager and PlacementManager.HandleDestroyItemRequest then
+                    return PlacementManager:HandleDestroyItemRequest(p, inst, cost, originalId)
+                end
+                return {success = false, message = "Destroy service is currently unavailable."}
+            end
+        )
+    end)
+    print("server.init: Connected legacy DestroyItem remote event handler")
 end
 
 -- Player events

@@ -118,28 +118,7 @@ function ItemInteractionClient:SetupRemotes()
     self:CacheRemoteFunction(remotesFolder, "IsItemAffordable")
     
     -- Cache remote events
-    self:CacheRemoteEvent(remotesFolder, "PurchaseItem")
-    self:CacheRemoteEvent(remotesFolder, "PlaceItem")
-    self:CacheRemoteEvent(remotesFolder, "ChangeItemColor")
-    self:CacheRemoteEvent(remotesFolder, "AddToInventory")
-    self:CacheRemoteEvent(remotesFolder, "RemoveFromInventory")
-    self:CacheRemoteEvent(remotesFolder, "NotifyPlayer")
-
-    -- New Item Action Request Events
-    self:CacheRemoteEvent(remotesFolder, "CloneItem") -- Renamed from RequestCloneItem
-    self:CacheRemoteEvent(remotesFolder, "MoveItem") -- Renamed from RequestMoveItem
-    self:CacheRemoteEvent(remotesFolder, "RecallItem") -- Renamed from RequestRecallItem (Note: Server might not have this yet)
-    self:CacheRemoteEvent(remotesFolder, "RequestDestroyItem") -- Changed from DestroyItem to match server expectations
-    self:CacheRemoteEvent(remotesFolder, "RotateItem") -- Renamed from RequestRotateItem
-    
-    -- Also try legacy event names for backward compatibility
-    if not self.remotes.RequestDestroyItem then
-        local destroyItem = remotesFolder:FindFirstChild("DestroyItem")
-        if destroyItem and destroyItem:IsA("RemoteEvent") then
-            self.remotes.RequestDestroyItem = destroyItem
-            print("Using legacy 'DestroyItem' remote event for destroy functionality")
-        end
-    end
+    self:CacheRemoteEvents(remotesFolder)
     
     -- Connect to notifications
     if self.remotes.NotifyPlayer then
@@ -165,6 +144,74 @@ function ItemInteractionClient:CacheRemoteEvent(parent, name)
     else
         warn("Remote event '" .. name .. "' not found")
     end
+end
+
+function ItemInteractionClient:CacheRemoteEvents(remotesFolder)
+    -- Cache the remote events
+    self.remotes = {}
+    
+    -- Function to log successful and failed remote event caching
+    local function logRemoteEvent(name, remote)
+        if remote then
+            print(string.format("ItemInteractionClient: Successfully cached remote event: %s", name))
+        else
+            print(string.format("Remote event '%s' not found", name))
+        end
+    end
+    
+    -- Try to find both legacy and new remotes for backward compatibility
+    local parent = remotesFolder
+    if not parent then
+        parent = ReplicatedStorage:FindFirstChild("Remotes")
+        if not parent then
+            warn("ItemInteractionClient: No Remotes folder found in ReplicatedStorage")
+            return
+        end
+    end
+    
+    -- Core remotes
+    -- Try to get both naming conventions (with and without "Request" prefix)
+    -- DestroyItem/RequestDestroyItem
+    local destroyItem = parent:FindFirstChild("RequestDestroyItem")
+    if destroyItem and destroyItem:IsA("RemoteEvent") then
+        self.remotes.RequestDestroyItem = destroyItem
+        logRemoteEvent("RequestDestroyItem", destroyItem)
+    else
+        destroyItem = parent:FindFirstChild("DestroyItem")
+        if destroyItem and destroyItem:IsA("RemoteEvent") then
+            self.remotes.DestroyItem = destroyItem
+            logRemoteEvent("DestroyItem", destroyItem)
+        end
+    end
+    
+    -- CloneItem/RequestCloneItem
+    local cloneItem = parent:FindFirstChild("CloneItem")
+    if cloneItem and cloneItem:IsA("RemoteEvent") then
+        self.remotes.CloneItem = cloneItem
+        logRemoteEvent("CloneItem", cloneItem)
+    else
+        cloneItem = parent:FindFirstChild("RequestCloneItem")
+        if cloneItem and cloneItem:IsA("RemoteEvent") then
+            self.remotes.RequestCloneItem = cloneItem
+            logRemoteEvent("RequestCloneItem", cloneItem)
+        end
+    end
+    
+    -- Other remotes (basic caching)
+    local simpleRemotes = {
+        "MoveItem", "RecallItem", "RotateItem", 
+        "PurchaseItem", "InteractWithItem", "NotifyPlayer", "AddToInventory", "PurchaseResult"
+    }
+    
+    for _, name in ipairs(simpleRemotes) do
+        local remote = parent:FindFirstChild(name)
+        if remote and (remote:IsA("RemoteEvent") or remote:IsA("RemoteFunction")) then
+            self.remotes[name] = remote
+            logRemoteEvent(name, remote)
+        end
+    end
+    
+    print("ItemInteractionClient: Remote events cached")
 end
 
 function ItemInteractionClient:SetupUI()
@@ -197,38 +244,50 @@ function ItemInteractionClient:SetupUI()
             local instanceId = itemInstance and itemInstance:GetAttribute("instanceId")
             if not instanceId then
                 warn("ItemInteractionClient: Cannot perform action - itemInstance is nil or missing instanceId attribute.")
-                local uniqueItemId = itemInstance and itemInstance:GetAttribute("UniqueItemId")
-                if uniqueItemId then
-                    instanceId = tostring(uniqueItemId)
-                    print(string.format("ItemInteractionClient: Using UniqueItemId as fallback: %s", instanceId))
-                else
-                    instanceId = itemInstance and itemInstance.Name
-                    print(string.format("ItemInteractionClient: Using item name as fallback: %s", instanceId))
-                end
-                
-                if not instanceId then
-                    self:ShowNotification("Error: Could not identify the selected item.", "Error")
-                    return
-                end
+                self:ShowNotification("Error: Could not identify the selected item.", "Error")
+                return
             end
 
-            -- Placeholder for client-side currency check - real check is on server
-            -- Actually fire the remote event
+            -- Placeholder for client-side currency check - removed for simplicity
             if actionKey == "destroy" then
-                print(string.format("Using RequestDestroyItem remote event with instanceId: %s", instanceId))
-                
-                local requestDestroyItem = self.remotes.RequestDestroyItem
-                if requestDestroyItem then
-                    requestDestroyItem:FireServer(instanceId, actualCost)
+                -- Using RequestDestroyItem remote event with new protocol
+                if self.remotes.RequestDestroyItem then
+                    print(string.format("Using RequestDestroyItem remote event with instanceId: %s", instanceId))
+                    self.remotes.RequestDestroyItem:FireServer(instanceId, actualCost)
+                    
+                    -- Notify the user that we've sent the request
+                    self:ShowNotification("Requested to destroy item. Processing...", "Info")
+                elseif self.remotes.DestroyItem then
+                    -- Fallback to legacy DestroyItem remote
+                    print(string.format("Using LEGACY DestroyItem remote event with instanceId: %s", instanceId))
+                    self.remotes.DestroyItem:FireServer(instanceId, actualCost)
+                    
+                    -- Notify the user that we've sent the request
+                    self:ShowNotification("Requested to destroy item (legacy). Processing...", "Info")
                 else
-                    -- Fallback to legacy remote
-                    print("Using legacy DestroyItem remote event")
-                    local destroyItem = self.remotes.DestroyItem
-                    if destroyItem then
-                        destroyItem:FireServer(instanceId, actualCost)
-                    else
-                        self:ShowNotification("Error: DestroyItem service unavailable.", "Error")
-                    end
+                    -- No compatible destroy event found
+                    warn("ItemInteractionClient: Cannot destroy item - no compatible destroy remote event found")
+                    self:ShowNotification("Error: Destroy functionality is not available.", "Error")
+                end
+            elseif actionKey == "clone" then
+                -- Using CloneItem remote event with new protocol
+                if self.remotes.CloneItem then
+                    print(string.format("Using CloneItem remote event with instanceId: %s", instanceId))
+                    self.remotes.CloneItem:FireServer(instanceId, actualCost)
+                    
+                    -- Notify the user that we've sent the request
+                    self:ShowNotification("Requested to clone item to inventory. Processing...", "Info")
+                elseif self.remotes.RequestCloneItem then
+                    -- Fallback to RequestCloneItem remote
+                    print(string.format("Using RequestCloneItem remote event with instanceId: %s", instanceId))
+                    self.remotes.RequestCloneItem:FireServer(instanceId, actualCost)
+                    
+                    -- Notify the user that we've sent the request
+                    self:ShowNotification("Requested to clone item to inventory. Processing...", "Info")
+                else
+                    -- No compatible clone event found
+                    warn("ItemInteractionClient: Cannot clone item - no compatible clone remote event found")
+                    self:ShowNotification("Error: Clone functionality is not available.", "Error")
                 end
             elseif actionKey == "move" then
                 -- Implementation for move action
@@ -242,8 +301,8 @@ function ItemInteractionClient:SetupUI()
                 self:ShowNotification("Rotate action selected. (Full implementation pending)", "Info")
                 -- self.remotes.RotateItem:FireServer(instanceId, actualCost, rotationParameters) -- Renamed from self.remotes.RequestRotateItem
             else
-                warn("ItemInteractionClient: Unknown or unhandled actionKey:", actionKey)
-                self:ShowNotification("Unknown action: " .. actionKey, "Error")
+                warn(string.format("ItemInteractionClient: Unknown or unhandled actionKey: %s", actionKey))
+                self:ShowNotification("Error: This action is not implemented yet.", "Error")
             end
         end
     else

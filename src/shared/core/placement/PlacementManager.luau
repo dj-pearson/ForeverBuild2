@@ -78,12 +78,28 @@ function PlacementManager.new(sharedModule)
         local success, result = pcall(function()
             return require(game:GetService("ServerScriptService").server.UniqueItemIdAssigner)
         end)
+        
         if success then
             print("PlacementManager.new: Successfully required UniqueItemIdAssigner")
-            -- Set the global module variable
+            -- Store the module in self
+            self.UniqueItemIdAssigner = result
+            -- Also set the global module variable for backward compatibility
             UniqueItemIdAssigner = result
         else
             warn("PlacementManager.new: Failed to require UniqueItemIdAssigner:", result)
+            
+            -- Try an alternative path
+            success, result = pcall(function()
+                return require(game:GetService("ServerStorage").UniqueItemIdAssigner)
+            end)
+            
+            if success then
+                print("PlacementManager.new: Successfully required UniqueItemIdAssigner from ServerStorage")
+                self.UniqueItemIdAssigner = result
+                UniqueItemIdAssigner = result
+            else
+                warn("PlacementManager.new: Could not find UniqueItemIdAssigner module")
+            end
         end
 
         -- First look for the main World_Items folder
@@ -466,8 +482,19 @@ function PlacementManager:PlaceItem(player, itemId, position, normal, currentAng
     end
     
     -- Generate a unique instance ID
-    local instanceId = self.UniqueItemIdAssigner:AssignNewIdToItem(placedItem, itemId, player.UserId)
-    placedItem.Name = instanceId -- MODIFIED: Set the item's actual name to the instanceId
+    local instanceId
+    if self.UniqueItemIdAssigner then
+        -- Use the proper ID assigner
+        instanceId = self.UniqueItemIdAssigner:AssignNewIdToItem(placedItem, itemId, player.UserId)
+    else
+        -- Create a fallback ID using timestamp and player ID
+        local timestamp = os.time()
+        local playerId = player and player.UserId or 0
+        instanceId = string.format("%s_%d_%d", normalizedItemId, playerId, timestamp)
+        print("PlacementManager: Using fallback instanceId generation:", instanceId)
+    end
+    
+    placedItem.Name = instanceId -- Set the item's actual name to the instanceId
     
     -- Set core attributes
     placedItem:SetAttribute("itemId", itemId)
@@ -784,89 +811,66 @@ function PlacementManager:FindItemByInstanceId(instanceId)
         return nil
     end
 
-    -- Get the Placed folder where items are stored
-    local PlacedItemsFolder = nil
+    print(string.format("FindItemByInstanceId: Looking for item with instanceId '%s'", instanceId))
+
+    -- Get all possible folders where items might be stored
+    local possibleFolders = {}
     
-    -- First try with World_Items/Placed folder which is the standard in this system
+    -- Check World_Items/Placed (standard)
     local worldItems = workspace:FindFirstChild("World_Items")
     if worldItems and worldItems:FindFirstChild("Placed") then
-        PlacedItemsFolder = worldItems.Placed
-        print(string.format("FindItemByInstanceId: Using standard World_Items/Placed folder at %s", PlacedItemsFolder:GetFullName()))
-    else
-        -- Try with self.placedFolder (which might be set elsewhere)
-        PlacedItemsFolder = self.placedFolder
-        
-        if not PlacedItemsFolder then
-            -- Try to find it through the worldFolder
-            if self.worldFolder and self.worldFolder:FindFirstChild("Placed") then
-                PlacedItemsFolder = self.worldFolder.Placed
-                print(string.format("FindItemByInstanceId: Using worldFolder.Placed at %s", PlacedItemsFolder:GetFullName()))
-            else
-                -- Try looking in Workspace directly for PlacedItems folder (legacy)
-                local placedItemsInWorkspace = workspace:FindFirstChild("PlacedItems")
-                if placedItemsInWorkspace then
-                    PlacedItemsFolder = placedItemsInWorkspace
-                    print(string.format("FindItemByInstanceId: Using legacy PlacedItems folder at %s", PlacedItemsFolder:GetFullName()))
-                else
-                    warn("FindItemByInstanceId: Could not find any PlacedItems folder in workspace.")
-                    return nil
-                end
-            end
-        else
-            print(string.format("FindItemByInstanceId: Using existing placedFolder reference at %s", PlacedItemsFolder:GetFullName()))
+        table.insert(possibleFolders, worldItems.Placed)
+        print(string.format("FindItemByInstanceId: Added World_Items/Placed folder to search: %s", worldItems.Placed:GetFullName()))
+    end
+    
+    -- Check self.placedFolder (set in constructor)
+    if self.placedFolder then
+        -- Only add if it's different from what we already added
+        if not worldItems or self.placedFolder ~= worldItems.Placed then
+            table.insert(possibleFolders, self.placedFolder)
+            print(string.format("FindItemByInstanceId: Added self.placedFolder to search: %s", self.placedFolder:GetFullName()))
         end
     end
     
-    print(string.format("FindItemByInstanceId: Looking for item with instanceId '%s' in %s", instanceId, PlacedItemsFolder:GetFullName()))
-
-    -- First, try to find by attribute (the primary method)
-    for _, item in ipairs(PlacedItemsFolder:GetChildren()) do
-        local itemInstanceId = item:GetAttribute("instanceId")
-        if itemInstanceId == instanceId then
-            print(string.format("FindItemByInstanceId: Found item '%s' with matching instanceId attribute", item.Name))
+    -- Check legacy PlacedItems folder
+    local legacyFolder = workspace:FindFirstChild("PlacedItems")
+    if legacyFolder then
+        table.insert(possibleFolders, legacyFolder)
+        print(string.format("FindItemByInstanceId: Added legacy PlacedItems folder to search: %s", legacyFolder:GetFullName()))
+    end
+    
+    -- First try: direct lookup in all folders by Name
+    for _, folder in ipairs(possibleFolders) do
+        local item = folder:FindFirstChild(instanceId)
+        if item then
+            print(string.format("FindItemByInstanceId: Found item by name: %s", item:GetFullName()))
             return item
         end
     end
     
-    print(string.format("FindItemByInstanceId: No item with matching instanceId attribute '%s' found, trying fallback methods", instanceId))
-
-    -- Fallback: If not found by attribute, try to find by name (assuming name is set to instanceId)
-    local itemByName = PlacedItemsFolder:FindFirstChild(instanceId)
-    if itemByName then
-        print(string.format("FindItemByInstanceId: Found item '%s' by name after attribute search failed.", instanceId))
-        return itemByName
-    end
-
-    -- Try checking with legacy folder if available
-    if self.legacyPlacedFolder and self.legacyPlacedFolder ~= PlacedItemsFolder then
-        print(string.format("FindItemByInstanceId: Checking legacy folder %s", self.legacyPlacedFolder:GetFullName()))
-        
-        -- Check by attribute
-        for _, item in ipairs(self.legacyPlacedFolder:GetChildren()) do
-            if item:GetAttribute("instanceId") == instanceId then
-                print(string.format("FindItemByInstanceId: Found item '%s' in legacy PlacedItems folder by attribute.", instanceId))
+    -- Second try: search by instanceId attribute
+    for _, folder in ipairs(possibleFolders) do
+        for _, item in ipairs(folder:GetChildren()) do
+            local itemInstanceId = item:GetAttribute("instanceId")
+            if itemInstanceId and itemInstanceId == instanceId then
+                print(string.format("FindItemByInstanceId: Found item by instanceId attribute: %s", item:GetFullName()))
                 return item
             end
         end
-        
-        -- Check by name
-        local legacyItemByName = self.legacyPlacedFolder:FindFirstChild(instanceId)
-        if legacyItemByName then
-            print(string.format("FindItemByInstanceId: Found item '%s' in legacy PlacedItems folder by name.", instanceId))
-            return legacyItemByName
+    end
+    
+    -- Third try: search by UniqueItemId attribute
+    for _, folder in ipairs(possibleFolders) do
+        for _, item in ipairs(folder:GetChildren()) do
+            local uniqueId = item:GetAttribute("UniqueItemId")
+            if uniqueId and tostring(uniqueId) == instanceId then
+                print(string.format("FindItemByInstanceId: Found item by UniqueItemId attribute: %s", item:GetFullName()))
+                return item
+            end
         end
     end
-
-    -- Final check: Try by UniqueItemId attribute 
-    for _, item in ipairs(PlacedItemsFolder:GetChildren()) do
-        local uniqueItemId = item:GetAttribute("UniqueItemId")
-        if tostring(uniqueItemId) == instanceId then
-            print(string.format("FindItemByInstanceId: Found item '%s' with matching UniqueItemId attribute", item.Name))
-            return item
-        end
-    end
-
-    print(string.format("FindItemByInstanceId: Item with instanceId '%s' not found by any method.", instanceId))
+    
+    warn(string.format("FindItemByInstanceId: Item with instanceId '%s' not found", instanceId))
     return nil
 end
 
@@ -2102,74 +2106,108 @@ end
 function PlacementManager:SetupRemoteEvents()
     print("PlacementManager: Setting up remote events")
     
+    -- Find or create Remotes folder
     local remotes = ReplicatedStorage:FindFirstChild("Remotes")
     if not remotes then
         remotes = Instance.new("Folder")
         remotes.Name = "Remotes"
         remotes.Parent = ReplicatedStorage
+        print("PlacementManager: Created Remotes folder in ReplicatedStorage")
     end
     
-    -- Create remote events for placement system if they don't exist
-    local events = {
-        "PlaceItem",       -- Client -> Server: Request to place an item
-        "ItemPlaced",      -- Server -> Client: Notify that an item was placed
-        "RecallItem",      -- Client -> Server: Request to recall an item
-        "ItemRecalled",    -- Server -> Client: Notify that an item was recalled
-        "UpdateItem",      -- Client -> Server: Update item properties (position, etc.)
-        "ItemUpdated",     -- Server -> Client: Notify that an item was updated
-        "DeleteItem",      -- Client -> Server: Request to delete an item
-        "ItemDeleted"      -- Server -> Client: Notify that an item was deleted
-    }
-    
-    self.remotes = {}
-    
-    for _, eventName in ipairs(events) do
-        local event = remotes:FindFirstChild(eventName)
-        if not event then
+    -- Helper function to get or create a RemoteEvent
+    local function getOrCreateRemoteEvent(name)
+        local event = remotes:FindFirstChild(name)
+        if not event or not event:IsA("RemoteEvent") then
+            if event then
+                event:Destroy() -- Remove if wrong type
+                print("PlacementManager: Removed invalid " .. name)
+            end
+            
             event = Instance.new("RemoteEvent")
-            event.Name = eventName
+            event.Name = name
             event.Parent = remotes
-            print("PlacementManager: Created remote event:", eventName)
+            print("PlacementManager: Created remote event: " .. name)
         else
-            print("PlacementManager: Using existing remote event:", eventName)
+            print("PlacementManager: Using existing remote event: " .. name)
         end
         
-        self.remotes[eventName] = event
+        self.remotes[name] = event
+        return event
     end
     
-    if RunService:IsServer() then
-        -- Connect server-side event handlers
-        self.remotes.PlaceItem.OnServerEvent:Connect(function(player, itemId, position, normal, currentAngleY, additionalAttributes)
+    -- Create/get core events for item placement
+    local placeItemEvent = getOrCreateRemoteEvent("PlaceItem")
+    local itemPlacedEvent = getOrCreateRemoteEvent("ItemPlaced")
+    local recallItemEvent = getOrCreateRemoteEvent("RecallItem")
+    local itemRecalledEvent = getOrCreateRemoteEvent("ItemRecalled")
+    local updateItemEvent = getOrCreateRemoteEvent("UpdateItem")
+    local itemUpdatedEvent = getOrCreateRemoteEvent("ItemUpdated")
+    local deleteItemEvent = getOrCreateRemoteEvent("DeleteItem")
+    local itemDeletedEvent = getOrCreateRemoteEvent("ItemDeleted")
+    
+    -- Create legacy-compatible remotes (with Request prefix)
+    local requestCloneItemEvent = getOrCreateRemoteEvent("RequestCloneItem")
+    local requestDestroyItemEvent = getOrCreateRemoteEvent("RequestDestroyItem")
+    local cloneItemEvent = getOrCreateRemoteEvent("CloneItem") -- For backward compatibility
+    local destroyItemEvent = getOrCreateRemoteEvent("DestroyItem") -- For backward compatibility
+    
+    -- Connect remote events
+    if placeItemEvent then
+        placeItemEvent.OnServerEvent:Connect(function(player, itemId, position, normal, currentAngleY, additionalAttributes)
+            print("PlacementManager: PlaceItem event received from " .. player.Name)
             self:PlaceItem(player, itemId, position, normal, currentAngleY, additionalAttributes)
         end)
-        
-        self.remotes.UpdateItem.OnServerEvent:Connect(function(player, instanceId, position, rotation)
-            self:UpdateItem(player, instanceId, position, rotation)
+    end
+    
+    if recallItemEvent then
+        recallItemEvent.OnServerEvent:Connect(function(player, instanceId)
+            print("PlacementManager: RecallItem event received from " .. player.Name)
+            self:RecallItem(player, instanceId)
         end)
-        
-        self.remotes.DeleteItem.OnServerEvent:Connect(function(player, instanceId)
+    end
+    
+    if updateItemEvent then
+        updateItemEvent.OnServerEvent:Connect(function(player, instanceId, newProperties)
+            print("PlacementManager: UpdateItem event received from " .. player.Name)
+            self:UpdateItem(player, instanceId, newProperties)
+        end)
+    end
+    
+    if deleteItemEvent then
+        deleteItemEvent.OnServerEvent:Connect(function(player, instanceId)
+            print("PlacementManager: DeleteItem event received from " .. player.Name)
             self:DeleteItem(player, instanceId)
         end)
-    else
-        -- Connect client-side event handlers
-        self.remotes.ItemPlaced.OnClientEvent:Connect(function(itemId, instanceId)
-            print("PlacementManager: Received ItemPlaced event for", itemId)
-            -- Update UI or other client-side state as needed
+    end
+    
+    -- Connect legacy events
+    if cloneItemEvent then
+        cloneItemEvent.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
+            print("PlacementManager: Legacy CloneItem event received from " .. player.Name)
+            self:HandleCloneItemRequest(player, self:FindItemByInstanceId(instanceId), clientCalculatedCost, nil)
         end)
-        
-        self.remotes.ItemRecalled.OnClientEvent:Connect(function(itemId)
-            print("PlacementManager: Received ItemRecalled event for", itemId)
-            -- Update UI or other client-side state as needed
+    end
+    
+    if destroyItemEvent then
+        destroyItemEvent.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
+            print("PlacementManager: Legacy DestroyItem event received from " .. player.Name)
+            self:HandleDestroyItemRequest(player, self:FindItemByInstanceId(instanceId), clientCalculatedCost, nil)
         end)
-        
-        self.remotes.ItemUpdated.OnClientEvent:Connect(function(instanceId, position, rotation)
-            print("PlacementManager: Received ItemUpdated event for", instanceId)
-            -- Update UI or other client-side state as needed
+    end
+    
+    -- Connect request events
+    if requestCloneItemEvent then
+        requestCloneItemEvent.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
+            print("PlacementManager: RequestCloneItem event received from " .. player.Name)
+            self:HandleCloneItemRequest(player, self:FindItemByInstanceId(instanceId), clientCalculatedCost, nil)
         end)
-        
-        self.remotes.ItemDeleted.OnClientEvent:Connect(function(instanceId)
-            print("PlacementManager: Received ItemDeleted event for", instanceId)
-            -- Update UI or other client-side state as needed
+    end
+    
+    if requestDestroyItemEvent then
+        requestDestroyItemEvent.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
+            print("PlacementManager: RequestDestroyItem event received from " .. player.Name)
+            self:HandleDestroyItemRequest(player, self:FindItemByInstanceId(instanceId), clientCalculatedCost, nil)
         end)
     end
     
@@ -2457,43 +2495,67 @@ function PlacementManager:HandleDestroyItemRequest(player, itemInstance, cost, o
         return {success = false, message = "Item to destroy not found or invalid."}
     end
     
-    print("PlacementManager:HandleDestroyItemRequest - Proceeding to DeleteItem.")
-    local instanceIdToDel = (itemInstance and itemInstance:GetAttribute("instanceId")) or (itemInstance and itemInstance.Name) or "UnknownInstanceIdForDelete"
-    print(string.format("PlacementManager:HandleDestroyItemRequest - Calling DeleteItem with Player: %s, InstanceID: %s", tostring(pName), tostring(instanceIdToDel)))
+    print(string.format("PlacementManager:HandleDestroyItemRequest - Destroying item directly from instance: %s", itemInstance:GetFullName()))
     
-    local success = self:DeleteItem(player, instanceIdToDel)
-    print(string.format("PlacementManager:HandleDestroyItemRequest - DeleteItem returned: %s", tostring(success)))
-
-    if success then
-        print("PlacementManager:HandleDestroyItemRequest - DeleteItem was successful.")
-        local currencyName = "coins" -- Default currency name
-        if self.Constants and self.Constants.CURRENCY and self.Constants.CURRENCY.INGAME then
-            currencyName = self.Constants.CURRENCY.INGAME
-            if currencyName == nil then
-                print("PlacementManager:HandleDestroyItemRequest - WARNING: self.Constants.CURRENCY.INGAME was nil, falling back to 'coins'.")
-                currencyName = "coins"
-            end
-        else
-            print("PlacementManager:HandleDestroyItemRequest - self.Constants.CURRENCY.INGAME not found, using default 'coins'.")
-        end
-        
-        -- Values for the success message
-        local msg_originalItemId = tostring(originalItemId or "NilOriginalId")
-        local msg_cost = tostring(cost or "NilCost")
-        local msg_currencyName = tostring(currencyName or "NilCurrency")
-
-        print(string.format("PlacementManager:HandleDestroyItemRequest - Formatting success message with: originalItemId='%s', cost='%s', currencyName='%s'", msg_originalItemId, msg_cost, msg_currencyName))
-        local successMessage = string.format("Item %s destroyed. You were charged %s %s.", msg_originalItemId, msg_cost, msg_currencyName)
-        print(string.format("PlacementManager:HandleDestroyItemRequest - Success message created: %s", successMessage))
-        return {success = true, message = successMessage}
-    else
-        print("PlacementManager:HandleDestroyItemRequest - DeleteItem failed.")
-        local msg_originalItemId_fail = tostring(originalItemId or "NilOriginalIdForFailMsg")
-        print(string.format("PlacementManager:HandleDestroyItemRequest - Formatting fail message with: originalItemId='%s'", msg_originalItemId_fail))
-        local failMessage = string.format("Failed to destroy %s.", msg_originalItemId_fail)
-        print(string.format("PlacementManager:HandleDestroyItemRequest - Fail message created: %s", failMessage))
-        return {success = false, message = failMessage}
+    -- Get attributes for tracking and logging
+    local instanceId = itemInstance:GetAttribute("instanceId")
+    local uniqueItemId = itemInstance:GetAttribute("UniqueItemId")
+    local ownerId = itemInstance:GetAttribute("owner")
+    
+    -- Check if player owns the item or is admin
+    local isAdmin = player:GetAttribute("IsAdmin") or false
+    if ownerId and ownerId ~= player.UserId and not isAdmin then
+        return {success = false, message = "You don't own this item."}
     end
+    
+    -- DIRECT APPROACH: Remove item from lookup tables
+    if uniqueItemId and self.ItemsByUniqueId then
+        self.ItemsByUniqueId[uniqueItemId] = nil
+        print(string.format("PlacementManager:HandleDestroyItemRequest - Removed from ItemsByUniqueId: %s", tostring(uniqueItemId)))
+    end
+    
+    if instanceId and self.ItemsByInstanceId then
+        self.ItemsByInstanceId[instanceId] = nil
+        print(string.format("PlacementManager:HandleDestroyItemRequest - Removed from ItemsByInstanceId: %s", tostring(instanceId)))
+    end
+    
+    if ownerId and self.placedItemsByPlayer and self.placedItemsByPlayer[ownerId] then
+        for i, itemId in ipairs(self.placedItemsByPlayer[ownerId]) do
+            if (instanceId and itemId == instanceId) or (uniqueItemId and itemId == uniqueItemId) then
+                table.remove(self.placedItemsByPlayer[ownerId], i)
+                print(string.format("PlacementManager:HandleDestroyItemRequest - Removed from placedItemsByPlayer for owner %s", tostring(ownerId)))
+                break
+            end
+        end
+    end
+    
+    -- Notify the client (if available)
+    if self.remotes and self.remotes.ItemDeleted then
+        self.remotes.ItemDeleted:FireClient(player, instanceId or uniqueItemId)
+        print(string.format("PlacementManager:HandleDestroyItemRequest - Notified client of item deletion: %s", instanceId or uniqueItemId))
+    end
+    
+    -- Destroy the instance
+    print(string.format("PlacementManager:HandleDestroyItemRequest - Destroying item: %s", itemInstance:GetFullName()))
+    itemInstance:Destroy()
+    
+    -- Save world data
+    task.spawn(function()
+        self:SaveWorldData()
+        print("PlacementManager:HandleDestroyItemRequest - World data saved after item destruction")
+    end)
+    
+    -- Format success message
+    local currencyName = "coins" -- Default currency name
+    if self.Constants and self.Constants.CURRENCY and self.Constants.CURRENCY.INGAME then
+        currencyName = self.Constants.CURRENCY.INGAME or "coins"
+    end
+    
+    local msg_originalItemId = tostring(originalItemId or instanceId or uniqueItemId or "UnknownItem")
+    local msg_cost = tostring(cost or 0)
+    
+    print(string.format("PlacementManager:HandleDestroyItemRequest - SUCCESS! Deleted %s", msg_originalItemId))
+    return {success = true, message = string.format("Item %s destroyed. You were charged %s %s.", msg_originalItemId, msg_cost, currencyName)}
 end
 
 -- Placeholder for handling a ROTATE item request (server-side)
