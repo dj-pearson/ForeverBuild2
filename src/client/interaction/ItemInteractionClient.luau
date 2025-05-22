@@ -290,16 +290,44 @@ function ItemInteractionClient:SetupUI()
                     self:ShowNotification("Error: Clone functionality is not available.", "Error")
                 end
             elseif actionKey == "move" then
-                -- Implementation for move action
-                self:ShowNotification("Move action selected. (Full implementation pending placement system integration)", "Info")
-                -- self.remotes.MoveItem:FireServer(instanceId, actualCost, newPosition, newRotation) -- Renamed from self.remotes.RequestMoveItem
-            elseif actionKey == "recall" and self.remotes.RecallItem then -- Renamed from self.remotes.RequestRecallItem
+                local PlacementManagerInstance = SharedModule and SharedModule.PlacementManagerClientInstance
+                if PlacementManagerInstance and PlacementManagerInstance.InitiateMoveOperation then
+                    self:ShowNotification("Initiating move... Select new position.", "Info")
+                    local success, err = pcall(function()
+                        PlacementManagerInstance:InitiateMoveOperation(itemInstance, actualCost)
+                    end)
+                    if not success then
+                        warn(string.format("ItemInteractionClient: Error calling PlacementManagerInstance:InitiateMoveOperation: %s", tostring(err)))
+                        self:ShowNotification("Error starting move operation: " .. tostring(err), "Error")
+                    end
+                else
+                    warn("ItemInteractionClient: PlacementManagerClientInstance or InitiateMoveOperation not found.")
+                    self:ShowNotification("Move functionality is not available.", "Error")
+                end
+            elseif actionKey == "recall" and self.remotes.RecallItem then
                 self:ShowNotification(string.format("Requesting recall for %s...", itemInstance.Name), "Info")
-                self.remotes.RecallItem:FireServer(instanceId, actualCost) -- Renamed from self.remotes.RequestRecallItem
-            elseif actionKey == "rotate" and self.remotes.RotateItem then -- Renamed from self.remotes.RequestRotateItem
-                 -- Rotate might also need a sub-UI for direction/angle
-                self:ShowNotification("Rotate action selected. (Full implementation pending)", "Info")
-                -- self.remotes.RotateItem:FireServer(instanceId, actualCost, rotationParameters) -- Renamed from self.remotes.RequestRotateItem
+                local originalItemId = itemInstance:GetAttribute("itemId") -- Get originalItemId from instance
+                if not originalItemId then
+                    warn("ItemInteractionClient: Recall - Could not get originalItemId from itemInstance attributes: " .. itemInstance.Name)
+                    self:ShowNotification("Error: Could not identify item type for recall.", "Error")
+                    return
+                end
+                self.remotes.RecallItem:FireServer(instanceId, actualCost, originalItemId) -- Added originalItemId
+            elseif actionKey == "rotate" then -- Removed 'and self.remotes.RotateItem' for now, will be handled by PlacementManager
+                local PlacementManagerInstance = SharedModule and SharedModule.PlacementManagerClientInstance
+                if PlacementManagerInstance and PlacementManagerInstance.StartRotationWorkflow then
+                    self:ShowNotification("Initiating rotation... Adjust rotation, then set position.", "Info")
+                    local success, err = pcall(function()
+                        PlacementManagerInstance:StartRotationWorkflow(itemInstance, actualCost)
+                    end)
+                    if not success then
+                        warn(string.format("ItemInteractionClient: Error calling PlacementManagerInstance:StartRotationWorkflow: %s", tostring(err)))
+                        self:ShowNotification("Error starting rotation workflow: " .. tostring(err), "Error")
+                    end
+                else
+                    warn("ItemInteractionClient: PlacementManagerClientInstance or StartRotationWorkflow not found.")
+                    self:ShowNotification("Rotate functionality is not available.", "Error")
+                end
             else
                 warn(string.format("ItemInteractionClient: Unknown or unhandled actionKey: %s", actionKey))
                 self:ShowNotification("Error: This action is not implemented yet.", "Error")

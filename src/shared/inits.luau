@@ -104,6 +104,8 @@ local modulePaths = {
                  script.Parent.core.ui:FindFirstChild("CurrencyUI"),
     PlacedItemDialog = script.Parent.core and script.Parent.core:FindFirstChild("ui") and 
                        script.Parent.core.ui:FindFirstChild("PlacedItemDialog"),
+    RotationControlsUI = script.Parent.core and script.Parent.core:FindFirstChild("ui") and 
+                       script.Parent.core.ui:FindFirstChild("RotationControlsUI"),
     
     -- Utilities
     LazyLoadModules = script.Parent.core and script.Parent.core:FindFirstChild("LazyLoadModules")

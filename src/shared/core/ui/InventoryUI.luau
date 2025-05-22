@@ -413,40 +413,58 @@ end
 -- Refresh inventory data from server
 function InventoryUI.RefreshInventory()
     local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-    if not remotes then return end
+    if not remotes then 
+        warn("InventoryUI.RefreshInventory: Remotes folder not found.")
+        return 
+    end
     
     local getInventoryFunc = remotes:FindFirstChild("GetInventory")
     if getInventoryFunc then
-        local success, result = pcall(function()
-            return getInventoryFunc:InvokeServer()
+        local pcallInvokeSuccess, server_success_flag, inventoryData, currencyAmount = pcall(function()
+            return getInventoryFunc:InvokeServer() -- Server returns: success, inventoryTable, currencyNumber
         end)
         
-        if success and result then
+        if not pcallInvokeSuccess then
+            -- pcallInvokeSuccess is false, meaning InvokeServer itself errored.
+            -- server_success_flag (the second variable from pcall) will contain the error message.
+            warn("InventoryUI.RefreshInventory: GetInventory InvokeServer pcall failed with error:", server_success_flag) 
+            return
+        end
+        
+        -- If pcallInvokeSuccess is true, then InvokeServer executed without error.
+        -- Now check server_success_flag (the first actual return value from the server).
+        if server_success_flag then
+            local currentInventory = inventoryData or {}
+            local currentCurrency = currencyAmount or 0
             local itemCount = 0
-            if result.inventory then
-                if typeof(result.inventory) == "table" then
-                    -- Count items in either array or dictionary format
-                    if #result.inventory > 0 then
-                        itemCount = #result.inventory
-                    else
-                        for _, quantity in pairs(result.inventory) do
-                            if quantity > 0 then
-                                itemCount = itemCount + 1
-                            end
+            if typeof(currentInventory) == "table" then
+                 -- Count items in either array or dictionary format
+                if #currentInventory > 0 then
+                    itemCount = #currentInventory
+                else
+                    for _, quantity_or_itemdata in pairs(currentInventory) do
+                        -- If it's a dictionary of itemIds to quantities:
+                        if typeof(quantity_or_itemdata) == "number" and quantity_or_itemdata > 0 then
+                            itemCount = itemCount + 1
+                        -- If it's an array of item data tables (like from GetPlayerInventory in ItemPurchaseHandler)
+                        elseif typeof(quantity_or_itemdata) == "table" and (quantity_or_itemdata.itemId or quantity_or_itemdata.id or quantity_or_itemdata.name) then
+                            itemCount = itemCount + 1
                         end
                     end
                 end
             end
+
+            print(string.format("InventoryUI.RefreshInventory: Retrieved inventory data: %d items, Currency: %s", 
+                itemCount, tostring(currentCurrency)))
             
-            print("InventoryUI: Retrieved inventory data:", 
-                itemCount, "items, Currency:", result.currency)
-            
-            InventoryUI.UpdateInventory(result.inventory or {}, result.currency or 0)
+            InventoryUI.UpdateInventory(currentInventory, currentCurrency) -- Pass the correctly unpacked values
         else
-            warn("InventoryUI: Failed to get inventory data:", result)
+            -- Server indicated failure (server_success_flag is false)
+            -- inventoryData might contain an error message or be nil
+            warn("InventoryUI.RefreshInventory: GetInventory server-side call reported failure. Details:", inventoryData, "Currency:", currencyAmount)
         end
     else
-        warn("InventoryUI: GetInventory RemoteFunction not found")
+        warn("InventoryUI.RefreshInventory: GetInventory RemoteFunction not found")
     end
 end
 

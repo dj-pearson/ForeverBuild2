@@ -426,49 +426,37 @@ local function createInventoryButton()
             return
         end
         
-        -- Improved error handling for inventory retrieval
-        local success, response = pcall(function()
-            return GetInventoryFunc:InvokeServer()
+        -- Correctly handle multiple return values from InvokeServer wrapped in pcall
+        local pcallInvokeSuccess, server_success_flag, inventoryData, currencyAmount = pcall(function()
+            return GetInventoryFunc:InvokeServer() -- Server returns: success, inventoryTable, currencyNumber
         end)
         
-        if not success then
-            warn("GetInventory invocation failed with error:", response)
+        if not pcallInvokeSuccess then
+            -- pcallInvokeSuccess is false, meaning InvokeServer itself errored.
+            -- server_success_flag (the second variable from pcall) will contain the error message.
+            warn("GetInventory InvokeServer pcall failed with error:", server_success_flag) 
+            lastError = "InvokeServer pcall failed: " .. tostring(server_success_flag)
             return
         end
         
-        -- Process the response, being tolerant of different formats
-        if response == nil then
-            warn("GetInventory returned nil")
-            return
-        end
-        
-        local inventoryData = {}
-        local currencyAmount = 0
-        
-        if type(response) == "table" then
-            -- Extract inventory and currency regardless of exact structure
-            if response.inventory then
-                inventoryData = response.inventory
-            end
+        -- If pcallInvokeSuccess is true, then InvokeServer executed without error.
+        -- Now check server_success_flag (the first actual return value from the server).
+        if server_success_flag then
+            currentInventory = inventoryData or {} -- Use the actual inventory data
+            currentCurrency = currencyAmount or 0  -- Use the actual currency amount
             
-            if response.currency then
-                currencyAmount = response.currency
-            end
-            
-            -- Update local cache
-            currentInventory = inventoryData
-            currentCurrency = currencyAmount
-            
-            -- Try to update UI if the module is available
             if InventoryUIModule and InventoryUIModule.UpdateInventory and InventoryUIModule.Show then
-                InventoryUIModule.UpdateInventory(inventoryData, currencyAmount)
+                InventoryUIModule.UpdateInventory(currentInventory, currentCurrency)
                 InventoryUIModule.Show()
             else
                 print("InventoryUIModule not available, but data was retrieved successfully")
-                print("Retrieved " .. #inventoryData .. " inventory items and " .. currencyAmount .. " currency")
+                print("Retrieved " .. #currentInventory .. " inventory items and " .. currentCurrency .. " currency")
             end
         else
-            warn("Unexpected response format from GetInventory:", type(response))
+            -- Server indicated failure (server_success_flag is false)
+            -- inventoryData might contain an error message or be nil
+            warn("GetInventory server-side call reported failure. Details:", inventoryData, "Currency:", currencyAmount)
+            lastError = "Server reported GetInventory failure. Details: " .. tostring(inventoryData)
         end
     end)
 end

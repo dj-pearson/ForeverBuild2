@@ -44,6 +44,8 @@ if not Remotes then
     createRemote("RemoveFromInventory", "RemoteEvent")
     createRemote("PurchaseItem", "RemoteEvent")
     createRemote("UpdateBalance", "RemoteEvent")
+    createRemote("ConfirmItemMove", "RemoteEvent")
+    createRemote("RequestMoveItem", "RemoteEvent")
     
     -- Create placement system remotes
     createRemote("RecallItem", "RemoteEvent")
@@ -60,6 +62,35 @@ if not Remotes then
     createRemote("GetMyBalance", "RemoteFunction")
     
     print("Created standard remote events and functions")
+end
+
+-- Define utility functions for remotes EARLIER
+local function getOrCreateRemoteEvent(name, parent)
+    local event = parent:FindFirstChild(name)
+    if not event or not event:IsA("RemoteEvent") then
+        if event then event:Destroy() end -- Remove if wrong type
+        event = Instance.new("RemoteEvent")
+        event.Name = name
+        event.Parent = parent
+        print(string.format("server.init: Created new RemoteEvent: %s in %s", name, parent:GetFullName()))
+    else
+        print(string.format("server.init: Using existing RemoteEvent: %s in %s", name, parent:GetFullName()))
+    end
+    return event
+end
+
+local function getOrCreateRemoteFunction(name, parent)
+    local functionRemote = parent:FindFirstChild(name)
+    if not functionRemote or not functionRemote:IsA("RemoteFunction") then
+        if functionRemote then functionRemote:Destroy() end -- Remove if wrong type
+        functionRemote = Instance.new("RemoteFunction")
+        functionRemote.Name = name
+        functionRemote.Parent = parent
+        print(string.format("server.init: Created new RemoteFunction: %s in %s", name, parent:GetFullName()))
+    else
+        print(string.format("server.init: Using existing RemoteFunction: %s in %s", name, parent:GetFullName()))
+    end
+    return functionRemote
 end
 
 -- Initialize shared module with error handling
@@ -428,7 +459,8 @@ if SharedModule.CurrencyManager and SharedModule.CurrencyManager.new then
         -- Initialize the CurrencyManager instance now, so it processes existing players
         if _G.CurrencyManager.Initialize then
             local initCmSuccess, initCmError = pcall(function()
-                _G.CurrencyManager:Initialize() -- This will call SetupPlayerHandling
+                _G.CurrencyManager:Initialize(SharedModule, DataService, Remotes, Players) -- Corrected: IPH removed from here
+                _G.CurrencyManager:SetupPlayerHandling(Players:GetPlayers(), itemPurchaseHandler) -- Corrected: IPH added here
             end)
             if initCmSuccess then
                 print("server.init: Explicitly initialized _G.CurrencyManager instance.")
@@ -445,30 +477,28 @@ else
     warn("server.init: CurrencyManager module not available")
 end
 
--- Load PlacementManager
-PlacementManager = nil
+-- Load PlacementManager (Define initPlacementManager before the wait block)
+local PlacementManager -- Keep this variable accessible for later use
 local function initPlacementManager()
-    print("server.init: Initializing PlacementManager...")
+    print("server.init: Initializing PlacementManager (function defined)...")
 
     if SharedModule.PlacementManager and type(SharedModule.PlacementManager) == "table" and SharedModule.PlacementManager.new then
         print("server.init: Found PlacementManager module in SharedModule. Attempting to create new instance.")
-        local newInstance
-        local success, newInstance = pcall(function()
+        local newInstance_Success, newInstance_Result = pcall(function()
             return SharedModule.PlacementManager.new(SharedModule) -- Call .new()
         end)
 
-        if not success or not newInstance then
-            warn("server.init: Failed to create PlacementManager instance from SharedModule.PlacementManager.new():", newInstance)
-            return false
+        if not newInstance_Success or not newInstance_Result then
+            warn("server.init: Failed to create PlacementManager instance from SharedModule.PlacementManager.new():", tostring(newInstance_Result))
+            return false, nil
         end
         
-        PlacementManager = newInstance
+        PlacementManager = newInstance_Result -- Assign to the outer scope PlacementManager variable
         print("server.init: Successfully created PlacementManager instance via SharedModule.PlacementManager.new()")
 
     else
-        warn("server.init: PlacementManager module (or its .new method) not found in SharedModule or is not a table.")
-        -- Fallback to trying to require it directly (original complex path)
-        -- This section can be simplified or removed if SharedModule always provides the module table
+        warn("server.init: PlacementManager module (or its .new method) not found in SharedModule or is not a table. Attempting fallback...")
+        -- Fallback to trying to require it directly
         local placementModulePath
         local pathSuccess = pcall(function()
             placementModulePath = ReplicatedStorage.shared.core.placement.PlacementManager
@@ -477,57 +507,81 @@ local function initPlacementManager()
 
         if not pathSuccess or not placementModulePath then
             warn("server.init: (Fallback) PlacementManager module path not found in ReplicatedStorage.")
-            return false
+            return false, nil
         end
 
-        local moduleFunc
-        local requireSuccess, moduleFunc = pcall(function()
+        local moduleFunc_Success, moduleFunc_Result = pcall(function()
             return require(placementModulePath)
         end)
 
-        if not requireSuccess or not moduleFunc then
-            warn("server.init: (Fallback) Failed to require PlacementManager:", moduleFunc)
-            return false
+        if not moduleFunc_Success or not moduleFunc_Result then
+            warn("server.init: (Fallback) Failed to require PlacementManager:", tostring(moduleFunc_Result))
+            return false, nil
         end
 
         print("server.init: (Fallback) Creating new PlacementManager instance")
-        local fallbackInstance
-        local createSuccess, fallbackInstance = pcall(function()
-            return moduleFunc.new(SharedModule)
+        local fallbackInstance_Success, fallbackInstance_Result = pcall(function()
+            return moduleFunc_Result.new(SharedModule)
         end)
 
-        if not createSuccess or not fallbackInstance then
-            warn("server.init: (Fallback) Failed to create PlacementManager instance:", fallbackInstance)
-            return false
+        if not fallbackInstance_Success or not fallbackInstance_Result then
+            warn("server.init: (Fallback) Failed to create PlacementManager instance:", tostring(fallbackInstance_Result))
+            return false, nil
         end
-        PlacementManager = fallbackInstance
+        PlacementManager = fallbackInstance_Result -- Assign to the outer scope PlacementManager variable
     end
     
     -- Initialize the PlacementManager instance
-    local initSuccess, initError = pcall(function()
-        PlacementManager:Initialize()
-    end)
-    
-    if not initSuccess then
-        warn(string.format("server.init: Failed to initialize PlacementManager instance. Error: %s", tostring(initError))) -- MODIFIED TO INCLUDE ERROR
-        return false
+    if PlacementManager and PlacementManager.Initialize then
+        local initSuccess, initError = pcall(function()
+            PlacementManager:Initialize()
+        end)
+        
+        if not initSuccess then
+            warn(string.format("server.init: Failed to initialize PlacementManager instance. Error: %s", tostring(initError)))
+            return false, PlacementManager -- Return the partially initialized manager for debugging if needed
+        end
+        print("server.init: PlacementManager instance initialized successfully")
+        return true, PlacementManager -- Return success and the instance
+    else
+        warn("server.init: PlacementManager instance available but Initialize method not found.")
+        return false, PlacementManager
     end
-    
-    -- Register the INSTANCE with SharedModule, replacing the module table if necessary for consistency
-    -- However, it's generally better if SharedModule stores module tables, and consumers create instances.
-    -- For now, let's assume consumers will get the instance from here if they need it.
-    -- SharedModule.PlacementManagerInstance = PlacementManager -- Optional: if other server scripts need the instance
-    
-    print("server.init: PlacementManager instance initialized successfully")
-    return true
 end
 
--- Add after other manager initializations, before remote setup
-local placementManagerSuccess = initPlacementManager()
-if placementManagerSuccess then
-    print("server.init: Successfully created PlacementManager instance")
+-- Wait for Data Clearing if it's in progress
+if _G.IsClearingData == true then
+    print("server.init: Detected _G.IsClearingData = true. Waiting for data clear to complete...")
+    local waitTime = 0
+    local maxWaitTime = 20 -- Max seconds to wait
+    while not _G.DataClearComplete and waitTime < maxWaitTime do
+        task.wait(1)
+        waitTime = waitTime + 1
+        print(string.format("server.init: Waiting for _G.DataClearComplete... (%d/%d seconds)", waitTime, maxWaitTime))
+    end
+    if _G.DataClearComplete then
+        print("server.init: _G.DataClearComplete is true. Proceeding with PlacementManager initialization.")
+    else
+        warn("server.init: Timed out waiting for _G.DataClearComplete. Proceeding with PlacementManager initialization anyway.")
+    end
 else
-    warn("server.init: PlacementManager initialization failed")
+    print("server.init: _G.IsClearingData is not true. Proceeding with PlacementManager initialization directly.")
+end
+
+-- Initialize PlacementManager
+print("server.init: Initializing PlacementManager (actual call)...")
+-- local PlacementManager -- This was already declared before initPlacementManager function
+local placementManagerInstance -- This will hold the instance returned by initPlacementManager
+local placementManagerSuccess
+placementManagerSuccess, placementManagerInstance = initPlacementManager() -- Call the function
+
+if placementManagerSuccess and placementManagerInstance then
+    PlacementManager = placementManagerInstance -- Ensure the module-scoped PlacementManager is the instance
+    print("server.init: Successfully created and initialized PlacementManager instance")
+else
+    warn("server.init: PlacementManager initialization failed or instance not returned correctly.")
+    -- If placementManagerInstance was returned even on failure, assign it for potential debugging
+    if placementManagerInstance then PlacementManager = placementManagerInstance end
 end
 
 -- InteractionManager
@@ -594,6 +648,66 @@ else
     else
         print("server.init: ItemPurchaseHandler initialized successfully")
     end
+end
+
+-- NEW SYNCHRONIZATION LOGIC
+if _G.CurrencyManager and ItemPurchaseHandler and ItemPurchaseHandler.GetPlayerData and game:GetService("Players") then
+    print("server.init: Attempting to synchronize CurrencyManager with ItemPurchaseHandler balances for existing players...")
+    for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+        local processPlayer = true
+        local cmPlayerBalance = _G.CurrencyManager.playerBalances and _G.CurrencyManager.playerBalances[player.UserId]
+
+        if not cmPlayerBalance then
+            if _G.CurrencyManager.OnPlayerJoined then
+                print(string.format("server.init: CurrencyManager has no balance entry for %s during sync. Attempting OnPlayerJoined.", player.Name))
+                local pcallSuccess, pcallErr = pcall(function() _G.CurrencyManager:OnPlayerJoined(player) end)
+                if not pcallSuccess then
+                    warn(string.format("server.init: Error calling OnPlayerJoined for %s: %s", player.Name, tostring(pcallErr)))
+                end
+                cmPlayerBalance = _G.CurrencyManager.playerBalances and _G.CurrencyManager.playerBalances[player.UserId] -- Re-check
+            else
+                print(string.format("server.init: CurrencyManager has no balance entry for %s and no OnPlayerJoined method. Skipping.", player.Name))
+                processPlayer = false
+            end
+        end
+        
+        if processPlayer and not cmPlayerBalance then 
+            print(string.format("server.init: CurrencyManager still has no balance entry for %s after OnPlayerJoined attempt. Skipping sync for this player.", player.Name))
+            processPlayer = false
+        end
+
+        if processPlayer then
+            local iphPlayerData_success, iphPlayerData = pcall(function() return ItemPurchaseHandler:GetPlayerData(player) end)
+
+            if iphPlayerData_success and iphPlayerData and typeof(iphPlayerData.currency) == "number" then 
+                if cmPlayerBalance.currency ~= iphPlayerData.currency then
+                    print(string.format("server.init: Syncing CurrencyManager balance for %s. Was: %s, IPH reports: %s. Updating CM and client.", 
+                        player.Name, 
+                        tostring(cmPlayerBalance.currency), 
+                        tostring(iphPlayerData.currency)))
+                    cmPlayerBalance.currency = iphPlayerData.currency
+                    cmPlayerBalance.isLoaded = true 
+                    _G.CurrencyManager:UpdatePlayerBalance(player) 
+                else
+                    print(string.format("server.init: Balances for %s already in sync (CM: %s, IPH: %s). No update needed.", 
+                        player.Name, 
+                        tostring(cmPlayerBalance.currency), 
+                        tostring(iphPlayerData.currency)))
+                end
+            elseif not iphPlayerData_success then
+                warn(string.format("server.init: Error calling ItemPurchaseHandler:GetPlayerData for %s during sync: %s", player.Name, tostring(iphPlayerData))) 
+            else
+                local currencyValue = iphPlayerData and iphPlayerData.currency
+                warn(string.format("server.init: ItemPurchaseHandler:GetPlayerData for %s returned no data, no currency field, or currency is not a number. Currency value: %s, Type: %s", player.Name, tostring(currencyValue), typeof(currencyValue)))
+            end
+        end 
+    end
+    print("server.init: Synchronization attempt complete.")
+else
+    if not _G.CurrencyManager then warn("server.init: Sync abort: _G.CurrencyManager not available.") end
+    if not ItemPurchaseHandler then warn("server.init: Sync abort: ItemPurchaseHandler not available.") end
+    if not (ItemPurchaseHandler and ItemPurchaseHandler.GetPlayerData) then warn("server.init: Sync abort: ItemPurchaseHandler.GetPlayerData not available.") end
+    if not game:GetService("Players") then warn("server.init: Sync abort: game:GetService(\"Players\") not available.") end
 end
 
 -- Setup Remote Function Handlers
@@ -767,33 +881,33 @@ local rotateItemRemote = getOrCreateRemoteEvent("RotateItem", Remotes)
 
 -- Connect handlers for legacy remotes to ensure they work the same as the Request prefixed ones
 if cloneItemRemote then
-    cloneItemRemote.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
-        print(string.format("--- SERVER INIT: LEGACY CloneItem RECEIVED from %s for instanceId: %s, clientCost: %s ---", player.Name, tostring(instanceId), tostring(clientCalculatedCost)))
-        processItemActionRequest(player, instanceId, "clone", Remotes, SharedModule, ItemPurchaseHandler, PlacementManager,
-            function(p, inst, cost, originalId)
-                if PlacementManager and PlacementManager.HandleCloneItemRequest then
-                    return PlacementManager:HandleCloneItemRequest(p, inst, cost, originalId)
-                end
-                return {success = false, message = "Clone service is currently unavailable."}
-            end
-        )
-    end)
-    print("server.init: Connected legacy CloneItem remote event handler")
+    -- cloneItemRemote.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
+    --     print(string.format("--- SERVER INIT: LEGACY CloneItem RECEIVED from %s for instanceId: %s, clientCost: %s ---", player.Name, tostring(instanceId), tostring(clientCalculatedCost)))
+    --     processItemActionRequest(player, instanceId, "clone", Remotes, SharedModule, ItemPurchaseHandler, PlacementManager,
+    --         function(p, inst, cost, originalId)
+    --             if PlacementManager and PlacementManager.HandleCloneItemRequest then
+    --                 return PlacementManager:HandleCloneItemRequest(p, inst, cost, originalId)
+    --             end
+    --             return {success = false, message = "Clone service is currently unavailable."}
+    --         end
+    --     )
+    -- end)
+    print("server.init: Legacy CloneItem remote event handler temporarily COMMENTED OUT due to missing processItemActionRequest")
 end
 
 if destroyItemRemote then
-    destroyItemRemote.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
-        print(string.format("--- SERVER INIT: LEGACY DestroyItem RECEIVED from %s for instanceId: %s, clientCost: %s ---", player.Name, tostring(instanceId), tostring(clientCalculatedCost)))
-        processItemActionRequest(player, instanceId, "destroy", Remotes, SharedModule, ItemPurchaseHandler, PlacementManager,
-            function(p, inst, cost, originalId)
-                if PlacementManager and PlacementManager.HandleDestroyItemRequest then
-                    return PlacementManager:HandleDestroyItemRequest(p, inst, cost, originalId)
-                end
-                return {success = false, message = "Destroy service is currently unavailable."}
-            end
-        )
-    end)
-    print("server.init: Connected legacy DestroyItem remote event handler")
+    -- destroyItemRemote.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
+    --     print(string.format("--- SERVER INIT: LEGACY DestroyItem RECEIVED from %s for instanceId: %s, clientCost: %s ---", player.Name, tostring(instanceId), tostring(clientCalculatedCost)))
+    --     processItemActionRequest(player, instanceId, "destroy", Remotes, SharedModule, ItemPurchaseHandler, PlacementManager,
+    --         function(p, inst, cost, originalId)
+    --             if PlacementManager and PlacementManager.HandleDestroyItemRequest then
+    --                 return PlacementManager:HandleDestroyItemRequest(p, inst, cost, originalId)
+    --             end
+    --             return {success = false, message = "Destroy service is currently unavailable."}
+    --         end
+    --     )
+    -- end)
+    print("server.init: Legacy DestroyItem remote event handler temporarily COMMENTED OUT due to missing processItemActionRequest")
 end
 
 -- Player events
@@ -840,21 +954,18 @@ end)
 -- Add a new RemoteEvent for RecallItem
 local recallItemRemote = Remotes:FindFirstChild("RecallItem")
 if recallItemRemote and PlacementManager then
-    recallItemRemote.OnServerEvent:Connect(function(player, instanceId)
-        print(string.format("--- SERVER INIT: RecallItem (Standard) RECEIVED from %s for instanceId: %s ---", player.Name, tostring(instanceId)))
-        processItemActionRequest(player, instanceId, "recall", Remotes, SharedModule, ItemPurchaseHandler, PlacementManager,
-            function(p, inst, cost, originalItemId) -- p is player, inst is itemInstance
-                if PlacementManager and PlacementManager.HandleCostedRecallItemRequest then
-                    -- HandleCostedRecallItemRequest is expected to handle inventory addition and currency (which processItemActionRequest already did for cost part)
-                    -- So, HandleCostedRecallItemRequest might need adjustment if it also tries to deduct currency.
-                    -- For now, we pass the cost, but it might be ignored or used for refund logic by HandleCostedRecallItemRequest.
-                    return PlacementManager:HandleCostedRecallItemRequest(p, inst, cost, originalItemId) 
-                end
-                return {success = false, message = "Recall (standard) service is currently unavailable."}
-            end
-        )
-    end)
-    print("server.init: Connected RecallItem remote event (now routed through processItemActionRequest to HandleCostedRecallItemRequest)")
+    -- recallItemRemote.OnServerEvent:Connect(function(player, instanceId)
+    --     print(string.format("--- SERVER INIT: RecallItem (Standard) RECEIVED from %s for instanceId: %s ---", player.Name, tostring(instanceId)))
+    --     processItemActionRequest(player, instanceId, "recall", Remotes, SharedModule, ItemPurchaseHandler, PlacementManager,
+    --         function(p, inst, cost, originalItemId) -- p is player, inst is itemInstance
+    --             if PlacementManager and PlacementManager.HandleCostedRecallItemRequest then
+    --                 return PlacementManager:HandleCostedRecallItemRequest(p, inst, cost, originalItemId) 
+    --             end
+    --             return {success = false, message = "Recall (standard) service is currently unavailable."}
+    --         end
+    --     )
+    -- end)
+    print("server.init: RecallItem remote event (standard) handler temporarily COMMENTED OUT due to missing processItemActionRequest. Recall is now directly handled in PlacementManager._SetupRemoteEvents")
 end
 
 print("Server initialization completed successfully")
@@ -923,36 +1034,6 @@ end
 
 -- Call the setup function to ensure templates exist
 setupItemTemplates()
-
--- Create a function to safely get or create a RemoteEvent
-local function getOrCreateRemoteEvent(name, parent)
-    local event = parent:FindFirstChild(name)
-    if not event or not event:IsA("RemoteEvent") then
-        if event then event:Destroy() end -- Remove if wrong type
-        event = Instance.new("RemoteEvent")
-        event.Name = name
-        event.Parent = parent
-        print(string.format("server.init: Created new RemoteEvent: %s in %s", name, parent:GetFullName()))
-    else
-        print(string.format("server.init: Using existing RemoteEvent: %s in %s", name, parent:GetFullName()))
-    end
-    return event
-end
-
--- Create a function to safely get or create a RemoteFunction
-local function getOrCreateRemoteFunction(name, parent)
-    local functionRemote = parent:FindFirstChild(name)
-    if not functionRemote or not functionRemote:IsA("RemoteFunction") then
-        if functionRemote then functionRemote:Destroy() end -- Remove if wrong type
-        functionRemote = Instance.new("RemoteFunction")
-        functionRemote.Name = name
-        functionRemote.Parent = parent
-        print(string.format("server.init: Created new RemoteFunction: %s in %s", name, parent:GetFullName()))
-    else
-        print(string.format("server.init: Using existing RemoteFunction: %s in %s", name, parent:GetFullName()))
-    end
-    return functionRemote
-end
 
 -- Placeholder handlers for new item action requests
 local requestCloneItemRemote = getOrCreateRemoteEvent("RequestCloneItem", Remotes)
