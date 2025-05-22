@@ -57,6 +57,7 @@ if not Remotes then
     createRemote("GetItemData", "RemoteFunction")
     createRemote("GetItemCatalog", "RemoteFunction")
     createRemote("IsItemAffordable", "RemoteFunction")
+    createRemote("GetMyBalance", "RemoteFunction")
     
     print("Created standard remote events and functions")
 end
@@ -326,7 +327,7 @@ local function processItemActionRequest(player, instanceId, actionKey, remotes, 
     -- 5. Call action-specific logic
     if actionSpecificLogic then
         local successCall, resultFromLogic = pcall(function()
-            return actionSpecificLogic(player, itemInstance, actualCost, originalItemId) -- Must return {success=bool, message=string}
+            return actionSpecificLogic(player, itemInstance, actualCost, originalId) -- Must return {success=bool, message=string}
         end)
 
         if not successCall or not resultFromLogic or type(resultFromLogic) ~= "table" then
@@ -420,8 +421,23 @@ if SharedModule.CurrencyManager and SharedModule.CurrencyManager.new then
     end)
     
     if cmSuccess and cmResult then
-        CurrencyManager = cmResult
-        print("server.init: Successfully created CurrencyManager instance")
+        CurrencyManager = cmResult -- This is a local variable
+        _G.CurrencyManager = CurrencyManager -- Make the instance globally accessible
+        print("server.init: Successfully created CurrencyManager instance and assigned to _G.CurrencyManager")
+        
+        -- Initialize the CurrencyManager instance now, so it processes existing players
+        if _G.CurrencyManager.Initialize then
+            local initCmSuccess, initCmError = pcall(function()
+                _G.CurrencyManager:Initialize() -- This will call SetupPlayerHandling
+            end)
+            if initCmSuccess then
+                print("server.init: Explicitly initialized _G.CurrencyManager instance.")
+            else
+                warn("server.init: Failed to explicitly initialize _G.CurrencyManager instance:", initCmError)
+            end
+        else
+            warn("server.init: _G.CurrencyManager.Initialize method not found after instance creation!")
+        end
     else
         warn("server.init: Failed to create CurrencyManager instance:", cmResult)
     end
@@ -624,6 +640,33 @@ local getItemDataRemote = Remotes:FindFirstChild("GetItemData")
 if getItemDataRemote then
     getItemDataRemote.OnServerInvoke = function(_, itemId)
         return SharedModule.Constants.ITEMS[itemId] or {}
+    end
+end
+
+-- GetMyBalance - NEW HANDLER
+local getMyBalanceFunc = Remotes:FindFirstChild("GetMyBalance")
+if getMyBalanceFunc then
+    getMyBalanceFunc.OnServerInvoke = function(player)
+        if _G.CurrencyManager and typeof(_G.CurrencyManager.GetBalance) == "function" then
+            local balance = _G.CurrencyManager:GetBalance(player) -- Use the instance from _G
+            print(string.format("GetMyBalance invoked by %s (using _G.CurrencyManager), returning balance: %s", player.Name, tostring(balance)))
+            return balance
+        else
+            warn("GetMyBalance: _G.CurrencyManager instance or GetBalance method not found.")
+            -- Fallback, though ideally the instance should always be available
+            local SharedModule = game:GetService("ReplicatedStorage"):FindFirstChild("shared")
+            if SharedModule then
+                local CM_Module = SharedModule:FindFirstChild("core"):FindFirstChild("economy"):FindFirstChild("CurrencyManager")
+                if CM_Module then
+                    -- This is a best-effort guess if _G fails, assumes module has an active instance or static method
+                    -- This path is not ideal and indicates a setup issue if reached.
+                    local CurrencyManager_Actual_Instance = CM_Module -- This is still not the instance.
+                    -- For this fallback to potentially work, we'd need a known way to get the instance.
+                    -- This highlights the importance of _G.CurrencyManager being correctly populated and accessible.
+                end
+            end
+            return 0 
+        end
     end
 end
 
@@ -1003,3 +1046,25 @@ getOrCreateRemoteEvent("MoveItem", Remotes)
 -- getOrCreateRemoteEvent("RecallItem", Remotes) -- This one is explicitly handled by PlacementManager and its event is created there, and also connected above (line 585)
 getOrCreateRemoteEvent("DestroyItem", Remotes)
 getOrCreateRemoteEvent("RotateItem", Remotes)
+
+-- Setup remote event/function handlers that need direct access to initialized managers
+local getInventoryFunc = Remotes:FindFirstChild("GetInventory")
+if getInventoryFunc then
+    getInventoryFunc.OnServerInvoke = function(player)
+        -- Implementation for GetInventory (likely uses ItemPurchaseHandler or InventoryManager)
+        -- This part seems to already exist in your logs for ItemPurchaseHandler
+        if ItemPurchaseHandler and ItemPurchaseHandler.GetPlayerData then
+            local data = ItemPurchaseHandler:GetPlayerData(player)
+            if data and data.inventory and data.currency then -- Make sure structure is as expected
+                print(string.format("GetInventory result for %s : success=true items=%d currency=%d", player.Name, #data.inventory, data.currency))
+                return true, data.inventory, data.currency
+            else
+                warn(string.format("GetInventory: Player data or expected fields missing for %s", player.Name))
+                return false, nil, nil
+            end
+        else
+            warn("GetInventory: ItemPurchaseHandler or GetPlayerData not available")
+            return false, nil, nil
+        end
+    end
+end

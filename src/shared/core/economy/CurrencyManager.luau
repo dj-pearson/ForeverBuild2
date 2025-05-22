@@ -52,6 +52,18 @@ function CurrencyManager:SetupPlayerHandling()
     game.Players.PlayerRemoving:Connect(function(player)
         self:OnPlayerLeaving(player)
     end)
+
+    -- Handle players already in the game when the manager initializes
+    if IS_SERVER then -- Ensure this server-specific logic runs only on the server
+        for _, player in ipairs(Players:GetPlayers()) do
+            if not self.playerBalances[player.UserId] then
+                print(string.format("CurrencyManager:SetupPlayerHandling - Processing existing player: %s", player.Name))
+                self:OnPlayerJoined(player)
+            else
+                print(string.format("CurrencyManager:SetupPlayerHandling - Existing player %s already has a balance entry.", player.Name))
+            end
+        end
+    end
 end
 
 -- Set up marketplace handling
@@ -101,7 +113,9 @@ function CurrencyManager:InitializePlayerBalance(player)
         lastRewardTime = os.time(),
         lastDailyBonus = 0,
         lastWeeklyBonus = 0,
-        lastMonthlyBonus = 0
+        lastMonthlyBonus = 0,
+        isLoading = true,
+        isLoaded = false
     }
     
     self.playerBalances[player.UserId] = balance
@@ -112,22 +126,68 @@ end
 
 -- Load player balance from DataStore
 function CurrencyManager:LoadPlayerBalance(player)
-    local success, result = pcall(function()
-        return self.currencyStore:GetAsync(player.UserId)
-    end)
-    
-    if success and result then
-        self.playerBalances[player.UserId] = result
-    else
-        -- Initialize with correct balance if loading fails
-        self.playerBalances[player.UserId] = {
-            coins = 2000000, -- Set to 2 million coins
+    local userId = player.UserId
+    -- Ensure playerBalances entry exists
+    if not self.playerBalances[userId] then
+        -- This case should ideally be handled by InitializePlayerBalance first
+        self.playerBalances[userId] = {
+            coins = 0,
             lastRewardTime = os.time(),
             lastDailyBonus = 0,
             lastWeeklyBonus = 0,
-            lastMonthlyBonus = 0
+            lastMonthlyBonus = 0,
+            isLoading = true,
+            isLoaded = false
         }
+        warn(string.format("CurrencyManager:LoadPlayerBalance - playerBalances entry for %s was missing, created.", player.Name))
+    else
+        self.playerBalances[userId].isLoading = true -- Set loading true if called directly
+        self.playerBalances[userId].isLoaded = false
     end
+
+    local success, result
+    local attempts = 0
+    local maxAttempts = 3 -- Try up to 3 times
+    
+    while attempts < maxAttempts and not (success and result) do
+        attempts = attempts + 1
+        if attempts > 1 then
+            print(string.format("CurrencyManager:LoadPlayerBalance - Retrying GetAsync for %s (attempt %d/%d)", player.Name, attempts, maxAttempts))
+            task.wait(1) -- Wait 1 second before retrying
+        end
+        success, result = pcall(function()
+            return self.currencyStore:GetAsync(userId)
+        end)
+        if not success then -- pcall itself failed
+             warn(string.format("CurrencyManager:LoadPlayerBalance - pcall to GetAsync failed for %s on attempt %d: %s", player.Name, attempts, tostring(result))) -- result here is the error message
+             result = nil -- Ensure result is nil if pcall failed, so the loop condition (success and result) is false
+        end
+    end
+    
+    if success and result then
+        -- Merge loaded data with existing structure to preserve flags
+        self.playerBalances[userId].coins = result.coins or 0
+        self.playerBalances[userId].lastRewardTime = result.lastRewardTime or os.time()
+        self.playerBalances[userId].lastDailyBonus = result.lastDailyBonus or 0
+        self.playerBalances[userId].lastWeeklyBonus = result.lastWeeklyBonus or 0
+        self.playerBalances[userId].lastMonthlyBonus = result.lastMonthlyBonus or 0
+        print(string.format("💰 SERVER CurrencyManager: Loaded balance for %s: %d coins from DataStore", player.Name, self.playerBalances[userId].coins))
+    else
+        -- Initialize with correct balance if loading fails or new player
+        local defaultCoins = (Constants.CURRENCY and Constants.CURRENCY.NEW_PLAYER_BALANCE) or 2000000 -- Safer access to NEW_PLAYER_BALANCE
+        self.playerBalances[userId].coins = defaultCoins
+        self.playerBalances[userId].lastRewardTime = os.time()
+        self.playerBalances[userId].lastDailyBonus = 0
+        self.playerBalances[userId].lastWeeklyBonus = 0
+        self.playerBalances[userId].lastMonthlyBonus = 0
+        print(string.format("💰 SERVER CurrencyManager: Set default balance for %s: %d coins (DataStore load failed or new player: %s)", player.Name, defaultCoins, tostring(not success or not result)))
+    end
+    
+    self.playerBalances[userId].isLoading = false -- FINISHED loading
+    self.playerBalances[userId].isLoaded = true   -- Data is now loaded
+    
+    -- Send this initial balance to the client
+    self:UpdatePlayerBalance(player) -- <<< KEY ADDITION
 end
 
 -- Save player balance to DataStore
@@ -209,20 +269,85 @@ end
 
 -- Update player balance
 function CurrencyManager:UpdatePlayerBalance(player)
-    local balance = self.playerBalances[player.UserId]
-    if not balance then return end
+    local balanceData = self.playerBalances[player.UserId]
+    if not balanceData then 
+        warn(string.format("CurrencyManager:UpdatePlayerBalance - No balance data for player %s (UserId: %s)", player.Name, player.UserId))
+        return 
+    end
     
-    -- Update player attributes
-    player:SetAttribute("Coins", balance.coins)
+    -- Ensure data is loaded before sending update, or if it's explicitly being set (e.g. default)
+    if not balanceData.isLoaded and not balanceData.isLoading then
+        -- This might happen if UpdatePlayerBalance is called before LoadPlayerBalance completes
+        -- Or if there's a logic path that bypasses the loading flags.
+        -- For safety, one could argue to initiate a load here or wait.
+        -- However, UpdatePlayerBalance is also called *after* loading completes or default is set.
+        -- The print statement below will help to understand the context if this warning appears.
+        warn(string.format("CurrencyManager:UpdatePlayerBalance - Called for %s when data might not be fully loaded. isLoaded: %s, isLoading: %s. Coins: %s", player.Name, tostring(balanceData.isLoaded), tostring(balanceData.isLoading), tostring(balanceData.coins)))
+    end
     
-    -- Fire client event
-    ReplicatedStorage.Remotes.UpdateBalance:FireClient(player, balance.coins)
+    local currentCoins = balanceData.coins
+    
+    -- Ensure Remotes folder and UpdateBalance event exist before firing
+    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+    if remotes then
+        local updateBalanceEvent = remotes:FindFirstChild("UpdateBalance")
+        if updateBalanceEvent then
+            print(string.format("💰 SERVER CurrencyManager: Firing UpdateBalance remote event for %s with %d coins", player.Name, currentCoins))
+            updateBalanceEvent:FireClient(player, currentCoins)
+        else
+            warn(string.format("CurrencyManager:UpdatePlayerBalance - UpdateBalance RemoteEvent not found for player %s", player.Name))
+        end
+    else
+        warn(string.format("CurrencyManager:UpdatePlayerBalance - Remotes folder not found for player %s", player.Name))
+    end
 end
 
 -- Get player balance
 function CurrencyManager:GetBalance(player)
-    local balance = self.playerBalances[player.UserId]
-    return balance and balance.coins or 0
+    local userId = player.UserId
+    local attempts = 0
+    -- Wait up to ~5 seconds total. PlayerAdded should definitely have fired by then.
+    local maxAttemptsInit = 25 -- for playerBalances[userId] to exist (2.5s)
+    local maxAttemptsLoad = 25 -- for data to be loaded (additional 2.5s)
+
+    -- Wait for the player's balance entry to be created by OnPlayerJoined/InitializePlayerBalance
+    while not self.playerBalances[userId] and attempts < maxAttemptsInit do
+        print(string.format("CurrencyManager:GetBalance - Waiting for balance entry for %s (attempt %d/%d)", player.Name, attempts + 1, maxAttemptsInit))
+        task.wait(0.1)
+        attempts = attempts + 1
+    end
+
+    if not self.playerBalances[userId] then
+        warn(string.format("CurrencyManager:GetBalance - Balance entry for %s NOT found after %d attempts. This player may not be fully initialized. Returning 0.", player.Name, attempts))
+        -- Attempting a last-ditch init, though this is not ideal here.
+        self:InitializePlayerBalance(player) 
+        -- This InitializePlayerBalance will do an async load. We can't wait for it here without overcomplicating.
+        -- The UI will get 0, then an update when LoadPlayerBalance completes.
+        return 0 
+    end
+
+    -- Now wait for the data to be loaded (isLoading == false and isLoaded == true)
+    attempts = 0 -- Reset attempts for the loading phase
+    while self.playerBalances[userId].isLoading == true and attempts < maxAttemptsLoad do
+        print(string.format("CurrencyManager:GetBalance - Balance for %s is loading (attempt %d/%d). Waiting...", player.Name, attempts + 1, maxAttemptsLoad))
+        task.wait(0.1)
+        attempts = attempts + 1
+    end
+
+    if not self.playerBalances[userId].isLoaded then
+        warn(string.format("CurrencyManager:GetBalance - Failed to get loaded balance for %s after %d + %d attempts. isLoading: %s, isLoaded: %s. Returning current coins or 0.", 
+            player.Name, 
+            maxAttemptsInit,
+            attempts,
+            tostring(self.playerBalances[userId].isLoading),
+            tostring(self.playerBalances[userId].isLoaded)
+        ))
+        -- Return whatever coins are there, or 0; an update should come later if it was a genuine load issue.
+        return self.playerBalances[userId].coins or 0
+    end
+    
+    print(string.format("CurrencyManager:GetBalance - Successfully retrieved balance for %s: %d coins", player.Name, self.playerBalances[userId].coins))
+    return self.playerBalances[userId].coins
 end
 
 -- Add coins to player
@@ -330,12 +455,11 @@ end
 function CurrencyManager:GetPlayerCurrency(player)
     if IS_SERVER then
         -- Server implementation
-        if not player then return 0 end
-        local userId = player.UserId
-        return self.playerBalances[userId] or Constants.CURRENCY.STARTING_COINS
+        local balance = self.playerBalances[player.UserId]
+        return balance and balance.coins or 0
     else
         -- Client implementation
-        return self.playerCurrency
+        return self.playerCurrency or 0
     end
 end
 

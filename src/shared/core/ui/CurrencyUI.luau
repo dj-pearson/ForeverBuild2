@@ -89,9 +89,45 @@ end
 
 -- Initialize the CurrencyUI
 function CurrencyUI:Initialize()
-    self:CreateUI()
-    self:SetupEventHandlers()
-    self:UpdateBalance(Constants.CURRENCY.STARTING_COINS) -- Assuming this is still relevant
+    self:CreateUI() -- Sets balance text to "0" initially by default in CreateUI
+
+    -- Change BalanceText to "---"
+    if self.ui then
+        local mainFrame = self.ui:FindFirstChild("MainCurrencyFrame") -- Assuming self.ui is the ScreenGui
+        if mainFrame then
+            local balanceText = mainFrame:FindFirstChild("BalanceText")
+            if balanceText then
+                balanceText.Text = "---" -- Or "Loading..."
+            end
+        end
+    end
+    
+    self:SetupEventHandlers() -- This connects to UpdateBalance for future updates
+
+    -- NEW: Proactively request initial balance
+    -- ReplicatedStorage and Constants are available as upvalues
+
+    local remotes = ReplicatedStorage:WaitForChild("Remotes", 10)
+    if remotes then
+        local getMyBalanceFunc = remotes:FindFirstChild("GetMyBalance") -- NEW RemoteFunction
+        if getMyBalanceFunc and getMyBalanceFunc:IsA("RemoteFunction") then
+            local success, currentBalance = pcall(function()
+                return getMyBalanceFunc:InvokeServer()
+            end)
+            if success and type(currentBalance) == "number" then
+                self:UpdateBalance(currentBalance)
+            else
+                warn("CurrencyUI: Failed to invoke GetMyBalance or received invalid balance. Error/Result:", currentBalance)
+                self:UpdateBalance(Constants.CURRENCY.STARTING_COINS) -- Fallback to 200 if call fails
+            end
+        else
+            warn("CurrencyUI: GetMyBalance RemoteFunction not found or not a RemoteFunction. UI might show default.")
+            self:UpdateBalance(Constants.CURRENCY.STARTING_COINS) -- Fallback to 200 if remote not found
+        end
+    else
+        warn("CurrencyUI: Remotes folder not found for initial balance fetch.")
+         self:UpdateBalance(Constants.CURRENCY.STARTING_COINS) -- Fallback to 200
+    end
 end
 
 -- Create UI

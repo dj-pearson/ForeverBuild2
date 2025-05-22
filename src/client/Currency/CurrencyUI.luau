@@ -169,7 +169,7 @@ function CurrencyUI:Initialize()
     self:SetupEventHandling()
     
     -- Initial balance update
-    self:UpdateBalance(Constants.CURRENCY.STARTING_COINS or 0)
+    -- self:UpdateBalance(Constants.CURRENCY.STARTING_COINS or 0)
 end
 
 -- Create UI
@@ -219,7 +219,7 @@ function CurrencyUI:CreateUI()
     balanceLabel.TextColor3 = Color3.fromRGB(255, 223, 70)
     balanceLabel.TextSize = 28
     balanceLabel.Font = Enum.Font.GothamBold
-    balanceLabel.Text = "0"
+    balanceLabel.Text = "..." -- Changed from "0"
     balanceLabel.TextXAlignment = Enum.TextXAlignment.Left
     balanceLabel.Parent = mainFrame
     

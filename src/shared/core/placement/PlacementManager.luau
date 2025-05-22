@@ -483,16 +483,11 @@ function PlacementManager:PlaceItem(player, itemId, position, normal, currentAng
     
     -- Generate a unique instance ID
     local instanceId
-    if self.UniqueItemIdAssigner then
-        -- Use the proper ID assigner
-        instanceId = self.UniqueItemIdAssigner:AssignNewIdToItem(placedItem, itemId, player.UserId)
-    else
-        -- Create a fallback ID using timestamp and player ID
-        local timestamp = os.time()
-        local playerId = player and player.UserId or 0
-        instanceId = string.format("%s_%d_%d", normalizedItemId, playerId, timestamp)
-        print("PlacementManager: Using fallback instanceId generation:", instanceId)
-    end
+    -- Create a fallback ID using timestamp and player ID
+    local timestamp = os.time()
+    local playerId = player and player.UserId or 0
+    instanceId = string.format("%s_%d_%d", normalizedItemId, playerId, timestamp)
+    print("PlacementManager: Using fallback instanceId generation:", instanceId)
     
     placedItem.Name = instanceId -- Set the item's actual name to the instanceId
     
