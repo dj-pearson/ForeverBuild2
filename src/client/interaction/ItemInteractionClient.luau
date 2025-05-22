@@ -129,8 +129,17 @@ function ItemInteractionClient:SetupRemotes()
     self:CacheRemoteEvent(remotesFolder, "CloneItem") -- Renamed from RequestCloneItem
     self:CacheRemoteEvent(remotesFolder, "MoveItem") -- Renamed from RequestMoveItem
     self:CacheRemoteEvent(remotesFolder, "RecallItem") -- Renamed from RequestRecallItem (Note: Server might not have this yet)
-    self:CacheRemoteEvent(remotesFolder, "DestroyItem") -- Renamed from RequestDestroyItem
+    self:CacheRemoteEvent(remotesFolder, "RequestDestroyItem") -- Changed from DestroyItem to match server expectations
     self:CacheRemoteEvent(remotesFolder, "RotateItem") -- Renamed from RequestRotateItem
+    
+    -- Also try legacy event names for backward compatibility
+    if not self.remotes.RequestDestroyItem then
+        local destroyItem = remotesFolder:FindFirstChild("DestroyItem")
+        if destroyItem and destroyItem:IsA("RemoteEvent") then
+            self.remotes.RequestDestroyItem = destroyItem
+            print("Using legacy 'DestroyItem' remote event for destroy functionality")
+        end
+    end
     
     -- Connect to notifications
     if self.remotes.NotifyPlayer then
@@ -211,9 +220,21 @@ function ItemInteractionClient:SetupUI()
             elseif actionKey == "recall" and self.remotes.RecallItem then -- Renamed from self.remotes.RequestRecallItem
                 self:ShowNotification(string.format("Requesting recall for %s...", itemInstance.Name), "Info")
                 self.remotes.RecallItem:FireServer(instanceId, actualCost) -- Renamed from self.remotes.RequestRecallItem
-            elseif actionKey == "destroy" and self.remotes.DestroyItem then -- Renamed from self.remotes.RequestDestroyItem
+            elseif actionKey == "destroy" then
                 self:ShowNotification(string.format("Requesting destroy for %s...", itemInstance.Name), "Info")
-                self.remotes.DestroyItem:FireServer(instanceId, actualCost) -- Renamed from self.remotes.RequestDestroyItem
+                
+                -- Try RequestDestroyItem first (proper name)
+                if self.remotes.RequestDestroyItem then
+                    print("Using RequestDestroyItem remote event")
+                    self.remotes.RequestDestroyItem:FireServer(instanceId, actualCost)
+                -- Fall back to DestroyItem (legacy name)
+                elseif self.remotes.DestroyItem then
+                    print("Using legacy DestroyItem remote event")
+                    self.remotes.DestroyItem:FireServer(instanceId, actualCost)
+                else
+                    self:ShowNotification("Error: Destroy functionality is not available.", "Error")
+                    warn("ItemInteractionClient: Neither RequestDestroyItem nor DestroyItem remote events are available")
+                end
             elseif actionKey == "rotate" and self.remotes.RotateItem then -- Renamed from self.remotes.RequestRotateItem
                  -- Rotate might also need a sub-UI for direction/angle
                 self:ShowNotification("Rotate action selected. (Full implementation pending)", "Info")
