@@ -452,7 +452,7 @@ function PlacementManager:PlaceItem(player, itemId, position, rotation)
     -- Generate a unique instance ID
     local instanceId = normalizedItemId .. "_" .. player.UserId .. "_" .. tostring(os.time())
     placedItem:SetAttribute("instanceId", instanceId)
-    placedItem:SetAttribute("itemId", normalizedItemId)
+    placedItem:SetAttribute("itemId", normalizedItemId) -- MODIFIED: Was template.Name, now normalizedItemId
     placedItem:SetAttribute("owner", player.UserId)
     placedItem:SetAttribute("placedTime", os.time())
     placedItem:SetAttribute("persistent", true)

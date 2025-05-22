@@ -194,11 +194,41 @@ local function processItemActionRequest(player, instanceId, actionKey, remotes, 
         NotifyPlayer:FireClient(player, "Error: Placed item storage not found.")
         return false, nil
     end
-    local itemInstance = placedFolder:FindFirstChild(instanceId)
+
+    local itemInstance = nil
+    -- Primary search: Iterate through children and check the "instanceId" attribute.
+    if placedFolder then
+        for _, child in ipairs(placedFolder:GetChildren()) do
+            local idAttribute = child:GetAttribute("instanceId")
+            if idAttribute and idAttribute == instanceId then
+                itemInstance = child
+                break
+            end
+        end
+    end
 
     if not itemInstance then
-        warn(string.format("server.init: processItemActionRequest (%s) - Could not find item instance: %s", actionKey, instanceId))
-        NotifyPlayer:FireClient(player, "Error: Could not find the specified item.")
+        -- Primary attribute search failed, log this and attempt fallback.
+        local primarySearchFailedMsg = string.format("server.init: processItemActionRequest (%s) - Primary lookup: Could not find item by instanceId attribute '%s'.", actionKey, instanceId)
+        
+        -- Fallback search: Try to find by name (original behavior).
+        if placedFolder then
+            itemInstance = placedFolder:FindFirstChild(instanceId)
+        end
+
+        if not itemInstance then
+            warn(primarySearchFailedMsg .. " Fallback lookup by name also failed. Item not found.")
+            NotifyPlayer:FireClient(player, "Error: Could not find the specified item.")
+            return false, nil
+        else
+            -- Found by name (fallback), but not by attribute. This is worth noting.
+            warn(primarySearchFailedMsg .. string.format(" Found by name '%s' (fallback). This might indicate inconsistent item naming or attribute setting.", instanceId))
+        end
+    end
+
+    if not itemInstance then -- This check is technically redundant if the logic above is correct, but as a safeguard.
+        warn(string.format("server.init: processItemActionRequest (%s) - 최종적으로 아이템 인스턴스를 찾지 못했습니다: %s", actionKey, instanceId)) -- "Ultimately could not find item instance"
+        NotifyPlayer:FireClient(player, "Error: Could not find the specified item (final check).")
         return false, nil
     end
 
