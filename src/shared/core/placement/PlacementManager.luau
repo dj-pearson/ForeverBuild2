@@ -785,43 +785,62 @@ function PlacementManager:FindItemByInstanceId(instanceId)
     end
 
     -- Get the Placed folder where items are stored
-    local PlacedItemsFolder = self.placedFolder
-    if not PlacedItemsFolder then
-        -- Try to find it through the worldFolder
-        if self.worldFolder and self.worldFolder:FindFirstChild("Placed") then
-            PlacedItemsFolder = self.worldFolder.Placed
-        else
-            -- Try looking in Workspace directly
-            local worldFolder = workspace:FindFirstChild(PLACED_ITEMS_FOLDER_NAME)
-            if worldFolder and worldFolder:FindFirstChild("Placed") then
-                PlacedItemsFolder = worldFolder.Placed
-                -- Update the reference while we're here
-                self.worldFolder = worldFolder
-                self.placedFolder = PlacedItemsFolder
-                print(string.format("FindItemByInstanceId: Found and cached PlacedItemsFolder at %s", PlacedItemsFolder:GetFullName()))
+    local PlacedItemsFolder = nil
+    
+    -- First try with World_Items/Placed folder which is the standard in this system
+    local worldItems = workspace:FindFirstChild("World_Items")
+    if worldItems and worldItems:FindFirstChild("Placed") then
+        PlacedItemsFolder = worldItems.Placed
+        print(string.format("FindItemByInstanceId: Using standard World_Items/Placed folder at %s", PlacedItemsFolder:GetFullName()))
+    else
+        -- Try with self.placedFolder (which might be set elsewhere)
+        PlacedItemsFolder = self.placedFolder
+        
+        if not PlacedItemsFolder then
+            -- Try to find it through the worldFolder
+            if self.worldFolder and self.worldFolder:FindFirstChild("Placed") then
+                PlacedItemsFolder = self.worldFolder.Placed
+                print(string.format("FindItemByInstanceId: Using worldFolder.Placed at %s", PlacedItemsFolder:GetFullName()))
             else
-                warn("FindItemByInstanceId: PlacedItemsFolder is nil and cannot be located.")
-                return nil
+                -- Try looking in Workspace directly for PlacedItems folder (legacy)
+                local placedItemsInWorkspace = workspace:FindFirstChild("PlacedItems")
+                if placedItemsInWorkspace then
+                    PlacedItemsFolder = placedItemsInWorkspace
+                    print(string.format("FindItemByInstanceId: Using legacy PlacedItems folder at %s", PlacedItemsFolder:GetFullName()))
+                else
+                    warn("FindItemByInstanceId: Could not find any PlacedItems folder in workspace.")
+                    return nil
+                end
             end
+        else
+            print(string.format("FindItemByInstanceId: Using existing placedFolder reference at %s", PlacedItemsFolder:GetFullName()))
         end
     end
+    
+    print(string.format("FindItemByInstanceId: Looking for item with instanceId '%s' in %s", instanceId, PlacedItemsFolder:GetFullName()))
 
     -- First, try to find by attribute (the primary method)
     for _, item in ipairs(PlacedItemsFolder:GetChildren()) do
-        if item:GetAttribute("instanceId") == instanceId then
+        local itemInstanceId = item:GetAttribute("instanceId")
+        if itemInstanceId == instanceId then
+            print(string.format("FindItemByInstanceId: Found item '%s' with matching instanceId attribute", item.Name))
             return item
         end
     end
+    
+    print(string.format("FindItemByInstanceId: No item with matching instanceId attribute '%s' found, trying fallback methods", instanceId))
 
     -- Fallback: If not found by attribute, try to find by name (assuming name is set to instanceId)
     local itemByName = PlacedItemsFolder:FindFirstChild(instanceId)
     if itemByName then
-        print(string.format("FindItemByInstanceId: Found item '%s' by name after attribute search failed. Consider ensuring instanceId attribute is always correctly set.", instanceId))
+        print(string.format("FindItemByInstanceId: Found item '%s' by name after attribute search failed.", instanceId))
         return itemByName
     end
 
     -- Try checking with legacy folder if available
-    if self.legacyPlacedFolder then
+    if self.legacyPlacedFolder and self.legacyPlacedFolder ~= PlacedItemsFolder then
+        print(string.format("FindItemByInstanceId: Checking legacy folder %s", self.legacyPlacedFolder:GetFullName()))
+        
         -- Check by attribute
         for _, item in ipairs(self.legacyPlacedFolder:GetChildren()) do
             if item:GetAttribute("instanceId") == instanceId then
@@ -838,9 +857,16 @@ function PlacementManager:FindItemByInstanceId(instanceId)
         end
     end
 
-    -- Fallback 2: If still not found, and if instanceId might be an old format (e.g. contains player ID and timestamp)
-    -- This part might be too specific or lead to incorrect matches if not careful.
-    print(string.format("FindItemByInstanceId: Item with instanceId '%s' not found by attribute or name.", instanceId))
+    -- Final check: Try by UniqueItemId attribute 
+    for _, item in ipairs(PlacedItemsFolder:GetChildren()) do
+        local uniqueItemId = item:GetAttribute("UniqueItemId")
+        if tostring(uniqueItemId) == instanceId then
+            print(string.format("FindItemByInstanceId: Found item '%s' with matching UniqueItemId attribute", item.Name))
+            return item
+        end
+    end
+
+    print(string.format("FindItemByInstanceId: Item with instanceId '%s' not found by any method.", instanceId))
     return nil
 end
 
@@ -1472,7 +1498,7 @@ function PlacementManager:DeleteItem(player, instanceId)
     local ownerId = item:GetAttribute("owner")
     local isAdmin = player:GetAttribute("IsAdmin") or false
     
-    if ownerId ~= player.UserId and not isAdmin then
+    if ownerId and ownerId ~= player.UserId and not isAdmin then
         warn(string.format("PlacementManager:DeleteItem - Player '%s' (ID: %s) does not own item (owner: %s) and is not admin", player.Name, player.UserId, tostring(ownerId)))
         return false
     end
@@ -1483,19 +1509,20 @@ function PlacementManager:DeleteItem(player, instanceId)
         print(string.format("  %s = %s", name, tostring(value)))
     end
     
-    -- Remove from the actual owner's placed items list
-    if ownerId and self.placedItemsByPlayer and self.placedItemsByPlayer[ownerId] then
+    -- Remove from tracking tables
+    if self.placedItemsByPlayer and ownerId and self.placedItemsByPlayer[ownerId] then
+        local instanceIdAttribute = item:GetAttribute("instanceId")
         local found = false
         for i, id_in_list in ipairs(self.placedItemsByPlayer[ownerId]) do
-            if id_in_list == instanceId then
+            if id_in_list == instanceIdAttribute then
                 table.remove(self.placedItemsByPlayer[ownerId], i)
-                print(string.format("PlacementManager:DeleteItem - Removed instanceId '%s' from placedItemsByPlayer for ownerId %s.", instanceId, tostring(ownerId)))
+                print(string.format("PlacementManager:DeleteItem - Removed instanceId '%s' from placedItemsByPlayer for ownerId %s.", instanceIdAttribute, tostring(ownerId)))
                 found = true
                 break
             end
         end
         if not found then
-            print(string.format("PlacementManager:DeleteItem - WARNING: instanceId '%s' not found in placedItemsByPlayer for ownerId %s", instanceId, tostring(ownerId)))
+            print(string.format("PlacementManager:DeleteItem - WARNING: instanceId '%s' not found in placedItemsByPlayer for ownerId %s", instanceIdAttribute, tostring(ownerId)))
         end
     else
         print(string.format("PlacementManager:DeleteItem - WARNING: Cannot track deletion in placedItemsByPlayer. ownerId: %s, self.placedItemsByPlayer: %s", tostring(ownerId), tostring(self.placedItemsByPlayer ~= nil)))
@@ -1510,9 +1537,11 @@ function PlacementManager:DeleteItem(player, instanceId)
         end
     end
     
-    if self.ItemsByInstanceId then
-        self.ItemsByInstanceId[instanceId] = nil
-        print(string.format("PlacementManager:DeleteItem - Removed from ItemsByInstanceId lookup: %s", instanceId))
+    -- Remove from InstanceId lookup
+    local itemInstanceId = item:GetAttribute("instanceId")
+    if itemInstanceId and self.ItemsByInstanceId then
+        self.ItemsByInstanceId[itemInstanceId] = nil
+        print(string.format("PlacementManager:DeleteItem - Removed from ItemsByInstanceId lookup: %s", itemInstanceId))
     end
     
     -- Destroy the item

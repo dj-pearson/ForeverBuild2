@@ -181,6 +181,8 @@ local function processItemActionRequest(player, instanceId, actionKey, remotes, 
     local Constants = sharedModule.Constants
     local NotifyPlayer = remotes.NotifyPlayer
 
+    print(string.format("server.init: processItemActionRequest - Player: %s, Action: %s, InstanceID: %s", player.Name, actionKey, tostring(instanceId)))
+
     -- 1. Get Item Instance
     local worldItemsFolder = Workspace:FindFirstChild("World_Items")
     if not worldItemsFolder then
@@ -198,15 +200,33 @@ local function processItemActionRequest(player, instanceId, actionKey, remotes, 
     local itemInstance = nil
     -- Primary search: Iterate through children and check the "instanceId" attribute.
     if placedFolder then
+        print(string.format("server.init: processItemActionRequest - Looking for item with instanceId '%s' in %s (%d children)", 
+            instanceId, placedFolder:GetFullName(), #placedFolder:GetChildren()))
+            
         for _, child in ipairs(placedFolder:GetChildren()) do
             local idAttribute = child:GetAttribute("instanceId")
             if idAttribute and idAttribute == instanceId then
                 itemInstance = child
+                print(string.format("server.init: processItemActionRequest - Found item '%s' by instanceId attribute", child.Name))
                 break
             end
         end
     end
 
+    -- Search by UniqueItemId if instanceId is not found
+    if not itemInstance then
+        print("server.init: processItemActionRequest - Trying to find by UniqueItemId attribute")
+        for _, child in ipairs(placedFolder:GetChildren()) do
+            local uniqueId = child:GetAttribute("UniqueItemId")
+            if uniqueId and tostring(uniqueId) == instanceId then
+                itemInstance = child
+                print(string.format("server.init: processItemActionRequest - Found item '%s' by UniqueItemId attribute", child.Name))
+                break
+            end
+        end
+    end
+
+    -- Search by name as last resort
     if not itemInstance then
         -- Primary attribute search failed, log this and attempt fallback.
         local primarySearchFailedMsg = string.format("server.init: processItemActionRequest (%s) - Primary lookup: Could not find item by instanceId attribute '%s'.", actionKey, instanceId)
@@ -226,11 +246,13 @@ local function processItemActionRequest(player, instanceId, actionKey, remotes, 
         end
     end
 
-    if not itemInstance then -- This check is technically redundant if the logic above is correct, but as a safeguard.
-        warn(string.format("server.init: processItemActionRequest (%s) - 최종적으로 아이템 인스턴스를 찾지 못했습니다: %s", actionKey, instanceId)) -- "Ultimately could not find item instance"
+    if not itemInstance then
+        warn(string.format("server.init: processItemActionRequest (%s) - Item not found: %s", actionKey, instanceId))
         NotifyPlayer:FireClient(player, "Error: Could not find the specified item (final check).")
         return false, nil
     end
+
+    print(string.format("server.init: processItemActionRequest - Found item: %s at %s", itemInstance.Name, itemInstance:GetFullName()))
 
     -- 2. Get itemId and priceIngame from attributes
     local originalItemId = itemInstance:GetAttribute("ItemId") -- Try "ItemId" first
@@ -238,6 +260,9 @@ local function processItemActionRequest(player, instanceId, actionKey, remotes, 
         originalItemId = itemInstance:GetAttribute("itemId") -- Fallback to "itemId"
     end
     local priceIngame = itemInstance:GetAttribute("priceIngame")
+
+    print(string.format("server.init: processItemActionRequest - Item attributes: originalItemId=%s, priceIngame=%s", 
+        tostring(originalItemId), tostring(priceIngame)))
 
     if not originalItemId or type(priceIngame) ~= "number" then
         warn(string.format("server.init: processItemActionRequest (%s) - Missing ItemId/itemId or invalid priceIngame attribute on instance: %s. ItemID: %s, PriceIngame: %s", actionKey, instanceId, tostring(originalItemId), tostring(priceIngame)))

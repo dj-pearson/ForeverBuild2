@@ -197,44 +197,46 @@ function ItemInteractionClient:SetupUI()
             local instanceId = itemInstance and itemInstance:GetAttribute("instanceId")
             if not instanceId then
                 warn("ItemInteractionClient: Cannot perform action - itemInstance is nil or missing instanceId attribute.")
-                self:ShowNotification("Error: Could not identify the selected item.", "Error")
-                return
+                local uniqueItemId = itemInstance and itemInstance:GetAttribute("UniqueItemId")
+                if uniqueItemId then
+                    instanceId = tostring(uniqueItemId)
+                    print(string.format("ItemInteractionClient: Using UniqueItemId as fallback: %s", instanceId))
+                else
+                    instanceId = itemInstance and itemInstance.Name
+                    print(string.format("ItemInteractionClient: Using item name as fallback: %s", instanceId))
+                end
+                
+                if not instanceId then
+                    self:ShowNotification("Error: Could not identify the selected item.", "Error")
+                    return
+                end
             end
 
-            -- Placeholder for client-side currency check - replace with actual currency check
-            local currentPlayerCurrency = 10000 -- TODO: Get this from CurrencyManager or GameManager
-            if currentPlayerCurrency < actualCost then
-                self:ShowNotification(string.format("Not enough coins for %s (Cost: %d)", Constants.ITEM_ACTIONS[actionKey].name, actualCost), "Error")
-                return
-            end
-
-            if actionKey == "clone" and self.remotes.CloneItem then -- Renamed from self.remotes.RequestCloneItem
-                -- For clone, we'd ideally also need a target position from the player.
-                -- For now, server can place it nearby or require a second step.
-                self:ShowNotification(string.format("Requesting clone for %s...", itemInstance.Name), "Info")
-                self.remotes.CloneItem:FireServer(instanceId, actualCost) -- Renamed from self.remotes.RequestCloneItem
-            elseif actionKey == "move" and self.remotes.MoveItem then -- Renamed from self.remotes.RequestMoveItem
-                -- Move would require a new placement system interaction
+            -- Placeholder for client-side currency check - real check is on server
+            -- Actually fire the remote event
+            if actionKey == "destroy" then
+                print(string.format("Using RequestDestroyItem remote event with instanceId: %s", instanceId))
+                
+                local requestDestroyItem = self.remotes.RequestDestroyItem
+                if requestDestroyItem then
+                    requestDestroyItem:FireServer(instanceId, actualCost)
+                else
+                    -- Fallback to legacy remote
+                    print("Using legacy DestroyItem remote event")
+                    local destroyItem = self.remotes.DestroyItem
+                    if destroyItem then
+                        destroyItem:FireServer(instanceId, actualCost)
+                    else
+                        self:ShowNotification("Error: DestroyItem service unavailable.", "Error")
+                    end
+                end
+            elseif actionKey == "move" then
+                -- Implementation for move action
                 self:ShowNotification("Move action selected. (Full implementation pending placement system integration)", "Info")
                 -- self.remotes.MoveItem:FireServer(instanceId, actualCost, newPosition, newRotation) -- Renamed from self.remotes.RequestMoveItem
             elseif actionKey == "recall" and self.remotes.RecallItem then -- Renamed from self.remotes.RequestRecallItem
                 self:ShowNotification(string.format("Requesting recall for %s...", itemInstance.Name), "Info")
                 self.remotes.RecallItem:FireServer(instanceId, actualCost) -- Renamed from self.remotes.RequestRecallItem
-            elseif actionKey == "destroy" then
-                self:ShowNotification(string.format("Requesting destroy for %s...", itemInstance.Name), "Info")
-                
-                -- Try RequestDestroyItem first (proper name)
-                if self.remotes.RequestDestroyItem then
-                    print("Using RequestDestroyItem remote event")
-                    self.remotes.RequestDestroyItem:FireServer(instanceId, actualCost)
-                -- Fall back to DestroyItem (legacy name)
-                elseif self.remotes.DestroyItem then
-                    print("Using legacy DestroyItem remote event")
-                    self.remotes.DestroyItem:FireServer(instanceId, actualCost)
-                else
-                    self:ShowNotification("Error: Destroy functionality is not available.", "Error")
-                    warn("ItemInteractionClient: Neither RequestDestroyItem nor DestroyItem remote events are available")
-                end
             elseif actionKey == "rotate" and self.remotes.RotateItem then -- Renamed from self.remotes.RequestRotateItem
                  -- Rotate might also need a sub-UI for direction/angle
                 self:ShowNotification("Rotate action selected. (Full implementation pending)", "Info")
