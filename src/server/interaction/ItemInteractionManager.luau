@@ -206,14 +206,14 @@ function ItemInteractionManager:RegisterHandlers()
     end
     
     if self.remotes.CloneItem then
-        self.remotes.CloneItem.OnServerEvent:Connect(function(player, itemId)
-            self:CloneItem(player, itemId)
+        self.remotes.CloneItem.OnServerEvent:Connect(function(player, instanceId, clientSentCost)
+            self:CloneItem(player, instanceId, clientSentCost)
         end)
     end
     
     if self.remotes.DestroyItem then
-        self.remotes.DestroyItem.OnServerEvent:Connect(function(player, itemId)
-            self:DestroyItem(player, itemId)
+        self.remotes.DestroyItem.OnServerEvent:Connect(function(player, instanceId, clientSentCost)
+            self:DestroyItem(player, instanceId, clientSentCost)
         end)
     end
 end
@@ -472,8 +472,8 @@ function ItemInteractionManager:RotateItem(player, itemId, newRotation)
     end)
 end
 
-function ItemInteractionManager:CloneItem(player, itemId)
-    self:ProcessItemAction(player, itemId, "clone", function(item)
+function ItemInteractionManager:CloneItem(player, instanceId, clientSentCost)
+    self:ProcessItemAction(player, instanceId, "clone", clientSentCost, function(item)
         local clone = item.instance:Clone()
         clone:SetAttribute("ItemID", HttpService:GenerateGUID(false))
         clone:SetAttribute("Owner", player.UserId)
@@ -495,10 +495,10 @@ function ItemInteractionManager:CloneItem(player, itemId)
     end)
 end
 
-function ItemInteractionManager:DestroyItem(player, itemId)
-    self:ProcessItemAction(player, itemId, "destroy", function(item)
+function ItemInteractionManager:DestroyItem(player, instanceId, clientSentCost)
+    self:ProcessItemAction(player, instanceId, "destroy", clientSentCost, function(item)
         -- Remove from registry
-        self.itemRegistry[itemId] = nil
+        self.itemRegistry[instanceId] = nil -- Ensure we use instanceId here
         
         -- Destroy the instance
         item.instance:Destroy()
@@ -506,16 +506,16 @@ function ItemInteractionManager:DestroyItem(player, itemId)
     end)
 end
 
-function ItemInteractionManager:ProcessItemAction(player, itemId, actionType, actionFunc)
+function ItemInteractionManager:ProcessItemAction(player, instanceId, actionType, clientSentCost, actionFunc)
     -- Get player data
     local playerData = self:GetPlayerData(player)
     
-    if not self.itemRegistry[itemId] then
+    if not self.itemRegistry[instanceId] then
         self:NotifyPlayer(player, "Item not found")
         return
     end
     
-    local item = self.itemRegistry[itemId]
+    local item = self.itemRegistry[instanceId]
     
     -- Check if player can perform this action on this item
     if item.type ~= "world" then
@@ -536,10 +536,18 @@ function ItemInteractionManager:ProcessItemAction(player, itemId, actionType, ac
         return
     end
     
-    -- Check if player can afford the action
-    local actionCost = Constants.ITEM_ACTIONS[actionType] and Constants.ITEM_ACTIONS[actionType].cost or 0
-    if playerData.currency < actionCost then
-        self:NotifyPlayer(player, "Not enough " .. Constants.CURRENCY.INGAME)
+    -- Validate clientSentCost against server-defined cost
+    local serverDefinedCost = Constants.ITEM_ACTIONS[actionType] and Constants.ITEM_ACTIONS[actionType].cost or 0
+    if clientSentCost ~= serverDefinedCost then
+        local message = string.format("Cost mismatch for %s. Client proposed %d, server expects %d.", actionType, clientSentCost, serverDefinedCost)
+        self:NotifyPlayer(player, message)
+        warn(string.format("Player %s (%d): %s for item %s.", player.Name, player.UserId, message, instanceId))
+        return -- Stop processing if costs don't align
+    end
+    
+    -- Check if player can afford the action (using server-defined cost)
+    if playerData.currency < serverDefinedCost then
+        self:NotifyPlayer(player, "Not enough " .. Constants.CURRENCY.INGAME .. string.format(" (Need %d, Have %d)", serverDefinedCost, playerData.currency))
         return
     end
     
@@ -547,8 +555,8 @@ function ItemInteractionManager:ProcessItemAction(player, itemId, actionType, ac
     local success = actionFunc(item)
     
     if success then
-        -- Deduct the cost
-        playerData.currency = playerData.currency - actionCost
+        -- Deduct the server-defined cost
+        playerData.currency = playerData.currency - serverDefinedCost
         self:NotifyPlayer(player, "Successfully " .. actionType .. "d the item")
     else
         self:NotifyPlayer(player, "Failed to " .. actionType .. " the item")
@@ -569,4 +577,4 @@ function ItemInteractionManager:IsAdmin(player)
     return false
 end
 
-return ItemInteractionManager 
+return ItemInteractionManager

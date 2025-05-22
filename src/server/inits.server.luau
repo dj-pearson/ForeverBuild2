@@ -203,11 +203,14 @@ local function processItemActionRequest(player, instanceId, actionKey, remotes, 
     end
 
     -- 2. Get itemId and priceIngame from attributes
-    local originalItemId = itemInstance:GetAttribute("itemId")
+    local originalItemId = itemInstance:GetAttribute("ItemId") -- Try "ItemId" first
+    if not originalItemId then
+        originalItemId = itemInstance:GetAttribute("itemId") -- Fallback to "itemId"
+    end
     local priceIngame = itemInstance:GetAttribute("priceIngame")
 
     if not originalItemId or type(priceIngame) ~= "number" then
-        warn(string.format("server.init: processItemActionRequest (%s) - Missing itemId or invalid priceIngame attribute on instance: %s. ItemID: %s, PriceIngame: %s", actionKey, instanceId, tostring(originalItemId), tostring(priceIngame)))
+        warn(string.format("server.init: processItemActionRequest (%s) - Missing ItemId/itemId or invalid priceIngame attribute on instance: %s. ItemID: %s, PriceIngame: %s", actionKey, instanceId, tostring(originalItemId), tostring(priceIngame)))
         NotifyPlayer:FireClient(player, "Error: Item information is incomplete for this action.")
         return false, nil
     end
@@ -253,7 +256,7 @@ local function processItemActionRequest(player, instanceId, actionKey, remotes, 
     -- 5. Call action-specific logic
     if actionSpecificLogic then
         local successCall, resultFromLogic = pcall(function()
-            return actionSpecificLogic(player, itemInstance, actualCost, originalId) -- Must return {success=bool, message=string}
+            return actionSpecificLogic(player, itemInstance, actualCost, originalItemId) -- Must return {success=bool, message=string}
         end)
 
         if not successCall or not resultFromLogic or type(resultFromLogic) ~= "table" then
