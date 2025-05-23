@@ -62,16 +62,31 @@ end
 
 -- Apply visual effects while moving
 function MovementManager:_ApplyMovementVisuals(item)
+    -- Store original properties for all parts
     if item:IsA("Model") then
         for _, part in ipairs(item:GetDescendants()) do
             if part:IsA("BasePart") then
-                part.Transparency = math.min(0.7, part.Transparency + 0.3)
-                part:SetAttribute("original_transparency", part.Transparency - 0.3)
+                -- Store all visual properties
+                part:SetAttribute("original_transparency", part.Transparency)
+                part:SetAttribute("original_color", part.BrickColor.Name)
+                part:SetAttribute("original_material", part.Material.Name)
+                part:SetAttribute("original_size", tostring(part.Size))
+                part:SetAttribute("original_cancollide", part.CanCollide)
+                
+                -- Apply movement transparency
+                part.Transparency = math.min(0.9, part.Transparency + 0.3)
             end
         end
     elseif item:IsA("BasePart") then
+        -- Store all visual properties
         item:SetAttribute("original_transparency", item.Transparency)
-        item.Transparency = math.min(0.7, item.Transparency + 0.3)
+        item:SetAttribute("original_color", item.BrickColor.Name)
+        item:SetAttribute("original_material", item.Material.Name)
+        item:SetAttribute("original_size", tostring(item.Size))
+        item:SetAttribute("original_cancollide", item.CanCollide)
+        
+        -- Apply movement transparency
+        item.Transparency = math.min(0.9, item.Transparency + 0.3)
     end
     
     -- Add movement highlight
@@ -208,17 +223,87 @@ function MovementManager:_RemoveMovementVisuals(item)
         highlight:Destroy()
     end
     
-    -- Restore transparency
+    -- Restore all original properties
     if item:IsA("Model") then
         for _, part in ipairs(item:GetDescendants()) do
-            if part:IsA("BasePart") and part:GetAttribute("original_transparency") then
-                part.Transparency = part:GetAttribute("original_transparency")
-                part:SetAttribute("original_transparency", nil)
+            if part:IsA("BasePart") then
+                -- Restore transparency
+                if part:GetAttribute("original_transparency") ~= nil then
+                    part.Transparency = part:GetAttribute("original_transparency")
+                    part:SetAttribute("original_transparency", nil)
+                end
+                
+                -- Restore color
+                if part:GetAttribute("original_color") then
+                    part.BrickColor = BrickColor.new(part:GetAttribute("original_color"))
+                    part:SetAttribute("original_color", nil)
+                end
+                
+                -- Restore material
+                if part:GetAttribute("original_material") then
+                    part.Material = Enum.Material[part:GetAttribute("original_material")]
+                    part:SetAttribute("original_material", nil)
+                end
+                
+                -- Restore size
+                if part:GetAttribute("original_size") then
+                    local sizeStr = part:GetAttribute("original_size")
+                    local coords = sizeStr:split(", ")
+                    if #coords == 3 then
+                        part.Size = Vector3.new(
+                            tonumber(coords[1]) or part.Size.X,
+                            tonumber(coords[2]) or part.Size.Y,
+                            tonumber(coords[3]) or part.Size.Z
+                        )
+                    end
+                    part:SetAttribute("original_size", nil)
+                end
+                
+                -- Restore collision
+                if part:GetAttribute("original_cancollide") ~= nil then
+                    part.CanCollide = part:GetAttribute("original_cancollide")
+                    part:SetAttribute("original_cancollide", nil)
+                end
             end
         end
-    elseif item:IsA("BasePart") and item:GetAttribute("original_transparency") then
-        item.Transparency = item:GetAttribute("original_transparency")
-        item:SetAttribute("original_transparency", nil)
+    elseif item:IsA("BasePart") then
+        -- Restore transparency
+        if item:GetAttribute("original_transparency") ~= nil then
+            item.Transparency = item:GetAttribute("original_transparency")
+            item:SetAttribute("original_transparency", nil)
+        end
+        
+        -- Restore color
+        if item:GetAttribute("original_color") then
+            item.BrickColor = BrickColor.new(item:GetAttribute("original_color"))
+            item:SetAttribute("original_color", nil)
+        end
+        
+        -- Restore material
+        if item:GetAttribute("original_material") then
+            item.Material = Enum.Material[item:GetAttribute("original_material")]
+            item:SetAttribute("original_material", nil)
+        end
+        
+        -- Restore size
+        if item:GetAttribute("original_size") then
+            local sizeStr = item:GetAttribute("original_size")
+            local coords = sizeStr:split(", ")
+            if #coords == 3 then
+                item.Size = Vector3.new(
+                    tonumber(coords[1]) or item.Size.X,
+                    tonumber(coords[2]) or item.Size.Y,
+                    tonumber(coords[3]) or item.Size.Z
+                )
+            end
+            item:SetAttribute("original_size", nil)
+        end
+        
+        -- Restore collision
+        if item:GetAttribute("original_cancollide") ~= nil then
+            item.CanCollide = item:GetAttribute("original_cancollide")
+            item:SetAttribute("original_cancollide", nil)
+        end
     end
 end
 

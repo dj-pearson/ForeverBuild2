@@ -219,27 +219,60 @@ function ItemInteractionManager:RegisterHandlers()
 end
 
 function ItemInteractionManager:RegisterCatalogItems()
-    -- Find and register all catalog items in the workspace
-    local items = workspace:FindFirstChild("Items")
-    if not items then
-        warn("Items folder not found in workspace")
-        return
-    end
+    -- Find and register all catalog items from multiple locations (recursively)
+    local count = 0
     
-    -- Register all items in the catalog
-    for _, item in ipairs(items:GetChildren()) do
-        if item:IsA("Model") or item:IsA("Part") then
-            local itemId = item:GetAttribute("ItemID") or item.Name
-            self.itemRegistry[itemId] = {
-                instance = item,
-                name = item.Name,
-                type = "catalog",
-                purchasable = true
-            }
+    -- Recursive function to register items from a folder
+    local function registerCatalogItemsRecursive(parent, path, source)
+        for _, item in ipairs(parent:GetChildren()) do
+            if item:IsA("Model") or item:IsA("Part") then
+                local itemId = item:GetAttribute("ItemID") or item.Name
+                self.itemRegistry[itemId] = {
+                    instance = item,
+                    name = item.Name,
+                    type = "catalog",
+                    purchasable = true,
+                    path = path and (path .. "/" .. item.Name) or item.Name,  -- Store folder path for organization
+                    source = source  -- Track where the item was found
+                }
+                count = count + 1
+                print("ItemInteractionManager: Registered catalog item:", itemId, "at path:", path and (path .. "/" .. item.Name) or item.Name, "from", source)
+            elseif item:IsA("Folder") then
+                -- Recursively search folders
+                local newPath = path and (path .. "/" .. item.Name) or item.Name
+                registerCatalogItemsRecursive(item, newPath, source)
+            end
         end
     end
     
-    print("Registered " .. #items:GetChildren() .. " catalog items")
+    -- 1. Check Workspace.Items first
+    local workspaceItems = workspace:FindFirstChild("Items")
+    if workspaceItems then
+        print("ItemInteractionManager: Scanning Workspace.Items for catalog items...")
+        registerCatalogItemsRecursive(workspaceItems, nil, "Workspace.Items")
+    else
+        print("ItemInteractionManager: Workspace.Items folder not found")
+    end
+    
+    -- 2. Check ServerStorage.Items (where glow items likely are)
+    if game:GetService("RunService"):IsServer() then
+        local serverStorageItems = game:GetService("ServerStorage"):FindFirstChild("Items")
+        if serverStorageItems then
+            print("ItemInteractionManager: Scanning ServerStorage.Items for catalog items...")
+            registerCatalogItemsRecursive(serverStorageItems, nil, "ServerStorage.Items")
+        else
+            print("ItemInteractionManager: ServerStorage.Items folder not found")
+        end
+    end
+    
+    -- 3. Check ReplicatedStorage.Items as fallback
+    local replicatedStorageItems = game:GetService("ReplicatedStorage"):FindFirstChild("Items")
+    if replicatedStorageItems then
+        print("ItemInteractionManager: Scanning ReplicatedStorage.Items for catalog items...")
+        registerCatalogItemsRecursive(replicatedStorageItems, nil, "ReplicatedStorage.Items")
+    end
+    
+    print("Registered " .. count .. " catalog items (including items in subfolders from multiple sources)")
 end
 
 function ItemInteractionManager:RegisterWorldItems()

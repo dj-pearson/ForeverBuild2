@@ -146,11 +146,37 @@ function ItemDataManager:_SerializeItem(item)
         itemData.position = {cf.Position.X, cf.Position.Y, cf.Position.Z}
         local rx, ry, rz = cf:ToEulerAnglesXYZ()
         itemData.rotation = {math.deg(rx), math.deg(ry), math.deg(rz)}
+        
+        -- Store visual properties of all parts
+        itemData.partProperties = {}
+        for i, part in ipairs(item:GetDescendants()) do
+            if part:IsA("BasePart") then
+                itemData.partProperties[tostring(i)] = {
+                    name = part.Name,
+                    transparency = part.Transparency,
+                    color = part.BrickColor.Name,
+                    material = part.Material.Name,
+                    size = {part.Size.X, part.Size.Y, part.Size.Z},
+                    canCollide = part.CanCollide,
+                    anchored = part.Anchored
+                }
+            end
+        end
     elseif item:IsA("BasePart") then
         local cf = item.CFrame
         itemData.position = {cf.Position.X, cf.Position.Y, cf.Position.Z}
         local rx, ry, rz = cf:ToEulerAnglesXYZ()
         itemData.rotation = {math.deg(rx), math.deg(ry), math.deg(rz)}
+        
+        -- Store visual properties for single part
+        itemData.partProperties = {
+            transparency = item.Transparency,
+            color = item.BrickColor.Name,
+            material = item.Material.Name,
+            size = {item.Size.X, item.Size.Y, item.Size.Z},
+            canCollide = item.CanCollide,
+            anchored = item.Anchored
+        }
     else
         warn("ItemDataManager: Unknown item type for serialization:", item.ClassName)
         return nil
@@ -196,6 +222,11 @@ function ItemDataManager:_RestoreItem(itemData, itemTemplateManager)
     -- Apply item data attributes
     self:_ApplyItemAttributes(placedItem, itemData)
     
+    -- Restore visual properties if saved
+    if itemData.partProperties then
+        self:_RestoreVisualProperties(placedItem, itemData.partProperties)
+    end
+    
     -- Set position and rotation
     local position = Vector3.new(itemData.position[1], itemData.position[2], itemData.position[3])
     local rotation = Vector3.new(itemData.rotation[1], itemData.rotation[2], itemData.rotation[3])
@@ -236,6 +267,75 @@ function ItemDataManager:_RestoreItem(itemData, itemTemplateManager)
     
     print("ItemDataManager: Successfully restored item:", itemData.instanceId)
     return true
+end
+
+-- Restore visual properties from saved data
+function ItemDataManager:_RestoreVisualProperties(item, savedProperties)
+    if item:IsA("Model") then
+        local parts = {}
+        for _, part in ipairs(item:GetDescendants()) do
+            if part:IsA("BasePart") then
+                table.insert(parts, part)
+            end
+        end
+        
+        -- Restore properties for each part
+        for index, partProps in pairs(savedProperties) do
+            local partIndex = tonumber(index)
+            if partIndex and parts[partIndex] then
+                local part = parts[partIndex]
+                
+                if partProps.transparency then
+                    part.Transparency = partProps.transparency
+                end
+                if partProps.color then
+                    pcall(function()
+                        part.BrickColor = BrickColor.new(partProps.color)
+                    end)
+                end
+                if partProps.material then
+                    pcall(function()
+                        part.Material = Enum.Material[partProps.material]
+                    end)
+                end
+                if partProps.size then
+                    part.Size = Vector3.new(partProps.size[1], partProps.size[2], partProps.size[3])
+                end
+                if partProps.canCollide ~= nil then
+                    part.CanCollide = partProps.canCollide
+                end
+                if partProps.anchored ~= nil then
+                    part.Anchored = partProps.anchored
+                end
+            end
+        end
+    elseif item:IsA("BasePart") then
+        -- Restore properties for single part
+        if savedProperties.transparency then
+            item.Transparency = savedProperties.transparency
+        end
+        if savedProperties.color then
+            pcall(function()
+                item.BrickColor = BrickColor.new(savedProperties.color)
+            end)
+        end
+        if savedProperties.material then
+            pcall(function()
+                item.Material = Enum.Material[savedProperties.material]
+            end)
+        end
+        if savedProperties.size then
+            item.Size = Vector3.new(savedProperties.size[1], savedProperties.size[2], savedProperties.size[3])
+        end
+        if savedProperties.canCollide ~= nil then
+            item.CanCollide = savedProperties.canCollide
+        end
+        if savedProperties.anchored ~= nil then
+            item.Anchored = savedProperties.anchored
+        end
+    end
+    
+    print("ItemDataManager: Restored visual properties for item:", item.Name)
 end
 
 -- Apply stored attributes to an item

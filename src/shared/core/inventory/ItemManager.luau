@@ -110,17 +110,32 @@ function ItemManager:GetActionPrice(itemId, action, player)
         end
     end
     
-    -- Look for the item model in Workspace > Items
+    -- Look for the item model in Workspace > Items (recursively)
     local itemsFolder = workspace:FindFirstChild("Items")
     if itemsFolder then
-        for _, model in ipairs(itemsFolder:GetChildren()) do
-            if model:IsA("Model") and model:GetAttribute("item") and model.Name == itemId then
-                local tier = model:GetAttribute("item")
-                local price = Constants.ITEM_PRICING[tier]
-                if price then
-                    return price
+        -- Recursive function to search through all folders
+        local function findItemRecursive(parent)
+            for _, model in ipairs(parent:GetChildren()) do
+                if model:IsA("Model") and model:GetAttribute("item") and model.Name == itemId then
+                    local tier = model:GetAttribute("item")
+                    local price = Constants.ITEM_PRICING[tier]
+                    if price then
+                        return price
+                    end
+                elseif model:IsA("Folder") then
+                    -- Recursively search subfolders
+                    local foundPrice = findItemRecursive(model)
+                    if foundPrice then
+                        return foundPrice
+                    end
                 end
             end
+            return nil
+        end
+        
+        local foundPrice = findItemRecursive(itemsFolder)
+        if foundPrice then
+            return foundPrice
         end
     end
     

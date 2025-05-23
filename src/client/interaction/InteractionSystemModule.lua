@@ -427,19 +427,10 @@ function InteractionSystem:UpdateCurrentTarget()
     -- Find all placed items in the workspace that we can interact with
     local potentialTargets = {}
     
-    -- Try both PlacedItems and World_Items.Placed
-    local placedItems = workspace:FindFirstChild("PlacedItems")
-    if not placedItems then
-        local worldItems = workspace:FindFirstChild("World_Items")
-        if worldItems then
-            placedItems = worldItems:FindFirstChild("Placed")
-        end
-    end
-    
-    if placedItems then
-        for _, item in ipairs(placedItems:GetChildren()) do
-            -- Check if the item has the necessary attributes
-            if item:GetAttribute("Interactable") then
+    -- Function to recursively scan for interactable items
+    local function scanForInteractableItems(parent, source)
+        for _, item in ipairs(parent:GetChildren()) do
+            if (item:IsA("Model") or item:IsA("Part")) and item:GetAttribute("Interactable") then
                 local itemPosition = item:GetPivot().Position
                 local distance = (itemPosition - playerPosition).Magnitude
                 
@@ -454,13 +445,53 @@ function InteractionSystem:UpdateCurrentTarget()
                         instance = item,
                         distance = distance,
                         dotProduct = dotProduct,
-                        id = item:GetAttribute("ItemID") or item.Name
+                        id = item:GetAttribute("ItemID") or item.Name,
+                        source = source  -- Track where the item was found
                     })
                 end
+            elseif item:IsA("Folder") then
+                -- Recursively search folders
+                scanForInteractableItems(item, source)
             end
         end
     end
     
+    -- 1. Try both PlacedItems and World_Items.Placed (existing placed world items)
+    local placedItems = workspace:FindFirstChild("PlacedItems")
+    if not placedItems then
+        local worldItems = workspace:FindFirstChild("World_Items")
+        if worldItems then
+            placedItems = worldItems:FindFirstChild("Placed")
+        end
+    end
+    
+    if placedItems then
+        scanForInteractableItems(placedItems, "Placed_Items")
+    end
+    
+    -- 2. Scan catalog items in Workspace.Items
+    local workspaceItems = workspace:FindFirstChild("Items")
+    if workspaceItems then
+        scanForInteractableItems(workspaceItems, "Workspace_Items")
+    end
+    
+    -- 3. Scan catalog items in ServerStorage.Items (where glow items likely are)
+    if game:GetService("RunService"):IsClient() then
+        -- On client, we can't access ServerStorage directly, so skip this
+        -- The server-side purchase system will handle ServerStorage items
+    else
+        local serverStorageItems = game:GetService("ServerStorage"):FindFirstChild("Items")
+        if serverStorageItems then
+            scanForInteractableItems(serverStorageItems, "ServerStorage_Items")
+        end
+    end
+    
+    -- 4. Scan catalog items in ReplicatedStorage.Items
+    local replicatedStorageItems = game:GetService("ReplicatedStorage"):FindFirstChild("Items")
+    if replicatedStorageItems then
+        scanForInteractableItems(replicatedStorageItems, "ReplicatedStorage_Items")
+    end
+
     -- If we have no potential targets, clear the current one
     if #potentialTargets == 0 then
         if self.currentTarget then
@@ -512,6 +543,9 @@ function InteractionSystem:UpdateCurrentTarget()
             -- Set new target and show UI
             self.currentTarget = bestTarget
             self:ShowInteractionUI(bestTarget)
+            
+            -- Debug output
+            print("[InteractionSystem] Target found:", bestTarget.id, "from", bestTarget.source)
         end
     elseif self.currentTarget then
         -- No good targets found, clear current
@@ -686,6 +720,11 @@ function InteractionSystem:GetAvailableInteractions(placedItem)
     -- This would typically depend on the item type and state
     local interactions = {}
     
+    -- Check if item is purchasable (catalog item)
+    if placedItem.instance:GetAttribute("Purchasable") or placedItem.instance:GetAttribute("Price") then
+        table.insert(interactions, "purchase")
+    end
+    
     -- Always allow examination
     table.insert(interactions, "examine")
     
@@ -797,6 +836,12 @@ function InteractionSystem:PerformInteraction(item, action)
     print("[InteractionSystem] Performing interaction", action, "on", item.id)
     
     -- Handle different interaction types
+    if action == "purchase" then
+        print("[InteractionSystem] Purchase action triggered")
+        self:PurchaseItem(item)
+        return
+    end
+    
     if action == "examine" then
         print("[InteractionSystem] Examine action triggered")
         self:ExamineItem(item)
@@ -1369,6 +1414,167 @@ function InteractionSystem:InteractWithItem(item)
     -- Hide the interaction UI
     self:HideInteractionUI()
     self.currentTarget = nil
+end
+
+function InteractionSystem:PurchaseItem(item)
+    print("[InteractionSystem] Showing purchase dialog for:", item.id)
+    
+    -- Get item details from attributes
+    local price = item.instance:GetAttribute("Price") or item.instance:GetAttribute("priceIngame") or 50
+    local currencyType = item.instance:GetAttribute("CurrencyType") or "Coins"
+    local description = item.instance:GetAttribute("Description") or "A buildable item"
+    local itemName = item.instance.Name:gsub("_", " ")
+    
+    -- Create a simple purchase dialog
+    local playerGui = self.player:FindFirstChild("PlayerGui")
+    if not playerGui then 
+        warn("[InteractionSystem] PlayerGui not found")
+        return 
+    end
+    
+    -- Remove existing purchase dialog
+    local existingDialog = playerGui:FindFirstChild("PurchaseDialog")
+    if existingDialog then existingDialog:Destroy() end
+    
+    -- Create purchase dialog UI
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "PurchaseDialog"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = playerGui
+    
+    -- Background overlay
+    local overlay = Instance.new("Frame")
+    overlay.Size = UDim2.new(1, 0, 1, 0)
+    overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    overlay.BackgroundTransparency = 0.5
+    overlay.BorderSizePixel = 0
+    overlay.Parent = screenGui
+    
+    -- Dialog frame
+    local dialog = Instance.new("Frame")
+    dialog.Size = UDim2.new(0, 400, 0, 300)
+    dialog.Position = UDim2.new(0.5, -200, 0.5, -150)
+    dialog.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    dialog.BorderSizePixel = 0
+    dialog.Parent = overlay
+    
+    -- Dialog corner
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = dialog
+    
+    -- Title
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, -20, 0, 40)
+    title.Position = UDim2.new(0, 10, 0, 10)
+    title.BackgroundTransparency = 1
+    title.Text = itemName
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextSize = 24
+    title.Font = Enum.Font.GothamBold
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Parent = dialog
+    
+    -- Description
+    local desc = Instance.new("TextLabel")
+    desc.Size = UDim2.new(1, -20, 0, 80)
+    desc.Position = UDim2.new(0, 10, 0, 60)
+    desc.BackgroundTransparency = 1
+    desc.Text = description
+    desc.TextColor3 = Color3.fromRGB(200, 200, 200)
+    desc.TextSize = 16
+    desc.Font = Enum.Font.Gotham
+    desc.TextWrapped = true
+    desc.TextXAlignment = Enum.TextXAlignment.Left
+    desc.TextYAlignment = Enum.TextYAlignment.Top
+    desc.Parent = dialog
+    
+    -- Price label
+    local priceLabel = Instance.new("TextLabel")
+    priceLabel.Size = UDim2.new(1, -20, 0, 30)
+    priceLabel.Position = UDim2.new(0, 10, 0, 150)
+    priceLabel.BackgroundTransparency = 1
+    priceLabel.Text = string.format("Price: %d %s or %d Robux", price, currencyType, 5)
+    priceLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+    priceLabel.TextSize = 18
+    priceLabel.Font = Enum.Font.GothamBold
+    priceLabel.TextXAlignment = Enum.TextXAlignment.Left
+    priceLabel.Parent = dialog
+    
+    -- Coins button
+    local coinsButton = Instance.new("TextButton")
+    coinsButton.Size = UDim2.new(0.4, 0, 0, 40)
+    coinsButton.Position = UDim2.new(0.05, 0, 0, 200)
+    coinsButton.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
+    coinsButton.Text = string.format("Buy with %d Coins", price)
+    coinsButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+    coinsButton.TextSize = 16
+    coinsButton.Font = Enum.Font.GothamBold
+    coinsButton.Parent = dialog
+    
+    local coinsCorner = Instance.new("UICorner")
+    coinsCorner.CornerRadius = UDim.new(0, 6)
+    coinsCorner.Parent = coinsButton
+    
+    -- Robux button
+    local robuxButton = Instance.new("TextButton")
+    robuxButton.Size = UDim2.new(0.4, 0, 0, 40)
+    robuxButton.Position = UDim2.new(0.55, 0, 0, 200)
+    robuxButton.BackgroundColor3 = Color3.fromRGB(0, 162, 255)
+    robuxButton.Text = "Buy with 5 Robux"
+    robuxButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    robuxButton.TextSize = 16
+    robuxButton.Font = Enum.Font.GothamBold
+    robuxButton.Parent = dialog
+    
+    local robuxCorner = Instance.new("UICorner")
+    robuxCorner.CornerRadius = UDim.new(0, 6)
+    robuxCorner.Parent = robuxButton
+    
+    -- Close button
+    local closeButton = Instance.new("TextButton")
+    closeButton.Size = UDim2.new(0, 30, 0, 30)
+    closeButton.Position = UDim2.new(1, -40, 0, 10)
+    closeButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    closeButton.Text = "✕"
+    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeButton.TextSize = 18
+    closeButton.Font = Enum.Font.GothamBold
+    closeButton.Parent = dialog
+    
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0, 6)
+    closeCorner.Parent = closeButton
+    
+    -- Button handlers
+    local function closePurchaseDialog()
+        screenGui:Destroy()
+    end
+    
+    closeButton.MouseButton1Click:Connect(closePurchaseDialog)
+    overlay.MouseButton1Click:Connect(closePurchaseDialog)
+    
+    coinsButton.MouseButton1Click:Connect(function()
+        print("[InteractionSystem] Attempting to purchase", item.id, "with coins")
+        -- Fire purchase request to server
+        local purchaseEvent = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes"):FindFirstChild("PurchaseItem")
+        if purchaseEvent then
+            purchaseEvent:FireServer(item.id, 1, "INGAME")
+        end
+        closePurchaseDialog()
+    end)
+    
+    robuxButton.MouseButton1Click:Connect(function()
+        print("[InteractionSystem] Attempting to purchase", item.id, "with Robux")
+        -- Fire purchase request to server
+        local purchaseEvent = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes"):FindFirstChild("PurchaseItem")
+        if purchaseEvent then
+            purchaseEvent:FireServer(item.id, 1, "ROBUX")
+        end
+        closePurchaseDialog()
+    end)
+    
+    print("[InteractionSystem] Purchase dialog shown for:", item.id)
 end
 
 return InteractionSystem

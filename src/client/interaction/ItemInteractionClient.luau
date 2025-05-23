@@ -50,6 +50,9 @@ else
     print("ItemInteractionClient: Successfully required SharedModule")
 end
 
+-- Import the new BottomPurchasePopup module
+local BottomPurchasePopup = require(script.Parent:WaitForChild("BottomPurchasePopup"))
+
 local ItemInteractionClient = {}
 ItemInteractionClient.__index = ItemInteractionClient
 
@@ -65,6 +68,9 @@ function ItemInteractionClient.new()
     self.inventoryUI = nil
     self.proximityUI = nil
     self.notificationUI = nil
+    
+    -- Bottom purchase popup system
+    self.bottomPurchasePopup = BottomPurchasePopup.new()
     
     -- State tracking
     self.currentTarget = nil
@@ -86,6 +92,9 @@ function ItemInteractionClient:Initialize()
     
     -- Create UI components
     self:SetupUI()
+    
+    -- Initialize the bottom purchase popup system
+    self.bottomPurchasePopup:Initialize()
     
     -- Set up input handling
     self:SetupInputHandling()
@@ -612,7 +621,15 @@ function ItemInteractionClient:GetInteractableFromPart(part)
     local itemsFolder = workspace:FindFirstChild("Items")
     if itemsFolder and part:IsDescendantOf(itemsFolder) then
         local ancestor = part
-        while ancestor and ancestor.Parent ~= itemsFolder and not ancestor:IsDescendantOf(itemsFolder) do 
+        -- Look for any Model with purchase attributes in the Items folder tree
+        while ancestor and ancestor.Parent do
+            if ancestor.Parent == itemsFolder then
+                -- Direct child of Items folder (e.g., Basic, Level_1, etc.)
+                break
+            elseif ancestor:IsDescendantOf(itemsFolder) and (ancestor:GetAttribute("Purchasable") or ancestor:GetAttribute("Price") or ancestor:GetAttribute("priceIngame")) then
+                -- Deeper nested item with purchase attributes (e.g., Glow items)
+                break
+            end
             ancestor = ancestor.Parent
         end
         
@@ -641,7 +658,7 @@ function ItemInteractionClient:GetInteractableFromPart(part)
             end
         end
     end
-    
+
     -- MINIMAL DEBUG PRINT
     -- print(string.format("DBG:GetInteractableFromPart: Returning %s for part %s",
     --    (result and result:GetFullName() or "NIL"),
@@ -653,22 +670,19 @@ function ItemInteractionClient:ShowProximityUI(target)
     -- Don't show if proximity UI is disabled
     if not self.proximityEnabled then return end
     
-    -- Clone the proximity UI template
+    -- Don't show proximity UI for store items - let the purchase popup system handle them
+    local isStoreItem = self:IsStoreItem(target)
+    if isStoreItem then
+        return -- Exit early for store items to avoid cluttering the screen
+    end
+    
+    -- Clone the proximity UI template (only for world items)
     local ui = self.proximityUI:Clone()
     
-    -- Update the UI based on the target type
-    local isStoreItem = self:IsStoreItem(target)
+    -- Update the UI for world items only
     local label = ui:FindFirstChild("Title", true)
-    
     if label then
-        if isStoreItem then
-            -- Store item UI
-            local itemName = target.Name:gsub("_", " ")
-            label.Text = "[E] View " .. itemName
-        else
-            -- World item UI
-            label.Text = "[E] Interact"
-        end
+        label.Text = "[E] Interact"
     end
     
     -- Attach to target and show
@@ -900,6 +914,12 @@ function ItemInteractionClient:Cleanup()
         end
     end
     self.connections = {}
+    
+    -- Clean up bottom purchase popup system
+    if self.bottomPurchasePopup then
+        self.bottomPurchasePopup:Cleanup()
+        self.bottomPurchasePopup = nil
+    end
     
     -- Remove UIs
     if self.notificationUI then

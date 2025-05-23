@@ -2,7 +2,7 @@
 print("DEBUG: ClearMyDataTool.server.luau SCRIPT STARTED") -- VERY FIRST LINE DEBUG
 
 -- WARNING: This script is for debugging purposes and performs destructive data operations.
--- Use with caution. It's recommended to disable or remove this script after use.
+-- Use with caution. This tool is now command-based and only activates when called via chat.
 
 local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
@@ -179,91 +179,102 @@ function _G.ClearMyDataAndWorldItems(player)
     print(string.format("ClearMyDataTool: Data clearing process for %s completed.", playerName))
 end
 
-print("ClearMyDataTool.server.luau loaded. Auto-execution block will attempt to run.") 
-
--- [[[ TEMPORARY AUTO-EXECUTION CODE - REMOVE AFTER ONE USE ]]]
-_G.IsClearingData = false -- Initialize the flag
-_G.DataClearComplete = false -- Initialize the flag
-
-local function autoClearData()
-    _G.IsClearingData = true -- Set flag to true when auto-clear starts
-    print("DEBUG: autoClearData() function called. _G.IsClearingData SET TO TRUE")
-    local targetPlayerName = "Xdjpearsonx"
-
-    local waitedTime = 0
-    while (not _G.CurrencyManager or not DataService) and waitedTime < 12 do -- Slightly longer wait
-        if not _G.CurrencyManager then print("DEBUG: Waiting for _G.CurrencyManager...") end
-        if not DataService then 
-            print("DEBUG: Waiting for DataService...")
-            -- Try to re-fetch DataService on each wait iteration
-            if SharedModule and SharedModule.DataService then
-                DataService = SharedModule.DataService
-                print("ClearMyDataTool (wait loop): Got DataService from SharedModule.DataService.")
-            elseif _G.DataService then
-                DataService = _G.DataService
-                print("ClearMyDataTool (wait loop): Got DataService from _G.DataService.")
+-- Chat Command System
+local chatCommands = {
+    ["/clearmydata"] = function(player, args)
+        print(string.format("ClearMyDataTool: Processing /clearmydata command for %s", player.Name))
+        
+        -- Wait for critical services to be available
+        local waitedTime = 0
+        while (not _G.CurrencyManager or not DataService) and waitedTime < 10 do
+            if not _G.CurrencyManager then 
+                print("ClearMyDataTool: Waiting for _G.CurrencyManager...")
+                -- Try to get it from global first
+                if _G.CurrencyManager then 
+                    break 
+                end
             end
+            if not DataService then 
+                print("ClearMyDataTool: Waiting for DataService...")
+                -- Try to re-fetch DataService
+                if SharedModule and SharedModule.DataService then
+                    DataService = SharedModule.DataService
+                    print("ClearMyDataTool: Got DataService from SharedModule.DataService.")
+                elseif _G.DataService then
+                    DataService = _G.DataService
+                    print("ClearMyDataTool: Got DataService from _G.DataService.")
+                end
+            end
+            task.wait(1)
+            waitedTime = waitedTime + 1
         end
-        task.wait(1)
-        waitedTime = waitedTime + 1
-    end
 
-    if not _G.CurrencyManager then
-        warn("ClearMyDataTool: _G.CurrencyManager did not become available after wait. Aborting auto-clear.")
-        return
-    end
-    if not DataService then
-        warn("ClearMyDataTool: DataService (via SharedModule) did not become available after wait. Aborting auto-clear as it is critical for world items.")
-        return 
-    end
-    print("DEBUG: _G.CurrencyManager and DataService are available.")
+        if not _G.CurrencyManager then
+            warn("ClearMyDataTool: _G.CurrencyManager not available. Aborting clear.")
+            return
+        end
+        if not DataService then
+            warn("ClearMyDataTool: DataService not available. Aborting clear.")
+            return 
+        end
 
-    local player = Players:FindFirstChild(targetPlayerName)
-    if player then
-        print(string.format("ClearMyDataTool: Player %s found by auto-clear. Running _G.ClearMyDataAndWorldItems.", targetPlayerName))
+        print(string.format("ClearMyDataTool: Executing clear data command for %s", player.Name))
         _G.ClearMyDataAndWorldItems(player)
-        _G.DataClearComplete = true -- Set flag to true when done
-        print("DEBUG: _G.ClearMyDataAndWorldItems completed for found player. _G.DataClearComplete SET TO TRUE")
-    else
-        print(string.format("ClearMyDataTool: Player %s not found yet by auto-clear. Waiting for PlayerAdded.", targetPlayerName))
-        local connection
-        connection = Players.PlayerAdded:Connect(function(joinedPlayer)
-            if joinedPlayer.Name == targetPlayerName then
-                print(string.format("ClearMyDataTool: Player %s joined. Ensuring critical modules are ready again...", targetPlayerName))
-                -- Re-check critical modules on PlayerAdded, though they should be ready if the initial wait passed.
-                local waitedTimeJoin = 0
-                while (not _G.CurrencyManager or not DataService) and waitedTimeJoin < 5 do
-                    if not _G.CurrencyManager then print("DEBUG: (PlayerAdded) Waiting for _G.CurrencyManager...") end
-                    if not DataService then 
-                        print("DEBUG: (PlayerAdded) Waiting for DataService...")
-                        if SharedModule and SharedModule.DataService then
-                            DataService = SharedModule.DataService
-                            print("ClearMyDataTool (PlayerAdded wait loop): Got DataService from SharedModule.DataService.")
-                        elseif _G.DataService then
-                            DataService = _G.DataService
-                            print("ClearMyDataTool (PlayerAdded wait loop): Got DataService from _G.DataService.")
-                        end
-                    end
-                    task.wait(1)
-                    waitedTimeJoin = waitedTimeJoin + 1
-                end
+    end,
+    
+    ["/cleardata"] = function(player, args)
+        -- Same as /clearmydata but with confirmation
+        if #args == 0 then
+            print(string.format("ClearMyDataTool: %s used /cleardata without confirmation. Use '/cleardata confirm' to proceed.", player.Name))
+            return
+        end
+        
+        if string.lower(args[1]) == "confirm" then
+            chatCommands["/clearmydata"](player, {})
+        else
+            print(string.format("ClearMyDataTool: %s used /cleardata with invalid argument. Use '/cleardata confirm' to proceed.", player.Name))
+        end
+    end
+}
 
-                if not _G.CurrencyManager or not DataService then
-                     warn("ClearMyDataTool: (PlayerAdded) Critical modules (_G.CurrencyManager or DataService) not ready. Aborting clear for joined player.")
-                     if connection then connection:Disconnect() end
-                     return
-                end
-                print(string.format("ClearMyDataTool: Player %s joined. Running _G.ClearMyDataAndWorldItems from PlayerAdded.", targetPlayerName))
-                _G.ClearMyDataAndWorldItems(joinedPlayer)
-                _G.DataClearComplete = true -- Set flag to true when done
-                print("DEBUG: _G.ClearMyDataAndWorldItems completed for joined player. _G.DataClearComplete SET TO TRUE")
-                if connection then connection:Disconnect() end
-            end
-        end)
+-- Function to handle chat commands
+local function onPlayerChatted(player, message)
+    local messageLower = string.lower(message)
+    local words = {}
+    for word in messageLower:gmatch("%S+") do
+        table.insert(words, word)
+    end
+    
+    if #words == 0 then return end
+    
+    local command = words[1]
+    local args = {}
+    for i = 2, #words do
+        table.insert(args, words[i])
+    end
+    
+    if chatCommands[command] then
+        print(string.format("ClearMyDataTool: Player %s executed command: %s", player.Name, command))
+        chatCommands[command](player, args)
     end
 end
 
-task.wait(0.1) -- Shorten this wait significantly
-print("DEBUG: Starting autoClearData after initial wait.")
-autoClearData()
--- [[[ END TEMPORARY AUTO-EXECUTION CODE ]]] 
+-- Set up chat command listeners
+Players.PlayerAdded:Connect(function(player)
+    player.Chatted:Connect(function(message)
+        onPlayerChatted(player, message)
+    end)
+end)
+
+-- Handle already connected players
+for _, player in pairs(Players:GetPlayers()) do
+    player.Chatted:Connect(function(message)
+        onPlayerChatted(player, message)
+    end)
+end
+
+print("ClearMyDataTool.server.luau loaded in COMMAND MODE.")
+print("Available commands:")
+print("  /clearmydata - Clear your data immediately")
+print("  /cleardata confirm - Clear your data with confirmation")
+print("Tool is now dormant and will only activate when commands are used.") 

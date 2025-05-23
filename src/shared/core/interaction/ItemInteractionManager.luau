@@ -389,11 +389,45 @@ function ItemInteractionManager:HandlePlaceItem(player, itemName, position, rota
         return first:upper() .. rest:lower()
     end):gsub(" ", "_")
     
-    -- Find template item
+    -- Find template item (recursively search through multiple folders)
     local templateItem
-    for _, folder in ipairs(itemsFolder:GetChildren()) do
-        templateItem = folder:FindFirstChild(formattedItemName)
-        if templateItem then break end
+    local function findTemplateRecursive(parent)
+        for _, child in ipairs(parent:GetChildren()) do
+            if child:IsA("Model") and child.Name == formattedItemName then
+                return child
+            elseif child:IsA("Folder") then
+                local found = findTemplateRecursive(child)
+                if found then
+                    return found
+                end
+            end
+        end
+        return nil
+    end
+    
+    -- Try Workspace.Items first
+    templateItem = findTemplateRecursive(itemsFolder)
+    
+    -- If not found in Workspace, try ServerStorage.Items
+    if not templateItem then
+        local serverStorageItems = ServerStorage:FindFirstChild("Items")
+        if serverStorageItems then
+            templateItem = findTemplateRecursive(serverStorageItems)
+            if templateItem then
+                print("ItemInteractionManager: Found template in ServerStorage.Items:", formattedItemName)
+            end
+        end
+    end
+    
+    -- If still not found, try ReplicatedStorage.Items
+    if not templateItem then
+        local replicatedStorageItems = game:GetService("ReplicatedStorage"):FindFirstChild("Items")
+        if replicatedStorageItems then
+            templateItem = findTemplateRecursive(replicatedStorageItems)
+            if templateItem then
+                print("ItemInteractionManager: Found template in ReplicatedStorage.Items:", formattedItemName)
+            end
+        end
     end
     
     if not templateItem then

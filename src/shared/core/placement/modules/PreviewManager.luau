@@ -63,6 +63,12 @@ function PreviewManager:_ApplyPreviewProperties(item)
     if item:IsA("Model") then
         for _, part in ipairs(item:GetDescendants()) do
             if part:IsA("BasePart") then
+                -- Store original properties
+                part:SetAttribute("preview_original_transparency", part.Transparency)
+                part:SetAttribute("preview_original_cancollide", part.CanCollide)
+                part:SetAttribute("preview_original_anchored", part.Anchored)
+                
+                -- Apply preview effects
                 part.Transparency = math.min(0.8, part.Transparency + 0.5)
                 part.CanCollide = false
                 part.Anchored = true
@@ -70,6 +76,12 @@ function PreviewManager:_ApplyPreviewProperties(item)
             end
         end
     elseif item:IsA("BasePart") then
+        -- Store original properties
+        item:SetAttribute("preview_original_transparency", item.Transparency)
+        item:SetAttribute("preview_original_cancollide", item.CanCollide)
+        item:SetAttribute("preview_original_anchored", item.Anchored)
+        
+        -- Apply preview effects
         item.Transparency = math.min(0.8, item.Transparency + 0.5)
         item.CanCollide = false
         item.Anchored = true
@@ -78,6 +90,7 @@ function PreviewManager:_ApplyPreviewProperties(item)
     
     -- Create a highlight effect for better visibility
     local highlight = Instance.new("Highlight")
+    highlight.Name = "PreviewHighlight"
     highlight.FillTransparency = 0.5
     highlight.OutlineTransparency = 0
     highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green fill
@@ -130,6 +143,12 @@ function PreviewManager:_ApplyHandItemProperties(item)
     if item:IsA("Model") then
         for _, part in ipairs(item:GetDescendants()) do
             if part:IsA("BasePart") then
+                -- Store original properties
+                part:SetAttribute("hand_original_transparency", part.Transparency)
+                part:SetAttribute("hand_original_cancollide", part.CanCollide)
+                part:SetAttribute("hand_original_anchored", part.Anchored)
+                
+                -- Apply hand item effects
                 part.Transparency = math.max(0, part.Transparency - 0.2) -- Make slightly more visible
                 part.CanCollide = false
                 part.Anchored = true
@@ -137,6 +156,12 @@ function PreviewManager:_ApplyHandItemProperties(item)
             end
         end
     elseif item:IsA("BasePart") then
+        -- Store original properties
+        item:SetAttribute("hand_original_transparency", item.Transparency)
+        item:SetAttribute("hand_original_cancollide", item.CanCollide)
+        item:SetAttribute("hand_original_anchored", item.Anchored)
+        
+        -- Apply hand item effects
         item.Transparency = math.max(0, item.Transparency - 0.2)
         item.CanCollide = false
         item.Anchored = true
@@ -145,6 +170,7 @@ function PreviewManager:_ApplyHandItemProperties(item)
     
     -- Add a highlight effect for better visibility
     local highlight = Instance.new("Highlight")
+    highlight.Name = "HandItemHighlight"
     highlight.FillTransparency = 0.3
     highlight.OutlineTransparency = 0
     highlight.FillColor = Color3.fromRGB(255, 215, 0) -- Gold fill
@@ -214,6 +240,10 @@ function PreviewManager:ClearItemInHand()
     
     if self.handItem then
         print("PreviewManager: Clearing item from hand:", self.handItem.Name)
+        
+        -- Restore original properties before destroying
+        self:_RestoreHandItemProperties(self.handItem)
+        
         self.handItem:Destroy()
         self.handItem = nil
         self.handItemId = nil
@@ -241,6 +271,10 @@ function PreviewManager:ClearPreviewItem()
     
     if self.previewItem then
         print("PreviewManager: Clearing preview item:", self.previewItem.Name)
+        
+        -- Restore original properties before destroying
+        self:_RestorePreviewProperties(self.previewItem)
+        
         self.previewItem:Destroy()
         self.previewItem = nil
     end
@@ -279,6 +313,84 @@ end
 -- Get current hand item info
 function PreviewManager:GetHandItemInfo()
     return self.handItem, self.handItemId
+end
+
+-- Restore preview properties
+function PreviewManager:_RestorePreviewProperties(item)
+    if item:IsA("Model") then
+        for _, part in ipairs(item:GetDescendants()) do
+            if part:IsA("BasePart") then
+                -- Restore original properties
+                if part:GetAttribute("preview_original_transparency") ~= nil then
+                    part.Transparency = part:GetAttribute("preview_original_transparency")
+                end
+                if part:GetAttribute("preview_original_cancollide") ~= nil then
+                    part.CanCollide = part:GetAttribute("preview_original_cancollide")
+                end
+                if part:GetAttribute("preview_original_anchored") ~= nil then
+                    part.Anchored = part:GetAttribute("preview_original_anchored")
+                end
+                part:SetAttribute("is_preview", nil)
+            end
+        end
+    elseif item:IsA("BasePart") then
+        -- Restore original properties
+        if item:GetAttribute("preview_original_transparency") ~= nil then
+            item.Transparency = item:GetAttribute("preview_original_transparency")
+        end
+        if item:GetAttribute("preview_original_cancollide") ~= nil then
+            item.CanCollide = item:GetAttribute("preview_original_cancollide")
+        end
+        if item:GetAttribute("preview_original_anchored") ~= nil then
+            item.Anchored = item:GetAttribute("preview_original_anchored")
+        end
+        item:SetAttribute("is_preview", nil)
+    end
+    
+    -- Remove preview highlight
+    local highlight = item:FindFirstChild("PreviewHighlight")
+    if highlight then
+        highlight:Destroy()
+    end
+end
+
+-- Restore hand item properties
+function PreviewManager:_RestoreHandItemProperties(item)
+    if item:IsA("Model") then
+        for _, part in ipairs(item:GetDescendants()) do
+            if part:IsA("BasePart") then
+                -- Restore original properties
+                if part:GetAttribute("hand_original_transparency") ~= nil then
+                    part.Transparency = part:GetAttribute("hand_original_transparency")
+                end
+                if part:GetAttribute("hand_original_cancollide") ~= nil then
+                    part.CanCollide = part:GetAttribute("hand_original_cancollide")
+                end
+                if part:GetAttribute("hand_original_anchored") ~= nil then
+                    part.Anchored = part:GetAttribute("hand_original_anchored")
+                end
+                part:SetAttribute("is_hand_item", nil)
+            end
+        end
+    elseif item:IsA("BasePart") then
+        -- Restore original properties
+        if item:GetAttribute("hand_original_transparency") ~= nil then
+            item.Transparency = item:GetAttribute("hand_original_transparency")
+        end
+        if item:GetAttribute("hand_original_cancollide") ~= nil then
+            item.CanCollide = item:GetAttribute("hand_original_cancollide")
+        end
+        if item:GetAttribute("hand_original_anchored") ~= nil then
+            item.Anchored = item:GetAttribute("hand_original_anchored")
+        end
+        item:SetAttribute("is_hand_item", nil)
+    end
+    
+    -- Remove hand item highlight
+    local highlight = item:FindFirstChild("HandItemHighlight")
+    if highlight then
+        highlight:Destroy()
+    end
 end
 
 return PreviewManager 
