@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
@@ -53,9 +54,6 @@ end
 -- Import the new BottomPurchasePopup module
 local BottomPurchasePopup = require(script.Parent:WaitForChild("BottomPurchasePopup"))
 
--- Import the new WorldItemInteractionPopup module
-local WorldItemInteractionPopup = require(script.Parent:WaitForChild("WorldItemInteractionPopup"))
-
 local ItemInteractionClient = {}
 ItemInteractionClient.__index = ItemInteractionClient
 
@@ -75,9 +73,6 @@ function ItemInteractionClient.new()
     -- Bottom purchase popup system
     self.bottomPurchasePopup = BottomPurchasePopup.new()
     
-    -- World item interaction popup system
-    self.worldItemInteractionPopup = WorldItemInteractionPopup.new()
-    
     -- State tracking
     self.currentTarget = nil
     self.isInteracting = false
@@ -86,6 +81,9 @@ function ItemInteractionClient.new()
     
     -- Connection tracking for cleanup
     self.connections = {}
+    
+    self.lastRaycast = 0
+    self.raycastCooldown = 0.1 -- Limit raycast frequency
     
     return self
 end
@@ -388,40 +386,60 @@ function ItemInteractionClient:CreateProximityUI()
     -- Create a billboard gui template for highlighting interactable objects
     self.proximityUI = Instance.new("BillboardGui")
     self.proximityUI.Name = "ProximityInteractUI"
-    self.proximityUI.Size = UDim2.new(0, 220, 0, 60)
-    self.proximityUI.StudsOffset = Vector3.new(0, 3, 0)
+    self.proximityUI.Size = UDim2.new(0, 280, 0, 80)  -- Made wider and taller
+    self.proximityUI.StudsOffset = Vector3.new(0, 4, 0)  -- Higher above the item
     self.proximityUI.AlwaysOnTop = true
     self.proximityUI.Enabled = false
     
-    -- Add background frame
+    -- Add background frame with enhanced styling
     local bg = Instance.new("Frame")
     bg.Size = UDim2.new(1, 0, 1, 0)
-    bg.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
-    bg.BackgroundTransparency = 0.2
+    bg.BackgroundColor3 = Color3.fromRGB(20, 25, 40)  -- Darker background
+    bg.BackgroundTransparency = 0.1  -- Less transparent
     bg.BorderSizePixel = 0
     bg.Parent = self.proximityUI
     
     -- Add rounded corners
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
+    corner.CornerRadius = UDim.new(0, 12)  -- More rounded
     corner.Parent = bg
     
-    -- Add stroke for visibility
+    -- Add enhanced stroke for better visibility
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(0, 170, 255)
-    stroke.Thickness = 2
+    stroke.Color = Color3.fromRGB(100, 200, 255)  -- Brighter blue
+    stroke.Thickness = 3  -- Thicker border
     stroke.Parent = bg
     
-    -- Add text label
+    -- Add subtle gradient effect
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 35, 50)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 20, 35))
+    }
+    gradient.Rotation = 90
+    gradient.Parent = bg
+    
+    -- Add text label with better styling
     local label = Instance.new("TextLabel")
     label.Name = "Title"
-    label.Size = UDim2.new(1, 0, 1, 0)
+    label.Size = UDim2.new(1, -20, 1, 0)  -- Padding from edges
+    label.Position = UDim2.new(0, 10, 0, 0)
     label.BackgroundTransparency = 1
     label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextSize = 22
+    label.TextSize = 24  -- Larger text
     label.Font = Enum.Font.GothamBold
     label.Text = "[E] Interact"
+    label.TextStrokeTransparency = 0.8  -- Text outline for better readability
+    label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
     label.Parent = bg
+    
+    -- Add subtle pulsing animation
+    local pulseIn = game:GetService("TweenService"):Create(
+        bg,
+        TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+        {BackgroundTransparency = 0.3}
+    )
+    pulseIn:Play()
 end
 
 function ItemInteractionClient:LoadUIModules()
@@ -591,19 +609,21 @@ function ItemInteractionClient:UpdateCurrentTargetForWorldItemsOnly()
         return
     end
     
-    -- Skip store items completely - let BottomPurchasePopup handle them
-    local isStoreItem = self:IsStoreItem(interactable)
-    if isStoreItem then
-        -- Hide any existing proximity UI and clear target for store items
-        if self.currentTarget then
-            self:HideProximityUI()
-            self.currentTarget = nil
-        end
-        return
+    -- NOW INCLUDE STORE ITEMS - let both systems work together
+    -- The BottomPurchasePopup system will handle the actual purchase UI for store items
+    -- This system will handle the proximity UI and E key interaction routing
+    
+    -- Check distance to the object
+    local objectPosition
+    if interactable:IsA("Model") then
+        objectPosition = interactable.PrimaryPart and interactable.PrimaryPart.Position or interactable:GetModelCFrame().Position
+    elseif interactable:IsA("Part") then
+        objectPosition = interactable.Position
+    else
+        -- Fallback
+        objectPosition = interactable:GetModelCFrame().Position
     end
     
-    -- Check distance to the object (only for world items)
-    local objectPosition = interactable.PrimaryPart and interactable.PrimaryPart.Position or interactable:GetModelCFrame().Position
     local distance = (hrp.Position - objectPosition).Magnitude
     
     if distance > self.maxInteractionDistance then
@@ -615,21 +635,15 @@ function ItemInteractionClient:UpdateCurrentTargetForWorldItemsOnly()
         return
     end
     
-    -- Set new target and show UI (only for world items)
+    -- Set new target and show UI for BOTH store and world items
     if interactable ~= self.currentTarget then
-        self.currentTarget = interactable
-        -- print(string.format("DBG:UpdateCurrentTarget: Updating target. Old: %s, New: %s",
-        --    (self.currentTarget and self.currentTarget:GetFullName() or "NIL"),
-        --    (interactable and interactable:GetFullName() or "NIL")
-        -- )) -- DEBUG
         self.currentTarget = interactable
         self:ShowProximityUI(interactable)
     end
 end
 
 function ItemInteractionClient:GetInteractableFromPart(part)
-    -- MINIMAL DEBUG PRINT
-    -- print(string.format("DBG:GetInteractableFromPart: Called with part: %s", (part and part:GetFullName() or "NIL")))
+    -- REMOVED EXCESSIVE DEBUG PRINTS TO STOP OUTPUT SPAM
     local result = nil
 
     -- First check if it's in the Items folder (store catalog item)
@@ -660,6 +674,7 @@ function ItemInteractionClient:GetInteractableFromPart(part)
             local placedFolder = worldFolder:FindFirstChild("Placed")
             if placedFolder then
                 local ancestor = part
+                -- Walk up the hierarchy to find the Model or Part that's directly under Placed
                 while ancestor and ancestor.Parent ~= placedFolder do
                     if not ancestor.Parent or ancestor.Parent == workspace or ancestor.Parent == worldFolder then
                         ancestor = nil
@@ -667,17 +682,18 @@ function ItemInteractionClient:GetInteractableFromPart(part)
                     end
                     ancestor = ancestor.Parent
                 end
-                if ancestor and ancestor:IsA("Model") then
-                    result = ancestor
+                
+                -- Accept both Models and Parts as world items
+                if ancestor and (ancestor:IsA("Model") or ancestor:IsA("Part")) then
+                    -- Check if it has world item attributes
+                    if ancestor:GetAttribute("instanceId") or ancestor:GetAttribute("itemId") then
+                        result = ancestor
+                    end
                 end
             end
         end
     end
 
-    -- MINIMAL DEBUG PRINT
-    -- print(string.format("DBG:GetInteractableFromPart: Returning %s for part %s",
-    --    (result and result:GetFullName() or "NIL"),
-    --    (part and part:GetFullName() or "NIL")))
     return result
 end
 
@@ -685,19 +701,22 @@ function ItemInteractionClient:ShowProximityUI(target)
     -- Don't show if proximity UI is disabled
     if not self.proximityEnabled then return end
     
-    -- Don't show proximity UI for store items - let the purchase popup system handle them
-    local isStoreItem = self:IsStoreItem(target)
-    if isStoreItem then
-        return -- Exit early for store items to avoid cluttering the screen
-    end
-    
-    -- Clone the proximity UI template (only for world items)
+    -- Clone the proximity UI template
     local ui = self.proximityUI:Clone()
     
-    -- Update the UI for world items only
+    -- Update the UI text based on item type and input method
     local label = ui:FindFirstChild("Title", true)
     if label then
-        label.Text = "[E] Interact"
+        local isStoreItem = self:IsStoreItem(target)
+        
+        -- Get device-appropriate input prompt
+        local inputPrompt = self:GetDeviceInputPrompt()
+        
+        if isStoreItem then
+            label.Text = inputPrompt .. " Purchase"  -- Store items show "Purchase"
+        else
+            label.Text = inputPrompt .. " Interact"  -- World items show "Interact"
+        end
     end
     
     -- Attach to target and show
@@ -711,6 +730,22 @@ function ItemInteractionClient:ShowProximityUI(target)
     end
     ui.Name = "ProximityUI"
     ui.Parent = target
+end
+
+function ItemInteractionClient:GetDeviceInputPrompt()
+    local UserInputService = game:GetService("UserInputService")
+    
+    -- Check input method and return appropriate prompt
+    if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
+        -- Mobile/Tablet
+        return "[TAP]"
+    elseif UserInputService.GamepadEnabled then
+        -- Console (Xbox, PlayStation, etc.)
+        return "[X]"  -- You can customize this based on specific gamepad type
+    else
+        -- PC/Keyboard
+        return "[E]"
+    end
 end
 
 function ItemInteractionClient:HideProximityUI()
@@ -773,30 +808,14 @@ function ItemInteractionClient:IsStoreItem(target)
 end
 
 function ItemInteractionClient:InteractWithStoreItem(target)
-    -- Get the item name
+    -- For store items, we don't need to do anything special here
+    -- The BottomPurchasePopup system handles store item interactions automatically
+    -- Just show a notification to let user know interaction was registered
     local itemName = target.Name
+    self:ShowNotification("Detected store item: " .. itemName .. ". BottomPurchasePopup should handle this.", "Info")
     
-    -- Check if the item is in the catalog
-    local itemData
-    local success, result = pcall(function() -- Wrapped pcall for safety
-        if self.remotes.GetItemData then
-            return self.remotes.GetItemData:InvokeServer(itemName)
-        end
-        return nil
-    end)
-    
-    if not success or not result then
-        self:ShowNotification("Error: Item data not found or error fetching. " .. (success == false and tostring(result) or ""), "Error")
-        return
-    end
-    itemData = result
-    
-    -- Show catalog UI for this item
-    if self.ShowCatalogUI then -- Check if function exists
-        self:ShowCatalogUI(itemName)
-    else
-        warn("ItemInteractionClient: self.ShowCatalogUI is not defined.")
-    end
+    -- Clear the interacting flag so the popup can show
+    self.isInteracting = false
 end
 
 function ItemInteractionClient:InteractWithWorldItem(target)
@@ -822,10 +841,16 @@ function ItemInteractionClient:InteractWithWorldItem(target)
     
     print(string.format("ItemInteractionClient: Interacting with world item. Name: %s, ItemID: %s, InstanceID: %s", target.Name, itemId, instanceId))
 
-    -- Use our new WorldItemInteractionPopup instead of the broken PlacedItemDialog system
-    print("--- ItemInteractionClient:InteractWithWorldItem() - Using WorldItemInteractionPopup.Show ---") -- DEBUG
-    self.worldItemInteractionPopup:Show(target)
-    print("--- ItemInteractionClient:InteractWithWorldItem() - WorldItemInteractionPopup.Show completed ---") -- DEBUG
+    -- REVERTED: Use the working PlacedItemDialog instead of the broken WorldItemInteractionPopup
+    print("--- ItemInteractionClient:InteractWithWorldItem() - Using PlacedItemDialog.Show ---") -- DEBUG
+    local PlacedItemDialog = SharedModule.PlacedItemDialog
+    if PlacedItemDialog and PlacedItemDialog.Show then
+        PlacedItemDialog.Show(itemId, itemName, target) -- Pass the target instance for actions
+        print("--- ItemInteractionClient:InteractWithWorldItem() - PlacedItemDialog.Show completed ---") -- DEBUG
+    else
+        warn("ItemInteractionClient: PlacedItemDialog not found in SharedModule")
+        self:ShowNotification("Error: Item interaction system not available.", "Error")
+    end
 end
 
 function ItemInteractionClient:GetAvailableInteractions(itemGuidOrInstance)
@@ -926,12 +951,6 @@ function ItemInteractionClient:Cleanup()
     if self.bottomPurchasePopup then
         self.bottomPurchasePopup:Cleanup()
         self.bottomPurchasePopup = nil
-    end
-    
-    -- Clean up world item interaction popup system
-    if self.worldItemInteractionPopup then
-        self.worldItemInteractionPopup:Hide()
-        self.worldItemInteractionPopup = nil
     end
     
     -- Remove UIs
