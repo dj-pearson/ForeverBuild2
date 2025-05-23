@@ -22,6 +22,10 @@ local success, errorMessage = pcall(function()
     if initSuccess then
         print("ClientInit: ItemInteractionClient initialized successfully with bottom purchase popup system")
         
+        -- IMPORTANT: Disable proximity UI completely for this instance
+        interactionClient.proximityEnabled = false
+        print("ClientInit: Disabled proximity UI - only bottom popup system active")
+        
         -- Store globally for other scripts to access if needed
         _G.ItemInteractionClient = interactionClient
     else

@@ -477,19 +477,48 @@ end
 -- Add a ProcessPurchase function that expects an itemId (string)
 function ItemPurchaseHandler:ProcessPurchase(player, itemId)
     local itemDefinition = nil
-    local price = 10 -- Default price
+    local price = 5 -- Default price (changed from 10 to 5 to match Constants)
 
     if SharedModule and SharedModule.Constants and SharedModule.Constants.ITEMS and SharedModule.Constants.ITEMS[itemId] then
         itemDefinition = SharedModule.Constants.ITEMS[itemId]
         if typeof(itemDefinition) == "table" then
-            price = itemDefinition.Price or itemDefinition.price or price -- Check for Price (capital P) or price (lowercase p)
+            -- Handle new price structure with INGAME/ROBUX fields
+            if itemDefinition.price and typeof(itemDefinition.price) == "table" then
+                price = itemDefinition.price.INGAME or 5
+            elseif itemDefinition.price and typeof(itemDefinition.price) == "number" then
+                -- Old format - direct number
+                price = itemDefinition.price
+            elseif itemDefinition.Price then
+                -- Capital P fallback
+                price = itemDefinition.Price
+            end
         else
             -- If itemDefinition is not a table, it might be a direct price or something else.
-            -- For now, we assume it implies the default price if not a table with a price field.
-            print("[ItemPurchaseHandler] Warning: Item definition for ''' .. itemId .. ''' in Constants.ITEMS is not a table. Using default price.")
+            print("[ItemPurchaseHandler] Warning: Item definition for '" .. itemId .. "' in Constants.ITEMS is not a table. Using default price.")
         end
     else
-        print("[ItemPurchaseHandler] Warning: Item ''' .. itemId .. ''' not found in Constants.ITEMS. Using default price and name.")
+        -- Try to determine price by tier if not found in ITEMS
+        local tier = "BASIC" -- Default tier
+        local lowerItemId = string.lower(itemId)
+        
+        if lowerItemId:find("glow") or lowerItemId:find("basic") then
+            tier = "BASIC"
+        elseif lowerItemId:find("level1") then
+            tier = "LEVEL_1"
+        elseif lowerItemId:find("level2") then
+            tier = "LEVEL_2"
+        elseif lowerItemId:find("rare") then
+            tier = "RARE"
+        elseif lowerItemId:find("exclusive") then
+            tier = "EXCLUSIVE"
+        end
+        
+        -- Get price from ITEM_PRICES by tier
+        if SharedModule and SharedModule.Constants and SharedModule.Constants.ITEM_PRICES and SharedModule.Constants.ITEM_PRICES[tier] then
+            price = SharedModule.Constants.ITEM_PRICES[tier].INGAME or 5
+        end
+        
+        print("[ItemPurchaseHandler] Item '" .. itemId .. "' not found in Constants.ITEMS. Using tier '" .. tier .. "' price: " .. price)
     end
 
     -- Construct an item object to pass, ensuring Name is always the itemId string
@@ -499,6 +528,7 @@ function ItemPurchaseHandler:ProcessPurchase(player, itemId)
         Price = price -- Store the determined price
     }
 
+    print("[ItemPurchaseHandler] Processing purchase for " .. itemId .. " with price: " .. price)
     return self:ProcessCurrencyPurchase(player, itemToProcess, price)
 end
 

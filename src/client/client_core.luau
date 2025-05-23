@@ -511,33 +511,42 @@ if player then
 end
 
 -- Initialize InteractionSystem instance if the module was loaded
+-- DISABLED: Using new integrated BottomPurchasePopup system instead
+--[[
 if InteractionSystem and typeof(InteractionSystem.new) == "function" then
-    print("[DEBUG in client_core.luau] Attempting to create InteractionSystem instance...")
-    local successNew, instanceOrError = pcall(InteractionSystem.new)
-    if successNew and instanceOrError and typeof(instanceOrError) == "table" then
-        interactionSystemInstance = instanceOrError -- Assign to the previously declared variable
-        print("[DEBUG in client_core.luau] InteractionSystem instance created:", interactionSystemInstance)
-        if typeof(interactionSystemInstance.Initialize) == "function" then
-            print("[DEBUG in client_core.luau] Attempting to call Initialize on InteractionSystem instance...")
-            local successInit, initError = pcall(function()
-                interactionSystemInstance:Initialize()
-            end)
-            if successInit then
-                print("InteractionSystem instance initialized successfully by client_core.luau")
-            else
-                warn("Error calling Initialize on InteractionSystem instance in client_core.luau:", initError)
-            end
-        else
-            warn("InteractionSystem instance is missing Initialize method in client_core.luau. Type of Initialize:", type(interactionSystemInstance and interactionSystemInstance.Initialize), "Instance methods:", interactionSystemInstance)
-        end
-    elseif successNew and not (instanceOrError and typeof(instanceOrError) == "table") then
-        warn("InteractionSystem.new() succeeded in client_core.luau but did not return a table instance. Returned:", instanceOrError)
+    -- Check global flag to prevent old interaction system from running
+    if _G.DISABLE_OLD_INTERACTION_CLIENT then
+        print("[client_core] InteractionSystem initialization disabled by global flag (new popup system active)")
     else
-        warn("Failed to create InteractionSystem instance in client_core.luau. pcall success:", successNew, "Error/Result:", instanceOrError)
+        print("[DEBUG in client_core.luau] Attempting to create InteractionSystem instance...")
+        local successNew, instanceOrError = pcall(InteractionSystem.new)
+        if successNew and instanceOrError and typeof(instanceOrError) == "table" then
+            interactionSystemInstance = instanceOrError -- Assign to the previously declared variable
+            print("[DEBUG in client_core.luau] InteractionSystem instance created:", interactionSystemInstance)
+            if typeof(interactionSystemInstance.Initialize) == "function" then
+                print("[DEBUG in client_core.luau] Attempting to call Initialize on InteractionSystem instance...")
+                local successInit, initError = pcall(function()
+                    interactionSystemInstance:Initialize()
+                end)
+                if successInit then
+                    print("InteractionSystem instance initialized successfully by client_core.luau")
+                else
+                    warn("Error calling Initialize on InteractionSystem instance in client_core.luau:", initError)
+                end
+            else
+                warn("InteractionSystem instance is missing Initialize method in client_core.luau. Type of Initialize:", type(interactionSystemInstance and interactionSystemInstance.Initialize), "Instance methods:", interactionSystemInstance)
+            end
+        elseif successNew and not (instanceOrError and typeof(instanceOrError) == "table") then
+            warn("InteractionSystem.new() succeeded in client_core.luau but did not return a table instance. Returned:", instanceOrError)
+        else
+            warn("Failed to create InteractionSystem instance in client_core.luau. pcall success:", successNew, "Error/Result:", instanceOrError)
+        end
     end
 else
     warn("InteractionSystem module is missing, invalid, or .new method not found after loading attempts in client_core.luau. Type of InteractionSystem:", type(InteractionSystem), ".new type:", type(InteractionSystem and InteractionSystem.new))
 end
+--]]
+print("[client_core] Old InteractionSystem initialization DISABLED - using new BottomPurchasePopup system")
 
 -- Initialize PlacedItemDialog if available and parent to a valid ScreenGui
 local PlacedItemDialog -- Local scope for this specific initialization

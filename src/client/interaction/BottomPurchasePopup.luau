@@ -9,6 +9,24 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
+-- Safely require SharedModule for Constants
+local SharedModule
+local success = pcall(function()
+    SharedModule = require(ReplicatedStorage:WaitForChild("shared"))
+end)
+
+if not success then
+    warn("BottomPurchasePopup: Could not load SharedModule, using fallback pricing")
+    SharedModule = {
+        Constants = {
+            ITEMS = {},
+            ITEM_PRICES = {
+                BASIC = {INGAME = 5, ROBUX = 5}
+            }
+        }
+    }
+end
+
 local BottomPurchasePopup = {}
 BottomPurchasePopup.__index = BottomPurchasePopup
 
@@ -48,10 +66,53 @@ function BottomPurchasePopup:Initialize()
     return true
 end
 
+-- Function to get correct pricing from Constants
+function BottomPurchasePopup:GetItemPricing(itemName)
+    local Constants = SharedModule.Constants
+    
+    -- First check if item exists in Constants.ITEMS
+    if Constants.ITEMS and Constants.ITEMS[itemName] then
+        local itemData = Constants.ITEMS[itemName]
+        if itemData.price then
+            if type(itemData.price) == "table" then
+                return itemData.price.INGAME or 5, itemData.price.ROBUX or 5
+            else
+                -- Old format, use same price for both
+                return itemData.price, itemData.price
+            end
+        end
+    end
+    
+    -- Determine tier and get price from ITEM_PRICES
+    local tier = "BASIC" -- Default tier
+    
+    -- Simple tier detection based on item name
+    local lowerName = itemName:lower()
+    if lowerName:find("glow") or lowerName:find("basic") then
+        tier = "BASIC"
+    elseif lowerName:find("level1") then
+        tier = "LEVEL_1"
+    elseif lowerName:find("level2") then
+        tier = "LEVEL_2"
+    elseif lowerName:find("rare") then
+        tier = "RARE"
+    elseif lowerName:find("exclusive") then
+        tier = "EXCLUSIVE"
+    end
+    
+    -- Get price from tier
+    if Constants.ITEM_PRICES and Constants.ITEM_PRICES[tier] then
+        local tierPrice = Constants.ITEM_PRICES[tier]
+        return tierPrice.INGAME or 5, tierPrice.ROBUX or 5
+    end
+    
+    -- Fallback
+    return 5, 5
+end
+
 function BottomPurchasePopup:CreateBottomPurchasePopup(item)
     local itemName = item.Name:gsub("_", " ")
-    local price = item:GetAttribute("Price") or item:GetAttribute("priceIngame") or 75
-    local robuxPrice = item:GetAttribute("priceRobux") or 5
+    local price, robuxPrice = self:GetItemPricing(item.Name)
     
     -- Remove existing popup
     if self.currentPopup then
@@ -156,12 +217,20 @@ function BottomPurchasePopup:CreateBottomPurchasePopup(item)
         self:PurchaseItem(item.Name, "ROBUX")
     end)
     
-    -- Smooth slide-in animation
-    popupFrame.Position = UDim2.new(0.5, -160, 1, 20) -- Start below screen
-    local slideIn = TweenService:Create(popupFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Position = UDim2.new(0.5, -160, 1, -120)
-    })
-    slideIn:Play()
+    -- Smooth slide-in animation (only if this is a new popup, not a replacement)
+    local isReplacement = self.currentPopup ~= nil
+    
+    if not isReplacement then
+        -- Start below screen for new popups
+        popupFrame.Position = UDim2.new(0.5, -160, 1, 20) 
+        local slideIn = TweenService:Create(popupFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.5, -160, 1, -120)
+        })
+        slideIn:Play()
+    else
+        -- For replacements, just put it in the correct position immediately
+        popupFrame.Position = UDim2.new(0.5, -160, 1, -120)
+    end
     
     self.currentPopup = screenGui
     print("BottomPurchasePopup: Showing popup for", item.Name)
@@ -251,17 +320,15 @@ function BottomPurchasePopup:CheckForNearbyItems()
     
     -- Handle popup changes
     if closestItem ~= self.currentStoreItem then
-        -- Hide current popup
-        if self.currentPopup then
-            self:HidePopup()
-        end
-        
         self.currentStoreItem = closestItem
         
-        -- Show new popup if we have an item
         if self.currentStoreItem then
-            task.wait(0.1) -- Small delay for smooth transition
+            -- If we're switching from one item to another, update immediately
+            -- If there's an existing popup, we'll replace it directly
             self:CreateBottomPurchasePopup(self.currentStoreItem)
+        else
+            -- No item nearby, hide popup
+            self:HidePopup()
         end
     end
 end

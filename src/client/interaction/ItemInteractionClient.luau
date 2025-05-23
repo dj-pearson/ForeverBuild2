@@ -53,6 +53,9 @@ end
 -- Import the new BottomPurchasePopup module
 local BottomPurchasePopup = require(script.Parent:WaitForChild("BottomPurchasePopup"))
 
+-- Import the new WorldItemInteractionPopup module
+local WorldItemInteractionPopup = require(script.Parent:WaitForChild("WorldItemInteractionPopup"))
+
 local ItemInteractionClient = {}
 ItemInteractionClient.__index = ItemInteractionClient
 
@@ -72,6 +75,9 @@ function ItemInteractionClient.new()
     -- Bottom purchase popup system
     self.bottomPurchasePopup = BottomPurchasePopup.new()
     
+    -- World item interaction popup system
+    self.worldItemInteractionPopup = WorldItemInteractionPopup.new()
+    
     -- State tracking
     self.currentTarget = nil
     self.isInteracting = false
@@ -85,6 +91,12 @@ function ItemInteractionClient.new()
 end
 
 function ItemInteractionClient:Initialize()
+    -- Check global flag to prevent duplicate initialization
+    if _G.DISABLE_OLD_INTERACTION_CLIENT then
+        print("ItemInteractionClient: Initialization disabled by global flag (preventing duplicate)")
+        return false
+    end
+    
     print("ItemInteractionClient initializing...")
     
     -- Cache remote events/functions
@@ -536,14 +548,15 @@ function ItemInteractionClient:SetupInputHandling()
 end
 
 function ItemInteractionClient:SetupMouseTracking()
-    -- Update target on mouse movement
+    -- Update target on mouse movement (only for world items, not store items)
     local mouseConnection = RunService.RenderStepped:Connect(function()
-        self:UpdateCurrentTarget()
+        -- Only update current target for world items since store items are handled by BottomPurchasePopup
+        self:UpdateCurrentTargetForWorldItemsOnly()
     end)
     table.insert(self.connections, mouseConnection)
 end
 
-function ItemInteractionClient:UpdateCurrentTarget()
+function ItemInteractionClient:UpdateCurrentTargetForWorldItemsOnly()
     -- Don't update if we're already interacting
     if self.isInteracting then return end
     
@@ -556,9 +569,7 @@ function ItemInteractionClient:UpdateCurrentTarget()
     
     -- Check if we're pointing at an interactable object
     local target = mouse.Target
-    -- MINIMAL DEBUG PRINT
-    -- print(string.format("DBG:UpdateCurrentTarget: mouse.Target is %s", (target and target:GetFullName() or "NIL")))
-
+    
     if not target then
         -- Hide UI and clear target if we're not pointing at anything
         if self.currentTarget then
@@ -570,13 +581,7 @@ function ItemInteractionClient:UpdateCurrentTarget()
     
     -- Check if we're pointing at an interactable object
     local interactable = self:GetInteractableFromPart(target)
-    -- MINIMAL DEBUG PRINT
-    -- if ОбычноЯМама and target then -- Guard against nil target if GetInteractableFromPart is called directly elsewhere
-    --    print(string.format("DBG:UpdateCurrentTarget: GetInteractableFromPart returned %s for target %s",
-    --        (interactable and interactable:GetFullName() or "NIL"),
-    --        (target and target:GetFullName() or "NIL")))
-    -- end
-
+    
     if not interactable then
         -- Hide UI and clear target if we're not pointing at an interactable
         if self.currentTarget then
@@ -586,11 +591,20 @@ function ItemInteractionClient:UpdateCurrentTarget()
         return
     end
     
-    -- Check distance to the object
+    -- Skip store items completely - let BottomPurchasePopup handle them
+    local isStoreItem = self:IsStoreItem(interactable)
+    if isStoreItem then
+        -- Hide any existing proximity UI and clear target for store items
+        if self.currentTarget then
+            self:HideProximityUI()
+            self.currentTarget = nil
+        end
+        return
+    end
+    
+    -- Check distance to the object (only for world items)
     local objectPosition = interactable.PrimaryPart and interactable.PrimaryPart.Position or interactable:GetModelCFrame().Position
     local distance = (hrp.Position - objectPosition).Magnitude
-    -- MINIMAL DEBUG PRINT
-    -- print(string.format("DBG:UpdateCurrentTarget: Interactable: %s, Distance: %.2f", interactable:GetFullName(), distance))
     
     if distance > self.maxInteractionDistance then
         -- Hide UI and clear target if we're too far away
@@ -601,8 +615,9 @@ function ItemInteractionClient:UpdateCurrentTarget()
         return
     end
     
-    -- Set new target and show UI
+    -- Set new target and show UI (only for world items)
     if interactable ~= self.currentTarget then
+        self.currentTarget = interactable
         -- print(string.format("DBG:UpdateCurrentTarget: Updating target. Old: %s, New: %s",
         --    (self.currentTarget and self.currentTarget:GetFullName() or "NIL"),
         --    (interactable and interactable:GetFullName() or "NIL")
@@ -807,18 +822,10 @@ function ItemInteractionClient:InteractWithWorldItem(target)
     
     print(string.format("ItemInteractionClient: Interacting with world item. Name: %s, ItemID: %s, InstanceID: %s", target.Name, itemId, instanceId))
 
-    if SharedModule and SharedModule.PlacedItemDialog and SharedModule.PlacedItemDialog.Show then
-        print("--- ItemInteractionClient:InteractWithWorldItem() - SharedModule.PlacedItemDialog.Show IS AVAILABLE. Calling it now... ---") -- DEBUG
-        SharedModule.PlacedItemDialog.Show(itemId, itemName, target) -- Pass the actual 'target' instance
-        print("--- ItemInteractionClient:InteractWithWorldItem() - AFTER calling SharedModule.PlacedItemDialog.Show. ---") -- DEBUG
-    else
-        warn("ItemInteractionClient: PlacedItemDialog or its Show method not available via SharedModule.")
-        print("--- ItemInteractionClient:InteractWithWorldItem() - PlacedItemDialog.Show IS NOT AVAILABLE. ---") -- DEBUG
-        self:ShowNotification("Interaction menu is currently unavailable.", "Error")
-        -- Fallback: The old self:ShowWorldItemUI(itemGuid) is deprecated and likely won't work as intended.
-        -- local itemGuid = target:GetAttribute("guid") -- old way
-        -- if itemGuid then self:ShowWorldItemUI(itemGuid) end
-    end
+    -- Use our new WorldItemInteractionPopup instead of the broken PlacedItemDialog system
+    print("--- ItemInteractionClient:InteractWithWorldItem() - Using WorldItemInteractionPopup.Show ---") -- DEBUG
+    self.worldItemInteractionPopup:Show(target)
+    print("--- ItemInteractionClient:InteractWithWorldItem() - WorldItemInteractionPopup.Show completed ---") -- DEBUG
 end
 
 function ItemInteractionClient:GetAvailableInteractions(itemGuidOrInstance)
@@ -919,6 +926,12 @@ function ItemInteractionClient:Cleanup()
     if self.bottomPurchasePopup then
         self.bottomPurchasePopup:Cleanup()
         self.bottomPurchasePopup = nil
+    end
+    
+    -- Clean up world item interaction popup system
+    if self.worldItemInteractionPopup then
+        self.worldItemInteractionPopup:Hide()
+        self.worldItemInteractionPopup = nil
     end
     
     -- Remove UIs

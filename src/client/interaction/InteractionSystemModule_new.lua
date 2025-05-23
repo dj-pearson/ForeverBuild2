@@ -2,6 +2,25 @@
 -- A robust interaction system for handling item interactions in the game.
 -- Handles proximity detection, UI, purchasing with in-game currency or Robux.
 
+-- IMMEDIATE CHECK: Disable this entire system if new popup system is active
+if _G.DISABLE_OLD_INTERACTION_CLIENT or _G.USE_NEW_BOTTOM_POPUP_ONLY then
+    print("[InteractionSystemModule_new] Disabled by global flag - new popup system is active")
+    -- Return a dummy module that does nothing
+    return {
+        new = function()
+            return {
+                Initialize = function() 
+                    print("[InteractionSystemModule_new] Dummy system - doing nothing")
+                end,
+                CreateUI = function() end,
+                ShowInteractionUI = function() end,
+                HideInteractionUI = function() end,
+                Update = function() end
+            }
+        end
+    }
+end
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -57,6 +76,12 @@ end
 
 -- Create interaction UI
 function InteractionSystem:CreateUI()
+    -- Check global flag again to prevent UI creation
+    if _G.DISABLE_OLD_INTERACTION_CLIENT or _G.USE_NEW_BOTTOM_POPUP_ONLY then
+        debugLog("CreateUI disabled by global flag - new popup system is active")
+        return
+    end
+    
     -- Create the UI if it doesn't exist
     if self.ui then return end
     
@@ -193,6 +218,12 @@ end
 
 -- Show the interaction UI for a specific item
 function InteractionSystem:ShowInteractionUI(item)
+    -- Check global flag to prevent showing old UI
+    if _G.DISABLE_OLD_INTERACTION_CLIENT or _G.USE_NEW_BOTTOM_POPUP_ONLY then
+        debugLog("ShowInteractionUI disabled by global flag - new popup system is active")
+        return
+    end
+    
     if not self.ui then
         self:CreateUI()
     end
@@ -619,6 +650,12 @@ end
 
 -- Initialize the interaction system
 function InteractionSystem:Initialize()
+    -- Check global flag to prevent old popup system from running
+    if _G.DISABLE_OLD_INTERACTION_CLIENT then
+        debugLog("InteractionSystem initialization disabled by global flag (new popup system active)")
+        return
+    end
+    
     debugLog("Initializing InteractionSystem...")
     if self.initialized then
         debugLog("Already initialized.")

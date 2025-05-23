@@ -117,6 +117,8 @@ end
 local currencyUI = safeInitialize(SharedModule.CurrencyUI, "CurrencyUI")
 
 -- Initialize the new Interaction System
+-- DISABLED: Using new integrated BottomPurchasePopup system instead
+--[[
 local InteractionSystemPath = script.Parent:WaitForChild("interaction"):WaitForChild("InteractionSystemModule_new")
 local success, InteractionSystem = pcall(require, InteractionSystemPath)
 
@@ -135,6 +137,8 @@ else
         print("InteractionSystem initialized successfully")
     end
 end
+--]]
+print("[inits.client] Old InteractionSystemModule_new loading DISABLED - using new BottomPurchasePopup system")
 
 -- Load item type fixes
 local itemTypesFixSuccess = pcall(function()
