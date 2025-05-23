@@ -89,6 +89,12 @@ function PlacementManager.new(sharedModule)
         self.isTransitioningFromRotation = false -- NEW: True if placing after rotation
         self.currentAngleY = 0 -- INITIALIZE self.currentAngleY
 
+        -- Performance optimization variables to prevent bouncing
+        self.lastUpdatePlacementTime = 0
+        self.updatePlacementInterval = 0.05 -- 20 FPS max (50ms between updates) - more aggressive throttling
+        self.lastSnappedPosition = nil
+        self.positionChangeTolerance = 0.1 -- Only update if position changes by more than 0.1 studs
+
         -- NEW: State variables for Rotation Workflow
         self.isRotatingItem = false
         self.itemToRotate = nil -- Will be the previewItem during rotation phase
@@ -1890,37 +1896,23 @@ end
 -- Client: Update the preview item position and appearance based on mouse position
 function PlacementManager:UpdatePlacementPreview()
     if RunService:IsServer() then return end
-    print(string.format("UpdatePlacementPreview - ENTERING - Angles X: %s, Y: %s, Z: %s", 
-        tostring(self.currentPlacementAngleX), 
-        tostring(self.currentPlacementAngleY), 
-        tostring(self.currentPlacementAngleZ)))
+    if not self.previewItem then return end
+    if not (self.isPlacing or self.isMovingExistingItem) then return end
 
-    if not self.previewItem then
-        return
+    -- PERFORMANCE THROTTLING: Prevent bouncing by limiting update frequency
+    local currentTime = tick()
+    if currentTime - self.lastUpdatePlacementTime < self.updatePlacementInterval then
+        return -- Skip this update to prevent bouncing
     end
 
-    if not (self.isPlacing or self.isMovingExistingItem) then
-        return -- Not in placement or move mode
-    end
-
-    -- ADDED NIL CHECKS FOR ANGLES EARLY IN THE FUNCTION
-    self.currentPlacementAngleX = tonumber(self.currentPlacementAngleX) or 0
-    self.currentPlacementAngleY = tonumber(self.currentPlacementAngleY) or 0
-    self.currentPlacementAngleZ = tonumber(self.currentPlacementAngleZ) or 0
-    print(string.format("UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: %s, Y: %s, Z: %s", 
-        tostring(self.currentPlacementAngleX), 
-        tostring(self.currentPlacementAngleY), 
-        tostring(self.currentPlacementAngleZ)))
-
+    -- Early basic setup checks
     local player = Players.LocalPlayer
     if not player or not player.Character then return end
-
     local camera = Workspace.CurrentCamera
     if not camera then return end
+    local mouse = player:GetMouse()
 
-    local mouse = player:GetMouse() -- Still used for screen position to ray direction
-
-    -- Create a ray from the camera through the mouse position
+    -- Get initial hit position quickly for position change check
     local viewportMouseRay = camera:ViewportPointToRay(mouse.X, mouse.Y)
     local rayOrigin = viewportMouseRay.Origin
     local rayDirection = viewportMouseRay.Direction
@@ -1936,21 +1928,25 @@ function PlacementManager:UpdatePlacementPreview()
     raycastParams.IgnoreWater = false
 
     local raycastResult = Workspace:Raycast(rayOrigin, rayDirection * 1000, raycastParams)
+    local hitPosition = raycastResult and raycastResult.Position or (rayOrigin + rayDirection * 100)
 
-    local hitPosition
-    local targetNormal
-
-    if raycastResult then
-        hitPosition = raycastResult.Position
-        targetNormal = raycastResult.Normal
-    else
-        hitPosition = rayOrigin + rayDirection * 100 
-        targetNormal = Vector3.new(0, 1, 0) 
-        -- If no hit, return or indicate out of range to avoid placing item floating in sky based on last valid normal
-        -- For now, we proceed, but this might need refinement if items float unexpectedly when aimed at sky
-        -- return -- Option: uncomment to prevent updates if aiming at sky
+    -- EARLY POSITION CHANGE CHECK: Skip expensive calculations if position hasn't changed much
+    if self.lastSnappedPosition then
+        local positionDelta = (hitPosition - self.lastSnappedPosition).Magnitude
+        if positionDelta < self.positionChangeTolerance then
+            return -- Skip update if position hasn't changed enough to prevent micro-bouncing
+        end
     end
 
+    -- Now we can update the timestamp since we're doing real work
+    self.lastUpdatePlacementTime = currentTime
+
+    -- Initialize angle variables without excessive logging
+    self.currentPlacementAngleX = tonumber(self.currentPlacementAngleX) or 0
+    self.currentPlacementAngleY = tonumber(self.currentPlacementAngleY) or 0
+    self.currentPlacementAngleZ = tonumber(self.currentPlacementAngleZ) or 0
+
+    local targetNormal = raycastResult and raycastResult.Normal or Vector3.new(0, 1, 0)
     local newPosition
     local newOrientation
 
@@ -2000,9 +1996,8 @@ function PlacementManager:UpdatePlacementPreview()
                 newPosition = basePosition
             end
         else
-            -- Fallback if targetNormal is somehow not a Vector3 (e.g. nil from a failed raycast that wasn't handled)
-            newPosition = hitPosition -- Place directly at hit position without normal offset
-            warn("PlacementManager:UpdatePlacementPreview - targetNormal was not a Vector3. Using hitPosition directly.")
+            -- Fallback if targetNormal is somehow not a Vector3
+            newPosition = hitPosition
         end
 
     else
@@ -2019,7 +2014,7 @@ function PlacementManager:UpdatePlacementPreview()
                 math.floor(hitPosition.Z / GRID_SIZE + 0.5) * GRID_SIZE
             )
         else
-             -- Ensure targetNormal is a valid Vector3 before using it for complex CFrame math
+            -- Ensure targetNormal is a valid Vector3 before using it for complex CFrame math
             if typeof(targetNormal) == "Vector3" and targetNormal.Magnitude > 0.001 then
                 local upVector = targetNormal
                 local currentYRotationCFrame = CFrame.Angles(0, math.rad(self.currentAngleY), 0)
@@ -2056,30 +2051,24 @@ function PlacementManager:UpdatePlacementPreview()
                     newPosition = basePosition
                 end
             else
-                -- Fallback if targetNormal is invalid (e.g. zero vector, or nil)
-                newOrientation = CFrame.Angles(0, math.rad(self.currentAngleY), 0) -- Keep current Y rotation
-                newPosition = hitPosition -- Place directly at hit position
-                warn("PlacementManager:UpdatePlacementPreview - targetNormal was invalid for surface alignment. Using basic orientation.")
+                -- Fallback if targetNormal is invalid
+                newOrientation = CFrame.Angles(0, math.rad(self.currentAngleY), 0)
+                newPosition = hitPosition
             end
         end
     end
 
-    -- Update the preview item position with the calculated values
-    local newCFrame = CFrame.new(newPosition) * newOrientation
+    -- Final position assignment and CFrame update
+    self.lastSnappedPosition = newPosition
     
-    -- Debug: Add current rotation angles (X, Y, Z)
+    -- Apply rotation angles
     local rotationAngles = CFrame.Angles(
         math.rad(self.currentPlacementAngleX),
         math.rad(self.currentPlacementAngleY), 
         math.rad(self.currentPlacementAngleZ)
     )
-    print(string.format("DEBUG_ANGLES_BEFORE_RAD_CALL: X= %s Y= %s Z= %s", 
-        tostring(self.currentPlacementAngleX), 
-        tostring(self.currentPlacementAngleY), 
-        tostring(self.currentPlacementAngleZ)))
     
-    -- Apply the rotation
-    newCFrame = newCFrame * rotationAngles
+    local newCFrame = CFrame.new(newPosition) * newOrientation * rotationAngles
 
     if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
         self.previewItem:SetPrimaryPartCFrame(newCFrame)
