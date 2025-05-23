@@ -54,6 +54,9 @@ end
 -- Import the new BottomPurchasePopup module
 local BottomPurchasePopup = require(script.Parent:WaitForChild("BottomPurchasePopup"))
 
+-- Import the UndoManager module
+local UndoManager = require(script.Parent:WaitForChild("UndoManager"))
+
 local ItemInteractionClient = {}
 ItemInteractionClient.__index = ItemInteractionClient
 
@@ -85,6 +88,9 @@ function ItemInteractionClient.new()
     self.lastRaycast = 0
     self.raycastCooldown = 0.1 -- Limit raycast frequency
     
+    -- Add UndoManager
+    self.undoManager = nil
+    
     return self
 end
 
@@ -114,6 +120,46 @@ function ItemInteractionClient:Initialize()
     
     -- Add notification to show system is ready
     self:ShowNotification("Interaction system ready! Press E to interact with objects.")
+    
+    -- Initialize UndoManager
+    self.undoManager = UndoManager.new()
+    local undoSuccess = self.undoManager:Initialize()
+    if undoSuccess then
+        print("ItemInteractionClient: UndoManager initialized successfully")
+        -- Store reference globally for easy access
+        _G.UndoManager = self.undoManager
+    else
+        warn("ItemInteractionClient: Failed to initialize UndoManager")
+    end
+    
+    -- Set up PlacedItemDialog action callback with undo recording
+    if SharedModule and SharedModule.PlacedItemDialog then
+        local PlacedItemDialog = SharedModule.PlacedItemDialog
+        
+        -- Store original callback if it exists
+        local originalCallback = PlacedItemDialog.OnActionSelected
+        
+        -- Override with our enhanced callback that records undo data
+        PlacedItemDialog.OnActionSelected = function(itemId, actionKey, itemInstance, actualCost)
+            print(string.format("ItemInteractionClient: PlacedItemDialog action - %s on %s (cost: %s)", actionKey, itemId, actualCost))
+            
+            -- Record action data for undo BEFORE performing the action
+            if self.undoManager and itemInstance then
+                self:RecordActionForUndo(actionKey, itemInstance, actualCost)
+            end
+            
+            -- Call original callback or our action processing
+            if originalCallback then
+                originalCallback(itemId, actionKey, itemInstance, actualCost)
+            else
+                -- Process the action ourselves
+                self:ProcessPlacedItemAction(itemId, actionKey, itemInstance, actualCost)
+            end
+        end
+    end
+    
+    -- Set up ItemPlaced event handler for fresh placements from inventory
+    self:SetupItemPlacedHandler()
     
     print("ItemInteractionClient initialized successfully")
     return true
@@ -686,7 +732,7 @@ function ItemInteractionClient:GetInteractableFromPart(part)
                 -- Accept both Models and Parts as world items
                 if ancestor and (ancestor:IsA("Model") or ancestor:IsA("Part")) then
                     -- Check if it has world item attributes
-                    if ancestor:GetAttribute("instanceId") or ancestor:GetAttribute("itemId") then
+                    if ancestor:GetAttribute("instanceId") or ancestor:GetAttribute("itemId")) then
                         result = ancestor
                     end
                 end
@@ -716,6 +762,29 @@ function ItemInteractionClient:ShowProximityUI(target)
             label.Text = inputPrompt .. " Purchase"  -- Store items show "Purchase"
         else
             label.Text = inputPrompt .. " Interact"  -- World items show "Interact"
+        end
+        
+        -- If this is the nearest item (what E will select), make it more prominent
+        local nearestItem = self:FindNearestInteractableItem()
+        if nearestItem == target then
+            -- Make the UI more prominent for the nearest item
+            label.TextColor3 = Color3.fromRGB(255, 255, 100)  -- Bright yellow for nearest
+            
+            -- Find the background frame and make it more visible
+            local bg = ui:FindFirstChild("Background", true)
+            if bg then
+                bg.BackgroundColor3 = Color3.fromRGB(50, 50, 20)  -- Slightly yellow tint
+                bg.BackgroundTransparency = 0.05  -- Less transparent
+            end
+        else
+            -- Regular appearance for non-nearest items
+            label.TextColor3 = Color3.fromRGB(255, 255, 255)  -- Normal white
+            
+            local bg = ui:FindFirstChild("Background", true)
+            if bg then
+                bg.BackgroundColor3 = Color3.fromRGB(20, 25, 40)  -- Normal dark background
+                bg.BackgroundTransparency = 0.1
+            end
         end
     end
     
@@ -763,13 +832,22 @@ function ItemInteractionClient:TryInteract()
         return 
     end
     
-    -- Need a valid target to interact with
-    if not self.currentTarget then 
-        print("--- ItemInteractionClient:TryInteract() - No currentTarget, returning. ---") -- Ensure this remains
-        return 
-    end
+    local targetToUse = self.currentTarget
     
-    print(string.format("--- ItemInteractionClient:TryInteract() - currentTarget: %s ---", self.currentTarget:GetFullName())) -- Ensure this remains
+    -- If no current target (mouse not pointing), try to find nearest interactable item in range
+    if not targetToUse then
+        print("--- ItemInteractionClient:TryInteract() - No currentTarget, searching for nearby items... ---")
+        targetToUse = self:FindNearestInteractableItem()
+        
+        if targetToUse then
+            print("--- ItemInteractionClient:TryInteract() - Found nearby item to interact with: " .. targetToUse:GetFullName() .. " ---")
+        else
+            print("--- ItemInteractionClient:TryInteract() - No nearby items found, returning. ---")
+            return
+        end
+    else
+        print(string.format("--- ItemInteractionClient:TryInteract() - Using currentTarget: %s ---", targetToUse:GetFullName()))
+    end
 
     -- Set interacting flag
     self.isInteracting = true
@@ -778,27 +856,80 @@ function ItemInteractionClient:TryInteract()
     self:HideProximityUI()
     
     -- Determine interaction type
-    local isStoreItem = self:IsStoreItem(self.currentTarget)
+    local isStoreItem = self:IsStoreItem(targetToUse)
     
     if isStoreItem then
         -- Handle store item interaction
-        -- local itemName = self.currentTarget.Name:gsub("_", " ") -- Corrected potential error if Name is not a string
-        local itemName = self.currentTarget.Name
+        local itemName = targetToUse.Name
         if type(itemName) == "string" then
             itemName = itemName:gsub("_", " ")
         end
-        self:InteractWithStoreItem(self.currentTarget)
+        self:InteractWithStoreItem(targetToUse)
     else
         -- Handle world item interaction
         print("--- ItemInteractionClient:TryInteract() - Target is a WORLD item. Calling InteractWithWorldItem. ---") -- DEBUG
-        self:InteractWithWorldItem(self.currentTarget) -- This will now call PlacedItemDialog.Show
+        self:InteractWithWorldItem(targetToUse) -- This will now call PlacedItemDialog.Show
     end
     
     -- Clear flags and target after short delay
     task.delay(0.2, function()
         self.isInteracting = false
-        -- self.currentTarget = nil -- Don't clear currentTarget here, PlacedItemDialog might still need it or hide might clear it.
     end)
+end
+
+-- New function to find the nearest interactable item within range
+function ItemInteractionClient:FindNearestInteractableItem()
+    local character = player.Character
+    if not character then return nil end
+    
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
+    
+    local nearestItem = nil
+    local nearestDistance = math.huge
+    
+    -- Check World_Items.Placed folder for placed items
+    local worldItems = workspace:FindFirstChild("World_Items")
+    if worldItems then
+        local placed = worldItems:FindFirstChild("Placed")
+        if placed then
+            for _, item in pairs(placed:GetChildren()) do
+                if (item:IsA("Model") or item:IsA("Part")) and (item:GetAttribute("instanceId") or item:GetAttribute("itemId")) then
+                    local itemPosition
+                    if item:IsA("Model") and item.PrimaryPart then
+                        itemPosition = item.PrimaryPart.Position
+                    elseif item:IsA("Part") then
+                        itemPosition = item.Position
+                    else
+                        itemPosition = item:GetModelCFrame().Position
+                    end
+                    
+                    local distance = (hrp.Position - itemPosition).Magnitude
+                    if distance <= self.maxInteractionDistance and distance < nearestDistance then
+                        nearestDistance = distance
+                        nearestItem = item
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Also check Items folder for store items
+    local itemsFolder = workspace:FindFirstChild("Items")
+    if itemsFolder then
+        for _, item in pairs(itemsFolder:GetDescendants()) do
+            if item:IsA("Model") and item.PrimaryPart and (item:GetAttribute("Purchasable") or item:GetAttribute("Price") or item:GetAttribute("priceIngame")) then
+                local itemPosition = item.PrimaryPart.Position
+                local distance = (hrp.Position - itemPosition).Magnitude
+                if distance <= self.maxInteractionDistance and distance < nearestDistance then
+                    nearestDistance = distance
+                    nearestItem = item
+                end
+            end
+        end
+    end
+    
+    return nearestItem
 end
 
 function ItemInteractionClient:IsStoreItem(target)
@@ -963,6 +1094,210 @@ function ItemInteractionClient:Cleanup()
     self:HideProximityUI()
     
     print("ItemInteractionClient cleaned up successfully")
+end
+
+function ItemInteractionClient:RecordActionForUndo(actionKey, itemInstance, actualCost)
+    if not self.undoManager or not itemInstance then return end
+    
+    -- Gather data needed to undo this action
+    local actionData = {
+        instanceId = itemInstance:GetAttribute("instanceId"),
+        itemId = itemInstance:GetAttribute("itemId"),
+        actualCost = actualCost
+    }
+    
+    if actionKey == "destroy" then
+        -- For destroy, we need to save the item's state to recreate it
+        actionData.position = nil
+        actionData.rotation = nil
+        
+        if itemInstance:IsA("Model") and itemInstance.PrimaryPart then
+            actionData.position = itemInstance.PrimaryPart.Position
+            actionData.rotation = itemInstance.PrimaryPart.CFrame - itemInstance.PrimaryPart.CFrame.Position
+        elseif itemInstance:IsA("Part") then
+            actionData.position = itemInstance.Position
+            actionData.rotation = itemInstance.CFrame - itemInstance.CFrame.Position
+        end
+        
+    elseif actionKey == "move" then
+        -- For move, we need to save the original position
+        if itemInstance:IsA("Model") and itemInstance.PrimaryPart then
+            actionData.originalPosition = itemInstance.PrimaryPart.Position
+        elseif itemInstance:IsA("Part") then
+            actionData.originalPosition = itemInstance.Position
+        end
+        
+    elseif actionKey == "rotate" then
+        -- For rotate, we need to save the original rotation
+        if itemInstance:IsA("Model") and itemInstance.PrimaryPart then
+            actionData.originalRotation = itemInstance.PrimaryPart.CFrame - itemInstance.PrimaryPart.CFrame.Position
+        elseif itemInstance:IsA("Part") then
+            actionData.originalRotation = itemInstance.CFrame - itemInstance.CFrame.Position
+        end
+        
+    elseif actionKey == "clone" then
+        -- For clone, we'll need to track the cloned item when it's created
+        -- This is more complex and might need server-side cooperation
+        actionData.originalItemId = itemInstance:GetAttribute("itemId")
+        
+    elseif actionKey == "recall" then
+        -- For recall, we need to save all the item data to recreate it
+        actionData.position = nil
+        actionData.rotation = nil
+        
+        if itemInstance:IsA("Model") and itemInstance.PrimaryPart then
+            actionData.position = itemInstance.PrimaryPart.Position
+            actionData.rotation = itemInstance.PrimaryPart.CFrame - itemInstance.PrimaryPart.CFrame.Position
+        elseif itemInstance:IsA("Part") then
+            actionData.position = itemInstance.Position
+            actionData.rotation = itemInstance.CFrame - itemInstance.CFrame.Position
+        end
+    end
+    
+    -- Record the action
+    self.undoManager:RecordAction(actionKey, actionData)
+    print(string.format("ItemInteractionClient: Recorded '%s' action for undo", actionKey))
+end
+
+function ItemInteractionClient:ProcessPlacedItemAction(itemId, actionKey, itemInstance, actualCost)
+    -- Process the action using existing systems
+    local instanceId = itemInstance:GetAttribute("instanceId")
+    
+    if actionKey == "destroy" and self.remotes.DestroyItem then
+        self:ShowNotification(string.format("Destroying %s...", itemInstance.Name), "Info")
+        self.remotes.DestroyItem:FireServer(instanceId, actualCost)
+        
+    elseif actionKey == "clone" and self.remotes.CloneItem then
+        self:ShowNotification(string.format("Cloning %s...", itemInstance.Name), "Info")
+        local originalItemId = itemInstance:GetAttribute("itemId")
+        self.remotes.CloneItem:FireServer(instanceId, actualCost, originalItemId)
+        
+    elseif actionKey == "move" then
+        -- Start move operation using PlacementManager
+        local PlacementManagerInstance = SharedModule and SharedModule.PlacementManagerClientInstance
+        if PlacementManagerInstance and PlacementManagerInstance.InitiateMoveOperation then
+            self:ShowNotification("Click to place item in new location...", "Info")
+            local success, err = pcall(function()
+                PlacementManagerInstance:InitiateMoveOperation(itemInstance, actualCost)
+            end)
+            if not success then
+                warn(string.format("ItemInteractionClient: Error calling PlacementManagerInstance:InitiateMoveOperation: %s", tostring(err)))
+                self:ShowNotification("Error starting move operation: " .. tostring(err), "Error")
+            end
+        else
+            warn("ItemInteractionClient: PlacementManagerClientInstance or InitiateMoveOperation not found.")
+            self:ShowNotification("Move functionality is not available.", "Error")
+        end
+        
+    elseif actionKey == "recall" and self.remotes.RecallItem then
+        self:ShowNotification(string.format("Recalling %s...", itemInstance.Name), "Info")
+        local originalItemId = itemInstance:GetAttribute("itemId")
+        if not originalItemId then
+            warn("ItemInteractionClient: Recall - Could not get originalItemId from itemInstance attributes: " .. itemInstance.Name)
+            self:ShowNotification("Error: Could not identify item type for recall.", "Error")
+            return
+        end
+        self.remotes.RecallItem:FireServer(instanceId, actualCost, originalItemId)
+        
+    elseif actionKey == "rotate" then
+        -- Start rotation workflow using PlacementManager
+        local PlacementManagerInstance = SharedModule and SharedModule.PlacementManagerClientInstance
+        if PlacementManagerInstance and PlacementManagerInstance.StartRotationWorkflow then
+            self:ShowNotification("Initiating rotation... Adjust rotation, then set position.", "Info")
+            local success, err = pcall(function()
+                PlacementManagerInstance:StartRotationWorkflow(itemInstance, actualCost)
+            end)
+            if not success then
+                warn(string.format("ItemInteractionClient: Error calling PlacementManagerInstance:StartRotationWorkflow: %s", tostring(err)))
+                self:ShowNotification("Error starting rotation: " .. tostring(err), "Error")
+            end
+        else
+            warn("ItemInteractionClient: PlacementManagerClientInstance or StartRotationWorkflow not found.")
+            self:ShowNotification("Rotation functionality is not available.", "Error")
+        end
+        
+    else
+        warn(string.format("ItemInteractionClient: Unknown action key '%s' or missing remote", actionKey))
+        self:ShowNotification("Action not supported: " .. actionKey, "Error")
+    end
+end
+
+function ItemInteractionClient:SetupItemPlacedHandler()
+    -- Set up client-side handler for ItemPlaced events from inventory placements
+    if not self.remotes.ItemPlaced then
+        warn("ItemInteractionClient: ItemPlaced remote event not found, cannot set up handler")
+        return
+    end
+    
+    local connection = self.remotes.ItemPlaced.OnClientEvent:Connect(function(itemId, instanceId)
+        print(string.format("ItemInteractionClient: ItemPlaced event received - itemId: %s, instanceId: %s", itemId, instanceId))
+        
+        -- Wait a brief moment for the item to fully appear in workspace
+        task.wait(0.1)
+        
+        -- Find the placed item in the world
+        local placedItem = self:FindItemByInstanceId(instanceId)
+        
+        if placedItem and self.undoManager then
+            -- Record undo data for the placement
+            local actionData = {
+                instanceId = instanceId,
+                itemId = itemId,
+                actualCost = 0 -- No cost for undoing placement (item goes back to inventory)
+            }
+            
+            -- Get position for undo restore (if we need to recreate later)
+            if placedItem:IsA("Model") and placedItem.PrimaryPart then
+                actionData.position = placedItem.PrimaryPart.Position
+                actionData.rotation = placedItem.PrimaryPart.CFrame - placedItem.PrimaryPart.CFrame.Position
+            elseif placedItem:IsA("Part") then
+                actionData.position = placedItem.Position
+                actionData.rotation = placedItem.CFrame - placedItem.CFrame.Position
+            end
+            
+            -- Record the placement action for undo
+            self.undoManager:RecordAction("place", actionData)
+            print(string.format("ItemInteractionClient: Recorded 'place' action for undo - item: %s", itemId))
+        else
+            if not placedItem then
+                warn(string.format("ItemInteractionClient: Could not find placed item %s for undo recording", instanceId))
+            end
+        end
+    end)
+    
+    -- Store the connection for cleanup
+    table.insert(self.connections, connection)
+    print("ItemInteractionClient: Set up ItemPlaced event handler for undo recording")
+end
+
+-- Helper function to find an item by its instanceId
+function ItemInteractionClient:FindItemByInstanceId(instanceId)
+    if not instanceId then return nil end
+    
+    -- Check World_Items.Placed folder
+    local worldItems = workspace:FindFirstChild("World_Items")
+    if worldItems then
+        local placed = worldItems:FindFirstChild("Placed")
+        if placed then
+            for _, item in pairs(placed:GetChildren()) do
+                if item:GetAttribute("instanceId") == instanceId then
+                    return item
+                end
+            end
+        end
+    end
+    
+    -- Check legacy PlacedItems folder if it exists
+    local placedItems = workspace:FindFirstChild("PlacedItems")
+    if placedItems then
+        for _, item in pairs(placedItems:GetChildren()) do
+            if item:GetAttribute("instanceId") == instanceId then
+                return item
+            end
+        end
+    end
+    
+    return nil
 end
 
 return ItemInteractionClient
