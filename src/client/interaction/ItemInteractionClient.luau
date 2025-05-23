@@ -112,6 +112,9 @@ function ItemInteractionClient:Initialize()
     -- Initialize the bottom purchase popup system
     self.bottomPurchasePopup:Initialize()
     
+    -- Initialize GridSnapSystem
+    self:InitializeGridSnapSystem()
+    
     -- Set up input handling
     self:SetupInputHandling()
     
@@ -119,46 +122,12 @@ function ItemInteractionClient:Initialize()
     self:SetupMouseTracking()
     
     -- Add notification to show system is ready
-    self:ShowNotification("Interaction system ready! Press E to interact with objects.")
+    self:ShowNotification("Interaction system ready!", 2)
     
     -- Initialize UndoManager
-    self.undoManager = UndoManager.new()
-    local undoSuccess = self.undoManager:Initialize()
-    if undoSuccess then
-        print("ItemInteractionClient: UndoManager initialized successfully")
-        -- Store reference globally for easy access
-        _G.UndoManager = self.undoManager
-    else
-        warn("ItemInteractionClient: Failed to initialize UndoManager")
-    end
+    self:InitializeUndoManager()
     
-    -- Set up PlacedItemDialog action callback with undo recording
-    if SharedModule and SharedModule.PlacedItemDialog then
-        local PlacedItemDialog = SharedModule.PlacedItemDialog
-        
-        -- Store original callback if it exists
-        local originalCallback = PlacedItemDialog.OnActionSelected
-        
-        -- Override with our enhanced callback that records undo data
-        PlacedItemDialog.OnActionSelected = function(itemId, actionKey, itemInstance, actualCost)
-            print(string.format("ItemInteractionClient: PlacedItemDialog action - %s on %s (cost: %s)", actionKey, itemId, actualCost))
-            
-            -- Record action data for undo BEFORE performing the action
-            if self.undoManager and itemInstance then
-                self:RecordActionForUndo(actionKey, itemInstance, actualCost)
-            end
-            
-            -- Call original callback or our action processing
-            if originalCallback then
-                originalCallback(itemId, actionKey, itemInstance, actualCost)
-            else
-                -- Process the action ourselves
-                self:ProcessPlacedItemAction(itemId, actionKey, itemInstance, actualCost)
-            end
-        end
-    end
-    
-    -- Set up ItemPlaced event handler for fresh placements from inventory
+    -- Setup ItemPlaced event handler for undo recording
     self:SetupItemPlacedHandler()
     
     print("ItemInteractionClient initialized successfully")
@@ -1337,6 +1306,95 @@ function ItemInteractionClient:FindItemByInstanceId(instanceId)
     end
     
     return nil
+end
+
+function ItemInteractionClient:InitializeGridSnapSystem()
+    print("ItemInteractionClient: Initializing GridSnapSystem...")
+    
+    -- Require the GridSnapSystem module
+    local success, GridSnapSystem = pcall(function()
+        return require(script.Parent.Parent.placement.GridSnapSystem)
+    end)
+    
+    if not success then
+        warn("ItemInteractionClient: Failed to require GridSnapSystem module:", GridSnapSystem)
+        return false
+    end
+    
+    -- Create new GridSnapSystem instance
+    self.gridSnapSystem = GridSnapSystem.new()
+    if self.gridSnapSystem then
+        local initSuccess = self.gridSnapSystem:Initialize()
+        if initSuccess then
+            print("ItemInteractionClient: GridSnapSystem initialized successfully")
+            -- Store reference globally for easy access
+            _G.GridSnapSystem = self.gridSnapSystem
+            
+            -- Show notification about grid snap controls
+            self:ShowNotification("Grid Snap: Press G to toggle, Shift+G to cycle sizes", 4)
+            return true
+        else
+            warn("ItemInteractionClient: Failed to initialize GridSnapSystem")
+        end
+    else
+        warn("ItemInteractionClient: Failed to create GridSnapSystem instance")
+    end
+    
+    return false
+end
+
+function ItemInteractionClient:InitializeUndoManager()
+    print("ItemInteractionClient: Initializing UndoManager...")
+    
+    -- Require the UndoManager module
+    local success, UndoManager = pcall(function()
+        return require(script.Parent.UndoManager)
+    end)
+    
+    if not success then
+        warn("ItemInteractionClient: Failed to require UndoManager module:", UndoManager)
+        return false
+    end
+    
+    -- Create new UndoManager instance
+    self.undoManager = UndoManager.new()
+    local undoSuccess = self.undoManager:Initialize()
+    if undoSuccess then
+        print("ItemInteractionClient: UndoManager initialized successfully")
+        -- Store reference globally for easy access
+        _G.UndoManager = self.undoManager
+        
+        -- Set up PlacedItemDialog action callback with undo recording
+        if SharedModule and SharedModule.PlacedItemDialog then
+            local PlacedItemDialog = SharedModule.PlacedItemDialog
+            
+            -- Store original callback if it exists
+            local originalCallback = PlacedItemDialog.OnActionSelected
+            
+            -- Override with our enhanced callback that records undo data
+            PlacedItemDialog.OnActionSelected = function(itemId, actionKey, itemInstance, actualCost)
+                print(string.format("ItemInteractionClient: PlacedItemDialog action - %s on %s (cost: %s)", actionKey, itemId, actualCost))
+                
+                -- Record action data for undo BEFORE performing the action
+                if self.undoManager and itemInstance then
+                    self:RecordActionForUndo(actionKey, itemInstance, actualCost)
+                end
+                
+                -- Call original callback or our action processing
+                if originalCallback then
+                    originalCallback(itemId, actionKey, itemInstance, actualCost)
+                else
+                    -- Process the action ourselves
+                    self:ProcessPlacedItemAction(itemId, actionKey, itemInstance, actualCost)
+                end
+            end
+        end
+        
+        return true
+    else
+        warn("ItemInteractionClient: Failed to initialize UndoManager")
+        return false
+    end
 end
 
 return ItemInteractionClient

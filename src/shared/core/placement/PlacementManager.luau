@@ -1954,6 +1954,14 @@ function PlacementManager:UpdatePlacementPreview()
     local newPosition
     local newOrientation
 
+    -- Get item size for grid snap system
+    local itemSize = Vector3.new(4, 4, 4) -- Default size
+    if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
+        itemSize = self.previewItem.PrimaryPart.Size
+    elseif self.previewItem:IsA("BasePart") then
+        itemSize = self.previewItem.Size
+    end
+
     if self.isMovingExistingItem and self.isTransitioningFromRotation and self.previewItem then
         if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
             newOrientation = self.previewItem:GetPrimaryPartCFrame() - self.previewItem:GetPrimaryPartCFrame().Position
@@ -1969,7 +1977,28 @@ function PlacementManager:UpdatePlacementPreview()
         
         -- Ensure targetNormal is a valid Vector3 before using it
         if typeof(targetNormal) == "Vector3" then
-            newPosition = hitPosition + targetNormal * (itemSizeY / 2)
+            local basePosition = hitPosition + targetNormal * (itemSizeY / 2)
+            
+            -- Apply grid snapping with collision detection
+            local gridSnapSystem = _G.GridSnapSystem
+            if gridSnapSystem then
+                local snappedPosition, _, hasCollision, collidingObject = gridSnapSystem:ProcessPlacement(
+                    basePosition, 
+                    newOrientation, 
+                    itemSize, 
+                    self.itemBeingMovedInstance
+                )
+                newPosition = snappedPosition
+                
+                -- Visual feedback for collision
+                if hasCollision then
+                    self:_UpdatePreviewCollisionFeedback(true, collidingObject)
+                else
+                    self:_UpdatePreviewCollisionFeedback(false)
+                end
+            else
+                newPosition = basePosition
+            end
         else
             -- Fallback if targetNormal is somehow not a Vector3 (e.g. nil from a failed raycast that wasn't handled)
             newPosition = hitPosition -- Place directly at hit position without normal offset
@@ -2002,7 +2031,30 @@ function PlacementManager:UpdatePlacementPreview()
                 else
                     newOrientation = CFrame.fromMatrix(Vector3.new(), rightVector, upVector, lookVector)
                 end
-                newPosition = hitPosition + targetNormal * (itemSizeY / 2)
+                
+                local basePosition = hitPosition + targetNormal * (itemSizeY / 2)
+                
+                -- Apply advanced grid snapping system
+                local gridSnapSystem = _G.GridSnapSystem
+                if gridSnapSystem then
+                    local snappedPosition, snappedRotation, hasCollision, collidingObject = gridSnapSystem:ProcessPlacement(
+                        basePosition, 
+                        newOrientation, 
+                        itemSize, 
+                        nil -- No instance to exclude for new placements
+                    )
+                    newPosition = snappedPosition
+                    newOrientation = snappedRotation
+                    
+                    -- Visual feedback for collision
+                    if hasCollision then
+                        self:_UpdatePreviewCollisionFeedback(true, collidingObject)
+                    else
+                        self:_UpdatePreviewCollisionFeedback(false)
+                    end
+                else
+                    newPosition = basePosition
+                end
             else
                 -- Fallback if targetNormal is invalid (e.g. zero vector, or nil)
                 newOrientation = CFrame.Angles(0, math.rad(self.currentAngleY), 0) -- Keep current Y rotation
@@ -2012,22 +2064,28 @@ function PlacementManager:UpdatePlacementPreview()
         end
     end
 
-    if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
-        self.previewItem:SetPrimaryPartCFrame(CFrame.new(newPosition) * newOrientation)
-    elseif self.previewItem:IsA("BasePart") then
-        self.previewItem.CFrame = CFrame.new(newPosition) * newOrientation
-    end
-
-    -- Apply rotation based on currentPlacementAngleX, Y, Z
-    -- REMOVED previous PMAP_DEBUG print to avoid confusion
+    -- Update the preview item position with the calculated values
+    local newCFrame = CFrame.new(newPosition) * newOrientation
     
-    print("DEBUG_ANGLES_BEFORE_RAD_CALL: X=", self.currentPlacementAngleX, "Y=", self.currentPlacementAngleY, "Z=", self.currentPlacementAngleZ) -- ADDED THIS VERY SPECIFIC PRINT
-
-    local currentRotation = CFrame.Angles(
-        math.rad(tonumber(self.currentPlacementAngleX) or 0),
-        math.rad(tonumber(self.currentPlacementAngleY) or 0),
-        math.rad(tonumber(self.currentPlacementAngleZ) or 0)
+    -- Debug: Add current rotation angles (X, Y, Z)
+    local rotationAngles = CFrame.Angles(
+        math.rad(self.currentPlacementAngleX),
+        math.rad(self.currentPlacementAngleY), 
+        math.rad(self.currentPlacementAngleZ)
     )
+    print(string.format("DEBUG_ANGLES_BEFORE_RAD_CALL: X= %s Y= %s Z= %s", 
+        tostring(self.currentPlacementAngleX), 
+        tostring(self.currentPlacementAngleY), 
+        tostring(self.currentPlacementAngleZ)))
+    
+    -- Apply the rotation
+    newCFrame = newCFrame * rotationAngles
+
+    if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
+        self.previewItem:SetPrimaryPartCFrame(newCFrame)
+    elseif self.previewItem:IsA("BasePart") then
+        self.previewItem.CFrame = newCFrame
+    end
 end
 
 -- Client: Show an item in the player's hand for inspection
@@ -3761,6 +3819,38 @@ end
 
 function PlacementManager:GetItemData(itemId)
     return self.shared and self.shared.Constants and self.shared.Constants.ITEM_DATA and self.shared.Constants.ITEM_DATA[itemId]
+end
+
+-- Client: Update preview visual feedback for collision detection
+function PlacementManager:_UpdatePreviewCollisionFeedback(hasCollision, collidingObject)
+    if RunService:IsServer() then return end
+    if not self.previewItem then return end
+    
+    -- Find existing highlight
+    local highlight = self.previewItem:FindFirstChildOfClass("Highlight")
+    
+    if hasCollision then
+        -- Show red highlight for collision
+        if highlight then
+            highlight.FillColor = Color3.fromRGB(255, 100, 100) -- Red fill
+            highlight.OutlineColor = Color3.fromRGB(255, 0, 0) -- Red outline
+            highlight.FillTransparency = 0.3
+            highlight.OutlineTransparency = 0
+        end
+        
+        -- Optional: Add collision warning text or effect
+        if collidingObject then
+            print("GridSnap: Collision detected with", collidingObject.Name or "unknown object")
+        end
+    else
+        -- Show green highlight for valid placement
+        if highlight then
+            highlight.FillColor = Color3.fromRGB(100, 255, 100) -- Green fill
+            highlight.OutlineColor = Color3.fromRGB(0, 255, 0) -- Green outline
+            highlight.FillTransparency = 0.5
+            highlight.OutlineTransparency = 0
+        end
+    end
 end
 
 return PlacementManager
