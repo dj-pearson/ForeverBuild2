@@ -732,7 +732,7 @@ function ItemInteractionClient:GetInteractableFromPart(part)
                 -- Accept both Models and Parts as world items
                 if ancestor and (ancestor:IsA("Model") or ancestor:IsA("Part")) then
                     -- Check if it has world item attributes
-                    if ancestor:GetAttribute("instanceId") or ancestor:GetAttribute("itemId")) then
+                    if ancestor:GetAttribute("instanceId") or ancestor:GetAttribute("itemId") then
                         result = ancestor
                     end
                 end
@@ -1224,13 +1224,31 @@ end
 
 function ItemInteractionClient:SetupItemPlacedHandler()
     -- Set up client-side handler for ItemPlaced events from inventory placements
+    print("ItemInteractionClient: Setting up ItemPlaced handler...")
+    
+    -- First ensure we have the remote events cached
     if not self.remotes.ItemPlaced then
-        warn("ItemInteractionClient: ItemPlaced remote event not found, cannot set up handler")
-        return
+        print("ItemInteractionClient: ItemPlaced remote not found in cache, attempting to find it...")
+        local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
+        if remotesFolder then
+            local itemPlacedEvent = remotesFolder:FindFirstChild("ItemPlaced")
+            if itemPlacedEvent and itemPlacedEvent:IsA("RemoteEvent") then
+                self.remotes.ItemPlaced = itemPlacedEvent
+                print("ItemInteractionClient: Found and cached ItemPlaced remote event")
+            else
+                warn("ItemInteractionClient: ItemPlaced remote event not found in Remotes folder")
+                return
+            end
+        else
+            warn("ItemInteractionClient: Remotes folder not found")
+            return
+        end
+    else
+        print("ItemInteractionClient: ItemPlaced remote already cached")
     end
     
     local connection = self.remotes.ItemPlaced.OnClientEvent:Connect(function(itemId, instanceId)
-        print(string.format("ItemInteractionClient: ItemPlaced event received - itemId: %s, instanceId: %s", itemId, instanceId))
+        print(string.format("🔔 ItemInteractionClient: ItemPlaced event received - itemId: %s, instanceId: %s", tostring(itemId), tostring(instanceId)))
         
         -- Wait a brief moment for the item to fully appear in workspace
         task.wait(0.1)
@@ -1239,6 +1257,8 @@ function ItemInteractionClient:SetupItemPlacedHandler()
         local placedItem = self:FindItemByInstanceId(instanceId)
         
         if placedItem and self.undoManager then
+            print(string.format("✅ ItemInteractionClient: Found placed item %s for undo recording", placedItem.Name))
+            
             -- Record undo data for the placement
             local actionData = {
                 instanceId = instanceId,
@@ -1257,17 +1277,36 @@ function ItemInteractionClient:SetupItemPlacedHandler()
             
             -- Record the placement action for undo
             self.undoManager:RecordAction("place", actionData)
-            print(string.format("ItemInteractionClient: Recorded 'place' action for undo - item: %s", itemId))
+            print(string.format("✅ ItemInteractionClient: Recorded 'place' action for undo - item: %s", itemId))
         else
             if not placedItem then
-                warn(string.format("ItemInteractionClient: Could not find placed item %s for undo recording", instanceId))
+                warn(string.format("❌ ItemInteractionClient: Could not find placed item %s for undo recording", instanceId))
+                print("   Searching in World_Items.Placed...")
+                local worldItems = workspace:FindFirstChild("World_Items")
+                if worldItems then
+                    local placed = worldItems:FindFirstChild("Placed")
+                    if placed then
+                        print("   Available items in Placed folder:")
+                        for _, item in pairs(placed:GetChildren()) do
+                            local itemInstanceId = item:GetAttribute("instanceId")
+                            print(string.format("     - %s (instanceId: %s)", item.Name, tostring(itemInstanceId)))
+                        end
+                    else
+                        print("   No Placed folder found")
+                    end
+                else
+                    print("   No World_Items folder found")
+                end
+            end
+            if not self.undoManager then
+                warn("❌ ItemInteractionClient: UndoManager not available")
             end
         end
     end)
     
     -- Store the connection for cleanup
     table.insert(self.connections, connection)
-    print("ItemInteractionClient: Set up ItemPlaced event handler for undo recording")
+    print("✅ ItemInteractionClient: Set up ItemPlaced event handler for undo recording")
 end
 
 -- Helper function to find an item by its instanceId

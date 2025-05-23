@@ -60,13 +60,30 @@ function UndoManager:SetupRemotes()
     end
     
     -- Cache existing remotes for undo operations
-    local remoteNames = {"PlaceItem", "DestroyItem", "MoveItem", "RotateItem", "CloneItem", "RecallItem"}
+    -- Include both legacy names and new "Request" prefixed names
+    local remoteNames = {
+        "PlaceItem", "DestroyItem", "RequestDestroyItem", 
+        "MoveItem", "RequestMoveItem", "RotateItem", "RequestRotateItem", 
+        "CloneItem", "RequestCloneItem", "RecallItem", "RequestRecallItem"
+    }
     
     for _, name in ipairs(remoteNames) do
         local remote = remotesFolder:FindFirstChild(name)
         if remote and remote:IsA("RemoteEvent") then
             self.remotes[name] = remote
+            print(string.format("UndoManager: Cached remote event: %s", name))
         end
+    end
+    
+    -- For undo operations, prioritize "Request" versions but fall back to legacy versions
+    if not self.remotes.DestroyItem and self.remotes.RequestDestroyItem then
+        self.remotes.DestroyItem = self.remotes.RequestDestroyItem
+        print("UndoManager: Using RequestDestroyItem as DestroyItem for undo")
+    end
+    
+    if not self.remotes.MoveItem and self.remotes.RequestMoveItem then
+        self.remotes.MoveItem = self.remotes.RequestMoveItem
+        print("UndoManager: Using RequestMoveItem as MoveItem for undo")
     end
     
     print("UndoManager: Remote events cached")

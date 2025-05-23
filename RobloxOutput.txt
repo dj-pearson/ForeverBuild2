@@ -1,1056 +1,580 @@
-  23:03:03.351  AMECOTouch is not a valid member of Folder "Workspace.Items.Rare"  -  Server - SpeedScript:2
-  23:03:03.351  Stack Begin  -  Studio
-  23:03:03.351  Script 'Workspace.Items.Rare.Rare_Fan.Motorset.Motor.SpeedScript', Line 2  -  Studio - SpeedScript:2
-  23:03:03.351  Stack End  -  Studio
-  23:03:03.352  Server initialization script starting...  -  Server - init:13
-  23:03:03.352  Created standard remote events and functions  -  Server - init:64
-  23:03:03.352  server.init: Attempting to require shared module  -  Server - init:97
-  23:03:03.353  server.init: Found shared module at ReplicatedStorage.shared  -  Server - init:101
-  23:03:03.353  [Bridge Init] Attempting to load main SharedModule logic...  -  Server - shared:13
-  23:03:03.354  Shared init.luau loading...  -  Server - inits:10
-  23:03:03.354  Constants path: ReplicatedStorage.shared.core.Constants  -  Server - inits:57
-  23:03:03.354  Attempting to require: Constants at path: ReplicatedStorage.shared.core.Constants  -  Server - inits:28
-  23:03:03.355  Successfully loaded module: Constants  -  Server - inits:39
-  23:03:03.355  Loading core modules directly...  -  Server - inits:117
-  23:03:03.355  Attempting to require: ItemManager at path: ReplicatedStorage.shared.core.inventory.ItemManager  -  Server - inits:28
-  23:03:03.356  Successfully loaded module: ItemManager  -  Server - inits:39
-  23:03:03.356  Attempting to require: PlacedItemDialog at path: ReplicatedStorage.shared.core.ui.PlacedItemDialog  -  Server - inits:28
-  23:03:03.356  Successfully loaded module: PlacedItemDialog  -  Server - inits:39
-  23:03:03.357  Attempting to require: LazyLoadModules at path: ReplicatedStorage.shared.core.LazyLoadModules  -  Server - inits:28
-  23:03:03.357  Successfully loaded module: LazyLoadModules  -  Server - inits:39
-  23:03:03.357  Attempting to require: PurchaseDialog at path: ReplicatedStorage.shared.core.ui.PurchaseDialog  -  Server - inits:28
-  23:03:03.357  Successfully loaded module: PurchaseDialog  -  Server - inits:39
-  23:03:03.358  Attempting to require: CurrencyUI at path: ReplicatedStorage.shared.core.ui.CurrencyUI  -  Server - inits:28
-  23:03:03.358  Successfully loaded module: CurrencyUI  -  Server - inits:39
-  23:03:03.358  Attempting to require: GameManager at path: ReplicatedStorage.shared.core.GameManager  -  Server - inits:28
-  23:03:03.359  Successfully loaded module: GameManager  -  Server - inits:39
-  23:03:03.359  Attempting to require: PlacementManager at path: ReplicatedStorage.shared.core.placement.PlacementManager  -  Server - inits:28
-  23:03:03.363  DEBUG: ClearMyDataTool.server.luau SCRIPT STARTED  -  Server - ClearMyDataTool:2
-  23:03:03.363  DEBUG: Attempting to require ItemPurchaseHandler...  -  Server - ClearMyDataTool:13
-  23:03:03.364  [ItemPurchaseHandler] Attempting to require shared module  -  Server - ItemPurchaseHandler:13
-  23:03:03.365  Character is not a valid member of Model "Workspace.Furnished Mansion.Helipack"  -  Server - Script:1
-  23:03:03.365  Stack Begin  -  Studio
-  23:03:03.365  Script 'Workspace.Furnished Mansion.Helipack.TheButton.Helipack Gui.Frame.MotorOn.Script', Line 1  -  Studio - Script:1
-  23:03:03.365  Stack End  -  Studio
-  23:03:03.365  Character is not a valid member of Model "Workspace.Furnished Mansion.Helipack"  -  Server - Script:1
-  23:03:03.365  Stack Begin  -  Studio
-  23:03:03.365  Script 'Workspace.Furnished Mansion.Helipack.TheButton.Helipack Gui.Frame.MotorOff.Script', Line 1  -  Studio - Script:1
-  23:03:03.365  Stack End  -  Studio
-  23:03:03.366  YOURNAMEHERE is not a valid member of Workspace "Workspace"  -  Server - reset tool script:1
-  23:03:03.366  Stack Begin  -  Studio
-  23:03:03.366  Script 'Workspace.Gravity Coil Giver.Giver.reset tool script', Line 1  -  Studio - reset tool script:1
-  23:03:03.366  Stack End  -  Studio
-  23:03:03.366  Character is not a valid member of Model "Workspace.Furnished Mansion.Helipack"  -  Server - Script:1
-  23:03:03.366  Stack Begin  -  Studio
-  23:03:03.366  Script 'Workspace.Furnished Mansion.Helipack.TheButton.Helipack Gui.Frame.Hover Mode.Script', Line 1  -  Studio - Script:1
-  23:03:03.366  Stack End  -  Studio
-  23:03:03.367  AMECOTouch is not a valid member of Folder "Workspace.Items.Rare"  -  Server - SpeedScript:2
-  23:03:03.367  Stack Begin  -  Studio
-  23:03:03.368  Script 'Workspace.Items.Rare.Rare_Fan.Motorset.Motor.SpeedScript', Line 2  -  Studio - SpeedScript:2
-  23:03:03.368  Stack End  -  Studio
-  23:03:03.368  Character is not a valid member of Model "Workspace.Furnished Mansion.Helipack"  -  Server - Script:1
-  23:03:03.368  Stack Begin  -  Studio
-  23:03:03.369  Script 'Workspace.Furnished Mansion.Helipack.TheButton.Helipack Gui.Frame.MotorOff.Script', Line 1  -  Studio - Script:1
-  23:03:03.369  Stack End  -  Studio
-  23:03:03.369  AMECOTouch is not a valid member of Folder "Workspace.Items.Rare"  -  Server - LightScript:2
-  23:03:03.369  Stack Begin  -  Studio
-  23:03:03.369  Script 'Workspace.Items.Rare.Rare_Fan.Light.LightScript', Line 2  -  Studio - LightScript:2
-  23:03:03.370  Stack End  -  Studio
-  23:03:03.370  AMECOTouch is not a valid member of Folder "Workspace.Items.Rare"  -  Server - LightScript:2
-  23:03:03.370  Stack Begin  -  Studio
-  23:03:03.370  Script 'Workspace.Items.Rare.Rare_Fan.Light.LightScript', Line 2  -  Studio - LightScript:2
-  23:03:03.370  Stack End  -  Studio
-  23:03:03.372  Failed to load sound rbxassetid://172154904: User is not authorized to access Asset.  -  Studio
-  23:03:03.372  The experience doesn't have access permission to use asset id 172154904. Click to share access  -  Studio
-  23:03:03.767  ClientInit: Starting client-side initialization...  -  Client - ClientInit:9
-  23:03:03.767  DirectCurrencyUI: Disabled via ENABLE_THIS_UI flag  -  Client - DirectCurrencyUI:11
-  23:03:03.767  InventoryUILoader: Starting initialization  -  Client - InventoryUILoader:16
-  23:03:03.767  InventoryItemHandler: Starting initialization  -  Client - InventoryItemHandler:12
-  23:03:03.768  [Bridge Init] Attempting to load main SharedModule logic...  -  Client - shared:13
-  23:03:03.768  Shared init.luau loading...  -  Client - inits:10
-  23:03:03.769  Constants path: ReplicatedStorage.shared.core.Constants  -  Client - inits:57
-  23:03:03.769  Attempting to require: Constants at path: ReplicatedStorage.shared.core.Constants  -  Client - inits:28
-  23:03:03.775  Successfully loaded module: Constants  -  Client - inits:39
-  23:03:03.776  Loading core modules directly...  -  Client - inits:117
-  23:03:03.776  Attempting to require: ItemManager at path: ReplicatedStorage.shared.core.inventory.ItemManager  -  Client - inits:28
-  23:03:03.776  Successfully loaded module: ItemManager  -  Client - inits:39
-  23:03:03.777  Attempting to require: PlacedItemDialog at path: ReplicatedStorage.shared.core.ui.PlacedItemDialog  -  Client - inits:28
-  23:03:03.777  Successfully loaded module: PlacedItemDialog  -  Client - inits:39
-  23:03:03.778  Attempting to require: LazyLoadModules at path: ReplicatedStorage.shared.core.LazyLoadModules  -  Client - inits:28
-  23:03:03.778  Successfully loaded module: LazyLoadModules  -  Client - inits:39
-  23:03:03.778  Attempting to require: PurchaseDialog at path: ReplicatedStorage.shared.core.ui.PurchaseDialog  -  Client - inits:28
-  23:03:03.780  Successfully loaded module: PurchaseDialog  -  Client - inits:39
-  23:03:03.780  Attempting to require: CurrencyUI at path: ReplicatedStorage.shared.core.ui.CurrencyUI  -  Client - inits:28
-  23:03:03.782  Successfully loaded module: CurrencyUI  -  Client - inits:39
-  23:03:03.782  Attempting to require: GameManager at path: ReplicatedStorage.shared.core.GameManager  -  Client - inits:28
-  23:03:03.783  Successfully loaded module: GameManager  -  Client - inits:39
-  23:03:03.784  Attempting to require: PlacementManager at path: ReplicatedStorage.shared.core.placement.PlacementManager  -  Client - inits:28
-  23:03:03.805  PlacementManager: Successfully required RotationControlsUI  -  Client - PlacementManager:17
-  23:03:03.805  Successfully loaded module: PlacementManager  -  Client - inits:39
-  23:03:03.806  Attempting to require: InventoryManager at path: ReplicatedStorage.shared.core.inventory.InventoryManager  -  Client - inits:28
-  23:03:03.806  Successfully loaded module: InventoryManager  -  Client - inits:39
-  23:03:03.806  Attempting to require: InteractionManager at path: ReplicatedStorage.shared.core.interaction.InteractionManager  -  Client - inits:28
-  23:03:03.806  Successfully loaded module: InteractionManager  -  Client - inits:39
-  23:03:03.806  Attempting to require: InventoryUI at path: ReplicatedStorage.shared.core.ui.InventoryUI  -  Client - inits:28
-  23:03:03.814  Successfully loaded module: InventoryUI  -  Client - inits:39
-  23:03:03.814  Attempting to require: CurrencyManager at path: ReplicatedStorage.shared.core.economy.CurrencyManager  -  Client - inits:28
-  23:03:03.815  Successfully loaded module: CurrencyManager  -  Client - inits:39
-  23:03:03.815  Attempting to require: PlacementCore at path: ReplicatedStorage.shared.core.placement.PlacementCore  -  Client - inits:28
-  23:03:03.818  Successfully loaded module: PlacementCore  -  Client - inits:39
-  23:03:03.819  Attempting to require: RotationControlsUI at path: ReplicatedStorage.shared.core.ui.RotationControlsUI  -  Client - inits:28
-  23:03:03.819  Successfully loaded module: RotationControlsUI  -  Client - inits:39
-  23:03:03.819  Core modules loaded with the following keys:  -  Client - inits:125
-  23:03:03.819    - ItemManager (loaded)  -  Client - inits:127
-  23:03:03.819    - PlacedItemDialog (loaded)  -  Client - inits:127
-  23:03:03.819    - LazyLoadModules (loaded)  -  Client - inits:127
-  23:03:03.819    - PurchaseDialog (loaded)  -  Client - inits:127
-  23:03:03.820    - CurrencyUI (loaded)  -  Client - inits:127
-  23:03:03.820    - GameManager (loaded)  -  Client - inits:127
-  23:03:03.820    - InventoryManager (loaded)  -  Client - inits:127
-  23:03:03.820    - PlacementManager (loaded)  -  Client - inits:127
-  23:03:03.820    - InteractionManager (loaded)  -  Client - inits:127
-  23:03:03.820    - PlacementCore (loaded)  -  Client - inits:127
-  23:03:03.820    - CurrencyManager (loaded)  -  Client - inits:127
-  23:03:03.820    - InventoryUI (loaded)  -  Client - inits:127
-  23:03:03.820    - RotationControlsUI (loaded)  -  Client - inits:127
-  23:03:03.820  [Bridge Init] Successfully loaded SharedModule via: inits (ModuleScript under shared)  -  Client - shared:25
-  23:03:03.820  InventoryItemHandler: SharedModule loaded  -  Client - InventoryItemHandler:25
-  23:03:03.821  InventoryItemHandler: InventoryUI module found  -  Client - InventoryItemHandler:41
-  23:03:03.821  InventoryItemHandler: PlacementManager module found in SharedModule. Creating new client instance.  -  Client - InventoryItemHandler:47
-  23:03:03.821  --- PLACEMENT MANAGER .new() CALLED ---  -  Client - PlacementManager:47
-  23:03:03.821  --- PLACEMENT MANAGER CLIENT CONSTRUCTOR REACHED (IsClient == true) ---  -  Client - PlacementManager:118
-  23:03:03.822  PlacementManager: Caching remote events --- MARKER ---  -  Client - PlacementManager:2388
-  23:03:03.822  PlacementManager: Remotes folder found immediately.  -  Client - PlacementManager:2400
-  23:03:03.822  PlacementManager: Successfully cached remote event: PlaceItem  -  Client - PlacementManager:2434
-  23:03:03.822  PlacementManager: Successfully cached remote event: ItemPlaced  -  Client - PlacementManager:2434
-  23:03:03.822  PlacementManager: Successfully cached remote event: RecallItem  -  Client - PlacementManager:2434
-  23:03:03.822  PlacementManager: Successfully cached remote event: ItemRecalled  -  Client - PlacementManager:2434
-  23:03:03.822  PlacementManager: Event 'UpdateItem' not found initially in Remotes folder. Waiting for it (5s)...  -  Client - PlacementManager:2422
-  23:03:03.823  Client initialization script starting...  -  Client - init:6
-  23:03:03.823  Found shared module at ReplicatedStorage.shared  -  Client - init:43
-  23:03:03.823  Successfully required SharedModule  -  Client - init:52
-  23:03:03.823  Initializing SharedModule with improved path resolution...  -  Client - inits:134
-  23:03:03.823  Registering modules with LazyLoadModules...  -  Client - inits:184
-  23:03:03.823  SharedModule initialized - other modules will load on demand  -  Client - inits:195
-  23:03:03.823  SharedModule initialized successfully  -  Client - init:62
-  23:03:03.823  Found client_core ModuleScript: Players.Xdjpearsonx.PlayerScripts.client.client_core  -  Client - init:74
-  23:03:03.825  client_core.luau: Attempting to require shared module  -  Client - client_core:11
-  23:03:03.825  client_core.luau: Found shared module at ReplicatedStorage.shared  -  Client - client_core:15
-  23:03:03.825  client_core.luau: Successfully required SharedModule  -  Client - client_core:37
-  23:03:03.825  Initializing SharedModule with improved path resolution...  -  Client - inits:134
-  23:03:03.825  Registering modules with LazyLoadModules...  -  Client - inits:184
-  23:03:03.826  SharedModule initialized - other modules will load on demand  -  Client - inits:195
-  23:03:03.826  client_core.luau: SharedModule initialized successfully  -  Client - client_core:47
-  23:03:03.826  client_core.luau: Getting references to modules  -  Client - client_core:53
-  23:03:03.826  client_core.luau: Module references:  -  Client - client_core:62
-  23:03:03.826    - GameManagerModule: loaded  -  Client - client_core:63
-  23:03:03.826    - Constants: loaded  -  Client - client_core:64
-  23:03:03.826    - PurchaseDialogModule: loaded  -  Client - client_core:65
-  23:03:03.826    - InventoryUIModule: loaded  -  Client - client_core:66
-  23:03:03.827    - PlacedItemDialogModule: loaded  -  Client - client_core:67
-  23:03:03.827    - CurrencyUIModule: loaded  -  Client - client_core:68
-  23:03:03.827  [InteractionSystem] Looking for interaction folder in: Players.Xdjpearsonx.PlayerScripts.client  -  Client - client_core:138
-  23:03:03.827  [InteractionSystem] Found interaction folder: Players.Xdjpearsonx.PlayerScripts.client.interaction  -  Client - client_core:142
-  23:03:03.827  [InteractionSystem] Trying to load ItemInteractionClient  -  Client - client_core:157
-  23:03:03.831  ItemInteractionClient: Attempting to require shared module  -  Client - ItemInteractionClient:14
-  23:03:03.832  ItemInteractionClient: Successfully required SharedModule  -  Client - ItemInteractionClient:51
-  23:03:03.833  [InteractionSystem] Successfully loaded ItemInteractionClient  -  Client - client_core:163
-  23:03:03.834  [DEBUG in client_core.luau] Top of initializeClient()  -  Client - client_core:214
-  23:03:03.834  --- DirectCurrencyUI.client.luau: MODIFIED TO FIX FORMATTING AND SET TO DISABLED ---  -  Client
-  23:03:03.834  DirectCurrencyUI: Disabled via ENABLE_THIS_UI flag  -  Client
-  23:03:03.834  --- THIS IS THE VERY LATEST VERSION OF DirectInventoryUI.client.luau, TIMESTAMP: 1747972983 ---  -  Client - DirectInventoryUI:1
-  23:03:03.834  DirectInventoryUI: Waiting for SharedModule and its InventoryUI...  -  Client - DirectInventoryUI:18
-  23:03:03.834  DirectInventoryUI: SharedModule.InventoryUI found and ready.  -  Client - DirectInventoryUI:31
-  23:03:03.834  DirectInventoryUI: SharedModule.InventoryUI is confirmed available.  -  Client - DirectInventoryUI:51
-  23:03:03.835  DirectInventoryUI: SharedModule.InventoryUI did NOT create a button, or it couldn't be found. This script will NOT create a fallback button anymore.  -  Client - DirectInventoryUI:68
-  23:03:03.835  DirectInventoryUI: Setup complete. TAB key is bound to SharedModule.InventoryUI.Toggle. No button created by this script.  -  Client - DirectInventoryUI:93
-  23:03:04.734  [DEBUG in client_core.luau] SharedModule:  ▶ {...}  -  Client - client_core:223
-  23:03:04.743  [DEBUG in client_core.luau] SharedModule.GameManager:  ▶ {...}  -  Client - client_core:224
-  23:03:04.743  [DEBUG in client_core.luau] GameManagerModule type: table  -  Client - client_core:226
-  23:03:04.743  [DEBUG in client_core.luau] Original line 108 print - script.Parent.Parent (of ModuleScript) is:  Players.Xdjpearsonx.PlayerScripts  -  Client - client_core:227
-  23:03:04.743  [LINE 108 PRE-CHECK in client_core.luau] --- Detailed Debug for Line 109 ---   -  Client - client_core:229
-  23:03:04.744  [LINE 108 PRE-CHECK in client_core.luau] script (ModuleScript):GetFullName() =  Players.Xdjpearsonx.PlayerScripts.client.client_core  -  Client - client_core:230
-  23:03:04.744  [LINE 108 PRE-CHECK in client_core.luau] script.Parent (LocalScript):GetFullName() =  Players.Xdjpearsonx.PlayerScripts.client  -  Client - client_core:231
-  23:03:04.744  [LINE 108 PRE-CHECK in client_core.luau] Successfully accessed GameManagerModule.new. Its type is: function  -  Client - client_core:240
-  23:03:04.744  [LINE 108 PRE-CHECK in client_core.luau] About to evaluate: typeof(gmm_new_prop) == 'function'  -  Client - client_core:247
-  23:03:04.744  [LINE 109 SUCCESS in client_core.luau] typeof(GameManagerModule.new) is 'function'  -  Client - client_core:249
-  23:03:04.744  [DEBUG in client_core.luau] GameManager instance created successfully.  -  Client - client_core:253
-  23:03:04.744  [LINE 109 POST-CHECK in client_core.luau] --- End Detailed Debug ---  -  Client - client_core:262
-  23:03:04.744  InventoryUIModule appears to be loaded in initializeClient (client_core.luau).  -  Client - client_core:268
-  23:03:04.744  [DEBUG in client_core.luau] Remotes folder found: ReplicatedStorage.Remotes  -  Client - client_core:276
-  23:03:04.744  [DEBUG in client_core.luau] GetInventory RemoteFunction found: ReplicatedStorage.Remotes.GetInventory  -  Client - client_core:283
-  23:03:04.744  [DEBUG in client_core.luau] BuyItem RemoteEvent found.  -  Client - client_core:287
-  23:03:04.744  [DEBUG in client_core.luau] PlaceItem RemoteEvent found.  -  Client - client_core:288
-  23:03:04.744  [DEBUG in client_core.luau] InteractWithItem RemoteEvent found.  -  Client - client_core:289
-  23:03:04.745  InventoryUI.Initialize called  -  Client - InventoryUI:258
-  23:03:04.745  InventoryUI.Initialize: Successfully verified inventory frame exists  -  Client - InventoryUI:270
-  23:03:04.746  InventoryUI.Initialize: Stored inventory reference  -  Client - InventoryUI:280
-  23:03:04.746  InventoryUI: Created inventory button  -  Client - InventoryUI:382
-  23:03:04.746  InventoryUI: Found AddToInventory event, connecting...  -  Client - InventoryUI:397
-  23:03:04.746  InventoryUI: Successfully connected to AddToInventory event  -  Client - InventoryUI:406
-  23:03:04.746  InventoryUI: Successfully registered with SharedModule  -  Client - InventoryUI:296
-  23:03:04.746  InventoryUI.Initialize completed  -  Client - InventoryUI:299
-  23:03:04.747  [UI] InventoryUI initialized successfully (functional style)  -  Client - client_core:306
-  23:03:04.747  [UI] PlacedItemDialog initialized successfully (functional style)  -  Client - client_core:322
-  23:03:04.748  [UI] PurchaseDialog initialized successfully (functional style)  -  Client - client_core:338
-  23:03:04.748  PurchaseDialogModule.Initialize() called in initializeUI (client_core.luau).  -  Client - client_core:483
-  23:03:04.748  InventoryUI.Initialize called  -  Client - InventoryUI:258
-  23:03:04.748  Found existing inventory frame, removing it  -  Client - InventoryUI:35
-  23:03:04.749  InventoryUI.Initialize: Successfully verified inventory frame exists  -  Client - InventoryUI:270
-  23:03:04.749  InventoryUI.Initialize: Stored inventory reference  -  Client - InventoryUI:280
-  23:03:04.749  InventoryUI: Found AddToInventory event, connecting...  -  Client - InventoryUI:397
-  23:03:04.750  InventoryUI: Successfully connected to AddToInventory event  -  Client - InventoryUI:406
-  23:03:04.750  InventoryUI: Successfully registered with SharedModule  -  Client - InventoryUI:296
-  23:03:04.750  InventoryUI.Initialize completed  -  Client - InventoryUI:299
-  23:03:04.750  InventoryUIModule.Initialize() called in client_core.luau.  -  Client - client_core:493
-  23:03:04.750  [client_core] Old InteractionSystem initialization DISABLED - using new BottomPurchasePopup system  -  Client - client_core:549
-  23:03:04.750  client_core ModuleScript loaded successfully  -  Client - init:83
-  23:03:04.755  StarterGui script starting...  -  Client - StarterGui:9
-  23:03:04.755  StarterGui.init: Attempting to require shared module  -  Client - StarterGui:15
-  23:03:04.756  StarterGui.init: Found shared module at ReplicatedStorage.shared  -  Client - StarterGui:19
-  23:03:04.756  StarterGui.init: Successfully required SharedModule  -  Client - StarterGui:30
-  23:03:04.756  Initializing SharedModule with improved path resolution...  -  Client - inits:134
-  23:03:04.756  Registering modules with LazyLoadModules...  -  Client - inits:184
-  23:03:04.756  SharedModule initialized - other modules will load on demand  -  Client - inits:195
-  23:03:04.756  StarterGui.init: SharedModule initialized successfully  -  Client - StarterGui:41
-  23:03:04.757  Successfully created GameManager instance  -  Client - StarterGui:61
-  23:03:04.757  Successfully created CurrencyManager instance  -  Client - StarterGui:78
-  23:03:04.757  Initializing GameManager client...  -  Client - GameManager:306
-  23:03:04.757  GameManager client initialized successfully  -  Client - GameManager:308
-  23:03:04.757  Initializing CurrencyManager client-side  -  Client - CurrencyManager:438
-  23:03:04.757  CurrencyManager client initialized  -  Client - CurrencyManager:469
-  23:03:04.784  ItemInteractionClient initializing...  -  Client - ItemInteractionClient:104
-  23:03:04.785  ItemInteractionClient: Successfully cached remote event: DestroyItem  -  Client - ItemInteractionClient:218
-  23:03:04.785  ItemInteractionClient: Successfully cached remote event: CloneItem  -  Client - ItemInteractionClient:218
-  23:03:04.786  ItemInteractionClient: Successfully cached remote event: MoveItem  -  Client - ItemInteractionClient:218
-  23:03:04.786  ItemInteractionClient: Successfully cached remote event: RecallItem  -  Client - ItemInteractionClient:218
-  23:03:04.786  ItemInteractionClient: Successfully cached remote event: RotateItem  -  Client - ItemInteractionClient:218
-  23:03:04.786  ItemInteractionClient: Successfully cached remote event: PurchaseItem  -  Client - ItemInteractionClient:218
-  23:03:04.786  ItemInteractionClient: Successfully cached remote event: InteractWithItem  -  Client - ItemInteractionClient:218
-  23:03:04.786  ItemInteractionClient: Successfully cached remote event: NotifyPlayer  -  Client - ItemInteractionClient:218
-  23:03:04.786  ItemInteractionClient: Successfully cached remote event: AddToInventory  -  Client - ItemInteractionClient:218
-  23:03:04.786  ItemInteractionClient: Remote events cached  -  Client - ItemInteractionClient:276
-  23:03:04.792  CatalogItemUI: Attempting to require shared module  -  Client - CatalogItemUI:11
-  23:03:04.792  CatalogItemUI: Successfully required SharedModule  -  Client - CatalogItemUI:40
-  23:03:04.793  ItemInteractionClient: CreateWorldItemUI is now mostly handled by PlacedItemDialog. This function can be deprecated.  -  Client - ItemInteractionClient:515
-  23:03:04.794  BottomPurchasePopup: Initializing...  -  Client - BottomPurchasePopup:53
-  23:03:04.794  BottomPurchasePopup: Ready! Small unobtrusive popup system active.  -  Client - BottomPurchasePopup:65
-  23:03:04.794  UndoManager: Initializing...  -  Client - UndoManager:37
-  23:03:04.794  UndoManager: Remote events cached  -  Client - UndoManager:72
-  23:03:04.795  UndoManager: UI created  -  Client - UndoManager:132
-  23:03:04.795  UndoManager: Initialized successfully  -  Client - UndoManager:51
-  23:03:04.795  ItemInteractionClient: UndoManager initialized successfully  -  Client - ItemInteractionClient:128
-  23:03:04.795  ItemInteractionClient initialized successfully  -  Client - ItemInteractionClient:161
-  23:03:04.795  ClientInit: ItemInteractionClient initialized successfully with bottom purchase popup system  -  Client - ClientInit:23
-  23:03:04.795  ClientInit: Enabled proximity UI - showing [E] Interact prompts above placed items  -  Client - ClientInit:27
-  23:03:04.795  ClientInit: Client initialization complete  -  Client - ClientInit:47
-  23:03:04.852  InventoryUILoader: InventoryUI is already registered in SharedModule  -  Client - InventoryUILoader:30
-  23:03:04.852  InventoryUILoader: InventoryUI is already initialized  -  Client - InventoryUILoader:37
-  23:03:04.853  InventoryUILoader: Successfully initialized InventoryUI  -  Client - InventoryUILoader:95
-  23:03:04.860  DirectInventoryUI: Attempting to call Initialize on SharedModule.InventoryUI as a fallback...  -  Client - DirectInventoryUI:104
-  23:03:04.860  InventoryUI.Initialize called  -  Client - InventoryUI:258
-  23:03:04.861  Found existing inventory frame, removing it  -  Client - InventoryUI:35
-  23:03:04.862  InventoryUI.Initialize: Successfully verified inventory frame exists  -  Client - InventoryUI:270
-  23:03:04.862  InventoryUI.Initialize: Stored inventory reference  -  Client - InventoryUI:280
-  23:03:04.862  InventoryUI: Found AddToInventory event, connecting...  -  Client - InventoryUI:397
-  23:03:04.862  InventoryUI: Successfully connected to AddToInventory event  -  Client - InventoryUI:406
-  23:03:04.863  InventoryUI: Successfully registered with SharedModule  -  Client - InventoryUI:296
-  23:03:04.863  InventoryUI.Initialize completed  -  Client - InventoryUI:299
-  23:03:04.863  DirectInventoryUI: Successfully called SharedModule.InventoryUI.Initialize().  -  Client - DirectInventoryUI:109
-  23:03:05.245  Failed to load sound rbxassetid://172154904: User is not authorized to access Asset.  -  Studio
-  23:03:05.246  The experience doesn't have access permission to use asset id 172154904. Click to share access  -  Studio
-  23:03:05.870  InventoryUILoader: Found inventory button, updating click handler  -  Client - InventoryUILoader:106
-  23:03:05.870  InventoryUILoader: Successfully updated inventory button click handler  -  Client - InventoryUILoader:129
-  23:03:06.446  ModelDisplayRunner: Starting ModelDisplayUtil...  -  Server - ModelDisplayRunner:36
-  23:03:06.446  ModelDisplayUtil: Initializing...  -  Server - ModelDisplayUtil:264
-  23:03:06.446  ModelDisplayUtil: Capturing all static models...  -  Server - ModelDisplayUtil:126
-  23:03:06.455  ModelDisplayUtil: Captured 4 static models for tracking  -  Server - ModelDisplayUtil:143
-  23:03:06.456  ModelDisplayUtil: Now monitoring World_Items folder  -  Server - ModelDisplayUtil:252
-  23:03:06.456  
+  23:09:54.415  Failed to load sound rbxassetid://172154904: User is not authorized to access Asset.  -  Studio
+  23:09:54.420  The experience doesn't have access permission to use asset id 172154904. Click to share access  -  Studio
+  23:09:54.442  Server initialization script starting...  -  Server - init:13
+  23:09:54.442  Created standard remote events and functions  -  Server - init:64
+  23:09:54.442  server.init: Attempting to require shared module  -  Server - init:97
+  23:09:54.443  server.init: Found shared module at ReplicatedStorage.shared  -  Server - init:101
+  23:09:54.443  [Bridge Init] Attempting to load main SharedModule logic...  -  Server - shared:13
+  23:09:54.443  Shared init.luau loading...  -  Server - inits:10
+  23:09:54.443  Constants path: ReplicatedStorage.shared.core.Constants  -  Server - inits:57
+  23:09:54.444  Attempting to require: Constants at path: ReplicatedStorage.shared.core.Constants  -  Server - inits:28
+  23:09:54.445  Successfully loaded module: Constants  -  Server - inits:39
+  23:09:54.445  Loading core modules directly...  -  Server - inits:117
+  23:09:54.445  Attempting to require: ItemManager at path: ReplicatedStorage.shared.core.inventory.ItemManager  -  Server - inits:28
+  23:09:54.446  Successfully loaded module: ItemManager  -  Server - inits:39
+  23:09:54.446  Attempting to require: PlacedItemDialog at path: ReplicatedStorage.shared.core.ui.PlacedItemDialog  -  Server - inits:28
+  23:09:54.446  Successfully loaded module: PlacedItemDialog  -  Server - inits:39
+  23:09:54.446  Attempting to require: LazyLoadModules at path: ReplicatedStorage.shared.core.LazyLoadModules  -  Server - inits:28
+  23:09:54.447  Successfully loaded module: LazyLoadModules  -  Server - inits:39
+  23:09:54.447  Attempting to require: PurchaseDialog at path: ReplicatedStorage.shared.core.ui.PurchaseDialog  -  Server - inits:28
+  23:09:54.447  Successfully loaded module: PurchaseDialog  -  Server - inits:39
+  23:09:54.447  Attempting to require: CurrencyUI at path: ReplicatedStorage.shared.core.ui.CurrencyUI  -  Server - inits:28
+  23:09:54.448  Successfully loaded module: CurrencyUI  -  Server - inits:39
+  23:09:54.448  Attempting to require: GameManager at path: ReplicatedStorage.shared.core.GameManager  -  Server - inits:28
+  23:09:54.449  Successfully loaded module: GameManager  -  Server - inits:39
+  23:09:54.449  Attempting to require: PlacementManager at path: ReplicatedStorage.shared.core.placement.PlacementManager  -  Server - inits:28
+  23:09:54.453  DEBUG: ClearMyDataTool.server.luau SCRIPT STARTED  -  Server - ClearMyDataTool:2
+  23:09:54.453  DEBUG: Attempting to require ItemPurchaseHandler...  -  Server - ClearMyDataTool:13
+  23:09:54.454  [ItemPurchaseHandler] Attempting to require shared module  -  Server - ItemPurchaseHandler:13
+  23:09:54.454  Character is not a valid member of Model "Workspace.Furnished Mansion.Helipack"  -  Server - Script:1
+  23:09:54.454  Stack Begin  -  Studio
+  23:09:54.455  Script 'Workspace.Furnished Mansion.Helipack.TheButton.Helipack Gui.Frame.MotorOff.Script', Line 1  -  Studio - Script:1
+  23:09:54.455  Stack End  -  Studio
+  23:09:54.455  Character is not a valid member of Model "Workspace.Furnished Mansion.Helipack"  -  Server - Script:1
+  23:09:54.455  Stack Begin  -  Studio
+  23:09:54.455  Script 'Workspace.Furnished Mansion.Helipack.TheButton.Helipack Gui.Frame.MotorOff.Script', Line 1  -  Studio - Script:1
+  23:09:54.455  Stack End  -  Studio
+  23:09:54.456  AMECOTouch is not a valid member of Folder "Workspace.Items.Rare"  -  Server - LightScript:2
+  23:09:54.456  Stack Begin  -  Studio
+  23:09:54.456  Script 'Workspace.Items.Rare.Rare_Fan.Light.LightScript', Line 2  -  Studio - LightScript:2
+  23:09:54.456  Stack End  -  Studio
+  23:09:54.456  AMECOTouch is not a valid member of Folder "Workspace.Items.Rare"  -  Server - LightScript:2
+  23:09:54.456  Stack Begin  -  Studio
+  23:09:54.456  Script 'Workspace.Items.Rare.Rare_Fan.Light.LightScript', Line 2  -  Studio - LightScript:2
+  23:09:54.457  Stack End  -  Studio
+  23:09:54.457  YOURNAMEHERE is not a valid member of Workspace "Workspace"  -  Server - reset tool script:1
+  23:09:54.457  Stack Begin  -  Studio
+  23:09:54.457  Script 'Workspace.Gravity Coil Giver.Giver.reset tool script', Line 1  -  Studio - reset tool script:1
+  23:09:54.457  Stack End  -  Studio
+  23:09:54.458  Character is not a valid member of Model "Workspace.Furnished Mansion.Helipack"  -  Server - Script:1
+  23:09:54.458  Stack Begin  -  Studio
+  23:09:54.458  Script 'Workspace.Furnished Mansion.Helipack.TheButton.Helipack Gui.Frame.Hover Mode.Script', Line 1  -  Studio - Script:1
+  23:09:54.458  Stack End  -  Studio
+  23:09:54.458  AMECOTouch is not a valid member of Folder "Workspace.Items.Rare"  -  Server - SpeedScript:2
+  23:09:54.458  Stack Begin  -  Studio
+  23:09:54.458  Script 'Workspace.Items.Rare.Rare_Fan.Motorset.Motor.SpeedScript', Line 2  -  Studio - SpeedScript:2
+  23:09:54.458  Stack End  -  Studio
+  23:09:54.460  AMECOTouch is not a valid member of Folder "Workspace.Items.Rare"  -  Server - SpeedScript:2
+  23:09:54.460  Stack Begin  -  Studio
+  23:09:54.460  Script 'Workspace.Items.Rare.Rare_Fan.Motorset.Motor.SpeedScript', Line 2  -  Studio - SpeedScript:2
+  23:09:54.460  Stack End  -  Studio
+  23:09:54.460  Character is not a valid member of Model "Workspace.Furnished Mansion.Helipack"  -  Server - Script:1
+  23:09:54.460  Stack Begin  -  Studio
+  23:09:54.460  Script 'Workspace.Furnished Mansion.Helipack.TheButton.Helipack Gui.Frame.MotorOn.Script', Line 1  -  Studio - Script:1
+  23:09:54.460  Stack End  -  Studio
+  23:09:54.818  ClientInit: Starting client-side initialization...  -  Client - ClientInit:9
+  23:09:54.818  InventoryItemHandler: Starting initialization  -  Client - InventoryItemHandler:12
+  23:09:54.819  [Bridge Init] Attempting to load main SharedModule logic...  -  Client - shared:13
+  23:09:54.819  Shared init.luau loading...  -  Client - inits:10
+  23:09:54.819  Constants path: ReplicatedStorage.shared.core.Constants  -  Client - inits:57
+  23:09:54.820  Attempting to require: Constants at path: ReplicatedStorage.shared.core.Constants  -  Client - inits:28
+  23:09:54.822  Successfully loaded module: Constants  -  Client - inits:39
+  23:09:54.822  Loading core modules directly...  -  Client - inits:117
+  23:09:54.823  Attempting to require: ItemManager at path: ReplicatedStorage.shared.core.inventory.ItemManager  -  Client - inits:28
+  23:09:54.823  Successfully loaded module: ItemManager  -  Client - inits:39
+  23:09:54.823  Attempting to require: PlacedItemDialog at path: ReplicatedStorage.shared.core.ui.PlacedItemDialog  -  Client - inits:28
+  23:09:54.824  Successfully loaded module: PlacedItemDialog  -  Client - inits:39
+  23:09:54.824  Attempting to require: LazyLoadModules at path: ReplicatedStorage.shared.core.LazyLoadModules  -  Client - inits:28
+  23:09:54.824  Successfully loaded module: LazyLoadModules  -  Client - inits:39
+  23:09:54.824  Attempting to require: PurchaseDialog at path: ReplicatedStorage.shared.core.ui.PurchaseDialog  -  Client - inits:28
+  23:09:54.826  Successfully loaded module: PurchaseDialog  -  Client - inits:39
+  23:09:54.826  Attempting to require: CurrencyUI at path: ReplicatedStorage.shared.core.ui.CurrencyUI  -  Client - inits:28
+  23:09:54.828  Successfully loaded module: CurrencyUI  -  Client - inits:39
+  23:09:54.828  Attempting to require: GameManager at path: ReplicatedStorage.shared.core.GameManager  -  Client - inits:28
+  23:09:54.828  Successfully loaded module: GameManager  -  Client - inits:39
+  23:09:54.828  Attempting to require: PlacementManager at path: ReplicatedStorage.shared.core.placement.PlacementManager  -  Client - inits:28
+  23:09:54.848  PlacementManager: Successfully required RotationControlsUI  -  Client - PlacementManager:17
+  23:09:54.848  Successfully loaded module: PlacementManager  -  Client - inits:39
+  23:09:54.848  Attempting to require: InventoryManager at path: ReplicatedStorage.shared.core.inventory.InventoryManager  -  Client - inits:28
+  23:09:54.848  Successfully loaded module: InventoryManager  -  Client - inits:39
+  23:09:54.848  Attempting to require: InteractionManager at path: ReplicatedStorage.shared.core.interaction.InteractionManager  -  Client - inits:28
+  23:09:54.849  Successfully loaded module: InteractionManager  -  Client - inits:39
+  23:09:54.849  Attempting to require: InventoryUI at path: ReplicatedStorage.shared.core.ui.InventoryUI  -  Client - inits:28
+  23:09:54.854  Successfully loaded module: InventoryUI  -  Client - inits:39
+  23:09:54.854  Attempting to require: CurrencyManager at path: ReplicatedStorage.shared.core.economy.CurrencyManager  -  Client - inits:28
+  23:09:54.855  Successfully loaded module: CurrencyManager  -  Client - inits:39
+  23:09:54.855  Attempting to require: PlacementCore at path: ReplicatedStorage.shared.core.placement.PlacementCore  -  Client - inits:28
+  23:09:54.857  Successfully loaded module: PlacementCore  -  Client - inits:39
+  23:09:54.857  Attempting to require: RotationControlsUI at path: ReplicatedStorage.shared.core.ui.RotationControlsUI  -  Client - inits:28
+  23:09:54.857  Successfully loaded module: RotationControlsUI  -  Client - inits:39
+  23:09:54.857  Core modules loaded with the following keys:  -  Client - inits:125
+  23:09:54.857    - ItemManager (loaded)  -  Client - inits:127
+  23:09:54.857    - PlacedItemDialog (loaded)  -  Client - inits:127
+  23:09:54.857    - LazyLoadModules (loaded)  -  Client - inits:127
+  23:09:54.857    - PurchaseDialog (loaded)  -  Client - inits:127
+  23:09:54.858    - CurrencyUI (loaded)  -  Client - inits:127
+  23:09:54.858    - GameManager (loaded)  -  Client - inits:127
+  23:09:54.858    - InventoryManager (loaded)  -  Client - inits:127
+  23:09:54.858    - PlacementManager (loaded)  -  Client - inits:127
+  23:09:54.858    - InteractionManager (loaded)  -  Client - inits:127
+  23:09:54.858    - PlacementCore (loaded)  -  Client - inits:127
+  23:09:54.858    - CurrencyManager (loaded)  -  Client - inits:127
+  23:09:54.858    - InventoryUI (loaded)  -  Client - inits:127
+  23:09:54.859    - RotationControlsUI (loaded)  -  Client - inits:127
+  23:09:54.859  [Bridge Init] Successfully loaded SharedModule via: inits (ModuleScript under shared)  -  Client - shared:25
+  23:09:54.859  InventoryItemHandler: SharedModule loaded  -  Client - InventoryItemHandler:25
+  23:09:54.859  InventoryItemHandler: InventoryUI module found  -  Client - InventoryItemHandler:41
+  23:09:54.859  InventoryItemHandler: PlacementManager module found in SharedModule. Creating new client instance.  -  Client - InventoryItemHandler:47
+  23:09:54.859  --- PLACEMENT MANAGER .new() CALLED ---  -  Client - PlacementManager:47
+  23:09:54.859  --- PLACEMENT MANAGER CLIENT CONSTRUCTOR REACHED (IsClient == true) ---  -  Client - PlacementManager:118
+  23:09:54.859  PlacementManager: Caching remote events --- MARKER ---  -  Client - PlacementManager:2388
+  23:09:54.859  PlacementManager: Remotes folder found immediately.  -  Client - PlacementManager:2400
+  23:09:54.859  PlacementManager: Successfully cached remote event: PlaceItem  -  Client - PlacementManager:2434
+  23:09:54.860  PlacementManager: Successfully cached remote event: ItemPlaced  -  Client - PlacementManager:2434
+  23:09:54.860  PlacementManager: Successfully cached remote event: RecallItem  -  Client - PlacementManager:2434
+  23:09:54.860  PlacementManager: Successfully cached remote event: ItemRecalled  -  Client - PlacementManager:2434
+  23:09:54.860  PlacementManager: Event 'UpdateItem' not found initially in Remotes folder. Waiting for it (5s)...  -  Client - PlacementManager:2422
+  23:09:54.860  InventoryUILoader: Starting initialization  -  Client - InventoryUILoader:16
+  23:09:54.860  Client initialization script starting...  -  Client - init:6
+  23:09:54.860  Found shared module at ReplicatedStorage.shared  -  Client - init:43
+  23:09:54.861  Successfully required SharedModule  -  Client - init:52
+  23:09:54.861  Initializing SharedModule with improved path resolution...  -  Client - inits:134
+  23:09:54.861  Registering modules with LazyLoadModules...  -  Client - inits:184
+  23:09:54.861  SharedModule initialized - other modules will load on demand  -  Client - inits:195
+  23:09:54.861  SharedModule initialized successfully  -  Client - init:62
+  23:09:54.861  Found client_core ModuleScript: Players.Xdjpearsonx.PlayerScripts.client.client_core  -  Client - init:74
+  23:09:54.866  client_core.luau: Attempting to require shared module  -  Client - client_core:11
+  23:09:54.866  client_core.luau: Found shared module at ReplicatedStorage.shared  -  Client - client_core:15
+  23:09:54.866  client_core.luau: Successfully required SharedModule  -  Client - client_core:37
+  23:09:54.866  Initializing SharedModule with improved path resolution...  -  Client - inits:134
+  23:09:54.866  Registering modules with LazyLoadModules...  -  Client - inits:184
+  23:09:54.866  SharedModule initialized - other modules will load on demand  -  Client - inits:195
+  23:09:54.867  client_core.luau: SharedModule initialized successfully  -  Client - client_core:47
+  23:09:54.867  client_core.luau: Getting references to modules  -  Client - client_core:53
+  23:09:54.867  client_core.luau: Module references:  -  Client - client_core:62
+  23:09:54.867    - GameManagerModule: loaded  -  Client - client_core:63
+  23:09:54.867    - Constants: loaded  -  Client - client_core:64
+  23:09:54.868    - PurchaseDialogModule: loaded  -  Client - client_core:65
+  23:09:54.868    - InventoryUIModule: loaded  -  Client - client_core:66
+  23:09:54.868    - PlacedItemDialogModule: loaded  -  Client - client_core:67
+  23:09:54.868    - CurrencyUIModule: loaded  -  Client - client_core:68
+  23:09:54.868  [InteractionSystem] Looking for interaction folder in: Players.Xdjpearsonx.PlayerScripts.client  -  Client - client_core:138
+  23:09:54.868  [InteractionSystem] Found interaction folder: Players.Xdjpearsonx.PlayerScripts.client.interaction  -  Client - client_core:142
+  23:09:54.868  [InteractionSystem] Trying to load ItemInteractionClient  -  Client - client_core:157
+  23:09:54.869  Players.Xdjpearsonx.PlayerScripts.client.interaction.ItemInteractionClient:735: Expected 'then' when parsing if statement, got ')'  -  Studio - ItemInteractionClient:735
+  23:09:54.869  [InteractionSystem] Failed to require ItemInteractionClient: Requested module experienced an error while loading  -  Client - client_core:171
+  23:09:54.869  [InteractionSystem] Trying to load InteractionSystemModule  -  Client - client_core:157
+  23:09:54.872  InteractionSystem module loading...  -  Client - InteractionSystemModule:10
+  23:09:54.872  [InteractionSystem] Successfully loaded all dependencies  -  Client - InteractionSystemModule:44
+  23:09:54.872  [InteractionSystem] Successfully loaded InteractionSystemModule  -  Client - client_core:163
+  23:09:54.872  [DEBUG in client_core.luau] Top of initializeClient()  -  Client - client_core:214
+  23:09:54.872  DirectCurrencyUI: Disabled via ENABLE_THIS_UI flag  -  Client - DirectCurrencyUI:11
+  23:09:54.873  --- THIS IS THE VERY LATEST VERSION OF DirectInventoryUI.client.luau, TIMESTAMP: 1747973394 ---  -  Client - DirectInventoryUI:1
+  23:09:54.873  DirectInventoryUI: Waiting for SharedModule and its InventoryUI...  -  Client - DirectInventoryUI:18
+  23:09:54.873  DirectInventoryUI: SharedModule.InventoryUI found and ready.  -  Client - DirectInventoryUI:31
+  23:09:54.873  DirectInventoryUI: SharedModule.InventoryUI is confirmed available.  -  Client - DirectInventoryUI:51
+  23:09:54.873  DirectInventoryUI: SharedModule.InventoryUI did NOT create a button, or it couldn't be found. This script will NOT create a fallback button anymore.  -  Client - DirectInventoryUI:68
+  23:09:54.873  DirectInventoryUI: Setup complete. TAB key is bound to SharedModule.InventoryUI.Toggle. No button created by this script.  -  Client - DirectInventoryUI:93
+  23:09:54.873  --- DirectCurrencyUI.client.luau: MODIFIED TO FIX FORMATTING AND SET TO DISABLED ---  -  Client
+  23:09:54.873  DirectCurrencyUI: Disabled via ENABLE_THIS_UI flag  -  Client
+  23:09:55.662  [DEBUG in client_core.luau] SharedModule:  ▶ {...}  -  Client - client_core:223
+  23:09:55.671  [DEBUG in client_core.luau] SharedModule.GameManager:  ▶ {...}  -  Client - client_core:224
+  23:09:55.671  [DEBUG in client_core.luau] GameManagerModule type: table  -  Client - client_core:226
+  23:09:55.671  [DEBUG in client_core.luau] Original line 108 print - script.Parent.Parent (of ModuleScript) is:  Players.Xdjpearsonx.PlayerScripts  -  Client - client_core:227
+  23:09:55.671  [LINE 108 PRE-CHECK in client_core.luau] --- Detailed Debug for Line 109 ---   -  Client - client_core:229
+  23:09:55.671  [LINE 108 PRE-CHECK in client_core.luau] script (ModuleScript):GetFullName() =  Players.Xdjpearsonx.PlayerScripts.client.client_core  -  Client - client_core:230
+  23:09:55.671  [LINE 108 PRE-CHECK in client_core.luau] script.Parent (LocalScript):GetFullName() =  Players.Xdjpearsonx.PlayerScripts.client  -  Client - client_core:231
+  23:09:55.671  [LINE 108 PRE-CHECK in client_core.luau] Successfully accessed GameManagerModule.new. Its type is: function  -  Client - client_core:240
+  23:09:55.671  [LINE 108 PRE-CHECK in client_core.luau] About to evaluate: typeof(gmm_new_prop) == 'function'  -  Client - client_core:247
+  23:09:55.671  [LINE 109 SUCCESS in client_core.luau] typeof(GameManagerModule.new) is 'function'  -  Client - client_core:249
+  23:09:55.671  [DEBUG in client_core.luau] GameManager instance created successfully.  -  Client - client_core:253
+  23:09:55.671  [LINE 109 POST-CHECK in client_core.luau] --- End Detailed Debug ---  -  Client - client_core:262
+  23:09:55.671  InventoryUIModule appears to be loaded in initializeClient (client_core.luau).  -  Client - client_core:268
+  23:09:55.671  [DEBUG in client_core.luau] Remotes folder found: ReplicatedStorage.Remotes  -  Client - client_core:276
+  23:09:55.671  [DEBUG in client_core.luau] GetInventory RemoteFunction found: ReplicatedStorage.Remotes.GetInventory  -  Client - client_core:283
+  23:09:55.671  [DEBUG in client_core.luau] BuyItem RemoteEvent found.  -  Client - client_core:287
+  23:09:55.671  [DEBUG in client_core.luau] PlaceItem RemoteEvent found.  -  Client - client_core:288
+  23:09:55.671  [DEBUG in client_core.luau] InteractWithItem RemoteEvent found.  -  Client - client_core:289
+  23:09:55.671  InventoryUI.Initialize called  -  Client - InventoryUI:258
+  23:09:55.672  InventoryUI.Initialize: Successfully verified inventory frame exists  -  Client - InventoryUI:270
+  23:09:55.672  InventoryUI.Initialize: Stored inventory reference  -  Client - InventoryUI:280
+  23:09:55.672  InventoryUI: Created inventory button  -  Client - InventoryUI:382
+  23:09:55.673  InventoryUI: Found AddToInventory event, connecting...  -  Client - InventoryUI:397
+  23:09:55.673  InventoryUI: Successfully connected to AddToInventory event  -  Client - InventoryUI:406
+  23:09:55.673  InventoryUI: Successfully registered with SharedModule  -  Client - InventoryUI:296
+  23:09:55.673  InventoryUI.Initialize completed  -  Client - InventoryUI:299
+  23:09:55.673  [UI] InventoryUI initialized successfully (functional style)  -  Client - client_core:306
+  23:09:55.674  [UI] PlacedItemDialog initialized successfully (functional style)  -  Client - client_core:322
+  23:09:55.674  [UI] PurchaseDialog initialized successfully (functional style)  -  Client - client_core:338
+  23:09:55.674  PurchaseDialogModule.Initialize() called in initializeUI (client_core.luau).  -  Client - client_core:483
+  23:09:55.674  InventoryUI.Initialize called  -  Client - InventoryUI:258
+  23:09:55.675  Found existing inventory frame, removing it  -  Client - InventoryUI:35
+  23:09:55.676  InventoryUI.Initialize: Successfully verified inventory frame exists  -  Client - InventoryUI:270
+  23:09:55.676  InventoryUI.Initialize: Stored inventory reference  -  Client - InventoryUI:280
+  23:09:55.676  InventoryUI: Found AddToInventory event, connecting...  -  Client - InventoryUI:397
+  23:09:55.676  InventoryUI: Successfully connected to AddToInventory event  -  Client - InventoryUI:406
+  23:09:55.676  InventoryUI: Successfully registered with SharedModule  -  Client - InventoryUI:296
+  23:09:55.676  InventoryUI.Initialize completed  -  Client - InventoryUI:299
+  23:09:55.676  InventoryUIModule.Initialize() called in client_core.luau.  -  Client - client_core:493
+  23:09:55.676  [client_core] Old InteractionSystem initialization DISABLED - using new BottomPurchasePopup system  -  Client - client_core:549
+  23:09:55.677  client_core ModuleScript loaded successfully  -  Client - init:83
+  23:09:55.681  StarterGui script starting...  -  Client - StarterGui:9
+  23:09:55.681  StarterGui.init: Attempting to require shared module  -  Client - StarterGui:15
+  23:09:55.681  StarterGui.init: Found shared module at ReplicatedStorage.shared  -  Client - StarterGui:19
+  23:09:55.681  StarterGui.init: Successfully required SharedModule  -  Client - StarterGui:30
+  23:09:55.681  Initializing SharedModule with improved path resolution...  -  Client - inits:134
+  23:09:55.681  Registering modules with LazyLoadModules...  -  Client - inits:184
+  23:09:55.681  SharedModule initialized - other modules will load on demand  -  Client - inits:195
+  23:09:55.681  StarterGui.init: SharedModule initialized successfully  -  Client - StarterGui:41
+  23:09:55.681  Successfully created GameManager instance  -  Client - StarterGui:61
+  23:09:55.682  Successfully created CurrencyManager instance  -  Client - StarterGui:78
+  23:09:55.682  Initializing GameManager client...  -  Client - GameManager:306
+  23:09:55.682  GameManager client initialized successfully  -  Client - GameManager:308
+  23:09:55.682  Initializing CurrencyManager client-side  -  Client - CurrencyManager:438
+  23:09:55.682  CurrencyManager client initialized  -  Client - CurrencyManager:469
+  23:09:55.872  ClientInit: Error initializing ItemInteractionClient: Requested module experienced an error while loading  -  Client - ClientInit:44
+  23:09:55.872  ClientInit: Client initialization complete  -  Client - ClientInit:47
+  23:09:55.873  InventoryUILoader: InventoryUI is already registered in SharedModule  -  Client - InventoryUILoader:30
+  23:09:55.873  InventoryUILoader: InventoryUI is already initialized  -  Client - InventoryUILoader:37
+  23:09:55.873  InventoryUILoader: Successfully initialized InventoryUI  -  Client - InventoryUILoader:95
+  23:09:55.881  DirectInventoryUI: Attempting to call Initialize on SharedModule.InventoryUI as a fallback...  -  Client - DirectInventoryUI:104
+  23:09:55.881  InventoryUI.Initialize called  -  Client - InventoryUI:258
+  23:09:55.881  Found existing inventory frame, removing it  -  Client - InventoryUI:35
+  23:09:55.882  InventoryUI.Initialize: Successfully verified inventory frame exists  -  Client - InventoryUI:270
+  23:09:55.882  InventoryUI.Initialize: Stored inventory reference  -  Client - InventoryUI:280
+  23:09:55.882  InventoryUI: Found AddToInventory event, connecting...  -  Client - InventoryUI:397
+  23:09:55.882  InventoryUI: Successfully connected to AddToInventory event  -  Client - InventoryUI:406
+  23:09:55.882  InventoryUI: Successfully registered with SharedModule  -  Client - InventoryUI:296
+  23:09:55.883  InventoryUI.Initialize completed  -  Client - InventoryUI:299
+  23:09:55.883  DirectInventoryUI: Successfully called SharedModule.InventoryUI.Initialize().  -  Client - DirectInventoryUI:109
+  23:09:56.502  Failed to load sound rbxassetid://172154904: User is not authorized to access Asset.  -  Studio
+  23:09:56.502  The experience doesn't have access permission to use asset id 172154904. Click to share access  -  Studio
+  23:09:56.923  InventoryUILoader: Found inventory button, updating click handler  -  Client - InventoryUILoader:106
+  23:09:56.923  InventoryUILoader: Successfully updated inventory button click handler  -  Client - InventoryUILoader:129
+  23:09:57.543  ModelDisplayRunner: Starting ModelDisplayUtil...  -  Server - ModelDisplayRunner:36
+  23:09:57.544  ModelDisplayUtil: Initializing...  -  Server - ModelDisplayUtil:264
+  23:09:57.544  ModelDisplayUtil: Capturing all static models...  -  Server - ModelDisplayUtil:126
+  23:09:57.552  ModelDisplayUtil: Captured 4 static models for tracking  -  Server - ModelDisplayUtil:143
+  23:09:57.553  ModelDisplayUtil: Now monitoring World_Items folder  -  Server - ModelDisplayUtil:252
+  23:09:57.553  
 === INITIAL WORLD ITEMS STRUCTURE ===  -  Server - ModelDisplayUtil:255
-  23:03:06.456  📁 World_Items (Folder)  -  Server - ModelDisplayUtil:22
-  23:03:06.456    📁 Placed (Folder)  -  Server - ModelDisplayUtil:22
-  23:03:06.457    📁 Static (Folder)  -  Server - ModelDisplayUtil:22
-  23:03:06.457      📁 Teleport Portals (Folder)  -  Server - ModelDisplayUtil:22
-  23:03:06.457        📋 PortalBlue (6 parts) [item=secondary] [name=Teleport Portals]   -  Server - ModelDisplayUtil:71
-  23:03:06.457        📋 PortalRed (6 parts) [item=secondary] [name=Teleport Portals]   -  Server - ModelDisplayUtil:71
-  23:03:06.457        ❓ Script (Script)  -  Server - ModelDisplayUtil:81
-  23:03:06.459      📋 Level 3 House (375 parts) [ModelDisplayUtil_LastSeen=1747972986] [ModelDisplayUtil_Tracked=true]   -  Server - ModelDisplayUtil:71
-  23:03:06.460      📋 Rare House (369 parts) [ModelDisplayUtil_LastSeen=1747972986] [ModelDisplayUtil_Tracked=true]   -  Server - ModelDisplayUtil:71
-  23:03:06.460   ▶     📋 Trampoline (6 parts) [ModelDisplayUtil_LastSeen=1747972986] [ModelDisplayUtil_Tracked=true]  (x2)  -  Server - ModelDisplayUtil:71
-  23:03:06.460  =====================================
+  23:09:57.553  📁 World_Items (Folder)  -  Server - ModelDisplayUtil:22
+  23:09:57.553    📁 Placed (Folder)  -  Server - ModelDisplayUtil:22
+  23:09:57.554    📁 Static (Folder)  -  Server - ModelDisplayUtil:22
+  23:09:57.554      📁 Teleport Portals (Folder)  -  Server - ModelDisplayUtil:22
+  23:09:57.554        📋 PortalBlue (6 parts) [item=secondary] [name=Teleport Portals]   -  Server - ModelDisplayUtil:71
+  23:09:57.554        📋 PortalRed (6 parts) [item=secondary] [name=Teleport Portals]   -  Server - ModelDisplayUtil:71
+  23:09:57.554        ❓ Script (Script)  -  Server - ModelDisplayUtil:81
+  23:09:57.555      📋 Level 3 House (375 parts) [ModelDisplayUtil_LastSeen=1747973397] [ModelDisplayUtil_Tracked=true]   -  Server - ModelDisplayUtil:71
+  23:09:57.555      📋 Rare House (369 parts) [ModelDisplayUtil_LastSeen=1747973397] [ModelDisplayUtil_Tracked=true]   -  Server - ModelDisplayUtil:71
+  23:09:57.556   ▶     📋 Trampoline (6 parts) [ModelDisplayUtil_LastSeen=1747973397] [ModelDisplayUtil_Tracked=true]  (x2)  -  Server - ModelDisplayUtil:71
+  23:09:57.556  =====================================
   -  Server - ModelDisplayUtil:257
-  23:03:06.460  ModelDisplayUtil: Initialization complete  -  Server - ModelDisplayUtil:310
-  23:03:06.461  ModelDisplayRunner: Setup complete  -  Server - ModelDisplayRunner:79
-  23:03:06.597  
+  23:09:57.556  ModelDisplayUtil: Initialization complete  -  Server - ModelDisplayUtil:310
+  23:09:57.556  ModelDisplayRunner: Setup complete  -  Server - ModelDisplayRunner:79
+  23:09:57.710  
 === PERIODIC MODEL DISPLAY ===  -  Server - ModelDisplayRunner:46
-  23:03:06.598  📁 World_Items (Folder)  -  Server - ModelDisplayUtil:22
-  23:03:06.598    📁 Placed (Folder)  -  Server - ModelDisplayUtil:22
-  23:03:06.598    📁 Static (Folder)  -  Server - ModelDisplayUtil:22
-  23:03:06.598      📁 Teleport Portals (Folder)  -  Server - ModelDisplayUtil:22
-  23:03:06.598        📋 PortalBlue (6 parts) [item=secondary] [name=Teleport Portals]   -  Server - ModelDisplayUtil:71
-  23:03:06.598        📋 PortalRed (6 parts) [item=secondary] [name=Teleport Portals]   -  Server - ModelDisplayUtil:71
-  23:03:06.598        ❓ Script (Script)  -  Server - ModelDisplayUtil:81
-  23:03:06.600      📋 Level 3 House (375 parts) [ModelDisplayUtil_LastSeen=1747972986] [ModelDisplayUtil_Tracked=true]   -  Server - ModelDisplayUtil:71
-  23:03:06.600      📋 Rare House (369 parts) [ModelDisplayUtil_LastSeen=1747972986] [ModelDisplayUtil_Tracked=true]   -  Server - ModelDisplayUtil:71
-  23:03:06.600   ▶     📋 Trampoline (6 parts) [ModelDisplayUtil_LastSeen=1747972986] [ModelDisplayUtil_Tracked=true]  (x2)  -  Server - ModelDisplayUtil:71
-  23:03:06.601  =============================
+  23:09:57.710  📁 World_Items (Folder)  -  Server - ModelDisplayUtil:22
+  23:09:57.711    📁 Placed (Folder)  -  Server - ModelDisplayUtil:22
+  23:09:57.711    📁 Static (Folder)  -  Server - ModelDisplayUtil:22
+  23:09:57.711      📁 Teleport Portals (Folder)  -  Server - ModelDisplayUtil:22
+  23:09:57.711        📋 PortalBlue (6 parts) [item=secondary] [name=Teleport Portals]   -  Server - ModelDisplayUtil:71
+  23:09:57.711        📋 PortalRed (6 parts) [item=secondary] [name=Teleport Portals]   -  Server - ModelDisplayUtil:71
+  23:09:57.711        ❓ Script (Script)  -  Server - ModelDisplayUtil:81
+  23:09:57.712      📋 Level 3 House (375 parts) [ModelDisplayUtil_LastSeen=1747973397] [ModelDisplayUtil_Tracked=true]   -  Server - ModelDisplayUtil:71
+  23:09:57.712      📋 Rare House (369 parts) [ModelDisplayUtil_LastSeen=1747973397] [ModelDisplayUtil_Tracked=true]   -  Server - ModelDisplayUtil:71
+  23:09:57.713   ▶     📋 Trampoline (6 parts) [ModelDisplayUtil_LastSeen=1747973397] [ModelDisplayUtil_Tracked=true]  (x2)  -  Server - ModelDisplayUtil:71
+  23:09:57.713  =============================
   -  Server - ModelDisplayRunner:48
-  23:03:08.369  UniqueItemIdAssigner: Starting scan of Workspace.World_Items/Placed to assign UniqueItemIds...  -  Server - UniqueItemIdAssigner:59
-  23:03:08.369  UniqueItemIdAssigner: Scan of World_Items/Placed complete. Processed 0 items, assigned 0 new UniqueItemIds.  -  Server - UniqueItemIdAssigner:104
-  23:03:08.370  PlacementManager: Successfully required UniqueItemIdAssigner  -  Server - PlacementManager:36
-  23:03:08.370  Successfully loaded module: PlacementManager  -  Server - inits:39
-  23:03:08.370  Attempting to require: InventoryManager at path: ReplicatedStorage.shared.core.inventory.InventoryManager  -  Server - inits:28
-  23:03:08.370  Successfully loaded module: InventoryManager  -  Server - inits:39
-  23:03:08.370  Attempting to require: InteractionManager at path: ReplicatedStorage.shared.core.interaction.InteractionManager  -  Server - inits:28
-  23:03:08.370  Successfully loaded module: InteractionManager  -  Server - inits:39
-  23:03:08.370  Attempting to require: InventoryUI at path: ReplicatedStorage.shared.core.ui.InventoryUI  -  Server - inits:28
-  23:03:08.374  Successfully loaded module: InventoryUI  -  Server - inits:39
-  23:03:08.374  Attempting to require: CurrencyManager at path: ReplicatedStorage.shared.core.economy.CurrencyManager  -  Server - inits:28
-  23:03:08.375  Successfully loaded module: CurrencyManager  -  Server - inits:39
-  23:03:08.375  Attempting to require: PlacementCore at path: ReplicatedStorage.shared.core.placement.PlacementCore  -  Server - inits:28
-  23:03:08.377  Successfully loaded module: PlacementCore  -  Server - inits:39
-  23:03:08.378  Attempting to require: RotationControlsUI at path: ReplicatedStorage.shared.core.ui.RotationControlsUI  -  Server - inits:28
-  23:03:08.378  Successfully loaded module: RotationControlsUI  -  Server - inits:39
-  23:03:08.378  Core modules loaded with the following keys:  -  Server - inits:125
-  23:03:08.378    - ItemManager (loaded)  -  Server - inits:127
-  23:03:08.379    - PlacedItemDialog (loaded)  -  Server - inits:127
-  23:03:08.379    - LazyLoadModules (loaded)  -  Server - inits:127
-  23:03:08.379    - PurchaseDialog (loaded)  -  Server - inits:127
-  23:03:08.379    - CurrencyUI (loaded)  -  Server - inits:127
-  23:03:08.379    - GameManager (loaded)  -  Server - inits:127
-  23:03:08.379    - InventoryManager (loaded)  -  Server - inits:127
-  23:03:08.379    - PlacementManager (loaded)  -  Server - inits:127
-  23:03:08.379    - InteractionManager (loaded)  -  Server - inits:127
-  23:03:08.380    - PlacementCore (loaded)  -  Server - inits:127
-  23:03:08.380    - CurrencyManager (loaded)  -  Server - inits:127
-  23:03:08.380    - InventoryUI (loaded)  -  Server - inits:127
-  23:03:08.380    - RotationControlsUI (loaded)  -  Server - inits:127
-  23:03:08.380  [Bridge Init] Successfully loaded SharedModule via: inits (ModuleScript under shared)  -  Server - shared:25
-  23:03:08.380  server.init: Successfully required SharedModule  -  Server - init:110
-  23:03:08.380  Initializing SharedModule with improved path resolution...  -  Server - inits:134
-  23:03:08.380  Registering modules with LazyLoadModules...  -  Server - inits:184
-  23:03:08.380  SharedModule initialized - other modules will load on demand  -  Server - inits:195
-  23:03:08.381  server.init: SharedModule initialized successfully  -  Server - init:120
-  23:03:08.381  server.init: Initializing DataService...  -  Server - init:128
-  23:03:08.381  server.init: Creating new DataService instance  -  Server - init:196
-  23:03:08.382  DataService: Auto-save setup with interval 300 seconds  -  Server - DataService:227
-  23:03:08.382  DataService: Initializing...  -  Server - DataService:252
-  23:03:08.382  DataService: Initialization complete  -  Server - DataService:259
-  23:03:08.382  server.init: DataService initialized successfully  -  Server - init:203
-  23:03:08.382  server.init: Successfully created DataService instance  -  Server - init:407
-  23:03:08.382  server.init: Initializing server managers  -  Server - init:413
-  23:03:08.383  server.init: Successfully created GameManager instance  -  Server - init:424
-  23:03:08.383  server.init: Successfully created InventoryManager instance  -  Server - init:440
-  23:03:08.383  server.init: Successfully created CurrencyManager instance and assigned to _G.CurrencyManager  -  Server - init:457
-  23:03:08.383  CurrencyManager:SetupPlayerHandling - Processing existing player: Xdjpearsonx  -  Server - CurrencyManager:60
-  23:03:08.383  [ItemPurchaseHandler] Successfully required SharedModule  -  Server - ItemPurchaseHandler:47
-  23:03:08.384  [ItemPurchaseHandler] Created PurchaseResult RemoteEvent  -  Server - ItemPurchaseHandler:88
-  23:03:08.384  DEBUG: ItemPurchaseHandler required successfully.  -  Server - ClearMyDataTool:17
-  23:03:08.384  DEBUG: Attempting to require SharedModule...  -  Server - ClearMyDataTool:24
-  23:03:08.384  DEBUG: SharedModule required successfully.  -  Server - ClearMyDataTool:28
-  23:03:08.384  ClearMyDataTool: Successfully got DataService from SharedModule.DataService.  -  Server - ClearMyDataTool:31
-  23:03:08.384  ClearMyDataTool.server.luau loaded in COMMAND MODE.  -  Server - ClearMyDataTool:276
-  23:03:08.384  Available commands:  -  Server - ClearMyDataTool:277
-  23:03:08.385    /clearmydata - Clear your data immediately  -  Server - ClearMyDataTool:278
-  23:03:08.385    /cleardata confirm - Clear your data with confirmation  -  Server - ClearMyDataTool:279
-  23:03:08.385  Tool is now dormant and will only activate when commands are used.  -  Server - ClearMyDataTool:280
-  23:03:08.736  💰 SERVER CurrencyManager: Loaded balance for Xdjpearsonx: 99570 from DataStore (PlayerData)  -  Server - CurrencyManager:177
-  23:03:08.736   ▶ 💰 SERVER CurrencyManager: Firing UpdateBalance remote event for Xdjpearsonx with 99570 currency (x2)  -  Server - CurrencyManager:313
-  23:03:08.737  CurrencyManager:SetupPlayerHandling - Existing player Xdjpearsonx already has a balance entry.  -  Server - CurrencyManager:63
-  23:03:08.737  server.init: Explicitly initialized _G.CurrencyManager instance.  -  Server - init:466
-  23:03:08.737  server.init: _G.IsClearingData is not true. Proceeding with PlacementManager initialization directly.  -  Server - init:568
-  23:03:08.737  server.init: Initializing PlacementManager (actual call)...  -  Server - init:572
-  23:03:08.737  server.init: Initializing PlacementManager (function defined)...  -  Server - init:483
-  23:03:08.737  server.init: Found PlacementManager module in SharedModule. Attempting to create new instance.  -  Server - init:486
-  23:03:08.737  --- PLACEMENT MANAGER .new() CALLED ---  -  Server - PlacementManager:47
-  23:03:08.737  PlacementManager.new: Successfully required UniqueItemIdAssigner  -  Server - PlacementManager:127
-  23:03:08.737  PlacementManager: No legacy PlacedItems folder found, will use World_Items/Placed  -  Server - PlacementManager:178
-  23:03:08.737  server.init: Successfully created PlacementManager instance via SharedModule.PlacementManager.new()  -  Server - init:497
-  23:03:08.737  PlacementManager: Initialize called  -  Server - PlacementManager:207
-  23:03:08.737  PlacementManager: Setting up remote events  -  Server - PlacementManager:2242
-  23:03:08.737  PlacementManager: Using existing remote event: PlaceItem  -  Server - PlacementManager:2267
-  23:03:08.737  PlacementManager: Using existing remote event: ItemPlaced  -  Server - PlacementManager:2267
-  23:03:08.737  PlacementManager: Using existing remote event: RecallItem  -  Server - PlacementManager:2267
-  23:03:08.737  PlacementManager: Using existing remote event: ItemRecalled  -  Server - PlacementManager:2267
-  23:03:08.737  PlacementManager: Created remote event: UpdateItem  -  Server - PlacementManager:2265
-  23:03:08.738  PlacementManager: Created remote event: ItemUpdated  -  Server - PlacementManager:2265
-  23:03:08.738  PlacementManager: Created remote event: DeleteItem  -  Server - PlacementManager:2265
-  23:03:08.738  PlacementManager: Created remote event: ItemDeleted  -  Server - PlacementManager:2265
-  23:03:08.738  PlacementManager: Using existing remote event: RequestMoveItem  -  Server - PlacementManager:2267
-  23:03:08.739  PlacementManager: Created remote event: RequestCloneItem  -  Server - PlacementManager:2265
-  23:03:08.739  PlacementManager: Created remote event: RequestDestroyItem  -  Server - PlacementManager:2265
-  23:03:08.739  PlacementManager: Using existing remote event: CloneItem  -  Server - PlacementManager:2267
-  23:03:08.739  PlacementManager: Using existing remote event: DestroyItem  -  Server - PlacementManager:2267
-  23:03:08.740  PlacementManager: Remote events setup completed  -  Server - PlacementManager:2381
-  23:03:08.740  [PlacementManager] ConnectPlayerEvents method called. Player events should now be connected.  -  Server - PlacementManager:232
-  23:03:08.740  PlacementManager: Initialization completed  -  Server - PlacementManager:227
-  23:03:08.740  server.init: PlacementManager instance initialized successfully  -  Server - init:544
-  23:03:08.740  server.init: Successfully created and initialized PlacementManager instance  -  Server - init:580
-  23:03:08.740  server.init: Successfully created InteractionManager instance  -  Server - init:595
-  23:03:08.740  InteractionManager initialized  -  Server - InteractionManager:14
-  23:03:08.741  server.init: Successfully loaded ItemPurchaseHandler module  -  Server - init:640
-  23:03:08.741  [ItemPurchaseHandler] Setting up command handlers for player: Xdjpearsonx  -  Server - ItemPurchaseHandler:655
-  23:03:08.741  [ItemPurchaseHandler] Connected PurchaseItem event  -  Server - ItemPurchaseHandler:614
-  23:03:08.741  [ItemPurchaseHandler] Connected AddToInventory event  -  Server - ItemPurchaseHandler:624
-  23:03:08.741  [ItemPurchaseHandler] Module initialized successfully  -  Server - ItemPurchaseHandler:642
-  23:03:08.741  server.init: ItemPurchaseHandler initialized successfully  -  Server - init:649
-  23:03:08.741  server.init: Attempting to synchronize CurrencyManager with ItemPurchaseHandler balances for existing players...  -  Server - init:655
-  23:03:08.742  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:113
-  23:03:08.742  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:08.772  PlacementManager: Found event 'UpdateItem' after WaitForChild.  -  Client - PlacementManager:2428
-  23:03:08.772  PlacementManager: Successfully cached remote event: UpdateItem  -  Client - PlacementManager:2434
-  23:03:08.773  PlacementManager: Successfully cached remote event: ItemUpdated  -  Client - PlacementManager:2434
-  23:03:08.773  PlacementManager: Successfully cached remote event: DeleteItem  -  Client - PlacementManager:2434
-  23:03:08.773  PlacementManager: Successfully cached remote event: ItemDeleted  -  Client - PlacementManager:2434
-  23:03:08.773  PlacementManager: Successfully cached remote event: RequestMoveItem  -  Client - PlacementManager:2434
-  23:03:08.773  PlacementManager: CacheRemoteEvents - All expected remote events appear to be cached.  -  Client - PlacementManager:2449
-  23:03:08.773  PlacementManager (Client): Connected OnClientEvent for ItemUpdated.  -  Client - PlacementManager:2481
-  23:03:08.773  PlacementManager: Caching remote events --- MARKER ---  -  Client - PlacementManager:2388
-  23:03:08.774  PlacementManager: Remotes folder found immediately.  -  Client - PlacementManager:2400
-  23:03:08.774  PlacementManager: Successfully cached remote event: PlaceItem  -  Client - PlacementManager:2434
-  23:03:08.774  PlacementManager: Successfully cached remote event: ItemPlaced  -  Client - PlacementManager:2434
-  23:03:08.774  PlacementManager: Successfully cached remote event: RecallItem  -  Client - PlacementManager:2434
-  23:03:08.774  PlacementManager: Successfully cached remote event: ItemRecalled  -  Client - PlacementManager:2434
-  23:03:08.774  PlacementManager: Successfully cached remote event: UpdateItem  -  Client - PlacementManager:2434
-  23:03:08.774  PlacementManager: Successfully cached remote event: ItemUpdated  -  Client - PlacementManager:2434
-  23:03:08.774  PlacementManager: Successfully cached remote event: DeleteItem  -  Client - PlacementManager:2434
-  23:03:08.774  PlacementManager: Successfully cached remote event: ItemDeleted  -  Client - PlacementManager:2434
-  23:03:08.775  PlacementManager: Successfully cached remote event: RequestMoveItem  -  Client - PlacementManager:2434
-  23:03:08.775  PlacementManager: CacheRemoteEvents - All expected remote events appear to be cached.  -  Client - PlacementManager:2449
-  23:03:08.775  PlacementManager (Client): Connected OnClientEvent for ItemUpdated.  -  Client - PlacementManager:2481
-  23:03:08.775  InventoryItemHandler: Called CacheRemoteEvents on new PlacementManager instance.  -  Client - InventoryItemHandler:55
-  23:03:08.775  InventoryItemHandler: PlacementManager initialization logic executed.  -  Client - InventoryItemHandler:71
-  23:03:08.775  InventoryItemHandler: Hooked InventoryUI methods for debugging  -  Client - InventoryItemHandler:100
-  23:03:08.775  InventoryItemHandler: Successfully initialized  -  Client - InventoryItemHandler:461
-  23:03:08.776  Created template: Grass_Cube (BrickColor=Bright green, Material=Grass, Transparency=0)  -  Client - InventoryItemHandler:372
-  23:03:08.776  Created template: Stone_Cube (BrickColor=Medium stone grey, Material=Slate, Transparency=0)  -  Client - InventoryItemHandler:372
-  23:03:08.776  Created template: Wood_Plank (BrickColor=Brown, Material=Wood, Transparency=0)  -  Client - InventoryItemHandler:372
-  23:03:08.777  Created template: Wood_Cube (BrickColor=Brown, Material=Wood, Transparency=0)  -  Client - InventoryItemHandler:372
-  23:03:08.777  Created template: Water_Cube (BrickColor=Bright blue, Material=Water, Transparency=0.30000001192092896)  -  Client - InventoryItemHandler:372
-  23:03:08.777  Created template: Fire_Cube (BrickColor=Bright red, Material=Neon, Transparency=0)  -  Client - InventoryItemHandler:372
-  23:03:08.778  Created template: Brick_Cube (BrickColor=Reddish brown, Material=Brick, Transparency=0)  -  Client - InventoryItemHandler:372
-  23:03:08.778  Created template: Sand_Cube (BrickColor=Brick yellow, Material=Sand, Transparency=0)  -  Client - InventoryItemHandler:372
-  23:03:08.778  Created template: Concrete_Cube (BrickColor=Institutional white, Material=Concrete, Transparency=0)  -  Client - InventoryItemHandler:372
-  23:03:08.778  Created template: Metal_Cube (BrickColor=Medium stone grey, Material=Metal, Transparency=0)  -  Client - InventoryItemHandler:372
-  23:03:08.778  Created template: Glass_Cube (BrickColor=Toothpaste, Material=Glass, Transparency=0.5)  -  Client - InventoryItemHandler:372
-  23:03:08.779  InventoryItemHandler: Created 21 item templates  -  Client - InventoryItemHandler:378
-  23:03:08.779  InventoryItemHandler: Set up inventory item interaction with PlacementManager  -  Client - InventoryItemHandler:319
-  23:03:08.779   ▶ Currency updated: 99570 (x2)  -  Client - CurrencyManager:450
-  23:03:08.826  [ItemPurchaseHandler] Loaded data from DataStore for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:08.826  server.init: Balances for Xdjpearsonx already in sync (CM: 99570, IPH: 99570). No update needed.  -  Server - init:692
-  23:03:08.826  server.init: Synchronization attempt complete.  -  Server - init:705
-  23:03:08.826  CurrencyManager:GetBalance - Successfully retrieved balance for Xdjpearsonx: 99570 currency  -  Server - CurrencyManager:367
-  23:03:08.826  GetMyBalance invoked by Xdjpearsonx (using _G.CurrencyManager), returning balance: 99570  -  Server - init:766
-  23:03:08.826  server.init: PlaceItem remote event already handled by PlacementManager module  -  Server - init:831
-  23:03:08.826  server.init: Connected PurchaseItem remote event handler  -  Server - init:837
-  23:03:08.826  server.init: Using existing RemoteEvent: CloneItem in ReplicatedStorage.Remotes  -  Server - init:77
-  23:03:08.826  server.init: Using existing RemoteEvent: MoveItem in ReplicatedStorage.Remotes  -  Server - init:77
-  23:03:08.826  server.init: Using existing RemoteEvent: DestroyItem in ReplicatedStorage.Remotes  -  Server - init:77
-  23:03:08.826  server.init: Using existing RemoteEvent: RotateItem in ReplicatedStorage.Remotes  -  Server - init:77
-  23:03:08.826  server.init: Legacy CloneItem remote event handler temporarily COMMENTED OUT due to missing processItemActionRequest  -  Server - init:895
-  23:03:08.827  server.init: Legacy DestroyItem remote event handler temporarily COMMENTED OUT due to missing processItemActionRequest  -  Server - init:910
-  23:03:08.827  server.init: RecallItem remote event (standard) handler temporarily COMMENTED OUT due to missing processItemActionRequest. Recall is now directly handled in PlacementManager._SetupRemoteEvents  -  Server - init:968
-  23:03:08.827  Server initialization completed successfully  -  Server - init:971
-  23:03:08.827  Created PlacedItems folder in Workspace  -  Server - init:979
-  23:03:08.827  Created template: Grass_Cube (Bright green, transparency=0)  -  Server - init:1024
-  23:03:08.827  Created template: Stone_Cube (Medium stone grey, transparency=0)  -  Server - init:1024
-  23:03:08.827  Created template: Wood_Plank (Brown, transparency=0)  -  Server - init:1024
-  23:03:08.827  Created template: Water_Cube (Bright blue, transparency=0.30000001192092896)  -  Server - init:1024
-  23:03:08.828  Created template: Fire_Cube (Bright red, transparency=0)  -  Server - init:1024
-  23:03:08.828  Created template: Brick_Cube (Reddish brown, transparency=0)  -  Server - init:1024
-  23:03:08.828  Created template: Sand_Cube (Brick yellow, transparency=0)  -  Server - init:1024
-  23:03:08.828  Created template: Concrete_Cube (Institutional white, transparency=0)  -  Server - init:1024
-  23:03:08.828  Created template: Metal_Cube (Medium stone grey, transparency=0)  -  Server - init:1024
-  23:03:08.829  Created template: Glass_Cube (Toothpaste, transparency=0.5)  -  Server - init:1024
-  23:03:08.829  Server init: Created 19 item templates  -  Server - init:1027
-  23:03:08.829  server.init: Using existing RemoteEvent: RequestCloneItem in ReplicatedStorage.Remotes  -  Server - init:77
-  23:03:08.829  server.init: Using existing RemoteEvent: RequestMoveItem in ReplicatedStorage.Remotes  -  Server - init:77
-  23:03:08.829  server.init: Created new RemoteEvent: RequestRecallItem in ReplicatedStorage.Remotes  -  Server - init:75
-  23:03:08.830  server.init: Using existing RemoteEvent: RequestDestroyItem in ReplicatedStorage.Remotes  -  Server - init:77
-  23:03:08.831  server.init: Created new RemoteEvent: RequestRotateItem in ReplicatedStorage.Remotes  -  Server - init:75
-  23:03:08.831  server.init: Connected RequestCloneItem remote event  -  Server - init:1057
-  23:03:08.831  server.init: Connected RequestMoveItem remote event  -  Server - init:1073
-  23:03:08.832  server.init: Connected RequestRecallItem (COSTED) remote event  -  Server - init:1089
-  23:03:08.832  server.init: Connected RequestDestroyItem remote event  -  Server - init:1104
-  23:03:08.832  server.init: Connected RequestRotateItem remote event  -  Server - init:1120
-  23:03:08.832  server.init: Using existing RemoteEvent: CloneItem in ReplicatedStorage.Remotes  -  Server - init:77
-  23:03:08.832  server.init: Using existing RemoteEvent: MoveItem in ReplicatedStorage.Remotes  -  Server - init:77
-  23:03:08.832  server.init: Using existing RemoteEvent: DestroyItem in ReplicatedStorage.Remotes  -  Server - init:77
-  23:03:08.832  server.init: Using existing RemoteEvent: RotateItem in ReplicatedStorage.Remotes  -  Server - init:77
-  23:03:08.855  [inits.client] Old InteractionSystemModule_new loading DISABLED - using new BottomPurchasePopup system  -  Client - init:141
-  23:03:08.855  Found FixItemTypes module, loading...  -  Client - init:147
-  23:03:08.857  Applying fix for missing item types...  -  Client - FixItemTypes:31
-  23:03:08.858  Found InteractionSystemModule_new, applying fix  -  Client - FixItemTypes:52
-  23:03:08.858  Successfully patched ShowInteractionUI function to handle price formats and admin checks  -  Client - FixItemTypes:134
-  23:03:08.858  Successfully patched Update function  -  Client - FixItemTypes:145
-  23:03:08.858  Successfully patched GetItemInfo function  -  Client - FixItemTypes:413
-  23:03:08.858  FixItemTypes module loaded successfully  -  Client - init:149
-  23:03:08.859  Client initialization completed successfully  -  Client - init:159
-  23:03:10.754  PlacementManager: Loading world data...  -  Server - PlacementManager:1170
-  23:03:10.786  InventoryItemHandler: Found inventory button, adding additional backup connection  -  Client - InventoryItemHandler:113
-  23:03:10.886  PlacementManager: Loaded 4 placed items from storage  -  Server - PlacementManager:1185
-  23:03:10.886  PlacementManager: Getting template for item: Glass_Cube  -  Server - PlacementManager:268
-  23:03:10.886  PlacementManager: Found template in ServerStorage.Items (recursive): Glass_Cube  -  Server - PlacementManager:315
-  23:03:10.887  PlacementManager:LoadWorldData: Processing loaded item. Original itemId: Glass_Cube, instanceId from data: Glass_Cube_7768610061_1747971532  -  Server - PlacementManager:1202
-  23:03:10.887  PlacementManager:LoadWorldData: Updated attributes for Glass_Cube from Constants: priceIngame=5, tier=BASIC  -  Server - PlacementManager:1245
-  23:03:11.204  UniqueItemIdAssigner: Successfully assigned new UniqueItemId: 909 (Previous: 908)  -  Server - UniqueItemIdAssigner:37
-  23:03:11.204  UniqueItemIdAssigner: Assigned new UniqueItemId 909 to new item 'Glass_Cube_7768610061_1747971532'  -  Server - UniqueItemIdAssigner:125
-  23:03:11.205  PlacementManager:LoadWorldData: Assigned UniqueItemId to loaded item 'Glass_Cube_7768610061_1747971532' (InstanceID: Glass_Cube_7768610061_1747971532) as it was missing.  -  Server - PlacementManager:1259
-  23:03:11.205  Parenting placed item Glass_Cube_7768610061_1747971532 to Workspace.World_Items.Placed  -  Server - PlacementManager:1302
-  23:03:11.205  PlacementManager: Getting template for item: Brick_Cube  -  Server - PlacementManager:268
-  23:03:11.205  PlacementManager: Found template in ServerStorage.Items (recursive): Brick_Cube  -  Server - PlacementManager:315
-  23:03:11.206  PlacementManager:LoadWorldData: Processing loaded item. Original itemId: Brick_Cube, instanceId from data: Brick_Cube_7768610061_1747971548  -  Server - PlacementManager:1202
-  23:03:11.206  PlacementManager:LoadWorldData: Updated attributes for Brick_Cube from Constants: priceIngame=5, tier=BASIC  -  Server - PlacementManager:1245
-  23:03:11.320  UniqueItemIdAssigner: Successfully assigned new UniqueItemId: 910 (Previous: 909)  -  Server - UniqueItemIdAssigner:37
-  23:03:11.320  UniqueItemIdAssigner: Assigned new UniqueItemId 910 to new item 'Brick_Cube_7768610061_1747971548'  -  Server - UniqueItemIdAssigner:125
-  23:03:11.320  PlacementManager:LoadWorldData: Assigned UniqueItemId to loaded item 'Brick_Cube_7768610061_1747971548' (InstanceID: Brick_Cube_7768610061_1747971548) as it was missing.  -  Server - PlacementManager:1259
-  23:03:11.321  Parenting placed item Brick_Cube_7768610061_1747971548 to Workspace.World_Items.Placed  -  Server - PlacementManager:1302
-  23:03:11.321  PlacementManager: Getting template for item: Brick_Cube  -  Server - PlacementManager:268
-  23:03:11.321  PlacementManager: Found template in ServerStorage.Items (recursive): Brick_Cube  -  Server - PlacementManager:315
-  23:03:11.322  PlacementManager:LoadWorldData: Processing loaded item. Original itemId: Brick_Cube, instanceId from data: Brick_Cube_7768610061_1747972654  -  Server - PlacementManager:1202
-  23:03:11.322  PlacementManager:LoadWorldData: Updated attributes for Brick_Cube from Constants: priceIngame=5, tier=BASIC  -  Server - PlacementManager:1245
-  23:03:11.437  UniqueItemIdAssigner: Successfully assigned new UniqueItemId: 911 (Previous: 910)  -  Server - UniqueItemIdAssigner:37
-  23:03:11.437  UniqueItemIdAssigner: Assigned new UniqueItemId 911 to new item 'Brick_Cube_7768610061_1747972654'  -  Server - UniqueItemIdAssigner:125
-  23:03:11.437  PlacementManager:LoadWorldData: Assigned UniqueItemId to loaded item 'Brick_Cube_7768610061_1747972654' (InstanceID: Brick_Cube_7768610061_1747972654) as it was missing.  -  Server - PlacementManager:1259
-  23:03:11.437  Parenting placed item Brick_Cube_7768610061_1747972654 to Workspace.World_Items.Placed  -  Server - PlacementManager:1302
-  23:03:11.437  PlacementManager: Getting template for item: Brick_Cube  -  Server - PlacementManager:268
-  23:03:11.437  PlacementManager: Found template in ServerStorage.Items (recursive): Brick_Cube  -  Server - PlacementManager:315
-  23:03:11.438  PlacementManager:LoadWorldData: Processing loaded item. Original itemId: Brick_Cube, instanceId from data: Brick_Cube_7768610061_1747972811  -  Server - PlacementManager:1202
-  23:03:11.438  PlacementManager:LoadWorldData: Updated attributes for Brick_Cube from Constants: priceIngame=5, tier=BASIC  -  Server - PlacementManager:1245
-  23:03:11.553  UniqueItemIdAssigner: Successfully assigned new UniqueItemId: 912 (Previous: 911)  -  Server - UniqueItemIdAssigner:37
-  23:03:11.553  UniqueItemIdAssigner: Assigned new UniqueItemId 912 to new item 'Brick_Cube_7768610061_1747972811'  -  Server - UniqueItemIdAssigner:125
-  23:03:11.553  PlacementManager:LoadWorldData: Assigned UniqueItemId to loaded item 'Brick_Cube_7768610061_1747972811' (InstanceID: Brick_Cube_7768610061_1747972811) as it was missing.  -  Server - PlacementManager:1259
-  23:03:11.553  Parenting placed item Brick_Cube_7768610061_1747972811 to Workspace.World_Items.Placed  -  Server - PlacementManager:1302
-  23:03:11.553  PlacementManager: Successfully spawned 4 world items  -  Server - PlacementManager:1320
-  23:03:11.870  DirectInventoryUI: Using external module implementation instead  -  Client - init:296
-  23:03:19.589  --- ItemInteractionClient:TryInteract() CALLED ---  -  Client - ItemInteractionClient:825
-  23:03:19.589  --- ItemInteractionClient:TryInteract() - Using currentTarget: Workspace.World_Items.Placed.Brick_Cube_7768610061_1747972654 ---  -  Client - ItemInteractionClient:846
-  23:03:19.589  --- ItemInteractionClient:TryInteract() - Target is a WORLD item. Calling InteractWithWorldItem. ---  -  Client - ItemInteractionClient:867
-  23:03:19.589  --- ItemInteractionClient:InteractWithWorldItem() CALLED ---  -  Client - ItemInteractionClient:950
-  23:03:19.589  --- ItemInteractionClient:InteractWithWorldItem() - Target: Workspace.World_Items.Placed.Brick_Cube_7768610061_1747972654, ItemID: Brick_Cube, ItemName: Brick Cube, InstanceID: Brick_Cube_7768610061_1747972654 ---  -  Client - ItemInteractionClient:961
-  23:03:19.590  ItemInteractionClient: Interacting with world item. Name: Brick_Cube_7768610061_1747972654, ItemID: Brick_Cube, InstanceID: Brick_Cube_7768610061_1747972654  -  Client - ItemInteractionClient:970
-  23:03:19.590  --- ItemInteractionClient:InteractWithWorldItem() - Using PlacedItemDialog.Show ---  -  Client - ItemInteractionClient:973
-  23:03:19.590  --- ItemInteractionClient:InteractWithWorldItem() - PlacedItemDialog.Show completed ---  -  Client - ItemInteractionClient:977
-  23:03:24.771  --- ItemInteractionClient:TryInteract() CALLED ---  -  Client - ItemInteractionClient:825
-  23:03:24.772  --- ItemInteractionClient:TryInteract() - Using currentTarget: Workspace.World_Items.Placed.Brick_Cube_7768610061_1747972654 ---  -  Client - ItemInteractionClient:846
-  23:03:24.772  --- ItemInteractionClient:TryInteract() - Target is a WORLD item. Calling InteractWithWorldItem. ---  -  Client - ItemInteractionClient:867
-  23:03:24.772  --- ItemInteractionClient:InteractWithWorldItem() CALLED ---  -  Client - ItemInteractionClient:950
-  23:03:24.772  --- ItemInteractionClient:InteractWithWorldItem() - Target: Workspace.World_Items.Placed.Brick_Cube_7768610061_1747972654, ItemID: Brick_Cube, ItemName: Brick Cube, InstanceID: Brick_Cube_7768610061_1747972654 ---  -  Client - ItemInteractionClient:961
-  23:03:24.772  ItemInteractionClient: Interacting with world item. Name: Brick_Cube_7768610061_1747972654, ItemID: Brick_Cube, InstanceID: Brick_Cube_7768610061_1747972654  -  Client - ItemInteractionClient:970
-  23:03:24.772  --- ItemInteractionClient:InteractWithWorldItem() - Using PlacedItemDialog.Show ---  -  Client - ItemInteractionClient:973
-  23:03:24.773  --- ItemInteractionClient:InteractWithWorldItem() - PlacedItemDialog.Show completed ---  -  Client - ItemInteractionClient:977
-  23:03:26.305  ItemInteractionClient: PlacedItemDialog action - destroy on Brick_Cube (cost: 4)  -  Client - ItemInteractionClient:144
-  23:03:26.305  UndoManager: Recorded destroy action (ID: 988402)  -  Client - UndoManager:179
-  23:03:26.306  ItemInteractionClient: Recorded 'destroy' action for undo  -  Client - ItemInteractionClient:1156
-  23:03:26.306  ItemInteractionClient: PlacedItemDialog.OnActionSelected - ItemID: Brick_Cube, ActionKey: destroy, Cost: 4  -  Client - ItemInteractionClient:303
-  23:03:26.306  Using LEGACY DestroyItem remote event with instanceId: Brick_Cube_7768610061_1747972654  -  Client - ItemInteractionClient:324
-  23:03:26.335  PlacementManager: Legacy DestroyItem event received from Xdjpearsonx  -  Server - PlacementManager:2353
-  23:03:26.335  PlacementManager:HandleDestroyItemRequest ENTERED. Player: Xdjpearsonx, ItemInstance Name: Brick_Cube_7768610061_1747972654, Cost: 4, OriginalItemId: UnknownOriginalItemId  -  Server - PlacementManager:2694
-  23:03:26.335  PlacementManager:HandleDestroyItemRequest - Destroying item directly from instance: Workspace.World_Items.Placed.Brick_Cube_7768610061_1747972654  -  Server - PlacementManager:2701
-  23:03:26.336  PlacementManager:HandleDestroyItemRequest - Removed from ItemsByUniqueId: 911  -  Server - PlacementManager:2717
-  23:03:26.336  PlacementManager:HandleDestroyItemRequest - Removed from ItemsByInstanceId: Brick_Cube_7768610061_1747972654  -  Server - PlacementManager:2722
-  23:03:26.336  PlacementManager:HandleDestroyItemRequest - Removed from placedItemsByPlayer for owner 7768610061  -  Server - PlacementManager:2729
-  23:03:26.336  PlacementManager:HandleDestroyItemRequest - Notified client of item deletion: Brick_Cube_7768610061_1747972654  -  Server - PlacementManager:2738
-  23:03:26.336  PlacementManager:HandleDestroyItemRequest - Destroying item: Workspace.World_Items.Placed.Brick_Cube_7768610061_1747972654  -  Server - PlacementManager:2742
-  23:03:26.336  PlacementManager: Saving world data...  -  Server - PlacementManager:1085
-  23:03:26.336  PlacementManager: Saving 3 placed items  -  Server - PlacementManager:1153
-  23:03:26.337  PlacementManager:HandleDestroyItemRequest - SUCCESS! Deleted Brick_Cube_7768610061_1747972654  -  Server - PlacementManager:2760
-  23:03:26.585  DataService: Successfully saved data for WorldData WorldPlacedItems  -  Server - DataService:91
-  23:03:26.585  PlacementManager: World data saved successfully  -  Server - PlacementManager:1158
-  23:03:26.585  PlacementManager:HandleDestroyItemRequest - World data saved after item destruction  -  Server - PlacementManager:2748
-  23:03:28.205  --- ItemInteractionClient:TryInteract() CALLED ---  -  Client - ItemInteractionClient:825
-  23:03:28.206  --- ItemInteractionClient:TryInteract() - No currentTarget, searching for nearby items... ---  -  Client - ItemInteractionClient:836
-  23:03:28.207  --- ItemInteractionClient:TryInteract() - No nearby items found, returning. ---  -  Client - ItemInteractionClient:842
-  23:03:36.601  
+  23:09:59.454  UniqueItemIdAssigner: Starting scan of Workspace.World_Items/Placed to assign UniqueItemIds...  -  Server - UniqueItemIdAssigner:59
+  23:09:59.454  UniqueItemIdAssigner: Scan of World_Items/Placed complete. Processed 0 items, assigned 0 new UniqueItemIds.  -  Server - UniqueItemIdAssigner:104
+  23:09:59.455  PlacementManager: Successfully required UniqueItemIdAssigner  -  Server - PlacementManager:36
+  23:09:59.455  Successfully loaded module: PlacementManager  -  Server - inits:39
+  23:09:59.455  Attempting to require: InventoryManager at path: ReplicatedStorage.shared.core.inventory.InventoryManager  -  Server - inits:28
+  23:09:59.455  Successfully loaded module: InventoryManager  -  Server - inits:39
+  23:09:59.456  Attempting to require: InteractionManager at path: ReplicatedStorage.shared.core.interaction.InteractionManager  -  Server - inits:28
+  23:09:59.456  Successfully loaded module: InteractionManager  -  Server - inits:39
+  23:09:59.456  Attempting to require: InventoryUI at path: ReplicatedStorage.shared.core.ui.InventoryUI  -  Server - inits:28
+  23:09:59.458  Successfully loaded module: InventoryUI  -  Server - inits:39
+  23:09:59.458  Attempting to require: CurrencyManager at path: ReplicatedStorage.shared.core.economy.CurrencyManager  -  Server - inits:28
+  23:09:59.460  Successfully loaded module: CurrencyManager  -  Server - inits:39
+  23:09:59.460  Attempting to require: PlacementCore at path: ReplicatedStorage.shared.core.placement.PlacementCore  -  Server - inits:28
+  23:09:59.464  Successfully loaded module: PlacementCore  -  Server - inits:39
+  23:09:59.464  Attempting to require: RotationControlsUI at path: ReplicatedStorage.shared.core.ui.RotationControlsUI  -  Server - inits:28
+  23:09:59.465  Successfully loaded module: RotationControlsUI  -  Server - inits:39
+  23:09:59.465  Core modules loaded with the following keys:  -  Server - inits:125
+  23:09:59.465    - ItemManager (loaded)  -  Server - inits:127
+  23:09:59.465    - PlacedItemDialog (loaded)  -  Server - inits:127
+  23:09:59.465    - LazyLoadModules (loaded)  -  Server - inits:127
+  23:09:59.466    - PurchaseDialog (loaded)  -  Server - inits:127
+  23:09:59.466    - CurrencyUI (loaded)  -  Server - inits:127
+  23:09:59.466    - GameManager (loaded)  -  Server - inits:127
+  23:09:59.466    - InventoryManager (loaded)  -  Server - inits:127
+  23:09:59.466    - PlacementManager (loaded)  -  Server - inits:127
+  23:09:59.466    - InteractionManager (loaded)  -  Server - inits:127
+  23:09:59.466    - PlacementCore (loaded)  -  Server - inits:127
+  23:09:59.466    - CurrencyManager (loaded)  -  Server - inits:127
+  23:09:59.467    - InventoryUI (loaded)  -  Server - inits:127
+  23:09:59.467    - RotationControlsUI (loaded)  -  Server - inits:127
+  23:09:59.467  [Bridge Init] Successfully loaded SharedModule via: inits (ModuleScript under shared)  -  Server - shared:25
+  23:09:59.467  server.init: Successfully required SharedModule  -  Server - init:110
+  23:09:59.467  Initializing SharedModule with improved path resolution...  -  Server - inits:134
+  23:09:59.467  Registering modules with LazyLoadModules...  -  Server - inits:184
+  23:09:59.467  SharedModule initialized - other modules will load on demand  -  Server - inits:195
+  23:09:59.467  server.init: SharedModule initialized successfully  -  Server - init:120
+  23:09:59.468  server.init: Initializing DataService...  -  Server - init:128
+  23:09:59.468  server.init: Creating new DataService instance  -  Server - init:196
+  23:09:59.468  DataService: Auto-save setup with interval 300 seconds  -  Server - DataService:227
+  23:09:59.468  DataService: Initializing...  -  Server - DataService:252
+  23:09:59.469  DataService: Initialization complete  -  Server - DataService:259
+  23:09:59.469  server.init: DataService initialized successfully  -  Server - init:203
+  23:09:59.469  server.init: Successfully created DataService instance  -  Server - init:407
+  23:09:59.469  server.init: Initializing server managers  -  Server - init:413
+  23:09:59.469  server.init: Successfully created GameManager instance  -  Server - init:424
+  23:09:59.469  server.init: Successfully created InventoryManager instance  -  Server - init:440
+  23:09:59.470  server.init: Successfully created CurrencyManager instance and assigned to _G.CurrencyManager  -  Server - init:457
+  23:09:59.470  CurrencyManager:SetupPlayerHandling - Processing existing player: Xdjpearsonx  -  Server - CurrencyManager:60
+  23:09:59.470  [ItemPurchaseHandler] Successfully required SharedModule  -  Server - ItemPurchaseHandler:47
+  23:09:59.470  [ItemPurchaseHandler] Created PurchaseResult RemoteEvent  -  Server - ItemPurchaseHandler:88
+  23:09:59.470  DEBUG: ItemPurchaseHandler required successfully.  -  Server - ClearMyDataTool:17
+  23:09:59.471  DEBUG: Attempting to require SharedModule...  -  Server - ClearMyDataTool:24
+  23:09:59.471  DEBUG: SharedModule required successfully.  -  Server - ClearMyDataTool:28
+  23:09:59.471  ClearMyDataTool: Successfully got DataService from SharedModule.DataService.  -  Server - ClearMyDataTool:31
+  23:09:59.471  ClearMyDataTool.server.luau loaded in COMMAND MODE.  -  Server - ClearMyDataTool:276
+  23:09:59.471  Available commands:  -  Server - ClearMyDataTool:277
+  23:09:59.471    /clearmydata - Clear your data immediately  -  Server - ClearMyDataTool:278
+  23:09:59.472    /cleardata confirm - Clear your data with confirmation  -  Server - ClearMyDataTool:279
+  23:09:59.472  Tool is now dormant and will only activate when commands are used.  -  Server - ClearMyDataTool:280
+  23:09:59.553  💰 SERVER CurrencyManager: Loaded balance for Xdjpearsonx: 99570 from DataStore (PlayerData)  -  Server - CurrencyManager:177
+  23:09:59.553   ▶ 💰 SERVER CurrencyManager: Firing UpdateBalance remote event for Xdjpearsonx with 99570 currency (x2)  -  Server - CurrencyManager:313
+  23:09:59.554  CurrencyManager:SetupPlayerHandling - Existing player Xdjpearsonx already has a balance entry.  -  Server - CurrencyManager:63
+  23:09:59.554  server.init: Explicitly initialized _G.CurrencyManager instance.  -  Server - init:466
+  23:09:59.554  server.init: _G.IsClearingData is not true. Proceeding with PlacementManager initialization directly.  -  Server - init:568
+  23:09:59.554  server.init: Initializing PlacementManager (actual call)...  -  Server - init:572
+  23:09:59.554  server.init: Initializing PlacementManager (function defined)...  -  Server - init:483
+  23:09:59.554  server.init: Found PlacementManager module in SharedModule. Attempting to create new instance.  -  Server - init:486
+  23:09:59.554  --- PLACEMENT MANAGER .new() CALLED ---  -  Server - PlacementManager:47
+  23:09:59.555  PlacementManager.new: Successfully required UniqueItemIdAssigner  -  Server - PlacementManager:127
+  23:09:59.555  PlacementManager: No legacy PlacedItems folder found, will use World_Items/Placed  -  Server - PlacementManager:178
+  23:09:59.555  server.init: Successfully created PlacementManager instance via SharedModule.PlacementManager.new()  -  Server - init:497
+  23:09:59.555  PlacementManager: Initialize called  -  Server - PlacementManager:207
+  23:09:59.555  PlacementManager: Setting up remote events  -  Server - PlacementManager:2242
+  23:09:59.555  PlacementManager: Using existing remote event: PlaceItem  -  Server - PlacementManager:2267
+  23:09:59.555  PlacementManager: Using existing remote event: ItemPlaced  -  Server - PlacementManager:2267
+  23:09:59.555  PlacementManager: Using existing remote event: RecallItem  -  Server - PlacementManager:2267
+  23:09:59.555  PlacementManager: Using existing remote event: ItemRecalled  -  Server - PlacementManager:2267
+  23:09:59.555  PlacementManager: Created remote event: UpdateItem  -  Server - PlacementManager:2265
+  23:09:59.556  PlacementManager: Created remote event: ItemUpdated  -  Server - PlacementManager:2265
+  23:09:59.556  PlacementManager: Created remote event: DeleteItem  -  Server - PlacementManager:2265
+  23:09:59.556  PlacementManager: Created remote event: ItemDeleted  -  Server - PlacementManager:2265
+  23:09:59.556  PlacementManager: Using existing remote event: RequestMoveItem  -  Server - PlacementManager:2267
+  23:09:59.556  PlacementManager: Created remote event: RequestCloneItem  -  Server - PlacementManager:2265
+  23:09:59.557  PlacementManager: Created remote event: RequestDestroyItem  -  Server - PlacementManager:2265
+  23:09:59.557  PlacementManager: Using existing remote event: CloneItem  -  Server - PlacementManager:2267
+  23:09:59.557  PlacementManager: Using existing remote event: DestroyItem  -  Server - PlacementManager:2267
+  23:09:59.557  PlacementManager: Remote events setup completed  -  Server - PlacementManager:2381
+  23:09:59.557  [PlacementManager] ConnectPlayerEvents method called. Player events should now be connected.  -  Server - PlacementManager:232
+  23:09:59.557  PlacementManager: Initialization completed  -  Server - PlacementManager:227
+  23:09:59.557  server.init: PlacementManager instance initialized successfully  -  Server - init:544
+  23:09:59.557  server.init: Successfully created and initialized PlacementManager instance  -  Server - init:580
+  23:09:59.557  server.init: Successfully created InteractionManager instance  -  Server - init:595
+  23:09:59.558  InteractionManager initialized  -  Server - InteractionManager:14
+  23:09:59.558  server.init: Successfully loaded ItemPurchaseHandler module  -  Server - init:640
+  23:09:59.558  [ItemPurchaseHandler] Setting up command handlers for player: Xdjpearsonx  -  Server - ItemPurchaseHandler:655
+  23:09:59.558  [ItemPurchaseHandler] Connected PurchaseItem event  -  Server - ItemPurchaseHandler:614
+  23:09:59.558  [ItemPurchaseHandler] Connected AddToInventory event  -  Server - ItemPurchaseHandler:624
+  23:09:59.558  [ItemPurchaseHandler] Module initialized successfully  -  Server - ItemPurchaseHandler:642
+  23:09:59.559  server.init: ItemPurchaseHandler initialized successfully  -  Server - init:649
+  23:09:59.559  server.init: Attempting to synchronize CurrencyManager with ItemPurchaseHandler balances for existing players...  -  Server - init:655
+  23:09:59.559  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:113
+  23:09:59.559  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
+  23:09:59.572  PlacementManager: Found event 'UpdateItem' after WaitForChild.  -  Client - PlacementManager:2428
+  23:09:59.572  PlacementManager: Successfully cached remote event: UpdateItem  -  Client - PlacementManager:2434
+  23:09:59.572  PlacementManager: Successfully cached remote event: ItemUpdated  -  Client - PlacementManager:2434
+  23:09:59.572  PlacementManager: Successfully cached remote event: DeleteItem  -  Client - PlacementManager:2434
+  23:09:59.572  PlacementManager: Successfully cached remote event: ItemDeleted  -  Client - PlacementManager:2434
+  23:09:59.572  PlacementManager: Successfully cached remote event: RequestMoveItem  -  Client - PlacementManager:2434
+  23:09:59.572  PlacementManager: CacheRemoteEvents - All expected remote events appear to be cached.  -  Client - PlacementManager:2449
+  23:09:59.573  PlacementManager (Client): Connected OnClientEvent for ItemUpdated.  -  Client - PlacementManager:2481
+  23:09:59.573  PlacementManager: Caching remote events --- MARKER ---  -  Client - PlacementManager:2388
+  23:09:59.573  PlacementManager: Remotes folder found immediately.  -  Client - PlacementManager:2400
+  23:09:59.573  PlacementManager: Successfully cached remote event: PlaceItem  -  Client - PlacementManager:2434
+  23:09:59.573  PlacementManager: Successfully cached remote event: ItemPlaced  -  Client - PlacementManager:2434
+  23:09:59.573  PlacementManager: Successfully cached remote event: RecallItem  -  Client - PlacementManager:2434
+  23:09:59.573  PlacementManager: Successfully cached remote event: ItemRecalled  -  Client - PlacementManager:2434
+  23:09:59.573  PlacementManager: Successfully cached remote event: UpdateItem  -  Client - PlacementManager:2434
+  23:09:59.573  PlacementManager: Successfully cached remote event: ItemUpdated  -  Client - PlacementManager:2434
+  23:09:59.574  PlacementManager: Successfully cached remote event: DeleteItem  -  Client - PlacementManager:2434
+  23:09:59.574  PlacementManager: Successfully cached remote event: ItemDeleted  -  Client - PlacementManager:2434
+  23:09:59.574  PlacementManager: Successfully cached remote event: RequestMoveItem  -  Client - PlacementManager:2434
+  23:09:59.574  PlacementManager: CacheRemoteEvents - All expected remote events appear to be cached.  -  Client - PlacementManager:2449
+  23:09:59.574  PlacementManager (Client): Connected OnClientEvent for ItemUpdated.  -  Client - PlacementManager:2481
+  23:09:59.574  InventoryItemHandler: Called CacheRemoteEvents on new PlacementManager instance.  -  Client - InventoryItemHandler:55
+  23:09:59.574  InventoryItemHandler: PlacementManager initialization logic executed.  -  Client - InventoryItemHandler:71
+  23:09:59.574  InventoryItemHandler: Hooked InventoryUI methods for debugging  -  Client - InventoryItemHandler:100
+  23:09:59.574  InventoryItemHandler: Successfully initialized  -  Client - InventoryItemHandler:461
+  23:09:59.575  Created template: Grass_Cube (BrickColor=Bright green, Material=Grass, Transparency=0)  -  Client - InventoryItemHandler:372
+  23:09:59.575  Created template: Stone_Cube (BrickColor=Medium stone grey, Material=Slate, Transparency=0)  -  Client - InventoryItemHandler:372
+  23:09:59.575  Created template: Wood_Plank (BrickColor=Brown, Material=Wood, Transparency=0)  -  Client - InventoryItemHandler:372
+  23:09:59.575  Created template: Wood_Cube (BrickColor=Brown, Material=Wood, Transparency=0)  -  Client - InventoryItemHandler:372
+  23:09:59.575  Created template: Water_Cube (BrickColor=Bright blue, Material=Water, Transparency=0.30000001192092896)  -  Client - InventoryItemHandler:372
+  23:09:59.576  Created template: Fire_Cube (BrickColor=Bright red, Material=Neon, Transparency=0)  -  Client - InventoryItemHandler:372
+  23:09:59.576  Created template: Brick_Cube (BrickColor=Reddish brown, Material=Brick, Transparency=0)  -  Client - InventoryItemHandler:372
+  23:09:59.576  Created template: Sand_Cube (BrickColor=Brick yellow, Material=Sand, Transparency=0)  -  Client - InventoryItemHandler:372
+  23:09:59.576  Created template: Concrete_Cube (BrickColor=Institutional white, Material=Concrete, Transparency=0)  -  Client - InventoryItemHandler:372
+  23:09:59.576  Created template: Metal_Cube (BrickColor=Medium stone grey, Material=Metal, Transparency=0)  -  Client - InventoryItemHandler:372
+  23:09:59.576  Created template: Glass_Cube (BrickColor=Toothpaste, Material=Glass, Transparency=0.5)  -  Client - InventoryItemHandler:372
+  23:09:59.577  InventoryItemHandler: Created 21 item templates  -  Client - InventoryItemHandler:378
+  23:09:59.577  InventoryItemHandler: Set up inventory item interaction with PlacementManager  -  Client - InventoryItemHandler:319
+  23:09:59.577   ▶ Currency updated: 99570 (x2)  -  Client - CurrencyManager:450
+  23:09:59.637  [ItemPurchaseHandler] Loaded data from DataStore for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
+  23:09:59.637  server.init: Balances for Xdjpearsonx already in sync (CM: 99570, IPH: 99570). No update needed.  -  Server - init:692
+  23:09:59.637  server.init: Synchronization attempt complete.  -  Server - init:705
+  23:09:59.638  CurrencyManager:GetBalance - Successfully retrieved balance for Xdjpearsonx: 99570 currency  -  Server - CurrencyManager:367
+  23:09:59.638  GetMyBalance invoked by Xdjpearsonx (using _G.CurrencyManager), returning balance: 99570  -  Server - init:766
+  23:09:59.638  server.init: PlaceItem remote event already handled by PlacementManager module  -  Server - init:831
+  23:09:59.638  server.init: Connected PurchaseItem remote event handler  -  Server - init:837
+  23:09:59.638  server.init: Using existing RemoteEvent: CloneItem in ReplicatedStorage.Remotes  -  Server - init:77
+  23:09:59.638  server.init: Using existing RemoteEvent: MoveItem in ReplicatedStorage.Remotes  -  Server - init:77
+  23:09:59.638  server.init: Using existing RemoteEvent: DestroyItem in ReplicatedStorage.Remotes  -  Server - init:77
+  23:09:59.638  server.init: Using existing RemoteEvent: RotateItem in ReplicatedStorage.Remotes  -  Server - init:77
+  23:09:59.638  server.init: Legacy CloneItem remote event handler temporarily COMMENTED OUT due to missing processItemActionRequest  -  Server - init:895
+  23:09:59.638  server.init: Legacy DestroyItem remote event handler temporarily COMMENTED OUT due to missing processItemActionRequest  -  Server - init:910
+  23:09:59.639  server.init: RecallItem remote event (standard) handler temporarily COMMENTED OUT due to missing processItemActionRequest. Recall is now directly handled in PlacementManager._SetupRemoteEvents  -  Server - init:968
+  23:09:59.639  Server initialization completed successfully  -  Server - init:971
+  23:09:59.639  Created PlacedItems folder in Workspace  -  Server - init:979
+  23:09:59.639  Created template: Grass_Cube (Bright green, transparency=0)  -  Server - init:1024
+  23:09:59.639  Created template: Stone_Cube (Medium stone grey, transparency=0)  -  Server - init:1024
+  23:09:59.640  Created template: Wood_Plank (Brown, transparency=0)  -  Server - init:1024
+  23:09:59.640  Created template: Water_Cube (Bright blue, transparency=0.30000001192092896)  -  Server - init:1024
+  23:09:59.641  Created template: Fire_Cube (Bright red, transparency=0)  -  Server - init:1024
+  23:09:59.641  Created template: Brick_Cube (Reddish brown, transparency=0)  -  Server - init:1024
+  23:09:59.641  Created template: Sand_Cube (Brick yellow, transparency=0)  -  Server - init:1024
+  23:09:59.641  Created template: Concrete_Cube (Institutional white, transparency=0)  -  Server - init:1024
+  23:09:59.642  Created template: Metal_Cube (Medium stone grey, transparency=0)  -  Server - init:1024
+  23:09:59.642  Created template: Glass_Cube (Toothpaste, transparency=0.5)  -  Server - init:1024
+  23:09:59.642  Server init: Created 19 item templates  -  Server - init:1027
+  23:09:59.642  server.init: Using existing RemoteEvent: RequestCloneItem in ReplicatedStorage.Remotes  -  Server - init:77
+  23:09:59.642  server.init: Using existing RemoteEvent: RequestMoveItem in ReplicatedStorage.Remotes  -  Server - init:77
+  23:09:59.642  server.init: Created new RemoteEvent: RequestRecallItem in ReplicatedStorage.Remotes  -  Server - init:75
+  23:09:59.643  server.init: Using existing RemoteEvent: RequestDestroyItem in ReplicatedStorage.Remotes  -  Server - init:77
+  23:09:59.643  server.init: Created new RemoteEvent: RequestRotateItem in ReplicatedStorage.Remotes  -  Server - init:75
+  23:09:59.643  server.init: Connected RequestCloneItem remote event  -  Server - init:1057
+  23:09:59.643  server.init: Connected RequestMoveItem remote event  -  Server - init:1073
+  23:09:59.643  server.init: Connected RequestRecallItem (COSTED) remote event  -  Server - init:1089
+  23:09:59.643  server.init: Connected RequestDestroyItem remote event  -  Server - init:1104
+  23:09:59.643  server.init: Connected RequestRotateItem remote event  -  Server - init:1120
+  23:09:59.644  server.init: Using existing RemoteEvent: CloneItem in ReplicatedStorage.Remotes  -  Server - init:77
+  23:09:59.644  server.init: Using existing RemoteEvent: MoveItem in ReplicatedStorage.Remotes  -  Server - init:77
+  23:09:59.644  server.init: Using existing RemoteEvent: DestroyItem in ReplicatedStorage.Remotes  -  Server - init:77
+  23:09:59.644  server.init: Using existing RemoteEvent: RotateItem in ReplicatedStorage.Remotes  -  Server - init:77
+  23:09:59.671  [inits.client] Old InteractionSystemModule_new loading DISABLED - using new BottomPurchasePopup system  -  Client - init:141
+  23:09:59.672  Found FixItemTypes module, loading...  -  Client - init:147
+  23:09:59.672  Applying fix for missing item types...  -  Client - FixItemTypes:31
+  23:09:59.674  Found InteractionSystemModule_new, applying fix  -  Client - FixItemTypes:52
+  23:09:59.674  Successfully patched ShowInteractionUI function to handle price formats and admin checks  -  Client - FixItemTypes:134
+  23:09:59.674  Successfully patched Update function  -  Client - FixItemTypes:145
+  23:09:59.674  Successfully patched GetItemInfo function  -  Client - FixItemTypes:413
+  23:09:59.674  FixItemTypes module loaded successfully  -  Client - init:149
+  23:09:59.674  Client initialization completed successfully  -  Client - init:159
+  23:10:01.571  PlacementManager: Loading world data...  -  Server - PlacementManager:1170
+  23:10:01.587  InventoryItemHandler: Found inventory button, adding additional backup connection  -  Client - InventoryItemHandler:113
+  23:10:01.670  PlacementManager: Loaded 5 placed items from storage  -  Server - PlacementManager:1185
+  23:10:01.670  PlacementManager: Getting template for item: Glass_Cube  -  Server - PlacementManager:268
+  23:10:01.670  PlacementManager: Found template in ServerStorage.Items (recursive): Glass_Cube  -  Server - PlacementManager:315
+  23:10:01.671  PlacementManager:LoadWorldData: Processing loaded item. Original itemId: Glass_Cube, instanceId from data: Glass_Cube_7768610061_1747971532  -  Server - PlacementManager:1202
+  23:10:01.671  PlacementManager:LoadWorldData: Updated attributes for Glass_Cube from Constants: priceIngame=5, tier=BASIC  -  Server - PlacementManager:1245
+  23:10:01.937  UniqueItemIdAssigner: Successfully assigned new UniqueItemId: 919 (Previous: 918)  -  Server - UniqueItemIdAssigner:37
+  23:10:01.938  UniqueItemIdAssigner: Assigned new UniqueItemId 919 to new item 'Glass_Cube_7768610061_1747971532'  -  Server - UniqueItemIdAssigner:125
+  23:10:01.938  PlacementManager:LoadWorldData: Assigned UniqueItemId to loaded item 'Glass_Cube_7768610061_1747971532' (InstanceID: Glass_Cube_7768610061_1747971532) as it was missing.  -  Server - PlacementManager:1259
+  23:10:01.938  Parenting placed item Glass_Cube_7768610061_1747971532 to Workspace.World_Items.Placed  -  Server - PlacementManager:1302
+  23:10:01.938  PlacementManager: Getting template for item: Brick_Cube  -  Server - PlacementManager:268
+  23:10:01.938  PlacementManager: Found template in ServerStorage.Items (recursive): Brick_Cube  -  Server - PlacementManager:315
+  23:10:01.939  PlacementManager:LoadWorldData: Processing loaded item. Original itemId: Brick_Cube, instanceId from data: Brick_Cube_7768610061_1747971548  -  Server - PlacementManager:1202
+  23:10:01.939  PlacementManager:LoadWorldData: Updated attributes for Brick_Cube from Constants: priceIngame=5, tier=BASIC  -  Server - PlacementManager:1245
+  23:10:02.120  UniqueItemIdAssigner: Successfully assigned new UniqueItemId: 920 (Previous: 919)  -  Server - UniqueItemIdAssigner:37
+  23:10:02.120  UniqueItemIdAssigner: Assigned new UniqueItemId 920 to new item 'Brick_Cube_7768610061_1747971548'  -  Server - UniqueItemIdAssigner:125
+  23:10:02.121  PlacementManager:LoadWorldData: Assigned UniqueItemId to loaded item 'Brick_Cube_7768610061_1747971548' (InstanceID: Brick_Cube_7768610061_1747971548) as it was missing.  -  Server - PlacementManager:1259
+  23:10:02.121  Parenting placed item Brick_Cube_7768610061_1747971548 to Workspace.World_Items.Placed  -  Server - PlacementManager:1302
+  23:10:02.121  PlacementManager: Getting template for item: Brick_Cube  -  Server - PlacementManager:268
+  23:10:02.121  PlacementManager: Found template in ServerStorage.Items (recursive): Brick_Cube  -  Server - PlacementManager:315
+  23:10:02.121  PlacementManager:LoadWorldData: Processing loaded item. Original itemId: Brick_Cube, instanceId from data: Brick_Cube_7768610061_1747972811  -  Server - PlacementManager:1202
+  23:10:02.121  PlacementManager:LoadWorldData: Updated attributes for Brick_Cube from Constants: priceIngame=5, tier=BASIC  -  Server - PlacementManager:1245
+  23:10:02.304  UniqueItemIdAssigner: Successfully assigned new UniqueItemId: 921 (Previous: 920)  -  Server - UniqueItemIdAssigner:37
+  23:10:02.304  UniqueItemIdAssigner: Assigned new UniqueItemId 921 to new item 'Brick_Cube_7768610061_1747972811'  -  Server - UniqueItemIdAssigner:125
+  23:10:02.304  PlacementManager:LoadWorldData: Assigned UniqueItemId to loaded item 'Brick_Cube_7768610061_1747972811' (InstanceID: Brick_Cube_7768610061_1747972811) as it was missing.  -  Server - PlacementManager:1259
+  23:10:02.305  Parenting placed item Brick_Cube_7768610061_1747972811 to Workspace.World_Items.Placed  -  Server - PlacementManager:1302
+  23:10:02.305  PlacementManager: Getting template for item: Brick_Cube  -  Server - PlacementManager:268
+  23:10:02.305  PlacementManager: Found template in ServerStorage.Items (recursive): Brick_Cube  -  Server - PlacementManager:315
+  23:10:02.305  PlacementManager:LoadWorldData: Processing loaded item. Original itemId: Brick_Cube, instanceId from data: Brick_Cube_7768610061_1747973022  -  Server - PlacementManager:1202
+  23:10:02.306  PlacementManager:LoadWorldData: Updated attributes for Brick_Cube from Constants: priceIngame=5, tier=BASIC  -  Server - PlacementManager:1245
+  23:10:02.453  UniqueItemIdAssigner: Successfully assigned new UniqueItemId: 922 (Previous: 921)  -  Server - UniqueItemIdAssigner:37
+  23:10:02.453  UniqueItemIdAssigner: Assigned new UniqueItemId 922 to new item 'Brick_Cube_7768610061_1747973022'  -  Server - UniqueItemIdAssigner:125
+  23:10:02.453  PlacementManager:LoadWorldData: Assigned UniqueItemId to loaded item 'Brick_Cube_7768610061_1747973022' (InstanceID: Brick_Cube_7768610061_1747973022) as it was missing.  -  Server - PlacementManager:1259
+  23:10:02.453  Parenting placed item Brick_Cube_7768610061_1747973022 to Workspace.World_Items.Placed  -  Server - PlacementManager:1302
+  23:10:02.454  PlacementManager: Getting template for item: Grass_Cube  -  Server - PlacementManager:268
+  23:10:02.454  PlacementManager: Found template in ServerStorage.Items (recursive): Grass_Cube  -  Server - PlacementManager:315
+  23:10:02.454  PlacementManager:LoadWorldData: Processing loaded item. Original itemId: Grass_Cube, instanceId from data: Grass_Cube_7768610061_1747973338  -  Server - PlacementManager:1202
+  23:10:02.454  PlacementManager:LoadWorldData: Updated attributes for Grass_Cube from Constants: priceIngame=5, tier=BASIC  -  Server - PlacementManager:1245
+  23:10:02.603  UniqueItemIdAssigner: Successfully assigned new UniqueItemId: 923 (Previous: 922)  -  Server - UniqueItemIdAssigner:37
+  23:10:02.603  UniqueItemIdAssigner: Assigned new UniqueItemId 923 to new item 'Grass_Cube_7768610061_1747973338'  -  Server - UniqueItemIdAssigner:125
+  23:10:02.604  PlacementManager:LoadWorldData: Assigned UniqueItemId to loaded item 'Grass_Cube_7768610061_1747973338' (InstanceID: Grass_Cube_7768610061_1747973338) as it was missing.  -  Server - PlacementManager:1259
+  23:10:02.604  Parenting placed item Grass_Cube_7768610061_1747973338 to Workspace.World_Items.Placed  -  Server - PlacementManager:1302
+  23:10:02.604  PlacementManager: Successfully spawned 5 world items  -  Server - PlacementManager:1320
+  23:10:02.688  DirectInventoryUI: Using external module implementation instead  -  Client - init:296
+  23:10:11.353  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:113
+  23:10:11.353  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
+  23:10:11.353  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
+  23:10:11.353  GetInventory result for Xdjpearsonx : success=true items=15 currency=99570  -  Server - init:1140
+  23:10:11.371  InventoryUI: Updated inventory with 15 items  -  Client - InventoryUI:579
+  23:10:11.371  InventoryItemHandler: InventoryUI.Show intercepted and called  -  Client - InventoryItemHandler:77
+  23:10:11.372  InventoryUI: Show function called  -  Client - InventoryUI:629
+  23:10:11.372  InventoryUI: Refreshing inventory data  -  Client - InventoryUI:658
+  23:10:11.386  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:113
+  23:10:11.386  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
+  23:10:11.386  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
+  23:10:11.386  GetInventory result for Xdjpearsonx : success=true items=15 currency=99570  -  Server - init:1140
+  23:10:11.403  InventoryUI.RefreshInventory: Retrieved inventory data: 15 items, Currency: 99570  -  Client - InventoryUI:457
+  23:10:11.405  InventoryUI: Updated inventory with 15 items  -  Client - InventoryUI:579
+  23:10:11.405  InventoryUI: Making inventory visible  -  Client - InventoryUI:662
+  23:10:11.405  InventoryUI: Inventory is now visible  -  Client - InventoryUI:673
+  23:10:12.203  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:113
+  23:10:12.203  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
+  23:10:12.204  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
+  23:10:12.204  GetInventory result for Xdjpearsonx : success=true items=15 currency=99570  -  Server - init:1140
+  23:10:12.223  InventoryUI: Updated inventory with 15 items  -  Client - InventoryUI:579
+  23:10:12.224  InventoryItemHandler: InventoryUI.Show intercepted and called  -  Client - InventoryItemHandler:77
+  23:10:12.224  InventoryUI: Show function called  -  Client - InventoryUI:629
+  23:10:12.224  InventoryUI: Refreshing inventory data  -  Client - InventoryUI:658
+  23:10:12.236  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:113
+  23:10:12.236  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
+  23:10:12.236  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
+  23:10:12.236  GetInventory result for Xdjpearsonx : success=true items=15 currency=99570  -  Server - init:1140
+  23:10:12.254  InventoryUI.RefreshInventory: Retrieved inventory data: 15 items, Currency: 99570  -  Client - InventoryUI:457
+  23:10:12.256  InventoryUI: Updated inventory with 15 items  -  Client - InventoryUI:579
+  23:10:12.257  InventoryUI: Making inventory visible  -  Client - InventoryUI:662
+  23:10:12.257  InventoryUI: Inventory is now visible  -  Client - InventoryUI:673
+  23:10:13.556  InventoryUI: Hide function called  -  Client - InventoryUI:678
+  23:10:13.556  InventoryUI: Found frame to hide  -  Client - InventoryUI:694
+  23:10:13.556  InventoryUI: Hide completed  -  Client - InventoryUI:713
+  23:10:13.857  InventoryUI: Frame hidden after tween  -  Client - InventoryUI:701
+  23:10:27.720  
 === PERIODIC MODEL DISPLAY ===  -  Server - ModelDisplayRunner:46
-  23:03:36.602  📁 World_Items (Folder)  -  Server - ModelDisplayUtil:22
-  23:03:36.602    📁 Placed (Folder)  -  Server - ModelDisplayUtil:22
-  23:03:36.602      📋 Brick_Cube_7768610061_1747971548 (1 parts) [description=A basic brick cube building block.] [instanceId=Brick_Cube_7768610061_1747971548] [placedTime=1747971548] [owner=7768610061] [persistent=true] [UniqueItemId=910] [itemId=Brick_Cube] [assetId=rbxassetid://120615102380248] [item=Brick_Cube] [tier=BASIC] [priceIngame=5] [priceRobux=5] [name=Brick Cube] [ItemId=5]   -  Server - ModelDisplayUtil:71
-  23:03:36.602      📋 Brick_Cube_7768610061_1747972811 (1 parts) [description=A basic brick cube building block.] [instanceId=Brick_Cube_7768610061_1747972811] [placedTime=1747972811] [owner=7768610061] [persistent=true] [UniqueItemId=912] [itemId=Brick_Cube] [assetId=rbxassetid://120615102380248] [item=Brick_Cube] [tier=BASIC] [priceIngame=5] [priceRobux=5] [name=Brick Cube] [ItemId=5]   -  Server - ModelDisplayUtil:71
-  23:03:36.602      📋 Glass_Cube_7768610061_1747971532 (1 parts) [description=A basic glass cube building block.] [instanceId=Glass_Cube_7768610061_1747971532] [placedTime=1747971532] [owner=7768610061] [persistent=true] [UniqueItemId=909] [itemId=Glass_Cube] [assetId=rbxassetid://83368835795295] [item=Glass_Cube] [tier=BASIC] [priceIngame=5] [priceRobux=5] [name=Glass Cube] [ItemId=6]   -  Server - ModelDisplayUtil:71
-  23:03:36.603    📁 Static (Folder)  -  Server - ModelDisplayUtil:22
-  23:03:36.603      📁 Teleport Portals (Folder)  -  Server - ModelDisplayUtil:22
-  23:03:36.603        📋 PortalBlue (6 parts) [item=secondary] [name=Teleport Portals]   -  Server - ModelDisplayUtil:71
-  23:03:36.603        📋 PortalRed (6 parts) [item=secondary] [name=Teleport Portals]   -  Server - ModelDisplayUtil:71
-  23:03:36.603        ❓ Script (Script)  -  Server - ModelDisplayUtil:81
-  23:03:36.604      📋 Level 3 House (375 parts) [ModelDisplayUtil_LastSeen=1747973016] [ModelDisplayUtil_Tracked=true]   -  Server - ModelDisplayUtil:71
-  23:03:36.605      📋 Rare House (369 parts) [ModelDisplayUtil_LastSeen=1747973016] [ModelDisplayUtil_Tracked=true]   -  Server - ModelDisplayUtil:71
-  23:03:36.605      📋 Trampoline (6 parts) [ModelDisplayUtil_LastSeen=1747973016] [ModelDisplayUtil_Tracked=true]   -  Server - ModelDisplayUtil:71
-  23:03:36.605      📋 Trampoline (6 parts) [ModelDisplayUtil_LastSeen=1747972986] [ModelDisplayUtil_Tracked=true]   -  Server - ModelDisplayUtil:71
-  23:03:36.605  =============================
+  23:10:27.720  📁 World_Items (Folder)  -  Server - ModelDisplayUtil:22
+  23:10:27.720    📁 Placed (Folder)  -  Server - ModelDisplayUtil:22
+  23:10:27.720      📋 Brick_Cube_7768610061_1747971548 (1 parts) [description=A basic brick cube building block.] [instanceId=Brick_Cube_7768610061_1747971548] [placedTime=1747971548] [owner=7768610061] [persistent=true] [UniqueItemId=920] [itemId=Brick_Cube] [assetId=rbxassetid://120615102380248] [item=Brick_Cube] [tier=BASIC] [priceIngame=5] [priceRobux=5] [name=Brick Cube] [ItemId=5]   -  Server - ModelDisplayUtil:71
+  23:10:27.720      📋 Brick_Cube_7768610061_1747972811 (1 parts) [description=A basic brick cube building block.] [instanceId=Brick_Cube_7768610061_1747972811] [placedTime=1747972811] [owner=7768610061] [persistent=true] [UniqueItemId=921] [itemId=Brick_Cube] [assetId=rbxassetid://120615102380248] [item=Brick_Cube] [tier=BASIC] [priceIngame=5] [priceRobux=5] [name=Brick Cube] [ItemId=5]   -  Server - ModelDisplayUtil:71
+  23:10:27.720      📋 Brick_Cube_7768610061_1747973022 (1 parts) [description=A basic brick cube building block.] [instanceId=Brick_Cube_7768610061_1747973022] [placedTime=1747973022] [owner=7768610061] [persistent=true] [UniqueItemId=922] [itemId=Brick_Cube] [assetId=rbxassetid://120615102380248] [item=Brick_Cube] [tier=BASIC] [priceIngame=5] [priceRobux=5] [name=Brick Cube] [ItemId=5]   -  Server - ModelDisplayUtil:71
+  23:10:27.720      📋 Glass_Cube_7768610061_1747971532 (1 parts) [description=A basic glass cube building block.] [instanceId=Glass_Cube_7768610061_1747971532] [placedTime=1747971532] [owner=7768610061] [persistent=true] [UniqueItemId=919] [itemId=Glass_Cube] [assetId=rbxassetid://83368835795295] [item=Glass_Cube] [tier=BASIC] [priceIngame=5] [priceRobux=5] [name=Glass Cube] [ItemId=6]   -  Server - ModelDisplayUtil:71
+  23:10:27.721      📋 Grass_Cube_7768610061_1747973338 (1 parts) [description=A basic grass cube building block.] [instanceId=Grass_Cube_7768610061_1747973338] [placedTime=1747973338] [owner=7768610061] [persistent=true] [UniqueItemId=923] [itemId=Grass_Cube] [assetId=rbxassetid://110439433453247] [item=Grass_Cube] [tier=BASIC] [priceIngame=5] [priceRobux=5] [name=Grass Cube] [ItemId=3]   -  Server - ModelDisplayUtil:71
+  23:10:27.721    📁 Static (Folder)  -  Server - ModelDisplayUtil:22
+  23:10:27.721      📁 Teleport Portals (Folder)  -  Server - ModelDisplayUtil:22
+  23:10:27.721        📋 PortalBlue (6 parts) [item=secondary] [name=Teleport Portals]   -  Server - ModelDisplayUtil:71
+  23:10:27.721        📋 PortalRed (6 parts) [item=secondary] [name=Teleport Portals]   -  Server - ModelDisplayUtil:71
+  23:10:27.721        ❓ Script (Script)  -  Server - ModelDisplayUtil:81
+  23:10:27.723      📋 Level 3 House (375 parts) [ModelDisplayUtil_LastSeen=1747973427] [ModelDisplayUtil_Tracked=true]   -  Server - ModelDisplayUtil:71
+  23:10:27.723      📋 Rare House (369 parts) [ModelDisplayUtil_LastSeen=1747973427] [ModelDisplayUtil_Tracked=true]   -  Server - ModelDisplayUtil:71
+  23:10:27.724      📋 Trampoline (6 parts) [ModelDisplayUtil_LastSeen=1747973427] [ModelDisplayUtil_Tracked=true]   -  Server - ModelDisplayUtil:71
+  23:10:27.724      📋 Trampoline (6 parts) [ModelDisplayUtil_LastSeen=1747973397] [ModelDisplayUtil_Tracked=true]   -  Server - ModelDisplayUtil:71
+  23:10:27.724  =============================
   -  Server - ModelDisplayRunner:48
-  23:03:37.352  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:113
-  23:03:37.352  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:37.352  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:37.352  GetInventory result for Xdjpearsonx : success=true items=15 currency=99570  -  Server - init:1140
-  23:03:37.370  InventoryUI: Updated inventory with 15 items  -  Client - InventoryUI:579
-  23:03:37.370  InventoryItemHandler: InventoryUI.Show intercepted and called  -  Client - InventoryItemHandler:77
-  23:03:37.370  InventoryUI: Show function called  -  Client - InventoryUI:629
-  23:03:37.371  InventoryUI: Refreshing inventory data  -  Client - InventoryUI:658
-  23:03:37.385  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:113
-  23:03:37.386  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:37.386  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:37.386  GetInventory result for Xdjpearsonx : success=true items=15 currency=99570  -  Server - init:1140
-  23:03:37.402  InventoryUI.RefreshInventory: Retrieved inventory data: 15 items, Currency: 99570  -  Client - InventoryUI:457
-  23:03:37.405  InventoryUI: Updated inventory with 15 items  -  Client - InventoryUI:579
-  23:03:37.405  InventoryUI: Making inventory visible  -  Client - InventoryUI:662
-  23:03:37.405  InventoryUI: Inventory is now visible  -  Client - InventoryUI:673
-  23:03:39.136  InventoryUI: Hide function called  -  Client - InventoryUI:678
-  23:03:39.136  InventoryUI: Found frame to hide  -  Client - InventoryUI:694
-  23:03:39.136  InventoryUI: Hide completed  -  Client - InventoryUI:713
-  23:03:39.253  InventoryItemHandler: Item selected from inventory: Brick_Cube  -  Client - InventoryItemHandler:299
-  23:03:39.253  InventoryItemHandler: Fixed movement for character  -  Client - InventoryItemHandler:144
-  23:03:39.253  InventoryItemHandler: Item count: 2  -  Client - InventoryItemHandler:306
-  23:03:39.253  PlacementManager: Recalling item from inventory: Brick_Cube  -  Client - PlacementManager:2169
-  23:03:39.254  PlacementManager: Showing item in hand: Brick_Cube  -  Client - PlacementManager:2037
-  23:03:39.254  PlacementManager: Getting template for item: Brick_Cube  -  Client - PlacementManager:268
-  23:03:39.254  PlacementManager (Client): Found template in ReplicatedStorage.ItemTemplates: Brick_Cube  -  Client - PlacementManager:276
-  23:03:39.421  InventoryUI: Frame hidden after tween  -  Client - InventoryUI:701
-  23:03:40.104  PlacementManager: Clearing item from hand: HandItem_Brick_Cube  -  Client - PlacementManager:2224
-  23:03:40.105  PlacementManager:ResetPlacementState called  -  Client - PlacementManager:3412
-  23:03:40.105  RotationControlsUI: Hidden  -  Client - RotationControlsUI:134
-  23:03:40.105  PlacementManager: All placement/move/rotate states and connections reset.  -  Client - PlacementManager:3463
-  23:03:40.105  ResetPlacementState - EXITING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:3465
-  23:03:40.105  PlacementManager: All placement/move/rotate states and connections reset.  -  Client - PlacementManager:3470
-  23:03:40.105  PlacementManager: Client StartPlacing for item: Brick_Cube  -  Client - PlacementManager:1734
-  23:03:40.106  PlacementManager: Creating preview item for: Brick_Cube  -  Client - PlacementManager:1839
-  23:03:40.106  PlacementManager: Getting template for item: Brick_Cube  -  Client - PlacementManager:268
-  23:03:40.106  PlacementManager (Client): Found template in ReplicatedStorage.ItemTemplates: Brick_Cube  -  Client - PlacementManager:276
-  23:03:40.107  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.108  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.108  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.126  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.127  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.127  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.140  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.140  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.141  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.156  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.156  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.157  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.171  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.171  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.172  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.191  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.191  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.192  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.209  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.210  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.210  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.224  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.225  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.225  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.240  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.240  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.241  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.261  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.261  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.262  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.273  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.273  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.274  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.288  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.288  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.289  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.306  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.307  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.307  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.327  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.328  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.328  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.338  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.338  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.339  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.358  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.359  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.359  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.375  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.375  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.375  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.387  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.387  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.387  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.408  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.409  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.409  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.421  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.422  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.422  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.439  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.439  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.439  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.455  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.456  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.456  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.475  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.475  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.475  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.492  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.492  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.492  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.509  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.509  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.510  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.525  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.525  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.526  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.542  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.542  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.543  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.560  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.560  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.560  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.577  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.577  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.577  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.593  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.593  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.593  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.611  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.611  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.611  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.626  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.626  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.626  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.639  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.639  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.640  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.656  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.657  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.657  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.674  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.674  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.674  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.694  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.694  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.695  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.704  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.704  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.704  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.725  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.725  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.726  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.742  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.742  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.743  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.754  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.754  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.754  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.774  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.774  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.775  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.792  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.792  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.792  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.809  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.809  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.809  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.821  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.822  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.822  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.841  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.841  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.842  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.856  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.856  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.857  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.872  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.872  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.872  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.889  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.889  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.889  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.905  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.905  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.905  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.921  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.921  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.921  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.939  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.940  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.940  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.955  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.956  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.956  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.972  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.972  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.973  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:40.989  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:40.989  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:40.989  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.004  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.004  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.005  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.021  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.021  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.021  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.039  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.039  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.039  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.055  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.055  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.055  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.071  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.071  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.072  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.087  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.087  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.087  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.105  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.105  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.106  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.121  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.121  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.122  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.138  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.138  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.138  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.155  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.155  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.155  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.171  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.171  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.171  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.186  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.186  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.186  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.204  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.204  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.205  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.220  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.220  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.221  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.237  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.238  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.238  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.255  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.255  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.255  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.274  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.274  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.274  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.289  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.289  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.289  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.305  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.305  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.306  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.320  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.320  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.320  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.337  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.337  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.337  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.354  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.354  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.354  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.371  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.371  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.371  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.388  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.388  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.388  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.405  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.405  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.405  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.420  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.420  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.421  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.437  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.438  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.438  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.454  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.454  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.454  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.470  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.471  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.471  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.487  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.488  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.488  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.504  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.505  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.505  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.521  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.521  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.521  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.538  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.538  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.538  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.556  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.556  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.557  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.572  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.572  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.573  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.587  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.587  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.587  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.603  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.603  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.604  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.621  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.621  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.622  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.637  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.637  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.637  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.655  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.655  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.655  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.671  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.671  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.671  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.688  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.688  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.688  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.705  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.705  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.705  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.721  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.721  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.721  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.737  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.737  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.737  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.755  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.755  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.755  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.771  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.771  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.772  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.788  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.788  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.788  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.803  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.803  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.803  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.821  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.821  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.821  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.838  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.838  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.838  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.854  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.854  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.855  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.871  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.871  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.871  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.889  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.889  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.889  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.906  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.906  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.906  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.923  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.923  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.923  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.942  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.942  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.942  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.954  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.954  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.954  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.971  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.971  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.971  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:41.987  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:41.987  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:41.987  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:42.003  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:42.003  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:42.003  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:42.021  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:42.021  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:42.021  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:42.038  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:42.038  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:42.038  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:42.053  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:42.053  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:42.053  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:42.071  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:42.071  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:42.071  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:42.087  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:42.087  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:42.088  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:42.104  UpdatePlacementPreview - ENTERING - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1893
-  23:03:42.104  UpdatePlacementPreview - AFTER EARLY NIL CHECK - Angles X: 0, Y: 0, Z: 0  -  Client - PlacementManager:1910
-  23:03:42.104  DEBUG_ANGLES_BEFORE_RAD_CALL: X= 0 Y= 0 Z= 0  -  Client - PlacementManager:2024
-  23:03:42.122  PlacementManager: StartPlacing - About to fire PlaceItem. self.remotes.PlaceItem is: PlaceItem  -  Client - PlacementManager:1789
-  23:03:42.122  PlacementManager: Requested server to place item: Brick_Cube  -  Client - PlacementManager:1792
-  23:03:42.122  PlacementManager: Clearing preview item: Preview_Brick_Cube  -  Client - PlacementManager:2231
-  23:03:42.151  PlacementManager: PlaceItem event received from Xdjpearsonx  -  Server - PlacementManager:2294
-  23:03:42.151  PlacementManager: PlaceItem called by Xdjpearsonx for item Brick_Cube  -  Server - PlacementManager:516
-  23:03:42.152  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:113
-  23:03:42.152  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:42.152  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:42.152  PlacementManager: Got player data from ItemPurchaseHandler directly  -  Server - PlacementManager:1011
-  23:03:42.152  PlacementManager: Getting template for item: Brick_Cube  -  Server - PlacementManager:268
-  23:03:42.152  PlacementManager: Found template in ServerStorage.Items (recursive): Brick_Cube  -  Server - PlacementManager:315
-  23:03:42.153  PLACEMENT: Cloned template: Brick_Cube -> Brick_Cube  -  Server - PlacementManager:550
-  23:03:42.153  PlacementManager: Using fallback instanceId generation: Brick_Cube_7768610061_1747973022  -  Server - PlacementManager:575
-  23:03:42.153  PlacementManager: Set priceIngame attribute to: 5 for item: Brick_Cube  -  Server - PlacementManager:590
-  23:03:42.468  UniqueItemIdAssigner: Successfully assigned new UniqueItemId: 913 (Previous: 912)  -  Server - UniqueItemIdAssigner:37
-  23:03:42.469  UniqueItemIdAssigner: Assigned new UniqueItemId 913 to new item 'Brick_Cube_7768610061_1747973022'  -  Server - UniqueItemIdAssigner:125
-  23:03:42.469  Parenting placed item Brick_Cube_7768610061_1747973022 to Workspace.World_Items.Placed  -  Server - PlacementManager:648
-  23:03:42.469  PlacementManager: Attempting to remove 1 x Brick_Cube from inventory of Xdjpearsonx  -  Server - PlacementManager:1329
-  23:03:42.469  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:113
-  23:03:42.469  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:42.469  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:42.470  [ItemPurchaseHandler] SavePlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:42.470  [ItemPurchaseHandler] Saving data for: Xdjpearsonx Currency: 99570 Inventory count: 15  -  Server - ItemPurchaseHandler:95
-  23:03:42.635  Saved player data for Xdjpearsonx  -  Server - ItemPurchaseHandler:210
-  23:03:42.635  [ItemPurchaseHandler] Removed 1 x Brick_Cube from Xdjpearsonx 's inventory  -  Server - ItemPurchaseHandler:427
-  23:03:42.635  PlacementManager: Successfully removed 1 x Brick_Cube using ItemPurchaseHandler directly  -  Server - PlacementManager:1374
-  23:03:42.635  PlacementManager: Notified client of placed item: Brick_Cube  -  Server - PlacementManager:662
-  23:03:42.635  PlacementManager: Saving world data...  -  Server - PlacementManager:1085
-  23:03:42.635  PlacementManager: Saving 4 placed items  -  Server - PlacementManager:1153
-  23:03:42.802  DataService: Successfully saved data for WorldData WorldPlacedItems  -  Server - DataService:91
-  23:03:42.803  PlacementManager: World data saved successfully  -  Server - PlacementManager:1158
-  23:03:47.738  --- ItemInteractionClient:TryInteract() CALLED ---  -  Client - ItemInteractionClient:825
-  23:03:47.738  --- ItemInteractionClient:TryInteract() - Using currentTarget: Workspace.World_Items.Placed.Brick_Cube_7768610061_1747973022 ---  -  Client - ItemInteractionClient:846
-  23:03:47.739  --- ItemInteractionClient:TryInteract() - Target is a WORLD item. Calling InteractWithWorldItem. ---  -  Client - ItemInteractionClient:867
-  23:03:47.739  --- ItemInteractionClient:InteractWithWorldItem() CALLED ---  -  Client - ItemInteractionClient:950
-  23:03:47.739  --- ItemInteractionClient:InteractWithWorldItem() - Target: Workspace.World_Items.Placed.Brick_Cube_7768610061_1747973022, ItemID: Brick_Cube, ItemName: Brick Cube, InstanceID: Brick_Cube_7768610061_1747973022 ---  -  Client - ItemInteractionClient:961
-  23:03:47.739  ItemInteractionClient: Interacting with world item. Name: Brick_Cube_7768610061_1747973022, ItemID: Brick_Cube, InstanceID: Brick_Cube_7768610061_1747973022  -  Client - ItemInteractionClient:970
-  23:03:47.739  --- ItemInteractionClient:InteractWithWorldItem() - Using PlacedItemDialog.Show ---  -  Client - ItemInteractionClient:973
-  23:03:47.740  --- ItemInteractionClient:InteractWithWorldItem() - PlacedItemDialog.Show completed ---  -  Client - ItemInteractionClient:977
-  23:03:49.419  ItemInteractionClient: PlacedItemDialog action - clone on Brick_Cube (cost: 5)  -  Client - ItemInteractionClient:144
-  23:03:49.419  UndoManager: Recorded clone action (ID: 603231)  -  Client - UndoManager:179
-  23:03:49.419  ItemInteractionClient: Recorded 'clone' action for undo  -  Client - ItemInteractionClient:1156
-  23:03:49.419  ItemInteractionClient: PlacedItemDialog.OnActionSelected - ItemID: Brick_Cube, ActionKey: clone, Cost: 5  -  Client - ItemInteractionClient:303
-  23:03:49.419  Using CloneItem remote event with instanceId: Brick_Cube_7768610061_1747973022  -  Client - ItemInteractionClient:337
-  23:03:49.453  PlacementManager: Legacy CloneItem event received from Xdjpearsonx  -  Server - PlacementManager:2346
-  23:03:49.453  PlacementManager:HandleCloneItemRequest CALLED for item: Brick_Cube_7768610061_1747973022 by player Xdjpearsonx (cost: 5, originalId: nil)  -  Server - PlacementManager:2491
-  23:03:49.453  PlacementManager:HandleCloneItemRequest - Successfully required ItemPurchaseHandler dynamically.  -  Server - PlacementManager:2514
-  23:03:49.453  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:113
-  23:03:49.453  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:49.454  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:49.454  [ItemPurchaseHandler] SavePlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:49.454  [ItemPurchaseHandler] Saving data for: Xdjpearsonx Currency: 99570 Inventory count: 15  -  Server - ItemPurchaseHandler:95
-  23:03:49.717  Saved player data for Xdjpearsonx  -  Server - ItemPurchaseHandler:210
-  23:03:49.718  [ItemPurchaseHandler] Added 1 x Brick_Cube to Xdjpearsonx 's inventory  -  Server - ItemPurchaseHandler:362
-  23:03:49.718  PlacementManager:HandleCloneItemRequest - Successfully added item 'Brick_Cube' to inventory for player Xdjpearsonx  -  Server - PlacementManager:2539
-  23:03:49.752   ▶ InventoryUI: Item added to inventory: Brick_Cube (x3)  -  Client - InventoryUI:400
-  23:03:49.769  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:113
-  23:03:49.769  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:49.770  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:49.770  GetInventory result for Xdjpearsonx : success=true items=15 currency=99570  -  Server - init:1140
-  23:03:49.770  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:113
-  23:03:49.770  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:49.770  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:49.770  GetInventory result for Xdjpearsonx : success=true items=15 currency=99570  -  Server - init:1140
-  23:03:49.771  [ItemPurchaseHandler] GetPlayerData called for Xdjpearsonx  -  Server - ItemPurchaseHandler:113
-  23:03:49.771  [ItemPurchaseHandler] LoadPlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:49.771  [ItemPurchaseHandler] Using cached data for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
-  23:03:49.771  GetInventory result for Xdjpearsonx : success=true items=15 currency=99570  -  Server - init:1140
-  23:03:49.786  InventoryUI.RefreshInventory: Retrieved inventory data: 15 items, Currency: 99570  -  Client - InventoryUI:457
-  23:03:49.788  InventoryUI: Updated inventory with 15 items  -  Client - InventoryUI:579
-  23:03:49.801  InventoryUI.RefreshInventory: Retrieved inventory data: 15 items, Currency: 99570  -  Client - InventoryUI:457
-  23:03:49.804  InventoryUI: Updated inventory with 15 items  -  Client - InventoryUI:579
-  23:03:49.818  InventoryUI.RefreshInventory: Retrieved inventory data: 15 items, Currency: 99570  -  Client - InventoryUI:457
-  23:03:49.822  InventoryUI: Updated inventory with 15 items  -  Client - InventoryUI:579
+  23:10:45.896  Disconnect from ::ffff:127.0.0.1|65486  -  Studio
+  23:10:45.902  Player leaving: Xdjpearsonx  -  Server - init:938
+  23:10:45.902  [ItemPurchaseHandler] SavePlayerData called for: Xdjpearsonx  -  Server - ItemPurchaseHandler:95
+  23:10:45.902  [ItemPurchaseHandler] Saving data for: Xdjpearsonx Currency: 99570 Inventory count: 15  -  Server - ItemPurchaseHandler:95
+  23:10:45.903  DataService: Performing auto-save of all data  -  Server - DataService:234
+  23:10:45.985  DataStore request was added to queue. If request queue fills, further requests will be dropped. Try sending fewer requests.Key = Player_7768610061  -  Studio
+  23:10:46.152  Saved player data for Xdjpearsonx  -  Server - ItemPurchaseHandler:210
+  23:10:46.152  [ItemPurchaseHandler] Removed player from command handler tracking: Xdjpearsonx  -  Server - ItemPurchaseHandler:572
+  23:10:46.152  DataService: Successfully saved data for WorldData WorldPlacedItems  -  Server - DataService:91
+  23:10:46.152  DataService: Auto-save completed  -  Server - DataService:242
