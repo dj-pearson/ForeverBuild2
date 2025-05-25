@@ -112,8 +112,7 @@ function ItemInteractionClient:Initialize()
     -- Initialize the bottom purchase popup system
     self.bottomPurchasePopup:Initialize()
     
-    -- Initialize GridSnapSystem
-    self:InitializeGridSnapSystem()
+
     
     -- Set up input handling
     self:SetupInputHandling()
@@ -556,7 +555,7 @@ function ItemInteractionClient:SetupInputHandling()
                 
                 -- Set up raycast parameters
                 local raycastParams = RaycastParams.new()
-                raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+                raycastParams.FilterType = Enum.RaycastFilterType.Exclude
                 raycastParams.FilterDescendantsInstances = {player.Character}
                 
                 -- Cast ray
@@ -1308,40 +1307,7 @@ function ItemInteractionClient:FindItemByInstanceId(instanceId)
     return nil
 end
 
-function ItemInteractionClient:InitializeGridSnapSystem()
-    print("ItemInteractionClient: Initializing GridSnapSystem...")
-    
-    -- Require the GridSnapSystem module
-    local success, GridSnapSystem = pcall(function()
-        return require(script.Parent.Parent.placement.GridSnapSystem)
-    end)
-    
-    if not success then
-        warn("ItemInteractionClient: Failed to require GridSnapSystem module:", GridSnapSystem)
-        return false
-    end
-    
-    -- Create new GridSnapSystem instance
-    self.gridSnapSystem = GridSnapSystem.new()
-    if self.gridSnapSystem then
-        local initSuccess = self.gridSnapSystem:Initialize()
-        if initSuccess then
-            print("ItemInteractionClient: GridSnapSystem initialized successfully")
-            -- Store reference globally for easy access
-            _G.GridSnapSystem = self.gridSnapSystem
-            
-            -- Show notification about grid snap controls
-            self:ShowNotification("Grid Snap: Press G to toggle, Shift+G to cycle sizes", 4)
-            return true
-        else
-            warn("ItemInteractionClient: Failed to initialize GridSnapSystem")
-        end
-    else
-        warn("ItemInteractionClient: Failed to create GridSnapSystem instance")
-    end
-    
-    return false
-end
+
 
 function ItemInteractionClient:InitializeUndoManager()
     print("ItemInteractionClient: Initializing UndoManager...")

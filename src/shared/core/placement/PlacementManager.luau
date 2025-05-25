@@ -23,7 +23,6 @@ end
 -- Configuration
 local PLACED_ITEMS_FOLDER_NAME = "World_Items" -- Use the existing World_Items folder
 local MAX_PLACEMENT_DISTANCE = 20
-local GRID_SIZE = 1 -- For grid snapping
 
 -- Attempt to require UniqueItemIdAssigner
 local UniqueItemIdAssigner
@@ -272,7 +271,7 @@ end
 -- Get an item template from ReplicatedStorage or other sources
 function PlacementManager:GetItemTemplate(itemId)
     print("PlacementManager: Getting template for item:", itemId)
-
+    
     if RunService:IsClient() then
         -- Client-side: Only check ReplicatedStorage.ItemTemplates
         local templatesFolder = ReplicatedStorage:FindFirstChild("ItemTemplates")
@@ -1733,7 +1732,7 @@ end
 -- Client: Start the item placement process
 function PlacementManager:StartPlacing(itemId, existingPreviewItem)
     if RunService:IsServer() then return false end
-
+    
     self:ClearItemFromHand() -- ADDED: Explicitly clear hand item first
     self:ResetPlacementState() -- Ensure clean state
 
@@ -1741,7 +1740,7 @@ function PlacementManager:StartPlacing(itemId, existingPreviewItem)
 
     -- Clear any existing preview item (ResetPlacementState should handle this, but good to be sure)
     -- self:ClearItemFromHand() -- ClearItemFromHand is called by ResetPlacementState
-
+    
     -- Set placing state
     self.isPlacing = true
     self.selectedItem = itemId
@@ -1911,7 +1910,7 @@ function PlacementManager:UpdatePlacementPreview()
     local camera = Workspace.CurrentCamera
     if not camera then return end
     local mouse = player:GetMouse()
-
+    
     -- Get initial hit position quickly for position change check
     local viewportMouseRay = camera:ViewportPointToRay(mouse.X, mouse.Y)
     local rayOrigin = viewportMouseRay.Origin
@@ -1950,9 +1949,9 @@ function PlacementManager:UpdatePlacementPreview()
     local newPosition
     local newOrientation
 
-    -- Get item size for grid snap system
+    -- Get item size for placement calculations
     local itemSize = Vector3.new(4, 4, 4) -- Default size
-    if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
+        if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
         itemSize = self.previewItem.PrimaryPart.Size
     elseif self.previewItem:IsA("BasePart") then
         itemSize = self.previewItem.Size
@@ -1975,26 +1974,7 @@ function PlacementManager:UpdatePlacementPreview()
         if typeof(targetNormal) == "Vector3" then
             local basePosition = hitPosition + targetNormal * (itemSizeY / 2)
             
-            -- Apply grid snapping with collision detection
-            local gridSnapSystem = _G.GridSnapSystem
-            if gridSnapSystem then
-                local snappedPosition, _, hasCollision, collidingObject = gridSnapSystem:ProcessPlacement(
-                    basePosition, 
-                    newOrientation, 
-                    itemSize, 
-                    self.itemBeingMovedInstance
-                )
-                newPosition = snappedPosition
-                
-                -- Visual feedback for collision
-                if hasCollision then
-                    self:_UpdatePreviewCollisionFeedback(true, collidingObject)
-                else
-                    self:_UpdatePreviewCollisionFeedback(false)
-                end
-            else
-                newPosition = basePosition
-            end
+            newPosition = basePosition
         else
             -- Fallback if targetNormal is somehow not a Vector3
             newPosition = hitPosition
@@ -2007,13 +1987,7 @@ function PlacementManager:UpdatePlacementPreview()
         if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then itemSizeY = self.previewItem.PrimaryPart.Size.Y
         elseif self.previewItem:IsA("BasePart") then itemSizeY = self.previewItem.Size.Y end
 
-        if self.snapToGrid then
-            newPosition = Vector3.new(
-                math.floor(hitPosition.X / GRID_SIZE + 0.5) * GRID_SIZE,
-                math.floor(hitPosition.Y / GRID_SIZE + 0.5) * GRID_SIZE + (itemSizeY / 2),
-                math.floor(hitPosition.Z / GRID_SIZE + 0.5) * GRID_SIZE
-            )
-        else
+
             -- Ensure targetNormal is a valid Vector3 before using it for complex CFrame math
             if typeof(targetNormal) == "Vector3" and targetNormal.Magnitude > 0.001 then
                 local upVector = targetNormal
@@ -2029,33 +2003,12 @@ function PlacementManager:UpdatePlacementPreview()
                 
                 local basePosition = hitPosition + targetNormal * (itemSizeY / 2)
                 
-                -- Apply advanced grid snapping system
-                local gridSnapSystem = _G.GridSnapSystem
-                if gridSnapSystem then
-                    local snappedPosition, snappedRotation, hasCollision, collidingObject = gridSnapSystem:ProcessPlacement(
-                        basePosition, 
-                        newOrientation, 
-                        itemSize, 
-                        nil -- No instance to exclude for new placements
-                    )
-                    newPosition = snappedPosition
-                    newOrientation = snappedRotation
-                    
-                    -- Visual feedback for collision
-                    if hasCollision then
-                        self:_UpdatePreviewCollisionFeedback(true, collidingObject)
-                    else
-                        self:_UpdatePreviewCollisionFeedback(false)
-                    end
-                else
-                    newPosition = basePosition
-                end
+                newPosition = basePosition
             else
                 -- Fallback if targetNormal is invalid
                 newOrientation = CFrame.Angles(0, math.rad(self.currentAngleY), 0)
                 newPosition = hitPosition
             end
-        end
     end
 
     -- Final position assignment and CFrame update
@@ -3829,7 +3782,7 @@ function PlacementManager:_UpdatePreviewCollisionFeedback(hasCollision, collidin
         
         -- Optional: Add collision warning text or effect
         if collidingObject then
-            print("GridSnap: Collision detected with", collidingObject.Name or "unknown object")
+            print("Collision detected with", collidingObject.Name or "unknown object")
         end
     else
         -- Show green highlight for valid placement
