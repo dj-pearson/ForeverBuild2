@@ -1,11 +1,13 @@
 -- BottomPurchasePopup.luau
 -- Clean bottom purchase popup system that matches the user's existing UI style
 -- Enhanced with Line of Sight detection to prevent prompts through walls
+-- Enhanced with E-key purchase support for crowded areas
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 
 -- Import LineOfSightChecker
 local LineOfSightChecker
@@ -39,6 +41,16 @@ if not success then
     }
 end
 
+-- Try to get currency manager
+local CurrencyManager
+local currencySuccess = pcall(function()
+    CurrencyManager = SharedModule.CurrencyManager
+end)
+
+if not currencySuccess then
+    warn("BottomPurchasePopup: Could not load CurrencyManager")
+end
+
 local BottomPurchasePopup = {}
 BottomPurchasePopup.__index = BottomPurchasePopup
 
@@ -57,6 +69,10 @@ function BottomPurchasePopup.new()
     self.currentStoreItem = nil
     self.currentPopup = nil
     self.enabled = true
+    
+    -- E-key purchase state
+    self.eKeyEnabled = true
+    self.currentItemData = nil
     
     -- Connection tracking
     self.connections = {}
@@ -82,6 +98,9 @@ end
 function BottomPurchasePopup:Initialize()
     print("BottomPurchasePopup: Initializing...")
     
+    -- Setup E-key input handling
+    self:SetupEKeyInput()
+    
     -- Start the main update loop with dynamic update rates
     local heartbeatConnection = RunService.Heartbeat:Connect(function()
         local now = tick()
@@ -96,8 +115,151 @@ function BottomPurchasePopup:Initialize()
     end)
     table.insert(self.connections, heartbeatConnection)
     
-    print("BottomPurchasePopup: Ready! Small unobtrusive popup system active.")
+    print("BottomPurchasePopup: Ready! Small unobtrusive popup system active with E-key support.")
     return true
+end
+
+-- Setup E-key input handling
+function BottomPurchasePopup:SetupEKeyInput()
+    local inputConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        if input.KeyCode == Enum.KeyCode.E and self.eKeyEnabled then
+            if self.currentStoreItem and self.currentItemData then
+                self:HandleEKeyPurchase()
+            end
+        end
+    end)
+    table.insert(self.connections, inputConnection)
+    
+    print("BottomPurchasePopup: E-key purchase system enabled")
+end
+
+-- Handle E-key purchase
+function BottomPurchasePopup:HandleEKeyPurchase()
+    if not self.currentStoreItem or not self.currentItemData then
+        return
+    end
+    
+    local currentCoins = self:GetPlayerCoins()
+    local itemPrice = self.currentItemData.coinPrice or 5
+    
+    print("BottomPurchasePopup: E-key pressed - Player has", currentCoins, "coins, item costs", itemPrice)
+    
+    if currentCoins >= itemPrice then
+        -- Player can afford it - proceed with purchase
+        print("BottomPurchasePopup: E-key purchase with coins for", self.currentStoreItem.Name)
+        self:PurchaseItem(self.currentStoreItem.Name, "INGAME")
+    else
+        -- Insufficient funds - show notification
+        local shortfall = itemPrice - currentCoins
+        print("BottomPurchasePopup: Insufficient funds - need", shortfall, "more coins")
+        self:ShowInsufficientFundsNotification(shortfall, itemPrice, currentCoins)
+    end
+end
+
+-- Get player's current coins
+function BottomPurchasePopup:GetPlayerCoins()
+    -- Try currency manager first
+    if CurrencyManager and typeof(CurrencyManager.GetCoins) == "function" then
+        local coins = CurrencyManager:GetCoins()
+        if coins then return coins end
+    end
+    
+    -- Fallback to leaderstats
+    local leaderstats = player:FindFirstChild("leaderstats")
+    if leaderstats then
+        local coins = leaderstats:FindFirstChild("Coins") or leaderstats:FindFirstChild("Cash") or leaderstats:FindFirstChild("Money")
+        if coins then
+            return coins.Value or 0
+        end
+    end
+    
+    -- Another fallback - check player data
+    local playerData = player:FindFirstChild("Data")
+    if playerData then
+        local coins = playerData:FindFirstChild("Coins")
+        if coins then
+            return coins.Value or 0
+        end
+    end
+    
+    return 0
+end
+
+-- Show insufficient funds notification
+function BottomPurchasePopup:ShowInsufficientFundsNotification(shortfall, needed, current)
+    -- Create notification UI
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "InsufficientFundsNotification"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = playerGui
+    
+    -- Notification frame (top center)
+    local notificationFrame = Instance.new("Frame")
+    notificationFrame.Size = UDim2.new(0, 350, 0, 80)
+    notificationFrame.Position = UDim2.new(0.5, -175, 0, -100) -- Start above screen
+    notificationFrame.BackgroundColor3 = Color3.fromRGB(60, 20, 20) -- Dark red
+    notificationFrame.BorderSizePixel = 0
+    notificationFrame.Parent = screenGui
+    
+    -- Rounded corners
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = notificationFrame
+    
+    -- Red border for emphasis
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(200, 50, 50)
+    stroke.Thickness = 2
+    stroke.Parent = notificationFrame
+    
+    -- Title
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, -10, 0, 25)
+    titleLabel.Position = UDim2.new(0, 5, 0, 5)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = "💰 Insufficient Funds"
+    titleLabel.TextColor3 = Color3.fromRGB(255, 150, 150)
+    titleLabel.TextSize = 16
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+    titleLabel.Parent = notificationFrame
+    
+    -- Message
+    local messageLabel = Instance.new("TextLabel")
+    messageLabel.Size = UDim2.new(1, -10, 0, 45)
+    messageLabel.Position = UDim2.new(0, 5, 0, 30)
+    messageLabel.BackgroundTransparency = 1
+    messageLabel.Text = string.format("Need %s more coins!\nRequired: %s | You have: %s", 
+        self:FormatNumber(shortfall), 
+        self:FormatNumber(needed), 
+        self:FormatNumber(current))
+    messageLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    messageLabel.TextSize = 12
+    messageLabel.Font = Enum.Font.Gotham
+    messageLabel.TextXAlignment = Enum.TextXAlignment.Center
+    messageLabel.TextYAlignment = Enum.TextYAlignment.Top
+    messageLabel.Parent = notificationFrame
+    
+    -- Slide in animation
+    local slideIn = TweenService:Create(notificationFrame, 
+        TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+        {Position = UDim2.new(0.5, -175, 0, 20)}
+    )
+    slideIn:Play()
+    
+    -- Auto hide after 3 seconds
+    task.delay(3, function()
+        local slideOut = TweenService:Create(notificationFrame,
+            TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+            {Position = UDim2.new(0.5, -175, 0, -100)}
+        )
+        slideOut:Play()
+        slideOut.Completed:Connect(function()
+            screenGui:Destroy()
+        end)
+    end)
 end
 
 -- Function to get correct pricing from Constants
@@ -146,7 +308,15 @@ end
 
 function BottomPurchasePopup:CreateBottomPurchasePopup(item)
     local itemName = item.Name:gsub("_", " ")
-    local price, robuxPrice = self:GetItemPricing(item.Name)
+    local coinPrice, robuxPrice = self:GetItemPricing(item.Name)
+    
+    -- Store current item data for E-key purchases
+    self.currentItemData = {
+        name = itemName,
+        coinPrice = coinPrice,
+        robuxPrice = robuxPrice,
+        originalName = item.Name
+    }
     
     -- Remove existing popup
     if self.currentPopup then
@@ -162,8 +332,8 @@ function BottomPurchasePopup:CreateBottomPurchasePopup(item)
     
     -- Main popup frame (small and unobtrusive)
     local popupFrame = Instance.new("Frame")
-    popupFrame.Size = UDim2.new(0, 320, 0, 100)
-    popupFrame.Position = UDim2.new(0.5, -160, 1, -120) -- Bottom center
+    popupFrame.Size = UDim2.new(0, 360, 0, 120) -- Slightly wider for E-key text
+    popupFrame.Position = UDim2.new(0.5, -180, 1, -140) -- Bottom center
     popupFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     popupFrame.BorderSizePixel = 0
     popupFrame.Parent = screenGui
@@ -196,17 +366,38 @@ function BottomPurchasePopup:CreateBottomPurchasePopup(item)
     priceLabel.Size = UDim2.new(1, -10, 0, 15)
     priceLabel.Position = UDim2.new(0, 5, 0, 30)
     priceLabel.BackgroundTransparency = 1
-    priceLabel.Text = string.format("Price: 💰%d Coins or 💎%d Robux", price, robuxPrice)
+    priceLabel.Text = string.format("Price: 💰%d Coins or 💎%d Robux", coinPrice, robuxPrice)
     priceLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
     priceLabel.TextSize = 12
     priceLabel.Font = Enum.Font.Gotham
     priceLabel.TextXAlignment = Enum.TextXAlignment.Center
     priceLabel.Parent = popupFrame
     
+    -- E-key prompt (NEW)
+    local eKeyLabel = Instance.new("TextLabel")
+    eKeyLabel.Size = UDim2.new(1, -10, 0, 15)
+    eKeyLabel.Position = UDim2.new(0, 5, 0, 45)
+    eKeyLabel.BackgroundTransparency = 1
+    
+    -- Check affordability and set appropriate text/color
+    local currentCoins = self:GetPlayerCoins()
+    if currentCoins >= coinPrice then
+        eKeyLabel.Text = "[E] Quick Purchase with Coins"
+        eKeyLabel.TextColor3 = Color3.fromRGB(100, 255, 100) -- Green
+    else
+        eKeyLabel.Text = "[E] Need More Coins"
+        eKeyLabel.TextColor3 = Color3.fromRGB(255, 150, 150) -- Light red
+    end
+    
+    eKeyLabel.TextSize = 11
+    eKeyLabel.Font = Enum.Font.GothamBold
+    eKeyLabel.TextXAlignment = Enum.TextXAlignment.Center
+    eKeyLabel.Parent = popupFrame
+    
     -- Button container
     local buttonContainer = Instance.new("Frame")
     buttonContainer.Size = UDim2.new(1, -20, 0, 35)
-    buttonContainer.Position = UDim2.new(0, 10, 0, 55)
+    buttonContainer.Position = UDim2.new(0, 10, 0, 75)
     buttonContainer.BackgroundTransparency = 1
     buttonContainer.Parent = popupFrame
     
@@ -215,7 +406,7 @@ function BottomPurchasePopup:CreateBottomPurchasePopup(item)
     coinsButton.Size = UDim2.new(0.48, 0, 1, 0)
     coinsButton.Position = UDim2.new(0, 0, 0, 0)
     coinsButton.BackgroundColor3 = Color3.fromRGB(255, 193, 7)
-    coinsButton.Text = string.format("💰 Buy with %d Coins", price)
+    coinsButton.Text = string.format("💰 Buy with %d Coins", coinPrice)
     coinsButton.TextColor3 = Color3.fromRGB(0, 0, 0)
     coinsButton.TextSize = 11
     coinsButton.Font = Enum.Font.GothamBold
@@ -242,7 +433,7 @@ function BottomPurchasePopup:CreateBottomPurchasePopup(item)
     
     -- Button click handlers
     coinsButton.MouseButton1Click:Connect(function()
-        print("BottomPurchasePopup: Purchasing", item.Name, "with", price, "coins")
+        print("BottomPurchasePopup: Purchasing", item.Name, "with", coinPrice, "coins")
         self:PurchaseItem(item.Name, "INGAME")
     end)
     
@@ -256,24 +447,25 @@ function BottomPurchasePopup:CreateBottomPurchasePopup(item)
     
     if not isReplacement then
         -- Start below screen for new popups
-        popupFrame.Position = UDim2.new(0.5, -160, 1, 20) 
+        popupFrame.Position = UDim2.new(0.5, -180, 1, 20) 
         local slideIn = TweenService:Create(popupFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-            Position = UDim2.new(0.5, -160, 1, -120)
+            Position = UDim2.new(0.5, -180, 1, -140)
         })
         slideIn:Play()
     else
         -- For replacements, just put it in the correct position immediately
-        popupFrame.Position = UDim2.new(0.5, -160, 1, -120)
+        popupFrame.Position = UDim2.new(0.5, -180, 1, -140)
     end
     
     self.currentPopup = screenGui
-    print("BottomPurchasePopup: Showing popup for", item.Name)
+    print("BottomPurchasePopup: Showing popup for", item.Name, "with E-key support")
 end
 
 function BottomPurchasePopup:PurchaseItem(itemName, currencyType)
     local purchaseEvent = ReplicatedStorage:FindFirstChild("Remotes"):FindFirstChild("PurchaseItem")
     if purchaseEvent then
         purchaseEvent:FireServer(itemName, 1, currencyType)
+        print("BottomPurchasePopup: Purchase request sent for", itemName, "with", currencyType)
     else
         warn("BottomPurchasePopup: PurchaseItem remote event not found")
     end
@@ -287,7 +479,7 @@ function BottomPurchasePopup:HidePopup()
         local popupFrame = self.currentPopup:FindFirstChild("Frame")
         if popupFrame then
             local slideOut = TweenService:Create(popupFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-                Position = UDim2.new(0.5, -160, 1, 20)
+                Position = UDim2.new(0.5, -180, 1, 20)
             })
             slideOut:Play()
             slideOut.Completed:Connect(function()
@@ -300,6 +492,7 @@ function BottomPurchasePopup:HidePopup()
         end
     end
     self.currentStoreItem = nil
+    self.currentItemData = nil -- Clear E-key data
 end
 
 function BottomPurchasePopup:CheckForNearbyItems()
@@ -408,6 +601,20 @@ function BottomPurchasePopup:SetEnabled(enabled)
     if not enabled then
         self:HidePopup()
     end
+end
+
+function BottomPurchasePopup:SetEKeyEnabled(enabled)
+    self.eKeyEnabled = enabled
+end
+
+function BottomPurchasePopup:FormatNumber(number)
+    local formatted = tostring(number)
+    local k = 3
+    while k <= #formatted do
+        formatted = formatted:sub(1, #formatted - k) .. "," .. formatted:sub(#formatted - k + 1)
+        k = k + 4
+    end
+    return formatted
 end
 
 function BottomPurchasePopup:Cleanup()

@@ -10,6 +10,10 @@ local ConflictResolver = require(script.Parent.ConflictResolver)
 local ModerationSystem = require(script.Parent.ModerationSystem)
 local AnalyticsSystem = require(script.Parent.AnalyticsSystem)
 local DataBackupSystem = require(script.Parent.DataBackupSystem)
+local AntiExploitSystem = require(script.Parent.AntiExploitSystem)
+local AdminToolsSystem = require(script.Parent.AdminToolsSystem)
+local GameHealthMonitor = require(script.Parent.GameHealthMonitor)
+local ProductionConfig = require(script.Parent.ProductionConfig)
 
 local ObjectStreaming = require(script.Parent.Parent.shared.optimization.ObjectStreaming)
 local ObjectPooling = require(script.Parent.Parent.shared.optimization.ObjectPooling)
@@ -58,11 +62,15 @@ end
 function SystemManager:Initialize()
     print("🚀 Starting System Manager initialization...")
     
+    -- Load production configuration
+    ProductionConfig.LogStartupConfig()
+    
     -- Initialize systems in dependency order
     self:InitializeCoreDataSystems()
     self:InitializeOptimizationSystems()
     self:InitializeSecuritySystems()
     self:InitializeAnalyticsSystems()
+    self:InitializeAdminSystems()
     
     -- Start system monitoring
     self:StartSystemMonitoring()
@@ -120,6 +128,10 @@ function SystemManager:InitializeSecuritySystems()
     self.systems.moderation = ModerationSystem.new(self.systems.placementTracker)
     self:RegisterSystem("moderation", self.systems.moderation, "HIGH")
     
+    -- 2. Anti-Exploit System (security validation)
+    self.systems.antiExploit = AntiExploitSystem.new(self.systems.placementTracker, self.systems.moderation)
+    self:RegisterSystem("antiExploit", self.systems.antiExploit, "CRITICAL")
+    
     print("✅ Security systems initialized")
 end
 
@@ -132,6 +144,21 @@ function SystemManager:InitializeAnalyticsSystems()
     self:RegisterSystem("analytics", self.systems.analytics, "MEDIUM")
     
     print("✅ Analytics systems initialized")
+end
+
+-- Admin and management systems
+function SystemManager:InitializeAdminSystems()
+    print("🛠️ Initializing admin systems...")
+    
+    -- 1. Admin Tools System (system management and monitoring)
+    self.systems.adminTools = AdminToolsSystem.new(self)
+    self:RegisterSystem("adminTools", self.systems.adminTools, "HIGH")
+    
+    -- 2. Game Health Monitor (real-time monitoring and alerting)
+    self.systems.healthMonitor = GameHealthMonitor.new(self)
+    self:RegisterSystem("healthMonitor", self.systems.healthMonitor, "HIGH")
+    
+    print("✅ Admin systems initialized")
 end
 
 -- System registration and monitoring
@@ -356,7 +383,16 @@ function SystemManager:PlaceObject(player, itemData, position, rotation)
     local startTime = tick()
     self.performanceMetrics.totalRequests = self.performanceMetrics.totalRequests + 1
     
-    -- 1. Check with moderation system first
+    -- 1. Anti-exploit validation first (most critical)
+    if self.systems.antiExploit then
+        local valid, violations = self.systems.antiExploit:ValidatePlacement(player, itemData, position, rotation)
+        if not valid then
+            self.performanceMetrics.failedRequests = self.performanceMetrics.failedRequests + 1
+            return false, "Placement blocked by security system: " .. (violations[1] and violations[1].type or "Unknown violation")
+        end
+    end
+    
+    -- 2. Check with moderation system
     if self.systems.moderation then
         local allowed = self.systems.moderation:CheckPlacement(player, {Position = position}, itemData)
         if not allowed then
@@ -365,24 +401,24 @@ function SystemManager:PlaceObject(player, itemData, position, rotation)
         end
     end
     
-    -- 2. Get object from pool or create new
+    -- 3. Get object from pool or create new
     local objectInstance
     if self.systems.objectPooling then
         local placementId = "PLACE_" .. os.time() .. "_" .. math.random(1000, 9999)
         objectInstance = self.systems.objectPooling:GetObject(itemData, placementId)
     end
     
-    -- 3. Place using placement tracker
+    -- 4. Place using placement tracker
     if self.systems.placementTracker and objectInstance then
         local success, placementId = self.systems.placementTracker:PlaceObject(player, itemData, objectInstance, position, rotation)
         
         if success then
-            -- 4. Track analytics
+            -- 5. Track analytics
             if self.systems.analytics then
                 self.systems.analytics:TrackPlacement(player, itemData, position)
             end
             
-            -- 5. Track backup changes
+            -- 6. Track backup changes
             if self.systems.dataBackup then
                 self.systems.dataBackup:TrackChange("PLACE", placementId, {
                     player = player.UserId,

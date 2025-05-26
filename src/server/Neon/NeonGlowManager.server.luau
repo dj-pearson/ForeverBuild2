@@ -134,25 +134,82 @@ local function makePartGlow(part, color)
 	lightTween:Play()
 end
 
--- Find all glow models in workspace
-local allGlowModels = findAllGlowModels(workspace)
-
--- Process each glow model
-for _, model in ipairs(allGlowModels) do
+-- Find all glow models in workspace (initial scan)
+local initialWorkspaceModels = findAllGlowModels(workspace)
+print(string.format("Found %d glow models in initial workspace scan.", #initialWorkspaceModels))
+for _, model in ipairs(initialWorkspaceModels) do
 	local colorName = model:GetAttribute("GlowColor")
 	local color = GLOW_COLORS[colorName]
-
 	if color then
-		-- Apply enhanced glow to all parts in the model
 		for _, part in ipairs(model:GetChildren()) do
 			if part:IsA("BasePart") then
 				makePartGlow(part, color)
 			end
 		end
 	else
-		warn(string.format("Unknown color: %s for model: %s", colorName, model.Name))
+		warn(string.format("Initial Scan: Unknown color: %s for model: %s", colorName, model.Name))
 	end
 end
+
+-- Specifically target Workspace > World_Items > Placed folder
+local worldItemsFolder = workspace:FindFirstChild("World_Items") or Instance.new("Folder", workspace)
+worldItemsFolder.Name = "World_Items"
+
+local placedFolder = worldItemsFolder:FindFirstChild("Placed") or Instance.new("Folder", worldItemsFolder)
+placedFolder.Name = "Placed"
+
+print(string.format("Monitoring folder: %s for new glow items.", placedFolder:GetFullName()))
+
+-- Process existing items in Placed folder
+local existingPlacedModels = findAllGlowModels(placedFolder)
+print(string.format("Found %d glow models in %s.", #existingPlacedModels, placedFolder:GetFullName()))
+for _, model in ipairs(existingPlacedModels) do
+	local colorName = model:GetAttribute("GlowColor")
+	local color = GLOW_COLORS[colorName]
+	if color then
+		for _, part in ipairs(model:GetChildren()) do
+			if part:IsA("BasePart") then
+				makePartGlow(part, color)
+			end
+		end
+	else
+		warn(string.format("Placed Items Scan: Unknown color: %s for model: %s", colorName, model.Name))
+	end
+end
+
+-- Listen for new items added to the Placed folder
+placedFolder.ChildAdded:Connect(function(child)
+	print(string.format("New child %s added to %s", child.Name, placedFolder:GetFullName()))
+	if child:IsA("Model") and child:GetAttribute("GlowColor") then
+		print(string.format("Processing new glow model: %s", child.Name))
+		local colorName = child:GetAttribute("GlowColor")
+		local color = GLOW_COLORS[colorName]
+		if color then
+			for _, part in ipairs(child:GetChildren()) do
+				if part:IsA("BasePart") then
+					makePartGlow(part, color)
+				end
+			end
+		else
+			warn(string.format("Runtime New Item: Unknown color: %s for model: %s", colorName, child.Name))
+		end
+	elseif child:IsA("Model") then -- If it's a model but doesn't have the attribute yet, wait for it
+		child:GetAttributeChangedSignal("GlowColor"):Connect(function()
+			local colorName = child:GetAttribute("GlowColor")
+			local color = GLOW_COLORS[colorName]
+			print(string.format("GlowColor attribute changed for %s to %s", child.Name, colorName))
+			if color then
+				for _, part in ipairs(child:GetChildren()) do
+					if part:IsA("BasePart") then
+						makePartGlow(part, color)
+					end
+				end
+			else
+				warn(string.format("Runtime Attribute Change: Unknown color: %s for model: %s", colorName, child.Name))
+			end
+		end)
+	end
+end)
 
 -- Cleanup function
 local function cleanup()

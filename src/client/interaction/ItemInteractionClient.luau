@@ -700,7 +700,7 @@ function ItemInteractionClient:GetInteractableFromPart(part)
                 -- Accept both Models and Parts as world items
                 if ancestor and (ancestor:IsA("Model") or ancestor:IsA("Part")) then
                     -- Check if it has world item attributes
-                    if ancestor:GetAttribute("instanceId") or ancestor:GetAttribute("itemId") then
+                                         if ancestor:GetAttribute("instanceId") or ancestor:GetAttribute("itemId") then
                         result = ancestor
                     end
                 end
@@ -907,14 +907,106 @@ function ItemInteractionClient:IsStoreItem(target)
 end
 
 function ItemInteractionClient:InteractWithStoreItem(target)
-    -- For store items, we don't need to do anything special here
-    -- The BottomPurchasePopup system handles store item interactions automatically
-    -- Just show a notification to let user know interaction was registered
+    -- For store items, trigger the purchase directly when E is pressed
     local itemName = target.Name
-    self:ShowNotification("Detected store item: " .. itemName .. ". BottomPurchasePopup should handle this.", "Info")
     
-    -- Clear the interacting flag so the popup can show
+    print("--- ItemInteractionClient:InteractWithStoreItem() - Target:", itemName, "---")
+    
+    -- Get the bottom purchase popup system
+    local bottomPopup = nil
+    if _G.ItemInteractionClient and _G.ItemInteractionClient.bottomPurchasePopup then
+        bottomPopup = _G.ItemInteractionClient.bottomPurchasePopup
+    end
+    
+    -- If BottomPurchasePopup is available and has the target as current item, use its E-key handler
+    if bottomPopup and bottomPopup.currentStoreItem == target then
+        print("--- ItemInteractionClient:InteractWithStoreItem() - Using BottomPurchasePopup E-key handler ---")
+        bottomPopup:HandleEKeyPurchase()
+        self.isInteracting = false
+        return
+    end
+    
+    -- Direct purchase fallback - get pricing and attempt purchase
+    local itemPrice = self:GetStoreItemPrice(target)
+    local currentCoins = self:GetPlayerCoins()
+    
+    print("--- ItemInteractionClient:InteractWithStoreItem() - Item price:", itemPrice, "Player coins:", currentCoins, "---")
+    
+    if currentCoins >= itemPrice then
+        -- Player can afford it - proceed with purchase
+        print("--- ItemInteractionClient:InteractWithStoreItem() - Proceeding with purchase ---")
+        self:PurchaseStoreItem(itemName, "INGAME")
+    else
+        -- Insufficient funds - show notification
+        local shortfall = itemPrice - currentCoins
+        print("--- ItemInteractionClient:InteractWithStoreItem() - Insufficient funds - need", shortfall, "more coins ---")
+        self:ShowInsufficientFundsNotification(shortfall, itemPrice, currentCoins)
+    end
+    
     self.isInteracting = false
+end
+
+-- Helper function to get store item price
+function ItemInteractionClient:GetStoreItemPrice(item)
+    -- Try getting price from item attributes
+    local price = item:GetAttribute("priceIngame") or item:GetAttribute("Price") or item:GetAttribute("price")
+    if price then return price end
+    
+    -- Try getting price from Constants based on item name
+    local itemId = item.Name
+    if Constants.ITEMS[itemId] and Constants.ITEMS[itemId].price then
+        local itemPrice = Constants.ITEMS[itemId].price
+        if typeof(itemPrice) == "number" then
+            return itemPrice
+        elseif typeof(itemPrice) == "table" then
+            return itemPrice.INGAME or itemPrice.ingame or itemPrice.Ingame or 5
+        end
+    end
+    
+    -- Default fallback
+    return 5
+end
+
+-- Helper function to get player coins
+function ItemInteractionClient:GetPlayerCoins()
+    -- Try currency manager first
+    if CurrencyManager and typeof(CurrencyManager.GetCoins) == "function" then
+        local coins = CurrencyManager:GetCoins()
+        if coins then return coins end
+    end
+    
+    -- Fallback to leaderstats
+    local leaderstats = player:FindFirstChild("leaderstats")
+    if leaderstats then
+        local coins = leaderstats:FindFirstChild("Coins") or leaderstats:FindFirstChild("Cash") or leaderstats:FindFirstChild("Money")
+        if coins then
+            return coins.Value or 0
+        end
+    end
+    
+    return 0
+end
+
+-- Helper function to purchase store item
+function ItemInteractionClient:PurchaseStoreItem(itemName, currencyType)
+    local purchaseEvent = ReplicatedStorage:FindFirstChild("Remotes"):FindFirstChild("PurchaseItem")
+    if purchaseEvent then
+        purchaseEvent:FireServer(itemName, 1, currencyType)
+        print("--- ItemInteractionClient:PurchaseStoreItem() - Purchase request sent for", itemName, "with", currencyType, "---")
+        self:ShowNotification("Purchased " .. itemName:gsub("_", " ") .. " with coins!", "Success")
+    else
+        warn("--- ItemInteractionClient:PurchaseStoreItem() - PurchaseItem remote event not found ---")
+        self:ShowNotification("Error: Purchase system not available.", "Error")
+    end
+end
+
+-- Helper function to show insufficient funds notification
+function ItemInteractionClient:ShowInsufficientFundsNotification(shortfall, itemPrice, currentCoins)
+    local message = string.format("Need %d more coins! (Have: %d, Need: %d)", shortfall, currentCoins, itemPrice)
+    self:ShowNotification(message, "Warning")
+    
+    -- Future: Could show "Get More Coins" popup here
+    -- For now, just the notification
 end
 
 function ItemInteractionClient:InteractWithWorldItem(target)
