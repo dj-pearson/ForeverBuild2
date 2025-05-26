@@ -179,7 +179,7 @@ function PlacementCore:UpdatePlacementPreview()
     local unitRay = camera:ViewportPointToRay(mouse.X, mouse.Y)
     
     local raycastParams = RaycastParams.new()
-    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
     raycastParams.FilterDescendantsInstances = {previewItem}
     
     local raycastResult = Workspace:Raycast(unitRay.Origin, unitRay.Direction * 1000, raycastParams)

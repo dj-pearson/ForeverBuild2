@@ -979,61 +979,14 @@ if not placedItemsFolder then
     print("Created PlacedItems folder in Workspace")
 end
 
--- Ensure ItemTemplates folder exists and contains all required templates
-local function setupItemTemplates()
-    local itemTemplates = ReplicatedStorage:FindFirstChild("ItemTemplates")
-    if not itemTemplates then
-        itemTemplates = Instance.new("Folder")
-        itemTemplates.Name = "ItemTemplates"
-        itemTemplates.Parent = ReplicatedStorage
-        
-        -- Create some basic templates for testing
-        local items = {
-            { name = "Grass_Cube", color = BrickColor.new("Bright green"), transparency = 0, material = Enum.Material.Grass },
-            { name = "Stone_Cube", color = BrickColor.new("Medium stone grey"), transparency = 0, material = Enum.Material.Slate },
-            { name = "Wood_Plank", color = BrickColor.new("Brown"), transparency = 0, material = Enum.Material.Wood },
-            { name = "Water_Cube", color = BrickColor.new("Bright blue"), transparency = 0.3, material = Enum.Material.Water },
-            { name = "Fire_Cube", color = BrickColor.new("Bright red"), transparency = 0, material = Enum.Material.Neon },
-            { name = "Brick_Cube", color = BrickColor.new("Reddish brown"), transparency = 0, material = Enum.Material.Brick },
-            { name = "Sand_Cube", color = BrickColor.new("Brick yellow"), transparency = 0, material = Enum.Material.Sand },
-            { name = "Concrete_Cube", color = BrickColor.new("Institutional white"), transparency = 0, material = Enum.Material.Concrete },
-            { name = "Metal_Cube", color = BrickColor.new("Medium grey"), transparency = 0, material = Enum.Material.Metal },
-            { name = "Glass_Cube", color = BrickColor.new("Toothpaste"), transparency = 0.5, material = Enum.Material.Glass }
-        }
-        
-        for _, itemInfo in ipairs(items) do
-            local part = Instance.new("Part")
-            part.Name = itemInfo.name
-            part.Size = Vector3.new(2, 2, 2)
-            part.Anchored = true
-            part.CanCollide = true
-            part.BrickColor = itemInfo.color
-            part.Transparency = itemInfo.transparency
-            part.Material = itemInfo.material
-            
-            -- Also create a shorthand version without the _Cube suffix for convenience
-            local shortName = itemInfo.name:gsub("_Cube", "")
-            if shortName ~= itemInfo.name then
-                local shortPart = part:Clone()
-                shortPart.Name = shortName
-                shortPart.Parent = itemTemplates
-            end
-            
-            part.Parent = itemTemplates
-            
-            print("Created template: " .. part.Name .. " (" .. tostring(part.BrickColor) .. ", transparency=" .. tostring(part.Transparency) .. ")")
-        end
-        
-        print("Server init: Created " .. #itemTemplates:GetChildren() .. " item templates")
-    else
-        print("Server init: ItemTemplates folder already exists with " .. #itemTemplates:GetChildren() .. " items")
-    end
-    
-    return itemTemplates
+-- ItemTemplates are now managed by the fix_template_system script
+-- This reduces redundancy and prevents multiple template creation
+local itemTemplates = ReplicatedStorage:FindFirstChild("ItemTemplates")
+if itemTemplates then
+    print("Server init: ItemTemplates folder exists with " .. #itemTemplates:GetChildren() .. " items")
+else
+    print("Server init: ItemTemplates folder not found - run fix_template_system.luau to create it")
 end
-
--- Call the setup function to ensure templates exist
-setupItemTemplates()
 
 -- Placeholder handlers for new item action requests
 local requestCloneItemRemote = getOrCreateRemoteEvent("RequestCloneItem", Remotes)

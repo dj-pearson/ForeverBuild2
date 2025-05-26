@@ -91,7 +91,7 @@ local function initialize()
         end
         
         -- Set up item template creation
-        setupItemTemplates()
+        checkItemTemplates()
         
         -- Set up inventory item interaction
         local setupSuccess = setupInventoryItemInteraction(sharedModule)
@@ -182,56 +182,13 @@ local function setupInventoryItemInteraction(sharedModule)
     return true
 end
 
--- Create necessary templates folder if it doesn't exist
-local function setupItemTemplates()
+-- ItemTemplates are now managed centrally to prevent redundancy
+local function checkItemTemplates()
     local templates = ReplicatedStorage:FindFirstChild("ItemTemplates")
-    if not templates then
-        templates = Instance.new("Folder")
-        templates.Name = "ItemTemplates"
-        templates.Parent = ReplicatedStorage
-        
-        -- Create some basic templates for testing
-        local items = {
-            { name = "Grass_Cube", color = BrickColor.new("Bright green"), transparency = 0, material = Enum.Material.Grass },
-            { name = "Stone_Cube", color = BrickColor.new("Medium stone grey"), transparency = 0, material = Enum.Material.Slate },
-            { name = "Wood_Plank", color = BrickColor.new("Brown"), transparency = 0, material = Enum.Material.Wood },
-            { name = "Wood_Cube", color = BrickColor.new("Brown"), transparency = 0, material = Enum.Material.Wood },
-            { name = "Water_Cube", color = BrickColor.new("Bright blue"), transparency = 0.3, material = Enum.Material.Water },
-            { name = "Fire_Cube", color = BrickColor.new("Bright red"), transparency = 0, material = Enum.Material.Neon },
-            { name = "Brick_Cube", color = BrickColor.new("Reddish brown"), transparency = 0, material = Enum.Material.Brick },
-            { name = "Sand_Cube", color = BrickColor.new("Brick yellow"), transparency = 0, material = Enum.Material.Sand },
-            { name = "Concrete_Cube", color = BrickColor.new("Institutional white"), transparency = 0, material = Enum.Material.Concrete },
-            { name = "Metal_Cube", color = BrickColor.new("Medium grey"), transparency = 0, material = Enum.Material.Metal },
-            { name = "Glass_Cube", color = BrickColor.new("Toothpaste"), transparency = 0.5, material = Enum.Material.Glass }
-        }
-        
-        for _, itemInfo in ipairs(items) do
-            local part = Instance.new("Part")
-            part.Name = itemInfo.name
-            part.Size = Vector3.new(2, 2, 2)
-            part.Anchored = true
-            part.CanCollide = true
-            part.BrickColor = itemInfo.color
-            part.Transparency = itemInfo.transparency
-            part.Material = itemInfo.material
-            
-            -- Store original properties as attributes to ensure they're preserved
-            part:SetAttribute("originalColor", itemInfo.color.Name)
-            part:SetAttribute("originalMaterial", itemInfo.material.Name)
-            part:SetAttribute("originalTransparency", itemInfo.transparency)
-            
-            part.Parent = templates
-            
-            -- Print debug info about created template
-            print("Created template: " .. part.Name .. 
-                  " (BrickColor=" .. part.BrickColor.Name .. 
-                  ", Material=" .. part.Material.Name .. 
-                  ", Transparency=" .. tostring(part.Transparency) .. ")")
-        end
-        
-        print("InventoryItemHandler: Created " .. #templates:GetChildren() .. " item templates")
+    if templates then
+        print("InventoryItemHandler: ItemTemplates folder exists with " .. #templates:GetChildren() .. " items")
     else
-        print("InventoryItemHandler: ItemTemplates folder already exists")
+        print("InventoryItemHandler: ItemTemplates folder not found - will be created by server or fix_template_system.luau")
     end
 end
 

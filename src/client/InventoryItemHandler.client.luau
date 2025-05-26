@@ -294,9 +294,24 @@ local function setupInventoryItemInteraction(sharedModule)
     local InventoryUI = sharedModule.InventoryUI
     local PlacementManager = sharedModule.PlacementManagerClientInstance
     
+    print("InventoryItemHandler: Setting up inventory item interaction...")
+    print("InventoryUI available:", InventoryUI ~= nil)
+    print("PlacementManager available:", PlacementManager ~= nil)
+    
+    if not InventoryUI then
+        warn("InventoryItemHandler: InventoryUI is nil - cannot set up interaction")
+        return false
+    end
+    
+    if not PlacementManager then
+        warn("InventoryItemHandler: PlacementManager is nil - cannot set up interaction")
+        return false
+    end
+    
     -- Set up the OnItemSelected callback in InventoryUI
     InventoryUI.OnItemSelected = function(itemName, itemData)
         print("InventoryItemHandler: Item selected from inventory:", itemName)
+        print("InventoryItemHandler: Item data:", itemData)
         
         -- First ensure player can move if they got stuck
         fixPlayerMovement(player.Character)
@@ -307,12 +322,27 @@ local function setupInventoryItemInteraction(sharedModule)
         
         -- Normalize the item name (replace spaces with underscores)
         local normalizedItemName = itemName:gsub(" ", "_")
+        print("InventoryItemHandler: Normalized item name:", normalizedItemName)
         
-        -- Recall the item from inventory to the player's hand
-        if PlacementManager and PlacementManager.RecallItemFromInventory then
-            PlacementManager:RecallItemFromInventory(normalizedItemName)
+        -- Use ShowItemInHand for consistent behavior
+        if PlacementManager and PlacementManager.ShowItemInHand then
+            print("InventoryItemHandler: Calling ShowItemInHand...")
+            local success = PlacementManager:ShowItemInHand(normalizedItemName)
+            if success then
+                print("InventoryItemHandler: Successfully showed item in hand")
+            else
+                warn("InventoryItemHandler: ShowItemInHand failed")
+            end
         else
-            warn("InventoryItemHandler: PlacementManager.RecallItemFromInventory not available")
+            warn("InventoryItemHandler: PlacementManager.ShowItemInHand not available")
+            print("InventoryItemHandler: Available methods:")
+            if PlacementManager then
+                for k, v in pairs(PlacementManager) do
+                    if type(v) == "function" then
+                        print("  -", k, "(function)")
+                    end
+                end
+            end
         end
     end
     
@@ -339,7 +369,7 @@ local function setupItemTemplates()
             { name = "Brick_Cube", color = BrickColor.new("Reddish brown"), transparency = 0, material = Enum.Material.Brick },
             { name = "Sand_Cube", color = BrickColor.new("Brick yellow"), transparency = 0, material = Enum.Material.Sand },
             { name = "Concrete_Cube", color = BrickColor.new("Institutional white"), transparency = 0, material = Enum.Material.Concrete },
-            { name = "Metal_Cube", color = BrickColor.new("Medium grey"), transparency = 0, material = Enum.Material.Metal },
+            { name = "Metal_Cube", color = BrickColor.new("Medium stone grey"), transparency = 0, material = Enum.Material.Metal },
             { name = "Glass_Cube", color = BrickColor.new("Toothpaste"), transparency = 0.5, material = Enum.Material.Glass }
         }
         

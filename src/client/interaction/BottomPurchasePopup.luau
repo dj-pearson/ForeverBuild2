@@ -1,10 +1,22 @@
 -- BottomPurchasePopup.luau
 -- Clean bottom purchase popup system that matches the user's existing UI style
+-- Enhanced with Line of Sight detection to prevent prompts through walls
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
+
+-- Import LineOfSightChecker
+local LineOfSightChecker
+local lineOfSightSuccess = pcall(function()
+    LineOfSightChecker = require(ReplicatedStorage:WaitForChild("shared"):WaitForChild("core"):WaitForChild("interaction"):WaitForChild("LineOfSightChecker"))
+end)
+
+if not lineOfSightSuccess then
+    warn("BottomPurchasePopup: Could not load LineOfSightChecker, using basic proximity only")
+    LineOfSightChecker = nil
+end
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -33,10 +45,13 @@ BottomPurchasePopup.__index = BottomPurchasePopup
 function BottomPurchasePopup.new()
     local self = setmetatable({}, BottomPurchasePopup)
     
-    -- Configuration
+    -- Configuration - OPTIMIZED FOR RESPONSIVENESS
     self.PROXIMITY_DISTANCE = 8
-    self.UPDATE_INTERVAL = 0.3
+    self.UPDATE_INTERVAL = 0.05 -- Much faster update rate (20 FPS)
+    self.SLOW_UPDATE_INTERVAL = 0.2 -- Slower rate when no items nearby
+    self.FAST_UPDATE_DISTANCE = 12 -- Distance threshold for fast updates
     self.lastUpdate = 0
+    self.fastUpdateMode = false
     
     -- State
     self.currentStoreItem = nil
@@ -46,16 +61,35 @@ function BottomPurchasePopup.new()
     -- Connection tracking
     self.connections = {}
     
+    -- Initialize LineOfSightChecker if available
+    if LineOfSightChecker then
+        self.lineOfSightChecker = LineOfSightChecker:Init()
+        -- Optimize LineOfSightChecker for faster response
+        self.lineOfSightChecker:SetMaxDistance(15)
+        -- Reduce cache duration for more responsive updates
+        if self.lineOfSightChecker.SetCacheDuration then
+            self.lineOfSightChecker:SetCacheDuration(0.1)
+        end
+        print("BottomPurchasePopup: Line of sight detection enabled with fast response")
+    else
+        self.lineOfSightChecker = nil
+        print("BottomPurchasePopup: Using basic proximity detection only")
+    end
+    
     return self
 end
 
 function BottomPurchasePopup:Initialize()
     print("BottomPurchasePopup: Initializing...")
     
-    -- Start the main update loop
+    -- Start the main update loop with dynamic update rates
     local heartbeatConnection = RunService.Heartbeat:Connect(function()
         local now = tick()
-        if now - self.lastUpdate >= self.UPDATE_INTERVAL then
+        
+        -- Use dynamic update interval based on proximity to items
+        local currentInterval = self.fastUpdateMode and self.UPDATE_INTERVAL or self.SLOW_UPDATE_INTERVAL
+        
+        if now - self.lastUpdate >= currentInterval then
             self.lastUpdate = now
             self:CheckForNearbyItems()
         end
@@ -272,14 +306,26 @@ function BottomPurchasePopup:CheckForNearbyItems()
     if not self.enabled then return end
     
     local character = player.Character
-    if not character then return end
+    if not character then 
+        self.fastUpdateMode = false
+        return 
+    end
     
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-    if not humanoidRootPart then return end
+    if not humanoidRootPart then 
+        self.fastUpdateMode = false
+        return 
+    end
     
     local playerPosition = humanoidRootPart.Position
     local closestItem = nil
     local closestDistance = self.PROXIMITY_DISTANCE
+    local nearestDistance = math.huge -- Track nearest item for update mode
+    
+    -- Quick scan for performance optimization
+    local itemsFound = 0
+    local proximityChecks = 0
+    local lineOfSightChecks = 0
     
     -- Scan Items folder for purchasable items (including glow items in subfolders)
     local itemsFolder = workspace:FindFirstChild("Items")
@@ -289,6 +335,7 @@ function BottomPurchasePopup:CheckForNearbyItems()
                 if item:IsA("Model") or item:IsA("Part") then
                     -- Check if item has purchase attributes
                     if item:GetAttribute("Purchasable") or item:GetAttribute("Price") or item:GetAttribute("priceIngame") then
+                        itemsFound = itemsFound + 1
                         local itemPosition
                         
                         -- Get position safely
@@ -302,10 +349,25 @@ function BottomPurchasePopup:CheckForNearbyItems()
                         
                         if itemPosition then
                             local distance = (itemPosition - playerPosition).Magnitude
+                            proximityChecks = proximityChecks + 1
+                            
+                            -- Track nearest item for update mode optimization
+                            if distance < nearestDistance then
+                                nearestDistance = distance
+                            end
                             
                             if distance < closestDistance then
-                                closestDistance = distance
-                                closestItem = item
+                                -- For very close items (< 3 studs), skip line of sight for instant response
+                                local hasLineOfSight = true
+                                if distance >= 3 and self.lineOfSightChecker then
+                                    lineOfSightChecks = lineOfSightChecks + 1
+                                    hasLineOfSight = self.lineOfSightChecker:HasLineOfSight(player, item)
+                                end
+                                
+                                if hasLineOfSight then
+                                    closestDistance = distance
+                                    closestItem = item
+                                end
                             end
                         end
                     end
@@ -316,6 +378,14 @@ function BottomPurchasePopup:CheckForNearbyItems()
         end
         
         scanForItems(itemsFolder)
+    end
+    
+    -- Dynamic update mode based on proximity to any purchasable item
+    local shouldUseFastMode = nearestDistance < self.FAST_UPDATE_DISTANCE
+    if shouldUseFastMode ~= self.fastUpdateMode then
+        self.fastUpdateMode = shouldUseFastMode
+        -- Optional debug output
+        -- print("BottomPurchasePopup: Switched to", shouldUseFastMode and "FAST" or "SLOW", "update mode")
     end
     
     -- Handle popup changes

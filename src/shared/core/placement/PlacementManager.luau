@@ -6,6 +6,11 @@ local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 
+-- Import SimpleRotationUI for cross-platform rotation
+local SimpleRotationUI = require(script.Parent.SimpleRotationUI)
+-- Import PlacementControlsUI for clear placement instructions
+local PlacementControlsUI = require(script.Parent.PlacementControlsUI)
+
 -- Attempt to require RotationControlsUI (Client-Only)
 local RotationControlsUI
 if RunService:IsClient() then
@@ -22,7 +27,7 @@ end
 
 -- Configuration
 local PLACED_ITEMS_FOLDER_NAME = "World_Items" -- Use the existing World_Items folder
-local MAX_PLACEMENT_DISTANCE = 20
+local _MAX_PLACEMENT_DISTANCE = 20 -- MAX_PLACEMENT_DISTANCE is never used; prefix with '_' to silence
 
 -- Attempt to require UniqueItemIdAssigner
 local UniqueItemIdAssigner
@@ -119,6 +124,12 @@ function PlacementManager.new(sharedModule)
             end
         end
         
+        -- Initialize simple rotation UI
+        self.simpleRotationUI = SimpleRotationUI.new()
+        
+        -- Initialize placement controls UI
+        self.placementControlsUI = PlacementControlsUI.new()
+        
         -- Cache remote events on the client
         print("--- PLACEMENT MANAGER CLIENT CONSTRUCTOR REACHED (IsClient == true) ---") -- MARKER
         self:CacheRemoteEvents()
@@ -136,19 +147,8 @@ function PlacementManager.new(sharedModule)
             UniqueItemIdAssigner = result
         else
             warn("PlacementManager.new: Failed to require UniqueItemIdAssigner:", result)
-            
-            -- Try an alternative path
-            success, result = pcall(function()
-                return require(game:GetService("ServerStorage").UniqueItemIdAssigner)
-            end)
-            
-            if success then
-                print("PlacementManager.new: Successfully required UniqueItemIdAssigner from ServerStorage")
-                self.UniqueItemIdAssigner = result
-                UniqueItemIdAssigner = result
-            else
-                warn("PlacementManager.new: Could not find UniqueItemIdAssigner module")
-            end
+            -- The fallback to ServerStorage was incorrect and has been removed.
+            warn("PlacementManager.new: Could not find UniqueItemIdAssigner module via ServerScriptService.server.UniqueItemIdAssigner")
         end
 
         -- First look for the main World_Items folder
@@ -258,9 +258,47 @@ end
 -- Helper: Recursively search for a template in a folder and its subfolders
 local function findTemplateRecursive(folder, itemId)
     for _, child in ipairs(folder:GetChildren()) do
-        if child.Name == itemId then
+        -- PRIMARY: Check for exact ItemId attribute match (preserves numeric IDs)
+        local childItemId = child:GetAttribute("ItemId")
+        if childItemId == itemId then
             return child
-        elseif child:IsA("Folder") then
+        end
+        
+        -- SECONDARY: Check lowercase itemId for compatibility  
+        local childItemIdLower = child:GetAttribute("itemId")
+        if childItemIdLower == itemId then
+            return child
+        end
+        
+        -- TERTIARY: Handle string/number conversion for cross-compatibility
+        if type(itemId) == "number" and type(childItemId) == "string" then
+            if tonumber(childItemId) == itemId then
+                return child
+            end
+        elseif type(itemId) == "string" and type(childItemId) == "number" then
+            if tostring(childItemId) == itemId then
+                return child
+            end
+        end
+        
+        -- QUATERNARY: Same for lowercase itemId
+        if type(itemId) == "number" and type(childItemIdLower) == "string" then
+            if tonumber(childItemIdLower) == itemId then
+                return child
+            end
+        elseif type(itemId) == "string" and type(childItemIdLower) == "number" then
+            if tostring(childItemIdLower) == itemId then
+                return child
+            end
+        end
+        
+        -- FALLBACK: Name matching for legacy compatibility
+        if child.Name == tostring(itemId) then
+            return child
+        end
+        
+        -- Recursively search subfolders
+        if child:IsA("Folder") then
             local found = findTemplateRecursive(child, itemId)
             if found then return found end
         end
@@ -273,7 +311,10 @@ function PlacementManager:GetItemTemplate(itemId)
     print("PlacementManager: Getting template for item:", itemId)
     
     if RunService:IsClient() then
-        -- Client-side: Only check ReplicatedStorage.ItemTemplates
+        -- Client-side: Enhanced template search
+        print("PlacementManager (Client): Searching for template:", itemId)
+        
+        -- 1. First check ReplicatedStorage.ItemTemplates (for basic parts)
         local templatesFolder = ReplicatedStorage:FindFirstChild("ItemTemplates")
         if templatesFolder then
             local template = templatesFolder:FindFirstChild(itemId)
@@ -290,15 +331,33 @@ function PlacementManager:GetItemTemplate(itemId)
                     return template
                 end
             end
-        else
-            warn("PlacementManager (Client): ItemTemplates folder not found in ReplicatedStorage.")
         end
         
-        -- If not found in ItemTemplates on client, try mapped numeric ID then give up for client.
+        -- 2. Check Workspace.Items (for actual models like Torch)
+        local workspaceItems = Workspace:FindFirstChild("Items")
+        if workspaceItems then
+            local wsTemplate = findTemplateRecursive(workspaceItems, itemId)
+            if wsTemplate then
+                print("PlacementManager (Client): Found template in Workspace.Items (recursive):", itemId)
+                return wsTemplate
+            end
+        end
+        
+        -- 3. Check ServerStorage.Items (for backup/duplicates)
+        local serverItems = game:GetService("ServerStorage"):FindFirstChild("Items")
+        if serverItems then
+            local ssTemplate = findTemplateRecursive(serverItems, itemId)
+            if ssTemplate then
+                print("PlacementManager (Client): Found template in ServerStorage.Items (recursive):", itemId)
+                return ssTemplate
+            end
+        end
+        
+        -- 4. Try mapped numeric ID if nothing found
         if self.itemTemplateMap and self.itemTemplateMap[itemId] then
             local mappedTemplateName = self.itemTemplateMap[itemId]
             print("PlacementManager (Client): Mapped numeric ID", itemId, "to template name:", mappedTemplateName)
-            if templatesFolder then
+            if templatesFolder then -- Re-check templatesFolder as it might have been nil
                 local mappedTemplate = templatesFolder:FindFirstChild(mappedTemplateName)
                 if mappedTemplate then
                      print("PlacementManager (Client): Found mapped template in ReplicatedStorage.ItemTemplates:", mappedTemplateName)
@@ -307,8 +366,8 @@ function PlacementManager:GetItemTemplate(itemId)
             end
         end
 
-        warn("PlacementManager (Client): Template not found in ReplicatedStorage.ItemTemplates for:", itemId)
-        return nil -- Client only gets from ReplicatedStorage.ItemTemplates or mapped
+        warn("PlacementManager (Client): Template not found anywhere for:", itemId)
+        return nil
     end
 
     -- Server-side logic (original broader search)
@@ -332,35 +391,35 @@ function PlacementManager:GetItemTemplate(itemId)
         end
     end
 
-    -- 3. Fallback to ReplicatedStorage.ItemTemplates
-    local templates = ReplicatedStorage:FindFirstChild("ItemTemplates")
-    if templates then
-        local template = templates:FindFirstChild(itemId)
+    -- 3. Fallback to ReplicatedStorage.ItemTemplates (initial check)
+    local initialTemplatesFolder = ReplicatedStorage:FindFirstChild("ItemTemplates")
+    if initialTemplatesFolder then
+        local template = initialTemplatesFolder:FindFirstChild(itemId)
         if template then
-            print("PlacementManager: Found template in ReplicatedStorage.ItemTemplates:", itemId)
+            print("PlacementManager: Found template in ReplicatedStorage.ItemTemplates (initial check):", itemId)
             return template
         end
     end
     
     -- Check if this is a numeric item ID that needs to be mapped to a template name
     if self.itemTemplateMap and self.itemTemplateMap[itemId] then
-        local mappedTemplate = self.itemTemplateMap[itemId]
-        print("PlacementManager: Mapped numeric ID", itemId, "to template name:", mappedTemplate)
-        itemId = mappedTemplate
+        local mappedTemplateName = self.itemTemplateMap[itemId]
+        print("PlacementManager: Mapped numeric ID", itemId, "to template name:", mappedTemplateName)
+        itemId = mappedTemplateName -- Update itemId to the mapped name for further checks
     end
     
     -- Normalize the itemId (replace spaces with underscores)
     local normalizedItemId = itemId:gsub(" ", "_")
     
-    -- First check in ReplicatedStorage.ItemTemplates
-    local templates = ReplicatedStorage:FindFirstChild("ItemTemplates")
-    if not templates then
+    -- First check in ReplicatedStorage.ItemTemplates (this variable is for the current scope)
+    local currentItemTemplates = ReplicatedStorage:FindFirstChild("ItemTemplates") -- Renamed to avoid shadowing (original line 356)
+    if not currentItemTemplates then
         -- Try to create templates folder on server if missing
         if RunService:IsServer() then
             print("PlacementManager: ItemTemplates folder not found, creating it")
-            templates = Instance.new("Folder")
-            templates.Name = "ItemTemplates"
-            templates.Parent = ReplicatedStorage
+            currentItemTemplates = Instance.new("Folder")
+            currentItemTemplates.Name = "ItemTemplates"
+            currentItemTemplates.Parent = ReplicatedStorage
             
             -- Create basic templates
             local basicTemplates = {
@@ -384,7 +443,7 @@ function PlacementManager:GetItemTemplate(itemId)
                 if info.transparency then
                     part.Transparency = info.transparency
                 end
-                part.Parent = templates
+                part.Parent = currentItemTemplates -- Use renamed variable
                 
                 print("PlacementManager: Created template:", info.name)
             end
@@ -396,20 +455,20 @@ function PlacementManager:GetItemTemplate(itemId)
     
     -- Debug info
     print("PlacementManager: Available templates in ItemTemplates folder:")
-    for _, template in ipairs(templates:GetChildren()) do
-        print("  -", template.Name)
+    for _, templateInLoop in ipairs(currentItemTemplates:GetChildren()) do -- Use renamed variable
+        print("  -", templateInLoop.Name)
     end
     
-    -- Try direct match first
-    local template = templates:FindFirstChild(normalizedItemId)
+    -- Try direct match first with normalizedItemId
+    local template = currentItemTemplates:FindFirstChild(normalizedItemId) -- Use renamed variable
     if template then
         print("PlacementManager: Found exact template match:", normalizedItemId)
         return template
     end
     
-    -- Try with original itemId
+    -- Try with original (possibly unnormalized or unmapped) itemId if different
     if normalizedItemId ~= itemId then
-        template = templates:FindFirstChild(itemId)
+        template = currentItemTemplates:FindFirstChild(itemId) -- Use renamed variable
         if template then
             print("PlacementManager: Found template using original itemId:", itemId)
             return template
@@ -418,12 +477,12 @@ function PlacementManager:GetItemTemplate(itemId)
     
     -- Special case for Wood_Cube - if Wood_Plank exists, create Wood_Cube from it
     if normalizedItemId == "Wood_Cube" then
-        local woodPlank = templates:FindFirstChild("Wood_Plank")
+        local woodPlank = currentItemTemplates:FindFirstChild("Wood_Plank") -- Use renamed variable
         if woodPlank then
             print("PlacementManager: Creating Wood_Cube from Wood_Plank")
             local woodCube = woodPlank:Clone()
             woodCube.Name = "Wood_Cube"
-            woodCube.Parent = templates
+            woodCube.Parent = currentItemTemplates -- Use renamed variable
             return woodCube
         end
     end
@@ -434,7 +493,7 @@ function PlacementManager:GetItemTemplate(itemId)
         tryWithCube = normalizedItemId .. "_Cube"
     end
     
-    template = templates:FindFirstChild(tryWithCube)
+    template = currentItemTemplates:FindFirstChild(tryWithCube) -- Use renamed variable
     if template then
         print("PlacementManager: Found template with _Cube suffix:", tryWithCube)
         return template
@@ -442,8 +501,8 @@ function PlacementManager:GetItemTemplate(itemId)
     
     -- Try without the _Cube suffix
     if normalizedItemId:lower():find("_cube$") then
-        local tryWithoutCube = normalizedItemId:gsub("_Cube$", "")
-        template = templates:FindFirstChild(tryWithoutCube)
+        local tryWithoutCube = normalizedItemId:gsub("_Cube$", ""):gsub("_cube$", "") -- Handle both cases
+        template = currentItemTemplates:FindFirstChild(tryWithoutCube) -- Use renamed variable
         if template then
             print("PlacementManager: Found template without _Cube suffix:", tryWithoutCube)
             return template
@@ -451,18 +510,18 @@ function PlacementManager:GetItemTemplate(itemId)
     end
     
     -- Try case-insensitive lookup
-    for _, potentialTemplate in ipairs(templates:GetChildren()) do
+    for _, potentialTemplate in ipairs(currentItemTemplates:GetChildren()) do -- Use renamed variable
         if potentialTemplate.Name:lower() == normalizedItemId:lower() or
-           potentialTemplate.Name:lower() == itemId:lower() then
+           potentialTemplate.Name:lower() == itemId:lower() then -- Check against original itemId too
             print("PlacementManager: Found template using case-insensitive match:", potentialTemplate.Name)
             return potentialTemplate
         end
     end
     
     -- Try to find a template with a similar name as a last resort
-    for _, potentialTemplate in ipairs(templates:GetChildren()) do
-        if potentialTemplate.Name:lower():find(normalizedItemId:lower()) or
-           normalizedItemId:lower():find(potentialTemplate.Name:lower()) then
+    for _, potentialTemplate in ipairs(currentItemTemplates:GetChildren()) do -- Use renamed variable
+        if potentialTemplate.Name:lower():find(normalizedItemId:lower(), 1, true) or -- Use plain find
+           normalizedItemId:lower():find(potentialTemplate.Name:lower(), 1, true) then
             print("PlacementManager: Found template with similar name:", potentialTemplate.Name)
             return potentialTemplate
         end
@@ -472,9 +531,9 @@ function PlacementManager:GetItemTemplate(itemId)
     print("PlacementManager: No template found for " .. normalizedItemId .. " - creating basic preview")
     
     -- Check if this looks like a numeric ID (item_X format)
-    local numericId = normalizedItemId:match("item_(%d+)")
-    if numericId then
-        print("PlacementManager: ⚠️ Item appears to be a numeric ID (item_" .. numericId .. "). Consider adding it to the itemTemplateMap.")
+    local numericIdMatch = normalizedItemId:match("^item_(%d+)$") -- More specific match
+    if numericIdMatch then
+        print("PlacementManager: ⚠️ Item appears to be a numeric ID (item_" .. numericIdMatch .. "). Consider adding it to the itemTemplateMap.")
     end
     
     local newTemplate = Instance.new("Part")
@@ -502,23 +561,26 @@ function PlacementManager:GetItemTemplate(itemId)
         newTemplate.Material = Enum.Material.Glass
         newTemplate.Transparency = 0.5
     elseif normalizedItemId:lower():find("brick") then
-        newTemplate.BrickColor = BrickColor.new("Reddish brown")
+        newTemplate.BrickColor = BrickColor.new("Reddish brown") -- Was "Brick red", more standard is "Reddish brown"
         newTemplate.Material = Enum.Material.Brick
     else
         newTemplate.BrickColor = BrickColor.new("Medium stone grey")
         newTemplate.Material = Enum.Material.Concrete
     end
     
-    newTemplate.Parent = templates
+    newTemplate.Parent = currentItemTemplates -- Use renamed variable
     print("PlacementManager: Created new template:", normalizedItemId)
     return newTemplate
 end
 
 -- Server: Place an item in the world and persist it
-function PlacementManager:PlaceItem(player, itemId, position, normal, currentAngleY, additionalAttributes)
+function PlacementManager:PlaceItem(player, itemId, position, normal, rotationData, additionalAttributes)
     if RunService:IsClient() then return false end
     
     print("PlacementManager: PlaceItem called by", player.Name, "for item", itemId)
+    print("📍 SERVER RECEIVED POSITION:", position)
+    print("🔄 SERVER RECEIVED NORMAL:", normal)
+    print("📐 SERVER RECEIVED ROTATION DATA:", rotationData)
     
     -- Normalize item name (replace spaces with underscores)
     local normalizedItemId = itemId:gsub(" ", "_")
@@ -588,6 +650,11 @@ function PlacementManager:PlaceItem(player, itemId, position, normal, currentAng
     placedItem:SetAttribute("placedTime", os.time())
     placedItem:SetAttribute("persistent", true)
     
+    -- Store rotation data as attributes for later retrieval
+    placedItem:SetAttribute("rotationX", rotationData.X or 0)
+    placedItem:SetAttribute("rotationY", rotationData.Y or 0)
+    placedItem:SetAttribute("rotationZ", rotationData.Z or 0)
+    
     -- Get item definition to set priceIngame attribute
     local itemDef = self.Constants and self.Constants.ITEMS and self.Constants.ITEMS[normalizedItemId]
     if itemDef and itemDef.priceIngame then
@@ -603,23 +670,17 @@ function PlacementManager:PlaceItem(player, itemId, position, normal, currentAng
         UniqueItemIdAssigner.assignIdToNewItem(placedItem)
     end
     
-    -- Position and anchor the item
+    -- Position and anchor the item with multi-axis rotation support
     if placedItem:IsA("Model") and placedItem.PrimaryPart then
-        -- Handle rotation properly - rotation can be a Vector3 or a number
-        local rotationCFrame
-        if typeof(normal) == "Vector3" then
-            -- Use rotation directly as Euler angles
-            rotationCFrame = CFrame.fromEulerAnglesXYZ(
-                math.rad(normal.X or 0),
-                math.rad(normal.Y or 0),
-                math.rad(normal.Z or 0)
-            )
-        else
-            -- Use rotation as Y-axis rotation
-            rotationCFrame = CFrame.Angles(0, math.rad(currentAngleY or 0), 0)
-        end
+        -- Apply multi-axis rotation using rotationData
+        local rotationCFrame = CFrame.Angles(
+            math.rad(rotationData.X or 0), -- X-axis (pitch)
+            math.rad(rotationData.Y or 0), -- Y-axis (yaw)
+            math.rad(rotationData.Z or 0)  -- Z-axis (roll)
+        )
         
         placedItem:SetPrimaryPartCFrame(CFrame.new(position) * rotationCFrame)
+        print("📐 APPLIED MULTI-AXIS ROTATION TO MODEL: X=" .. (rotationData.X or 0) .. "°, Y=" .. (rotationData.Y or 0) .. "°, Z=" .. (rotationData.Z or 0) .. "°")
         
         -- Set all parts to anchored
         for _, part in pairs(placedItem:GetDescendants()) do
@@ -629,23 +690,17 @@ function PlacementManager:PlaceItem(player, itemId, position, normal, currentAng
             end
         end
     elseif placedItem:IsA("BasePart") then
-        -- Handle rotation properly - rotation can be a Vector3 or a number
-        local rotationCFrame
-        if typeof(normal) == "Vector3" then
-            -- Use rotation directly as Euler angles
-            rotationCFrame = CFrame.fromEulerAnglesXYZ(
-                math.rad(normal.X or 0),
-                math.rad(normal.Y or 0),
-                math.rad(normal.Z or 0)
-            )
-        else
-            -- Use rotation as Y-axis rotation
-            rotationCFrame = CFrame.Angles(0, math.rad(currentAngleY or 0), 0)
-        end
+        -- Apply multi-axis rotation using rotationData
+        local rotationCFrame = CFrame.Angles(
+            math.rad(rotationData.X or 0), -- X-axis (pitch)
+            math.rad(rotationData.Y or 0), -- Y-axis (yaw)
+            math.rad(rotationData.Z or 0)  -- Z-axis (roll)
+        )
         
         placedItem.CFrame = CFrame.new(position) * rotationCFrame
         placedItem.Anchored = true
         placedItem.CanCollide = true
+        print("📐 APPLIED MULTI-AXIS ROTATION TO PART: X=" .. (rotationData.X or 0) .. "°, Y=" .. (rotationData.Y or 0) .. "°, Z=" .. (rotationData.Z or 0) .. "°")
     end
     
     -- Parent to the placed items folder
@@ -1336,9 +1391,9 @@ function PlacementManager:RemoveFromInventory(player, itemId, quantity)
     -- Find the server ItemPurchaseHandler
     local ItemPurchaseHandler = nil
     
-    -- Try with ItemPurchaseHandler.lua in ServerScriptService
+    -- Try with ItemPurchaseHandler.luau in ServerScriptService
     local success1, result1 = pcall(function()
-        return require(game:GetService("ServerScriptService").server.ItemPurchaseHandler)
+        return require(game:GetService("ServerScriptService").server.ItemPurchaseHandler) -- Path is correct
     end)
     
     if success1 then
@@ -1361,7 +1416,7 @@ function PlacementManager:RemoveFromInventory(player, itemId, quantity)
         -- Try loading from server folder directly
         if not ItemPurchaseHandler then
             local success3, result3 = pcall(function()
-                return require(game:GetService("ServerScriptService").ItemPurchaseHandler)
+                return require(game:GetService("ServerScriptService").server.ItemPurchaseHandler) -- Corrected path
             end)
             if success3 then
                 ItemPurchaseHandler = result3
@@ -1397,14 +1452,16 @@ function PlacementManager:RemoveFromInventory(player, itemId, quantity)
     -- 3. Try with InventoryManager if available
     local InventoryManager = self.shared and self.shared.InventoryManager
     if not InventoryManager then
-        -- Try to find InventoryManager in ServerStorage or other locations
+        -- Try to find InventoryManager in ReplicatedStorage.shared.core.inventory
         local success, result = pcall(function()
-            return require(game:GetService("ServerStorage").server.InventoryManager)
+            return require(game:GetService("ReplicatedStorage").shared.core.inventory.InventoryManager) -- Corrected path
         end)
         
         if success then
             InventoryManager = result
-            print("PlacementManager: Found InventoryManager in ServerStorage")
+            print("PlacementManager: Found InventoryManager in ReplicatedStorage.shared.core.inventory")
+        else
+            warn("PlacementManager: Failed to require InventoryManager from ReplicatedStorage.shared.core.inventory:", result)
         end
     end
     
@@ -1756,6 +1813,31 @@ function PlacementManager:StartPlacing(itemId, existingPreviewItem)
     
     self.previewItem = previewItem
     
+            -- Initialize rotation (multi-axis support)
+        self.currentPlacementRotation = 0 -- Y-axis (yaw) - backward compatibility
+        self.currentPlacementRotationX = 0 -- X-axis (pitch) - up/down tilt
+        self.currentPlacementRotationY = 0 -- Y-axis (yaw) - left/right rotation
+        self.currentPlacementRotationZ = 0 -- Z-axis (roll) - spinning
+    
+    -- Setup placement controls callbacks
+    local onRotate = function()
+        self:_ShowRotationUI()
+    end
+    
+    local onPlace = function()
+        -- Place functionality is handled by the mouse click
+        -- This is just for UI consistency
+    end
+    
+    local onCancel = function()
+        self:ClearItemFromHand()
+    end
+    
+    -- Show placement controls UI
+    if self.placementControlsUI then
+        self.placementControlsUI:Show(itemId, onRotate, onPlace, onCancel)
+    end
+    
     -- Start the placement preview update loop
     local movementConnection
     movementConnection = RunService.RenderStepped:Connect(function()
@@ -1763,6 +1845,10 @@ function PlacementManager:StartPlacing(itemId, existingPreviewItem)
             if movementConnection then
                 movementConnection:Disconnect()
                 movementConnection = nil
+            end
+            -- Hide controls UI when placement ends
+            if self.placementControlsUI then
+                self.placementControlsUI:Hide()
             end
             return
         end
@@ -1772,41 +1858,112 @@ function PlacementManager:StartPlacing(itemId, existingPreviewItem)
     
     -- Setup input to place the item on click
     local userInputService = game:GetService("UserInputService")
-    local inputConnection
+    local inputConnection, scrollConnection, gamepadConnection
     
     inputConnection = userInputService.InputBegan:Connect(function(input, gameProcessed)
         if gameProcessed then return end
+        
+        -- Handle rotation UI if active
+        if self.simpleRotationUI and self.simpleRotationUI:IsActive() then
+            -- Simple rotation UI will handle its own input
+            return
+        end
+        
+        -- Direct rotation controls during placement (multi-axis support)
+        if self.isPlacing and self.previewItem then
+            local isShiftHeld = userInputService:IsKeyDown(Enum.KeyCode.LeftShift) or userInputService:IsKeyDown(Enum.KeyCode.RightShift)
+            local isCtrlHeld = userInputService:IsKeyDown(Enum.KeyCode.LeftControl) or userInputService:IsKeyDown(Enum.KeyCode.RightControl)
+            
+            if input.KeyCode == Enum.KeyCode.Q then
+                if isCtrlHeld then
+                    -- Ctrl+Q: Roll left (Z-axis)
+                    self:_DirectRotateAxis("Z", -45)
+                elseif isShiftHeld then
+                    -- Shift+Q: Pitch down (X-axis)
+                    self:_DirectRotateAxis("X", -45)
+                else
+                    -- Q: Yaw left (Y-axis)
+                    self:_DirectRotateAxis("Y", -45)
+                end
+                return
+            elseif input.KeyCode == Enum.KeyCode.E then
+                if isCtrlHeld then
+                    -- Ctrl+E: Roll right (Z-axis)
+                    self:_DirectRotateAxis("Z", 45)
+                elseif isShiftHeld then
+                    -- Shift+E: Pitch up (X-axis)
+                    self:_DirectRotateAxis("X", 45)
+                else
+                    -- E: Yaw right (Y-axis)
+                    self:_DirectRotateAxis("Y", 45)
+                end
+                return
+            elseif input.KeyCode == Enum.KeyCode.Space then
+                -- Space: Show fine rotation UI
+                self:_ShowRotationUI()
+                return
+            end
+        end
         
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             -- Left-click to place
             if self.isPlacing and self.previewItem then
                 -- Get current position and rotation
-                local position, rotation
+                local position, orientation
                 if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
                     position = self.previewItem.PrimaryPart.Position
-                    rotation = self.previewItem.PrimaryPart.Orientation
+                    orientation = self.previewItem.PrimaryPart.Orientation
                 else
                     position = self.previewItem.Position
-                    rotation = self.previewItem.Orientation
+                    orientation = self.previewItem.Orientation
                 end
                 
+                -- Convert orientation to parameters expected by server
+                local normal = Vector3.new(0, 1, 0) -- Default surface normal (pointing up)
+                local currentAngleY = self.currentPlacementRotation or orientation.Y or 0 -- Use stored rotation from rotation mode, or fallback to current orientation
+                
                 -- Request server to place the item
-                print("PlacementManager: StartPlacing - About to fire PlaceItem. self.remotes.PlaceItem is:", self.remotes and self.remotes.PlaceItem or "nil_remotes_or_placeitem") -- MARKER
-                if self.remotes and self.remotes.PlaceItem then
-                    self.remotes.PlaceItem:FireServer(self.selectedItem, position, rotation)
+                print("PlacementManager: StartPlacing - About to fire RequestPlaceItem. self.remotes.RequestPlaceItem is:", self.remotes and self.remotes.RequestPlaceItem or "nil_remotes_or_requestplaceitem") -- MARKER
+                print("📍 CLIENT PLACING AT POSITION:", position)
+                print("🔄 CLIENT PLACING WITH ORIENTATION:", orientation)
+                print("🔄 CLIENT SENDING NORMAL:", normal)
+                -- Send multi-axis rotation data
+                local rotationData = {
+                    X = self.currentPlacementRotationX or 0,
+                    Y = self.currentPlacementRotationY or self.currentPlacementRotation or currentAngleY or 0,
+                    Z = self.currentPlacementRotationZ or 0
+                }
+                print("📐 CLIENT SENDING MULTI-AXIS ROTATION:", rotationData)
+                if self.remotes and self.remotes.RequestPlaceItem then
+                    self.remotes.RequestPlaceItem:FireServer(self.selectedItem, position, normal, rotationData)
                     print("PlacementManager: Requested server to place item:", self.selectedItem)
                 else
-                    warn("PlacementManager: Cannot place item - remote event not found. self.remotes table:", self.remotes, "self.remotes.PlaceItem:", self.remotes and self.remotes.PlaceItem or "nil") -- MARKER
+                    warn("PlacementManager: Cannot place item - remote event not found. self.remotes table:", self.remotes, "self.remotes.RequestPlaceItem:", self.remotes and self.remotes.RequestPlaceItem or "nil") -- MARKER
                 end
                 
                 -- Clean up
                 self:ClearItemFromHand()
                 self.isPlacing = false
+                -- Clear all rotation values
+                self.currentPlacementRotation = nil
+                self.currentPlacementRotationX = 0
+                self.currentPlacementRotationY = 0
+                self.currentPlacementRotationZ = 0
                 
-                -- Disconnect the input handler
+                -- Disconnect all input handlers
                 if inputConnection then
                     inputConnection:Disconnect()
                     inputConnection = nil
+                end
+                
+                if scrollConnection then
+                    scrollConnection:Disconnect()
+                    scrollConnection = nil
+                end
+                
+                if gamepadConnection then
+                    gamepadConnection:Disconnect()
+                    gamepadConnection = nil
                 end
                 
                 -- Disconnect the movement handler
@@ -1820,10 +1977,20 @@ function PlacementManager:StartPlacing(itemId, existingPreviewItem)
             self:ClearItemFromHand()
             self.isPlacing = false
             
-            -- Disconnect the input handler
+            -- Disconnect all input handlers
             if inputConnection then
                 inputConnection:Disconnect()
                 inputConnection = nil
+            end
+            
+            if scrollConnection then
+                scrollConnection:Disconnect()
+                scrollConnection = nil
+            end
+            
+            if gamepadConnection then
+                gamepadConnection:Disconnect()
+                gamepadConnection = nil
             end
             
             -- Disconnect the movement handler
@@ -1835,6 +2002,65 @@ function PlacementManager:StartPlacing(itemId, existingPreviewItem)
     end)
     
     return true
+end
+
+-- Client: Start rotation mode for a placed item
+function PlacementManager:RotatePlacedItem(placedItem)
+    if RunService:IsServer() then return false end
+    
+    if not placedItem then
+        warn("PlacementManager: No item provided for rotation")
+        return false
+    end
+    
+    print("🔄 PlacementManager: Starting rotation for placed item:", placedItem.Name)
+    
+    -- Get the instanceId for server communication
+    local instanceId = placedItem:GetAttribute("instanceId") or placedItem.Name
+    
+    -- Store original rotation for cancel functionality
+    local originalRotation = 0
+    if placedItem:IsA("Model") and placedItem.PrimaryPart then
+        local _, currentY, _ = placedItem.PrimaryPart.CFrame:ToEulerAnglesXYZ()
+        originalRotation = math.deg(currentY)
+    elseif placedItem:IsA("BasePart") then
+        local _, currentY, _ = placedItem.CFrame:ToEulerAnglesXYZ()
+        originalRotation = math.deg(currentY)
+    end
+    
+    local onRotationChanged = function(item, rotation)
+        -- Apply rotation to placed item in real-time
+        self:_ApplyRotationToItem(item, rotation)
+    end
+    
+    local onConfirm = function(item, finalRotation)
+        print("✅ PlacementManager: Placed item rotation confirmed at", finalRotation, "degrees")
+        
+        -- Send rotation update to server
+        if self.remotes and self.remotes.RequestRotateItem then
+            self.remotes.RequestRotateItem:FireServer(instanceId, finalRotation)
+            print("PlacementManager: Sent rotation request to server for", instanceId)
+        else
+            warn("PlacementManager: RequestRotateItem remote not available")
+        end
+    end
+    
+    local onCancel = function(item)
+        print("❌ PlacementManager: Placed item rotation cancelled")
+        -- Restore original rotation
+        if item then
+            self:_ApplyRotationToItem(item, originalRotation)
+        end
+    end
+    
+    -- Show the simple rotation UI
+    if self.simpleRotationUI then
+        self.simpleRotationUI:Show(placedItem, onRotationChanged, onConfirm, onCancel)
+        return true
+    else
+        warn("PlacementManager: SimpleRotationUI not available")
+        return false
+    end
 end
 
 -- Client: Create a preview item for placement
@@ -1889,10 +2115,46 @@ function PlacementManager:CreatePreviewItem(itemId)
     -- Add preview to workspace
     previewItem.Parent = Workspace
     
+    -- Give the preview item an initial position (where the player is looking)
+    local player = Players.LocalPlayer
+    if player and player.Character then
+        local camera = Workspace.CurrentCamera
+        local mouse = player:GetMouse()
+        
+        -- Initial position setup - place it where the player is looking
+        local viewportMouseRay = camera:ViewportPointToRay(mouse.X, mouse.Y)
+        local raycastParams = RaycastParams.new()
+        raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+        raycastParams.FilterDescendantsInstances = {previewItem, player.Character}
+        
+        local raycastResult = Workspace:Raycast(viewportMouseRay.Origin, viewportMouseRay.Direction * 1000, raycastParams)
+        if raycastResult then
+            local initialPosition = raycastResult.Position + raycastResult.Normal * 2
+            print("📍 PREVIEW ITEM INITIAL POSITION:", initialPosition)
+            if previewItem:IsA("Model") and previewItem.PrimaryPart then
+                previewItem:SetPrimaryPartCFrame(CFrame.new(initialPosition))
+            elseif previewItem:IsA("BasePart") then
+                previewItem.CFrame = CFrame.new(initialPosition)
+            end
+        else
+            -- Fallback: place in front of player
+            local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+            if humanoidRootPart then
+                local fallbackPosition = humanoidRootPart.Position + humanoidRootPart.CFrame.LookVector * 10
+                print("📍 PREVIEW ITEM FALLBACK POSITION:", fallbackPosition)
+                if previewItem:IsA("Model") and previewItem.PrimaryPart then
+                    previewItem:SetPrimaryPartCFrame(CFrame.new(fallbackPosition))
+                elseif previewItem:IsA("BasePart") then
+                    previewItem.CFrame = CFrame.new(fallbackPosition)
+                end
+            end
+        end
+    end
+    
     return previewItem
 end
 
--- Client: Update the preview item position and appearance based on mouse position
+-- Client: Update the placement preview
 function PlacementManager:UpdatePlacementPreview()
     if RunService:IsServer() then return end
     if not self.previewItem then return end
@@ -1950,11 +2212,11 @@ function PlacementManager:UpdatePlacementPreview()
     local newOrientation
 
     -- Get item size for placement calculations
-    local itemSize = Vector3.new(4, 4, 4) -- Default size
+    local _itemSize = Vector3.new(4, 4, 4) -- Default size, prefixed with _
         if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
-        itemSize = self.previewItem.PrimaryPart.Size
+        _itemSize = self.previewItem.PrimaryPart.Size
     elseif self.previewItem:IsA("BasePart") then
-        itemSize = self.previewItem.Size
+        _itemSize = self.previewItem.Size
     end
 
     if self.isMovingExistingItem and self.isTransitioningFromRotation and self.previewItem then
@@ -2014,14 +2276,21 @@ function PlacementManager:UpdatePlacementPreview()
     -- Final position assignment and CFrame update
     self.lastSnappedPosition = newPosition
     
-    -- Apply rotation angles
+    -- Apply rotation angles - use multi-axis rotation system
     local rotationAngles = CFrame.Angles(
-        math.rad(self.currentPlacementAngleX),
-        math.rad(self.currentPlacementAngleY), 
-        math.rad(self.currentPlacementAngleZ)
+        math.rad(self.currentPlacementRotationX or self.currentPlacementAngleX or 0), -- X-axis (pitch)
+        math.rad(self.currentPlacementRotationY or self.currentPlacementRotation or 0), -- Y-axis (yaw)
+        math.rad(self.currentPlacementRotationZ or self.currentPlacementAngleZ or 0)  -- Z-axis (roll)
     )
     
     local newCFrame = CFrame.new(newPosition) * newOrientation * rotationAngles
+
+    -- Debug: Only log occasionally to avoid spam (every 20 updates)
+    if not self.debugUpdateCounter then self.debugUpdateCounter = 0 end
+    self.debugUpdateCounter = self.debugUpdateCounter + 1
+    if self.debugUpdateCounter % 20 == 0 then
+        print("🔄 PREVIEW UPDATE - Position:", newPosition, "HitPos:", hitPosition)
+    end
 
     if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
         self.previewItem:SetPrimaryPartCFrame(newCFrame)
@@ -2142,8 +2411,13 @@ function PlacementManager:ShowItemInHand(itemId)
             self.handItem = nil
             self.handItemId = nil
         elseif input.UserInputType == Enum.UserInputType.MouseButton2 or input.KeyCode == Enum.KeyCode.Escape then
-            -- Right click or Escape to close
+            -- Right click or Escape: Return to inventory
             self:ClearItemFromHand()
+            
+            -- Hide placement controls UI
+            if self.placementControlsUI then
+                self.placementControlsUI:Hide()
+            end
             
             -- Disconnect the input handler
             if inputConnection then
@@ -2156,6 +2430,78 @@ function PlacementManager:ShowItemInHand(itemId)
                 movementConnection:Disconnect()
                 movementConnection = nil
             end
+        end
+    end)
+    
+    -- Add scroll wheel support for multi-axis rotation
+    scrollConnection = userInputService.InputChanged:Connect(function(input, gameProcessed)
+        if gameProcessed or not self.isPlacing or not self.previewItem then return end
+        
+        if input.UserInputType == Enum.UserInputType.MouseWheel then
+            local isShiftHeld = userInputService:IsKeyDown(Enum.KeyCode.LeftShift) or userInputService:IsKeyDown(Enum.KeyCode.RightShift)
+            local isCtrlHeld = userInputService:IsKeyDown(Enum.KeyCode.LeftControl) or userInputService:IsKeyDown(Enum.KeyCode.RightControl)
+            
+            -- Scroll wheel: Rotate by 45 degrees (up = positive, down = negative)
+            local scrollDirection = input.Position.Z > 0 and 45 or -45
+            
+            if isCtrlHeld then
+                -- Ctrl+Scroll: Roll (Z-axis)
+                self:_DirectRotateAxis("Z", scrollDirection)
+                print("🖱️ Scroll wheel roll (Z):", scrollDirection, "degrees")
+            elseif isShiftHeld then
+                -- Shift+Scroll: Pitch (X-axis)
+                self:_DirectRotateAxis("X", scrollDirection)
+                print("🖱️ Scroll wheel pitch (X):", scrollDirection, "degrees")
+            else
+                -- Normal Scroll: Yaw (Y-axis)
+                self:_DirectRotateAxis("Y", scrollDirection)
+                print("🖱️ Scroll wheel yaw (Y):", scrollDirection, "degrees")
+            end
+        end
+    end)
+    
+    -- Add gamepad support for multi-axis rotation
+    gamepadConnection = userInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed or not self.isPlacing or not self.previewItem then return end
+        
+        -- Check for trigger presses (for modifier functionality)
+        local isLeftTriggerHeld = userInputService:IsKeyDown(Enum.KeyCode.ButtonL2)
+        local isRightTriggerHeld = userInputService:IsKeyDown(Enum.KeyCode.ButtonR2)
+        
+        if input.KeyCode == Enum.KeyCode.ButtonL1 then
+            -- Left bumper with modifiers
+            if isLeftTriggerHeld then
+                -- L2+L1: Roll left (Z-axis)
+                self:_DirectRotateAxis("Z", -45)
+                print("🎮 L2+L1: Roll left (Z) -45 degrees")
+            elseif isRightTriggerHeld then
+                -- R2+L1: Pitch down (X-axis)
+                self:_DirectRotateAxis("X", -45)
+                print("🎮 R2+L1: Pitch down (X) -45 degrees")
+            else
+                -- L1 alone: Yaw left (Y-axis)
+                self:_DirectRotateAxis("Y", -45)
+                print("🎮 L1: Yaw left (Y) -45 degrees")
+            end
+        elseif input.KeyCode == Enum.KeyCode.ButtonR1 then
+            -- Right bumper with modifiers
+            if isLeftTriggerHeld then
+                -- L2+R1: Roll right (Z-axis)
+                self:_DirectRotateAxis("Z", 45)
+                print("🎮 L2+R1: Roll right (Z) 45 degrees")
+            elseif isRightTriggerHeld then
+                -- R2+R1: Pitch up (X-axis)
+                self:_DirectRotateAxis("X", 45)
+                print("🎮 R2+R1: Pitch up (X) 45 degrees")
+            else
+                -- R1 alone: Yaw right (Y-axis)
+                self:_DirectRotateAxis("Y", 45)
+                print("🎮 R1: Yaw right (Y) 45 degrees")
+            end
+        elseif input.KeyCode == Enum.KeyCode.ButtonY then
+            -- Y button: Show fine rotation UI
+            self:_ShowRotationUI()
+            print("🎮 Y button: showing rotation UI")
         end
     end)
     
@@ -2233,1534 +2579,342 @@ function PlacementManager:ClearItemFromHand()
         self.previewItem = nil
     end
     
+    -- Hide placement controls UI
+    if self.placementControlsUI then
+        self.placementControlsUI:Hide()
+    end
+    
+    -- Hide rotation UI if active
+    if self.simpleRotationUI and self.simpleRotationUI:IsActive() then
+        self.simpleRotationUI:Hide()
+    end
+    
     self.isPlacing = false
     self.selectedItem = nil
+    self.currentPlacementRotation = nil
 end
 
 -- Setup remote events for client-server communication
 function PlacementManager:SetupRemoteEvents()
-    print("PlacementManager: Setting up remote events")
-    
-    -- Find or create Remotes folder
-    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-    if not remotes then
-        remotes = Instance.new("Folder")
-        remotes.Name = "Remotes"
-        remotes.Parent = ReplicatedStorage
-        print("PlacementManager: Created Remotes folder in ReplicatedStorage")
-    end
-    
-    -- Helper function to get or create a RemoteEvent
-    local function getOrCreateRemoteEvent(name)
-        local event = remotes:FindFirstChild(name)
-        if not event or not event:IsA("RemoteEvent") then
-            if event then
-                event:Destroy() -- Remove if wrong type
-                print("PlacementManager: Removed invalid " .. name)
-            end
-            
-            event = Instance.new("RemoteEvent")
-            event.Name = name
-            event.Parent = remotes
-            print("PlacementManager: Created remote event: " .. name)
-        else
-            print("PlacementManager: Using existing remote event: " .. name)
-        end
-        
-        self.remotes[name] = event
-        return event
-    end
-    
-    -- Create/get core events for item placement
-    local placeItemEvent = getOrCreateRemoteEvent("PlaceItem")
-    local itemPlacedEvent = getOrCreateRemoteEvent("ItemPlaced")
-    local recallItemEvent = getOrCreateRemoteEvent("RecallItem")
-    local itemRecalledEvent = getOrCreateRemoteEvent("ItemRecalled")
-    local updateItemEvent = getOrCreateRemoteEvent("UpdateItem")
-    local itemUpdatedEvent = getOrCreateRemoteEvent("ItemUpdated")
-    local deleteItemEvent = getOrCreateRemoteEvent("DeleteItem")
-    local itemDeletedEvent = getOrCreateRemoteEvent("ItemDeleted")
-    local requestMoveItemEvent = getOrCreateRemoteEvent("RequestMoveItem") -- NEW
-    
-    -- Create legacy-compatible remotes (with Request prefix)
-    local requestCloneItemEvent = getOrCreateRemoteEvent("RequestCloneItem")
-    local requestDestroyItemEvent = getOrCreateRemoteEvent("RequestDestroyItem")
-    local cloneItemEvent = getOrCreateRemoteEvent("CloneItem") -- For backward compatibility
-    local destroyItemEvent = getOrCreateRemoteEvent("DestroyItem") -- For backward compatibility
-    
-    -- Connect remote events
-    if placeItemEvent then
-        placeItemEvent.OnServerEvent:Connect(function(player, itemId, position, normal, currentAngleY, additionalAttributes)
-            print("PlacementManager: PlaceItem event received from " .. player.Name)
-            self:PlaceItem(player, itemId, position, normal, currentAngleY, additionalAttributes)
-        end)
-    end
-    
-    if recallItemEvent then
-        recallItemEvent.OnServerEvent:Connect(function(player, instanceId, cost, originalItemId) -- Added cost and originalItemId based on HandleCostedRecallItemRequest signature
-            print("PlacementManager: RecallItem event received from " .. player.Name .. " for " .. tostring(instanceId))
-            -- Ensure we have the necessary parameters for HandleCostedRecallItemRequest
-            -- ItemInteractionClient sends: instanceId, cost, originalItemId (derived from instanceId's attributes if needed)
-            local itemInstance = self:FindItemByInstanceId(instanceId)
-            if not itemInstance then
-                warn("PlacementManager: RecallItem - Could not find item instance for ID: " .. tostring(instanceId))
-                return
-            end
-            local actualOriginalItemId = itemInstance:GetAttribute("itemId") or originalItemId -- Get it from attribute if available
-            if not actualOriginalItemId then
-                warn("PlacementManager: RecallItem - Could not determine originalItemId for instance: " .. tostring(instanceId))
-                return
-            end
-            -- The 'cost' should be passed from the client (ItemInteractionClient) when it fires the event.
-            -- If ItemInteractionClient isn't sending it, that needs to be updated too.
-            -- For now, assume cost is being sent or retrieve it if necessary.
-            local actualCost = cost
-            if actualCost == nil then
-                -- Fallback if cost wasn't sent, though it should be
-                local itemDef = self:GetItemData(actualOriginalItemId)
-                actualCost = (itemDef and itemDef.recallCost) or 0 -- Default to 0 if not defined
-                print("PlacementManager: RecallItem - Cost was not directly provided, using fallback/default: " .. tostring(actualCost))
-            end
+    print("PlacementManager: Setting up remote events...")
+    self.remotes = self.remotes or {} -- Ensure self.remotes is initialized
 
-            self:HandleCostedRecallItemRequest(player, itemInstance, actualCost, actualOriginalItemId)
-        end)
-    end
-    
-    if updateItemEvent then
-        updateItemEvent.OnServerEvent:Connect(function(player, instanceId, newProperties)
-            print("PlacementManager: UpdateItem event received from " .. player.Name)
-            self:UpdateItem(player, instanceId, newProperties)
-        end)
-    end
-    
-    if deleteItemEvent then
-        deleteItemEvent.OnServerEvent:Connect(function(player, instanceId)
-            print("PlacementManager: DeleteItem event received from " .. player.Name)
-            self:DeleteItem(player, instanceId)
-        end)
-    end
-    
-    -- Connect legacy events
-    if cloneItemEvent then
-        cloneItemEvent.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
-            print("PlacementManager: Legacy CloneItem event received from " .. player.Name)
-            self:HandleCloneItemRequest(player, self:FindItemByInstanceId(instanceId), clientCalculatedCost, nil)
-        end)
-    end
-    
-    if destroyItemEvent then
-        destroyItemEvent.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
-            print("PlacementManager: Legacy DestroyItem event received from " .. player.Name)
-            self:HandleDestroyItemRequest(player, self:FindItemByInstanceId(instanceId), clientCalculatedCost, nil)
-        end)
-    end
-    
-    -- Connect request events
-    if requestCloneItemEvent then
-        requestCloneItemEvent.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
-            print("PlacementManager: RequestCloneItem event received from " .. player.Name)
-            self:HandleCloneItemRequest(player, self:FindItemByInstanceId(instanceId), clientCalculatedCost, nil)
-        end)
-    end
-    
-    if requestDestroyItemEvent then
-        requestDestroyItemEvent.OnServerEvent:Connect(function(player, instanceId, clientCalculatedCost)
-            print("PlacementManager: RequestDestroyItem event received from " .. player.Name)
-            self:HandleDestroyItemRequest(player, self:FindItemByInstanceId(instanceId), clientCalculatedCost, nil)
-        end)
-    end
-    
-    -- NEW: Connect RequestMoveItem
-    if requestMoveItemEvent then
-        requestMoveItemEvent.OnServerEvent:Connect(function(player, instanceId, newCFrame, cost)
-            print(string.format("PlacementManager: RequestMoveItem event received from %s for instanceId %s, cost %s", player.Name, tostring(instanceId), tostring(cost)))
-            self:HandleRequestMoveItem(player, instanceId, newCFrame, cost) -- New handler function needed
-        end)
-    end
-    
-    print("PlacementManager: Remote events setup completed")
-end
-
--- Client: Cache remote events
-function PlacementManager:CacheRemoteEvents()
-    if RunService:IsServer() then return end
-    
-    print("PlacementManager: Caching remote events --- MARKER ---") -- MARKER
-    
-    local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
-    if not remotesFolder then
-        warn("PlacementManager: Remotes folder not found initially during CacheRemoteEvents. Waiting...") -- MARKER
-        remotesFolder = ReplicatedStorage:WaitForChild("Remotes", 10) -- Wait up to 10 seconds
+    if RunService:IsClient() then
+        -- Client-side: Get existing events
+        local remotesFolder = ReplicatedStorage:WaitForChild("Remotes", 10)
         if not remotesFolder then
-            warn("PlacementManager: Remotes folder STILL not found after WaitForChild(10). Cannot cache remotes.") -- MARKER
-            return false
+            warn("PlacementManager (Client): Remotes folder not found!")
+            return
         end
-        print("PlacementManager: Remotes folder found after WaitForChild.") -- MARKER
-    else
-        print("PlacementManager: Remotes folder found immediately.") -- MARKER
-    end
-    
-    -- Cache all required remote events
-    local events = {
-        "PlaceItem",
-        "ItemPlaced",
-        "RecallItem",
-        "ItemRecalled",
-        "UpdateItem",
-        "ItemUpdated",
-        "DeleteItem",
-        "ItemDeleted",
-        "RequestMoveItem" -- NEW: For requesting to move an existing item
-    }
-    
-    self.remotes = self.remotes or {} -- Ensure self.remotes is initialized (should be by .new)
-    local allEventsCached = true
+        
+        -- Helper function to get remote events
+        local function getRemoteEvent(name)
+            return remotesFolder:WaitForChild(name, 5)
+        end
+        
+        self.remotes.ItemPlaced = getRemoteEvent("ItemPlaced")
+        self.remotes.ItemRecalled = getRemoteEvent("ItemRecalled")
+        self.remotes.ItemUpdated = getRemoteEvent("ItemUpdated")
+        self.remotes.ItemDeleted = getRemoteEvent("ItemDeleted")
+        self.remotes.RequestPlaceItem = getRemoteEvent("RequestPlaceItem")
+        self.remotes.RequestRecallItem = getRemoteEvent("RequestRecallItem")
+        self.remotes.RequestMoveItem = getRemoteEvent("RequestMoveItem") -- NEW
+        self.remotes.ConfirmMoveItem = getRemoteEvent("ConfirmMoveItem") -- NEW
+        self.remotes.CancelMoveItem = getRemoteEvent("CancelMoveItem")   -- NEW
+        self.remotes.RequestRotateItem = getRemoteEvent("RequestRotateItem") -- NEW
+        self.remotes.ConfirmRotation = getRemoteEvent("ConfirmRotation")     -- NEW
+        self.remotes.CancelRotation = getRemoteEvent("CancelRotation")       -- NEW
+        self.remotes.UpdateRotationInput = getRemoteEvent("UpdateRotationInput") -- NEW
 
-    for _, eventName in ipairs(events) do
-        local event = remotesFolder:FindFirstChild(eventName)
-        if not event then
-            warn("PlacementManager: Event '"..eventName.."' not found initially in Remotes folder. Waiting for it (5s)...") -- MARKER
-            event = remotesFolder:WaitForChild(eventName, 5) -- Wait up to 5 seconds for the specific event
+        print("PlacementManager (Client): Remote events cached.")
+        if not self.remotes.RequestPlaceItem then
+            warn("PlacementManager (Client): RequestPlaceItem remote not found!")
+        end
+
+    else -- Server-side: Create events
+        local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
+        if not remotesFolder then
+            remotesFolder = Instance.new("Folder")
+            remotesFolder.Name = "Remotes"
+            remotesFolder.Parent = ReplicatedStorage
+        end
+        
+        -- Helper function to get or create remote events
+        local function getOrCreateRemoteEvent(name)
+            local event = remotesFolder:FindFirstChild(name)
             if not event then
-                warn("PlacementManager: FAILED to find remote event after wait: " .. eventName) -- MARKER
-                allEventsCached = false
-            else
-                print("PlacementManager: Found event '"..eventName.."' after WaitForChild.") -- MARKER
+                event = Instance.new("RemoteEvent")
+                event.Name = name
+                event.Parent = remotesFolder
+                print("PlacementManager: Created RemoteEvent:", name)
             end
+            return event
         end
-
-        if event and event:IsA("RemoteEvent") then
-            self.remotes[eventName] = event
-            print("PlacementManager: Successfully cached remote event: " .. eventName) -- MARKER
-        elseif event then
-            warn("PlacementManager: Found instance named '"..eventName.."' but it's not a RemoteEvent. Type: "..event:GetFullName() .. " is a " .. event.ClassName) -- MARKER
-            allEventsCached = false
-        else
-            -- This case is covered by the "FAILED to find" warning above if WaitForChild also failed
-            if not remotesFolder:FindFirstChild(eventName) then -- Double check if it really failed
-                 allEventsCached = false
-            end
-        end
-    end
-    
-    if not allEventsCached then
-        warn("PlacementManager: CacheRemoteEvents - Not all remote events were cached successfully.") -- MARKER
-    else
-        print("PlacementManager: CacheRemoteEvents - All expected remote events appear to be cached.") -- MARKER
-    end
-
-    -- Connect client-side handler for ItemUpdated if on client
-    if RunService:IsClient() and self.remotes.ItemUpdated then
-        self.remotes.ItemUpdated.OnClientEvent:Connect(function(instanceId, newCFrame)
-            print(string.format("PlacementManager (Client): ItemUpdated event received for %s", instanceId))
-            local itemToUpdate = self:FindItemByInstanceId(instanceId) -- Use existing FindItemByInstanceId
-            if itemToUpdate then
-                if itemToUpdate:IsA("Model") and itemToUpdate.PrimaryPart then
-                    itemToUpdate:SetPrimaryPartCFrame(newCFrame)
-                    print(string.format("PlacementManager (Client): Updated CFrame for Model %s", instanceId))
-                elseif itemToUpdate:IsA("BasePart") then
-                    itemToUpdate.CFrame = newCFrame
-                    print(string.format("PlacementManager (Client): Updated CFrame for BasePart %s", instanceId))
-                else
-                    warn(string.format("PlacementManager (Client): ItemUpdated - Item %s is not a Model or BasePart, cannot set CFrame.", instanceId))
-                end
-                -- Make sure item is visible after move confirmation
-                if itemToUpdate:IsA("Model") then
-                    for _, child in ipairs(itemToUpdate:GetDescendants()) do
-                        if child:IsA("BasePart") or child:IsA("Decal") then
-                            child.Transparency = 0
-                        end
-                    end
-                elseif itemToUpdate:IsA("BasePart") then
-                    itemToUpdate.Transparency = 0
-                end
-            else
-                warn(string.format("PlacementManager (Client): ItemUpdated - Could not find item %s in workspace to update.", instanceId))
-            end
-        end)
-        print("PlacementManager (Client): Connected OnClientEvent for ItemUpdated.")
-    elseif RunService:IsClient() then
-        warn("PlacementManager (Client): ItemUpdated remote was not available to connect OnClientEvent.")
-    end
-
-    return allEventsCached
-end
-
--- Placeholder for handling a CLONE item request (server-side)
-function PlacementManager:HandleCloneItemRequest(player, itemInstance, cost, originalItemId)
-    print(string.format("PlacementManager:HandleCloneItemRequest CALLED for item: %s by player %s (cost: %s, originalId: %s)", tostring(itemInstance and itemInstance.Name), tostring(player and player.Name), tostring(cost), tostring(originalItemId)))
-    
-    if not itemInstance or not itemInstance.Parent then
-        return {success = false, message = "Original item not found or invalid."}
-    end
-
-    if not originalItemId then
-        originalItemId = itemInstance:GetAttribute("itemId")
-        if not originalItemId then
-            return {success = false, message = "Could not determine the original item ID."}
-        end
-    end
-
-    -- Find ItemPurchaseHandler to add the item to inventory
-    local ItemPurchaseHandler = self.shared and self.shared.ItemPurchaseHandler
-    if not ItemPurchaseHandler then
-        -- Try requiring it directly if not found in shared
-        local success, result = pcall(function()
-            return require(game:GetService("ServerScriptService").server.ItemPurchaseHandler)
-        end)
         
-        if success then
-            ItemPurchaseHandler = result
-            print("PlacementManager:HandleCloneItemRequest - Successfully required ItemPurchaseHandler dynamically.")
-        else
-            print("PlacementManager:HandleCloneItemRequest - Failed to require ItemPurchaseHandler:", result)
-            return {success = false, message = "Could not access inventory system."}
-        end
-    end
-
-    if not ItemPurchaseHandler then
-        return {success = false, message = "Inventory system is not available."}
-    end
-
-    -- Add the item to player's inventory
-    local successAdd, resultAdd = pcall(function()
-        return ItemPurchaseHandler:AddToInventory(player, originalItemId, 1)
-    end)
-
-    if not successAdd or not resultAdd then
-        local errorMsg = "Failed to add item to inventory."
-        if not successAdd and resultAdd then
-            errorMsg = "Error adding to inventory: " .. tostring(resultAdd)
-        end
-        print("PlacementManager:HandleCloneItemRequest - " .. errorMsg)
-        return {success = false, message = errorMsg}
-    end
-
-    print(string.format("PlacementManager:HandleCloneItemRequest - Successfully added item '%s' to inventory for player %s", originalItemId, player.Name))
-    
-    -- Fire notification to client if we have NotifyPlayer
-    if self.shared and self.shared.remotes and self.shared.remotes.NotifyPlayer then
-        self.shared.remotes.NotifyPlayer:FireClient(player, string.format("Item '%s' has been added to your inventory.", originalItemId))
-    end
-
-    return {success = true, message = string.format("Item '%s' was cloned to your inventory.", originalItemId)}
-end
-
--- Placeholder for handling a MOVE item request (server-side)
-function PlacementManager:HandleMoveItemRequest(player, itemInstance, cost, originalItemId, newPosition, newRotation)
-    print(string.format("PlacementManager:HandleMoveItemRequest called for item: %s by player %s (cost: %s, originalId: %s)", itemInstance.Name, player.Name, tostring(cost), originalItemId))
-    
-    if not itemInstance or not itemInstance.Parent then
-        return {success = false, message = "Item to move not found or invalid."}
-    end
-
-    if not newPosition or not newRotation then
-        return {success = false, message = string.format("Move action for %s requires new position/rotation data from client. (Not fully implemented client-side)", originalItemId)}
-    end
-
-    local ownerId = itemInstance:GetAttribute("owner")
-    if ownerId ~= player.UserId and not (player:GetAttribute("IsAdmin") == true) then
-        return {success = false, message = "You do not own this item."}
-    end
-
-    local finalPosition = newPosition
-    if type(newPosition) == "table" then
-        finalPosition = Vector3.new(newPosition.X or 0, newPosition.Y or 0, newPosition.Z or 0)
-    end
-
-    local finalRotation = newRotation 
-    if type(newRotation) == "table" then 
-        finalRotation = Vector3.new(newRotation.X or 0, newRotation.Y or 0, newRotation.Z or 0)
-    end
-
-    local success, updateMessage
-    if itemInstance:IsA("Model") and itemInstance.PrimaryPart then
-        local cfRotation
-        if typeof(finalRotation) == "Vector3" then
-            cfRotation = CFrame.fromEulerAnglesXYZ(math.rad(finalRotation.X), math.rad(finalRotation.Y), math.rad(finalRotation.Z))
-        else 
-            cfRotation = finalRotation 
-        end
-        itemInstance:SetPrimaryPartCFrame(CFrame.new(finalPosition) * cfRotation)
-        success = true
-    elseif itemInstance:IsA("BasePart") then
-        local cfRotation
-        if typeof(finalRotation) == "Vector3" then
-            cfRotation = CFrame.fromEulerAnglesXYZ(math.rad(finalRotation.X), math.rad(finalRotation.Y), math.rad(finalRotation.Z))
-        else 
-            cfRotation = finalRotation
-        end
-        itemInstance.CFrame = CFrame.new(finalPosition) * cfRotation
-        success = true
-    else
-        success = false
-        updateMessage = "Item is not a Model or BasePart."
-    end
-    
-    if success then
-        itemInstance:SetAttribute("lastModified", os.time())
-        self:SaveWorldData()
-        return {success = true, message = string.format("Item %s moved for %s %s.", originalItemId, cost, self.Constants.CURRENCY.INGAME or "coins")}
-    else
-        return {success = false, message = updateMessage or string.format("Failed to move %s.", originalItemId)}
-    end
-end
-
--- Placeholder for handling a COSTED RECALL item request (server-side)
-function PlacementManager:HandleCostedRecallItemRequest(player, itemInstance, cost, originalItemId)
-    print(string.format("PlacementManager:HandleCostedRecallItemRequest CALLED for item: %s by player %s (cost: %s, originalItemId: %s)", tostring(itemInstance and itemInstance.Name), tostring(player and player.Name), tostring(cost), tostring(originalItemId)))
-
-    if not itemInstance or not itemInstance.Parent then
-        return {success = false, message = "Item to recall not found or invalid."}
-    end
-
-    if not originalItemId then 
-        return {success = false, message = "Cannot recall item: Original ItemID is missing."}
-    end
-
-    -- 1. Add item back to inventory
-    local ItemPurchaseHandler = self.shared and self.shared.ItemPurchaseHandler
-    if not ItemPurchaseHandler then
-        local successRequire, requiredModule = pcall(require, game:GetService("ServerScriptService").server.ItemPurchaseHandler) -- Corrected path
-        if successRequire then ItemPurchaseHandler = requiredModule end
-    end
-
-    if ItemPurchaseHandler then
-        print("HandleCostedRecallItemRequest DEBUG: Attempting to add item to inventory via ItemPurchaseHandler: ", originalItemId)
-        local successAdd, resultAdd = pcall(ItemPurchaseHandler.AddToInventory, ItemPurchaseHandler, player, originalItemId, 1)
-        if not successAdd or not resultAdd then
-            local errMessage = resultAdd or "Unknown error adding item to inventory."
-            print("HandleCostedRecallItemRequest WARNING: Failed to add item to inventory via ItemPurchaseHandler: " .. tostring(errMessage))
-            -- Proceeding with recall even if inventory add fails, but this is a warning.
-        else
-            print("HandleCostedRecallItemRequest DEBUG: Successfully added item to inventory via ItemPurchaseHandler.")
-        end
-    else
-        warn("HandleCostedRecallItemRequest WARNING: ItemPurchaseHandler module not found. Cannot add item to inventory.")
-        -- Decide if this is a fatal error for recall. For now, let's allow recall to proceed.
-        -- return {success = false, message = "System error: ItemPurchaseHandler not available."}
-    end
-    
-    -- 2. Remove item from world (using existing DeleteItem logic but without cost/refund)
-    local uniqueItemId = itemInstance:GetAttribute("UniqueItemId")
-    if uniqueItemId then
-        self.ItemsByUniqueId[uniqueItemId] = nil
-    end
-    local ownerId = itemInstance:GetAttribute("owner")
-    if ownerId and self.ItemsByOwner[ownerId] then
-        local items = self.ItemsByOwner[ownerId]
-        for i, id in ipairs(items) do
-            if id == uniqueItemId then
-                table.remove(items, i)
-                break
-            end
-        end
-    end
-    local instanceId = itemInstance:GetAttribute("instanceId")
-    if instanceId then
-         self.ItemsByInstanceId[instanceId] = nil
-    end
-    
-    itemInstance:Destroy()
-    self:SaveWorldData() 
-    print(string.format("PlacementManager:HandleCostedRecallItemRequest - Item %s (InstanceID: %s) destroyed and removed from tracking.", tostring(originalItemId), tostring(instanceId)))
-
-    local final_s_originalItemId_recall = tostring(originalItemId)
-    local final_s_cost_recall = tostring(cost)
-
-    local currency_for_message_recall
-    local raw_ingame_currency_value_recall = self.Constants.CURRENCY.INGAME
-    print(string.format("HandleCostedRecallItemRequest DEBUG: raw_ingame_currency_value_recall is '%s' (type: %s)", tostring(raw_ingame_currency_value_recall), type(raw_ingame_currency_value_recall)))
-
-    if type(raw_ingame_currency_value_recall) == "string" and raw_ingame_currency_value_recall ~= "" then
-        currency_for_message_recall = raw_ingame_currency_value_recall
-    else
-        currency_for_message_recall = "coins" -- Default
-    end
-    print(string.format("HandleCostedRecallItemRequest DEBUG: currency_for_message_recall decided as '%s'", currency_for_message_recall))
-    
-    local message_recall = string.format("Item %s recalled for %s %s. Added back to inventory.", final_s_originalItemId_recall, final_s_cost_recall, currency_for_message_recall)
-    print("HandleCostedRecallItemRequest DEBUG: Success message prepared: " .. message_recall)
-    return {success = true, message = message_recall, recalledItemId = originalItemId}
-end
-
--- Placeholder for handling a DESTROY item request (server-side)
-function PlacementManager:HandleDestroyItemRequest(player, itemInstance, cost, originalItemId)
-    -- Log entry point and initial parameters
-    local pName = (player and player.Name) or "UnknownPlayer"
-    local iName = (itemInstance and itemInstance.Name) or "UnknownItemInstance"
-    local cValue = cost or "UnknownCost"
-    local oItemId = originalItemId or "UnknownOriginalItemId"
-    print(string.format("PlacementManager:HandleDestroyItemRequest ENTERED. Player: %s, ItemInstance Name: %s, Cost: %s, OriginalItemId: %s", tostring(pName), tostring(iName), tostring(cValue), tostring(oItemId)))
-
-    if not itemInstance or not itemInstance.Parent then
-        print("PlacementManager:HandleDestroyItemRequest - itemInstance or parent is nil. Returning error.")
-        return {success = false, message = "Item to destroy not found or invalid."}
-    end
-    
-    print(string.format("PlacementManager:HandleDestroyItemRequest - Destroying item directly from instance: %s", itemInstance:GetFullName()))
-    
-    -- Get attributes for tracking and logging
-    local instanceId = itemInstance:GetAttribute("instanceId")
-    local uniqueItemId = itemInstance:GetAttribute("UniqueItemId")
-    local ownerId = itemInstance:GetAttribute("owner")
-    
-    -- Check if player owns the item or is admin
-    local isAdmin = player:GetAttribute("IsAdmin") or false
-    if ownerId and ownerId ~= player.UserId and not isAdmin then
-        return {success = false, message = "You don't own this item."}
-    end
-    
-    -- DIRECT APPROACH: Remove item from lookup tables
-    if uniqueItemId and self.ItemsByUniqueId then
-        self.ItemsByUniqueId[uniqueItemId] = nil
-        print(string.format("PlacementManager:HandleDestroyItemRequest - Removed from ItemsByUniqueId: %s", tostring(uniqueItemId)))
-    end
-    
-    if instanceId and self.ItemsByInstanceId then
-        self.ItemsByInstanceId[instanceId] = nil
-        print(string.format("PlacementManager:HandleDestroyItemRequest - Removed from ItemsByInstanceId: %s", tostring(instanceId)))
-    end
-    
-    if ownerId and self.placedItemsByPlayer and self.placedItemsByPlayer[ownerId] then
-        for i, itemId in ipairs(self.placedItemsByPlayer[ownerId]) do
-            if (instanceId and itemId == instanceId) or (uniqueItemId and itemId == uniqueItemId) then
-                table.remove(self.placedItemsByPlayer[ownerId], i)
-                print(string.format("PlacementManager:HandleDestroyItemRequest - Removed from placedItemsByPlayer for owner %s", tostring(ownerId)))
-                break
-            end
-        end
-    end
-    
-    -- Notify the client (if available)
-    if self.remotes and self.remotes.ItemDeleted then
-        self.remotes.ItemDeleted:FireClient(player, instanceId or uniqueItemId)
-        print(string.format("PlacementManager:HandleDestroyItemRequest - Notified client of item deletion: %s", instanceId or uniqueItemId))
-    end
-    
-    -- Destroy the instance
-    print(string.format("PlacementManager:HandleDestroyItemRequest - Destroying item: %s", itemInstance:GetFullName()))
-    itemInstance:Destroy()
-    
-    -- Save world data
-    task.spawn(function()
-        self:SaveWorldData()
-        print("PlacementManager:HandleDestroyItemRequest - World data saved after item destruction")
-    end)
-    
-    -- Format success message
-    local currencyName = "coins" -- Default currency name
-    if self.Constants and self.Constants.CURRENCY and self.Constants.CURRENCY.INGAME then
-        currencyName = self.Constants.CURRENCY.INGAME or "coins"
-    end
-    
-    local msg_originalItemId = tostring(originalItemId or instanceId or uniqueItemId or "UnknownItem")
-    local msg_cost = tostring(cost or 0)
-    
-    print(string.format("PlacementManager:HandleDestroyItemRequest - SUCCESS! Deleted %s", msg_originalItemId))
-    return {success = true, message = string.format("Item %s destroyed. You were charged %s %s.", msg_originalItemId, msg_cost, currencyName)}
-end
-
--- Placeholder for handling a ROTATE item request (server-side)
-function PlacementManager:HandleRotateItemRequest(player, itemInstance, cost, originalItemId, rotationParameters)
-    print(string.format("PlacementManager:HandleRotateItemRequest called for item: %s by player %s (cost: %s, originalId: %s)", itemInstance.Name, player.Name, tostring(cost), originalItemId))
-    if rotationParameters then print("  Rotation Parameters:", rotationParameters) end
-    
-    if not itemInstance or not itemInstance.Parent then
-        return {success = false, message = "Item to rotate not found or invalid."}
-    end
-
-    if not rotationParameters or type(rotationParameters) ~= "table" or not rotationParameters.axis or not rotationParameters.degrees then
-        return {success = false, message = "Rotation parameters (axis, degrees) missing or invalid."}
-    end
-
-    local axis = string.lower(tostring(rotationParameters.axis))
-    local degrees = tonumber(rotationParameters.degrees)
-
-    if not degrees or (axis ~= "x" and axis ~= "y" and axis ~= "z") then
-        return {success = false, message = "Invalid rotation axis or degrees."}
-    end
-
-    local currentCFrame
-    if itemInstance:IsA("Model") and itemInstance.PrimaryPart then
-        currentCFrame = itemInstance.PrimaryPart.CFrame
-    elseif itemInstance:IsA("BasePart") then
-        currentCFrame = itemInstance.CFrame
-    else
-        return {success = false, message = "Item is not a Model or BasePart."}
-    end
-    
-    local rotationCFrame
-    if axis == "x" then
-        rotationCFrame = CFrame.Angles(math.rad(degrees), 0, 0)
-    elseif axis == "y" then
-        rotationCFrame = CFrame.Angles(0, math.rad(degrees), 0)
-    else -- axis == "z"
-        rotationCFrame = CFrame.Angles(0, 0, math.rad(degrees))
-    end
-    
-    local newCFrame = currentCFrame * rotationCFrame
-
-    if itemInstance:IsA("Model") and itemInstance.PrimaryPart then
-        itemInstance:SetPrimaryPartCFrame(newCFrame)
-    elseif itemInstance:IsA("BasePart") then
-        itemInstance.CFrame = newCFrame
-    end
-
-    itemInstance:SetAttribute("lastModified", os.time())
-    self:SaveWorldData()
-    
-    return {success = true, message = string.format("Item %s rotated around %s-axis by %s degrees for %s %s.", originalItemId, axis:upper(), degrees, cost, self.Constants.CURRENCY.INGAME or "coins")}
-end
-
--- Client: Initiate moving an existing placed item
-function PlacementManager:InitiateMoveOperation(itemInstance, cost)
-    if RunService:IsServer() then return false end
-    if not itemInstance or not itemInstance.Parent then 
-        warn("PlacementManager:InitiateMoveOperation - Invalid itemInstance provided.")
-        return false
-    end
-
-    self:ResetPlacementState() -- ADDED: Ensure clean state
-
-    local originalItemId = itemInstance:GetAttribute("itemId")
-    if not originalItemId then
-        warn("PlacementManager:InitiateMoveOperation - itemInstance is missing itemId attribute: " .. itemInstance.Name)
-        return false
-    end
-
-    print(string.format("PlacementManager:InitiateMoveOperation - Initiating move for %s (itemId: %s), cost %s", itemInstance.Name, originalItemId, tostring(cost)))
-
-    -- self:ClearItemFromHand() -- Called by ResetPlacementState
-
-    self.isMovingExistingItem = true
-    self.isPlacing = false 
-    self.itemBeingMovedInstance = itemInstance
-    self.currentMoveCost = cost or 0
-    self.selectedItem = originalItemId 
-
-    -- Set initial orientation from the item being moved
-    if itemInstance:IsA("Model") and itemInstance.PrimaryPart then
-        self.currentPlacementAngleY = itemInstance.PrimaryPart.Orientation.Y
-    elseif itemInstance:IsA("BasePart") then
-        self.currentPlacementAngleY = itemInstance.Orientation.Y
-    else
-        self.currentPlacementAngleY = 0 -- Default if no orientation found
-    end
-    self.currentPlacementAngleX = 0 -- Ensure X and Z are 0 for standard move
-    self.currentPlacementAngleZ = 0
-
-    -- Store original transparency and make item semi-transparent
-    self.itemBeingMovedInstance_OriginalState = {instance = itemInstance, transparencies = {}}
-
-    -- Make the original item semi-transparent
-    if self.itemBeingMovedInstance:IsA("Model") then
-        for _, child in ipairs(self.itemBeingMovedInstance:GetDescendants()) do
-            if child:IsA("BasePart") or child:IsA("Decal") then
-                child.Transparency = 0.7
-            end
-        end
-    elseif self.itemBeingMovedInstance:IsA("BasePart") then
-        self.itemBeingMovedInstance.Transparency = 0.7
-    end
-
-    -- Create a new preview item
-    self.previewItem = self:CreatePreviewItem(originalItemId) -- Reuses existing preview creation logic
-    if not self.previewItem then
-        warn("PlacementManager:InitiateMoveOperation - Failed to create preview item for " .. originalItemId)
-        self:CancelMoveOperation() -- Full cleanup for move mode
-        return false
-    end
-    
-    -- Ensure the preview item starts at the original item's position initially
-    if self.itemBeingMovedInstance:IsA("Model") and self.itemBeingMovedInstance.PrimaryPart then
-        if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
-            self.previewItem:SetPrimaryPartCFrame(self.itemBeingMovedInstance:GetPrimaryPartCFrame())
-        elseif self.previewItem:IsA("BasePart") then -- Original is Model, Preview is Part
-            self.previewItem.CFrame = self.itemBeingMovedInstance:GetPrimaryPartCFrame()
-        end
-    elseif self.itemBeingMovedInstance:IsA("BasePart") then
-        if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then -- Original is Part, Preview is Model
-            self.previewItem:SetPrimaryPartCFrame(self.itemBeingMovedInstance.CFrame)
-        elseif self.previewItem:IsA("BasePart") then -- Both are Parts
-            self.previewItem.CFrame = self.itemBeingMovedInstance.CFrame
-        end
-    end
-
-    -- Activate placement controls (RenderStepped for mouse follow, InputBegan for click)
-    -- This part is similar to StartPlacing, let's adapt it carefully
-    local movementConnection
-    movementConnection = RunService.RenderStepped:Connect(function()
-        if not self.isMovingExistingItem or not self.previewItem then -- Check for move state
-            if movementConnection then
-                movementConnection:Disconnect()
-                movementConnection = nil
-            end
-            return
-        end
-        self:UpdatePlacementPreview() -- Re-use existing preview update logic
-    end)
-
-    local userInputService = game:GetService("UserInputService")
-    local inputConnection
-    inputConnection = userInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
+        self.remotes.ItemPlaced = getOrCreateRemoteEvent("ItemPlaced")
+        self.remotes.ItemRecalled = getOrCreateRemoteEvent("ItemRecalled")
+        self.remotes.ItemUpdated = getOrCreateRemoteEvent("ItemUpdated")
+        self.remotes.ItemDeleted = getOrCreateRemoteEvent("ItemDeleted")
+        self.remotes.RequestPlaceItem = getOrCreateRemoteEvent("RequestPlaceItem")
+        self.remotes.RequestRecallItem = getOrCreateRemoteEvent("RequestRecallItem")
+        self.remotes.RequestMoveItem = getOrCreateRemoteEvent("RequestMoveItem") -- NEW
+        self.remotes.ConfirmMoveItem = getOrCreateRemoteEvent("ConfirmMoveItem") -- NEW
+        self.remotes.CancelMoveItem = getOrCreateRemoteEvent("CancelMoveItem")   -- NEW
+        self.remotes.RequestRotateItem = getOrCreateRemoteEvent("RequestRotateItem") -- NEW
+        self.remotes.ConfirmRotation = getOrCreateRemoteEvent("ConfirmRotation")     -- NEW
+        self.remotes.CancelRotation = getOrCreateRemoteEvent("CancelRotation")       -- NEW
+        self.remotes.UpdateRotationInput = getOrCreateRemoteEvent("UpdateRotationInput") -- NEW
         
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then -- Left-click
-            if self.isMovingExistingItem and self.previewItem and self.itemBeingMovedInstance then
-                local targetCFrame
-                if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
-                    targetCFrame = self.previewItem.PrimaryPart.CFrame
-                elseif self.previewItem:IsA("BasePart") then
-                    targetCFrame = self.previewItem.CFrame
+        print("PlacementManager (Server): Remote events created.")
+        
+        -- Connect server-side handlers
+        if self.remotes.RequestPlaceItem then
+            self.remotes.RequestPlaceItem.OnServerEvent:Connect(function(player, itemId, position, normal, rotationData, additionalAttributes)
+                print("PlacementManager: Received RequestPlaceItem from", player.Name)
+                print("📐 SERVER RECEIVED ROTATION DATA:", rotationData)
+                
+                -- Handle both old format (single Y angle) and new format (multi-axis)
+                local finalRotation
+                if typeof(rotationData) == "table" then
+                    -- New multi-axis format
+                    finalRotation = rotationData
+                elseif typeof(rotationData) == "number" then
+                    -- Old single Y-axis format (backward compatibility)
+                    finalRotation = {X = 0, Y = rotationData, Z = 0}
                 else
-                    warn("PlacementManager:MoveOperation - PreviewItem is neither Model with PrimaryPart nor BasePart.")
-                    self:CancelMoveOperation() 
-                    return
+                    -- Fallback
+                    finalRotation = {X = 0, Y = 0, Z = 0}
                 end
                 
-                local instanceIdToMove = self.itemBeingMovedInstance:GetAttribute("instanceId")
-                if not instanceIdToMove then
-                     warn("PlacementManager:MoveOperation - Original item to move is missing instanceId!")
-                     self:CancelMoveOperation() 
-                     return
-                end
-
-                -- Fire the NEW RemoteEvent for moving an item
-                if self.remotes and self.remotes.RequestMoveItem then
-                    print(string.format("PlacementManager: Firing RequestMoveItem for %s to new CFrame, cost %s", instanceIdToMove, tostring(self.currentMoveCost)))
-                    self.remotes.RequestMoveItem:FireServer(instanceIdToMove, targetCFrame, self.currentMoveCost)
-                else
-                    warn("PlacementManager: RequestMoveItem remote not found.")
-                end
-                self:CancelMoveOperation() -- Clean up move state
-            end
-        elseif input.UserInputType == Enum.UserInputType.MouseButton2 or input.KeyCode == Enum.KeyCode.Escape then -- Right-click or Escape
-            if self.isMovingExistingItem then
-                self:CancelMoveOperation()
-            end
-        elseif input.KeyCode == Enum.KeyCode.R then -- Rotate preview
-             if self.isMovingExistingItem and self.previewItem then
-                if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
-                    self.previewItem:SetPrimaryPartCFrame(self.previewItem.PrimaryPart.CFrame * CFrame.Angles(0, math.rad(45), 0))
-                elseif self.previewItem:IsA("BasePart") then
-                    self.previewItem.CFrame = self.previewItem.CFrame * CFrame.Angles(0, math.rad(45), 0)
-                end
-            end
-        end
-        
-        -- Disconnect if action taken or cancelled (handled by CancelMoveOperation or if not moving)
-        if not self.isMovingExistingItem then
-            if inputConnection then inputConnection:Disconnect(); inputConnection = nil; end
-            if movementConnection then movementConnection:Disconnect(); movementConnection = nil; end
-        end
-    end)
-    
-    self.inputConnection_Move = inputConnection -- Store for potential explicit disconnect
-    self.movementConnection_Move = movementConnection -- Store for potential explicit disconnect
-
-    print("PlacementManager:InitiateMoveOperation - Ready to move. Preview active.")
-    return true
-end
-
--- Client: Cancel the current item move operation (NEW or to be adjusted)
-function PlacementManager:CancelMoveOperation()
-    if RunService:IsServer() then return end
-
-    print(string.format("PlacementManager:CancelMoveOperation CALLED. Current state: isPlacing=%s, isMovingExistingItem=%s, itemBeingMovedInstance=%s, previewItem=%s, currentMoveCost=%s",
-        tostring(self.isPlacing), tostring(self.isMovingExistingItem), 
-        tostring(self.itemBeingMovedInstance and self.itemBeingMovedInstance.Name), 
-        tostring(self.previewItem and self.previewItem.Name), 
-        tostring(self.currentMoveCost)))
-
-    if self.itemBeingMovedInstance and self.itemBeingMovedInstance.Parent then
-        -- Make original item fully visible
-        if self.itemBeingMovedInstance:IsA("Model") then
-            for _, child in ipairs(self.itemBeingMovedInstance:GetDescendants()) do
-                if child:IsA("BasePart") or child:IsA("Decal") then
-                    child.Transparency = 0 -- Or original transparency if stored
-                end
-            end
-        elseif self.itemBeingMovedInstance:IsA("BasePart") then
-            self.itemBeingMovedInstance.Transparency = 0 -- Or original transparency
-        end
-    end
-
-    if self.previewItem then
-        self.previewItem:Destroy()
-        self.previewItem = nil
-    end
-
-    -- Disconnect specific move operation connections
-    if self.inputConnection_Move then
-        self.inputConnection_Move:Disconnect()
-        self.inputConnection_Move = nil
-    end
-    if self.movementConnection_Move then
-        self.movementConnection_Move:Disconnect()
-        self.movementConnection_Move = nil
-    end
-
-    self.isMovingExistingItem = false
-    self.itemBeingMovedInstance = nil
-    self.currentMoveCost = 0
-    self.selectedItem = nil -- Clear selected item used for preview
-    
-    print("PlacementManager: Move operation cancelled and cleaned up.")
-end
-
--- Server: Handle a request to move an existing item
-function PlacementManager:HandleRequestMoveItem(player, instanceId, newCFrame, cost)
-    if RunService:IsClient() then return {success = false, message = "Cannot handle move request on client."} end
-
-    print(string.format("PlacementManager:HandleRequestMoveItem CALLED for instanceId: %s by player %s (cost: %s, newCFrame: %s)", 
-        tostring(instanceId), 
-        tostring(player and player.Name), 
-        tostring(cost), 
-        tostring(newCFrame)))
-
-    local itemInstance = self:FindItemByInstanceId(instanceId)
-
-    if not itemInstance or not itemInstance.Parent then
-        warn("PlacementManager:HandleRequestMoveItem - Item to move (instanceId: " .. tostring(instanceId) .. ") not found or invalid parent.")
-        return {success = false, message = "Item to move not found or invalid."}
-    end
-
-    -- Verify ownership (or admin)
-    local ownerId = itemInstance:GetAttribute("owner")
-    local isAdmin = player:GetAttribute("IsAdmin") or false -- Assuming an IsAdmin attribute
-    if ownerId ~= player.UserId and not isAdmin then
-        warn(string.format("PlacementManager:HandleRequestMoveItem - Player %s is not owner or admin of %s.", player.Name, instanceId))
-        return {success = false, message = "You do not have permission to move this item."}
-    end
-
-    -- Attempt to deduct currency
-    local currencyDeducted = false
-    if cost > 0 then
-        if _G.CurrencyManager and _G.CurrencyManager.RemoveCurrency then
-            local removeSuccess, removeResult = pcall(function()
-                return _G.CurrencyManager:RemoveCurrency(player, cost)
+                self:PlaceItem(player, itemId, position, normal, finalRotation, additionalAttributes)
             end)
-            if removeSuccess and removeResult then
-                currencyDeducted = true
-                print(string.format("PlacementManager:HandleRequestMoveItem - Successfully deducted %s currency from %s", tostring(cost), player.Name))
-            else
-                local errMsg = removeSuccess and tostring(removeResult) or "pcall failed or insufficient funds"
-                warn(string.format("PlacementManager:HandleRequestMoveItem - Failed to deduct %s currency from %s for moving %s: %s", tostring(cost), player.Name, instanceId, errMsg))
-                if self.remotes.NotifyPlayer then
-                    self.remotes.NotifyPlayer:FireClient(player, "Move failed: Could not charge cost (" .. errMsg .. ")", "Error")
-                end
-                return {success = false, message = "Failed to charge move cost: " .. errMsg}
-            end
         else
-            warn("PlacementManager:HandleRequestMoveItem - _G.CurrencyManager or RemoveCurrency method not found.")
-            if self.remotes.NotifyPlayer then
-                 self.remotes.NotifyPlayer:FireClient(player, "Move failed: Currency system unavailable.", "Error")
-            end
-            return {success = false, message = "Currency system unavailable to charge move cost."}
-        end
-    else
-        currencyDeducted = true -- No cost, so consider it deducted
-    end
-
-    -- Update item CFrame
-    local originalItemId = itemInstance:GetAttribute("itemId") or "UnknownItem"
-    local successSetCFrame = false
-    if itemInstance:IsA("Model") and itemInstance.PrimaryPart then
-        itemInstance:SetPrimaryPartCFrame(newCFrame)
-        successSetCFrame = true
-    elseif itemInstance:IsA("BasePart") then
-        itemInstance.CFrame = newCFrame
-        successSetCFrame = true
-    else
-        warn("PlacementManager:HandleRequestMoveItem - Item " .. instanceId .. " is not a Model with PrimaryPart or a BasePart, cannot set CFrame.")
-    end
-
-    if not successSetCFrame then
-        -- Attempt to refund if currency was deducted and CFrame update failed
-        if cost > 0 and currencyDeducted and _G.CurrencyManager and _G.CurrencyManager.AddCurrency then
-            _G.CurrencyManager:AddCurrency(player, cost)
-            print("PlacementManager:HandleRequestMoveItem - Refunded cost for "..instanceId.." due to CFrame update failure.")
-            if self.remotes.NotifyPlayer then
-                self.remotes.NotifyPlayer:FireClient(player, "Move failed: Item could not be physically moved. Cost refunded.", "Error")
-            end
-        end
-        return {success = false, message = "Item type cannot be moved (invalid CFrame target)."}
-    end
-
-    itemInstance:SetAttribute("lastModified", os.time())
-    itemInstance:SetAttribute("lastMovedBy", player.UserId)
-
-    print(string.format("PlacementManager:HandleRequestMoveItem - Item %s (original: %s) moved successfully by %s.", instanceId, originalItemId, player.Name))
-
-    -- Save world data (non-blocking)
-    task.spawn(function()
-        self:SaveWorldData()
-    end)
-
-    -- Notify all clients about the update (could use a specific ItemMoved event too)
-    if self.remotes.ItemUpdated then
-        self.remotes.ItemUpdated:FireAllClients(instanceId, newCFrame) 
-        print(string.format("PlacementManager:HandleRequestMoveItem - Fired ItemUpdated for %s to all clients.", instanceId))
-    end
-
-    if self.remotes.NotifyPlayer then
-        local currencyName = (self.Constants and self.Constants.CURRENCY and self.Constants.CURRENCY.INGAME) or "currency"
-        self.remotes.NotifyPlayer:FireClient(player, string.format("Item successfully moved for %s %s.", cost, currencyName), "Info")
-    end
-    return {success = true, message = "Item moved successfully."}
-end
-
--- NEW CLIENT FUNCTION: Start the Rotation Workflow
-function PlacementManager:StartRotationWorkflow(itemInstance, cost)
-    if RunService:IsServer() then return false end
-    if not itemInstance or not itemInstance.Parent then
-        warn("PlacementManager:StartRotationWorkflow - Invalid itemInstance provided.")
-        return false
-    end
-    if self.isPlacing or self.isMovingExistingItem or self.isRotatingItem then
-        warn("PlacementManager:StartRotationWorkflow - Already in a placement/move/rotate operation.")
-        return false
-    end
-
-    local originalItemId = itemInstance:GetAttribute("itemId")
-    if not originalItemId then
-        warn("PlacementManager:StartRotationWorkflow - itemInstance is missing itemId attribute: " .. itemInstance.Name)
-        return false
-    end
-
-    print(string.format("PlacementManager:StartRotationWorkflow - Initiating for %s (itemId: %s), cost %s", itemInstance.Name, originalItemId, tostring(cost)))
-
-    self:ClearItemFromHand() -- Clear any other active previews/states
-
-    self.isRotatingItem = true
-    self.itemBeingMovedInstance = itemInstance -- Store the original item
-    self.rotationCost = cost or 0
-    self.selectedItem = originalItemId -- For preview creation
-
-    -- Make original item semi-transparent
-    if self.itemBeingMovedInstance:IsA("Model") then
-        for _, child in ipairs(self.itemBeingMovedInstance:GetDescendants()) do
-            if child:IsA("BasePart") or child:IsA("Decal") then
-                child.Transparency = 0.85 -- More transparent during rotation
-            end
-        end
-    elseif self.itemBeingMovedInstance:IsA("BasePart") then
-        self.itemBeingMovedInstance.Transparency = 0.85
-    end
-
-    -- Create preview item
-    self.previewItem = self:CreatePreviewItem(originalItemId)
-    if not self.previewItem then
-        warn("PlacementManager:StartRotationWorkflow - Failed to create preview item for " .. originalItemId)
-        self:CancelRotationWorkflow()
-        return false
-    end
-    self.itemToRotate = self.previewItem -- Alias for clarity during rotation phase
-
-    -- Initial position and orientation of preview matches the original item
-    local initialCFrame = CFrame.new()
-    if self.itemBeingMovedInstance:IsA("Model") and self.itemBeingMovedInstance.PrimaryPart then
-        initialCFrame = self.itemBeingMovedInstance:GetPrimaryPartCFrame()
-    elseif self.itemBeingMovedInstance:IsA("BasePart") then
-        initialCFrame = self.itemBeingMovedInstance.CFrame
-    end
-    
-    if self.itemToRotate:IsA("Model") and self.itemToRotate.PrimaryPart then
-        self.itemToRotate:SetPrimaryPartCFrame(initialCFrame)
-    elseif self.itemToRotate:IsA("BasePart") then
-        self.itemToRotate.CFrame = initialCFrame
-    end
-    self.basePreviewCFrame = initialCFrame -- Save this base CFrame
-    self.currentRotationInput = CFrame.new() -- Reset accumulated rotation
-
-    -- Setup Input Handlers for Rotation
-    local UserInputService = game:GetService("UserInputService")
-    
-    -- Mouse movement for rotation (if mouse is locked)
-    -- For free-form rotation, mouse delta will be used.
-    -- We will use key-based rotation for now for simplicity, can add mouse-look rotation later.
-
-    -- Key press for rotation commands and confirm/cancel
-    if self.rotationInputBeganConnection then self.rotationInputBeganConnection:Disconnect() end
-    self.rotationInputBeganConnection = UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-        if gameProcessedEvent then return end
-        if not self.isRotatingItem then return end
-
-        local CFrameRotationAmount = CFrame.Angles(0,0,0)
-        local rotated = false
-
-        if input.KeyCode == Enum.KeyCode.Q then -- Rotate Yaw Left (around Y axis)
-            CFrameRotationAmount = CFrame.Angles(0, self.rotationSensitivityKeys, 0)
-            rotated = true
-        elseif input.KeyCode == Enum.KeyCode.E then -- Rotate Yaw Right (around Y axis)
-            CFrameRotationAmount = CFrame.Angles(0, -self.rotationSensitivityKeys, 0)
-            rotated = true
-        elseif input.KeyCode == Enum.KeyCode.R then -- Rotate Pitch Up (around X axis)
-            CFrameRotationAmount = CFrame.Angles(self.rotationSensitivityKeys, 0, 0)
-            rotated = true
-        elseif input.KeyCode == Enum.KeyCode.F then -- Rotate Pitch Down (around X axis)
-            CFrameRotationAmount = CFrame.Angles(-self.rotationSensitivityKeys, 0, 0)
-            rotated = true
-        elseif input.KeyCode == Enum.KeyCode.Z then -- Rotate Roll Left (around Z axis)
-            CFrameRotationAmount = CFrame.Angles(0, 0, self.rotationSensitivityKeys)
-            rotated = true
-        elseif input.KeyCode == Enum.KeyCode.X then -- Rotate Roll Right (around Z axis)
-            CFrameRotationAmount = CFrame.Angles(0, 0, -self.rotationSensitivityKeys)
-            rotated = true
-        elseif input.UserInputType == Enum.UserInputType.MouseButton1 or input.KeyCode == Enum.KeyCode.Return then -- Confirm Rotation (Left Click or Enter)
-            self:ConfirmRotationAndTransitionToPlacement()
-            return -- Exit early as state changes
-        elseif input.UserInputType == Enum.UserInputType.MouseButton2 or input.KeyCode == Enum.KeyCode.Escape then -- Cancel Rotation (Right Click or Escape)
-            self:CancelRotationWorkflow()
-            return -- Exit early
+            warn("PlacementManager (Server): RequestPlaceItem remote not found, cannot connect handler.")
         end
 
-        if rotated and self.itemToRotate then
-            -- Accumulate rotation relative to the world axes
-            self.currentRotationInput = self.currentRotationInput * CFrameRotationAmount
-            self:_ApplyPreviewRotation()
+        if self.remotes.RequestRecallItem then
+            self.remotes.RequestRecallItem.OnServerEvent:Connect(function(player, instanceId)
+                print("PlacementManager: Received RequestRecallItem from", player.Name)
+                self:RecallItem(player, instanceId)
+            end)
         end
-    end)
-    
-    -- RenderStepped for smooth updates if mouse rotation was active
-    -- if self.rotationRenderSteppedConnection then self.rotationRenderSteppedConnection:Disconnect() end
-    -- self.rotationRenderSteppedConnection = RunService.RenderStepped:Connect(function()
-    --    if not self.isRotatingItem or not self.itemToRotate then return end
-    --    -- self:_UpdateRotationFromMouse() -- If implementing mouse-look rotation
-    --    self:_ApplyPreviewRotation()
-    -- end)
 
-    print("PlacementManager:StartRotationWorkflow - Rotation mode activated. Q/E for Yaw, R/F for Pitch, Z/X for Roll. LMB/Enter to confirm, RMB/Esc to cancel.")
-    return true
-end
-
--- NEW CLIENT FUNCTION: Apply the accumulated rotation to the preview item
-function PlacementManager:_ApplyPreviewRotation()
-    if not self.itemToRotate or not self.basePreviewCFrame then return end
-
-    local finalCFrame = self.basePreviewCFrame * self.currentRotationInput
-    
-    if self.itemToRotate:IsA("Model") and self.itemToRotate.PrimaryPart then
-        self.itemToRotate:SetPrimaryPartCFrame(finalCFrame)
-    elseif self.itemToRotate:IsA("BasePart") then
-        self.itemToRotate.CFrame = finalCFrame
-    end
-end
-
--- NEW CLIENT FUNCTION: Confirm rotation and transition to placement phase
-function PlacementManager:ConfirmRotationAndTransitionToPlacement()
-    if RunService:IsServer() then return end
-    if not self.isRotatingItem or not self.itemToRotate then return end
-
-    print("PlacementManager:ConfirmRotationAndTransitionToPlacement - Rotation confirmed.")
-
-    -- Hide rotation UI
-    if self.rotationControlsUI then
-        self.rotationControlsUI:HideInstructions()
-    end
-
-    -- Disconnect rotation-specific input listeners
-    if self.rotationInputBeganConnection then self.rotationInputBeganConnection:Disconnect(); self.rotationInputBeganConnection = nil; end
-    -- if self.rotationRenderSteppedConnection then self.rotationRenderSteppedConnection:Disconnect(); self.rotationRenderSteppedConnection = nil; end
-    
-    self.isRotatingItem = false
-    -- self.itemToRotate is already self.previewItem
-
-    -- Now, transition to the "move" phase using the rotated previewItem.
-    -- The previewItem (now stored in self.previewItem) has the desired rotation.
-    -- Its position is currently the same as the original item.
-    -- We will use InitiateMoveOperation's underlying input logic to move it.
-    
-    self.isMovingExistingItem = true -- Set this to true to reuse move logic's input handlers
-    -- itemBeingMovedInstance is already set to the original item
-    -- currentMoveCost should be self.rotationCost (or a combined cost)
-    self.currentMoveCost = self.rotationCost 
-    -- self.selectedItem is already originalItemId
-
-    -- Make original item fully transparent as we are now "moving" its replacement
-    if self.itemBeingMovedInstance:IsA("Model") then
-        for _, child in ipairs(self.itemBeingMovedInstance:GetDescendants()) do
-            if child:IsA("BasePart") or child:IsA("Decal") then
-                child.Transparency = 1 -- Fully transparent
-            end
+        if self.remotes.RequestMoveItem then
+            self.remotes.RequestMoveItem.OnServerEvent:Connect(function(player, instanceId)
+                print("PlacementManager: Received RequestMoveItem from", player.Name, "for instanceId:", instanceId)
+                self:HandleRequestMoveItem(player, instanceId)
+            end)
         end
-    elseif self.itemBeingMovedInstance:IsA("BasePart") then
-        self.itemBeingMovedInstance.Transparency = 1
-    end
-    
-    -- The previewItem (self.previewItem) will now follow the mouse for placement.
-    -- The input connections for MoveOperation (left click to place, right to cancel) need to be activated.
-    -- We can re-use the input setup from InitiateMoveOperation, but ensure it doesn't reset the previewItem.
 
-    print("PlacementManager:ConfirmRotation - Transitioning to move/placement phase with rotated item.")
-
-    -- Activate placement controls (RenderStepped for mouse follow, InputBegan for click)
-    -- This part is similar to StartPlacing and InitiateMoveOperation.
-    if self.movementConnection_Move then self.movementConnection_Move:Disconnect(); self.movementConnection_Move = nil; end
-    self.movementConnection_Move = RunService.RenderStepped:Connect(function()
-        if not self.isMovingExistingItem or not self.previewItem then
-            if self.movementConnection_Move then
-                self.movementConnection_Move:Disconnect()
-                self.movementConnection_Move = nil
-            end
-            return
+        if self.remotes.ConfirmMoveItem then
+            self.remotes.ConfirmMoveItem.OnServerEvent:Connect(function(player, instanceId, newPosition, newRotationY)
+                print("PlacementManager: Received ConfirmMoveItem from", player.Name, "for instanceId:", instanceId)
+                self:HandleConfirmMoveItem(player, instanceId, newPosition, newRotationY)
+            end)
         end
-        self:UpdatePlacementPreview() -- Re-use existing preview update logic
-    end)
 
-    local UserInputService = game:GetService("UserInputService")
-    if self.inputConnection_Move then self.inputConnection_Move:Disconnect(); self.inputConnection_Move = nil; end
-    self.inputConnection_Move = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then -- Left-click
-            if self.isMovingExistingItem and self.previewItem and self.itemBeingMovedInstance then
-                local targetCFrame
-                if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
-                    targetCFrame = self.previewItem.PrimaryPart.CFrame
-                elseif self.previewItem:IsA("BasePart") then
-                    targetCFrame = self.previewItem.CFrame
-                else
-                    warn("PlacementManager:MoveAfterRotate - PreviewItem is neither Model nor BasePart.")
-                    self:CancelMoveOperation() 
-                    return
-                end
-                
-                local instanceIdToMove = self.itemBeingMovedInstance:GetAttribute("instanceId")
-                if not instanceIdToMove then
-                     warn("PlacementManager:MoveAfterRotate - Original item is missing instanceId!")
-                     self:CancelMoveOperation() 
-                     return
-                end
-
-                if self.remotes and self.remotes.RequestMoveItem then
-                    print(string.format("PlacementManager: Firing RequestMoveItem (after rotate) for %s to new CFrame, cost %s", instanceIdToMove, tostring(self.currentMoveCost)))
-                    self.remotes.RequestMoveItem:FireServer(instanceIdToMove, targetCFrame, self.currentMoveCost)
-                else
-                    warn("PlacementManager: RequestMoveItem remote not found for move-after-rotate.")
-                end
-                self:CancelMoveOperation() -- Clean up all move/rotate states
-            end
-        elseif input.UserInputType == Enum.UserInputType.MouseButton2 or input.KeyCode == Enum.KeyCode.Escape then -- Right-click or Escape
-            if self.isMovingExistingItem then
-                self:CancelMoveOperation() -- This will also cancel the preceding rotation implicitly by resetting state.
-            end
+        if self.remotes.CancelMoveItem then
+            self.remotes.CancelMoveItem.OnServerEvent:Connect(function(player, instanceId)
+                print("PlacementManager: Received CancelMoveItem from", player.Name, "for instanceId:", instanceId)
+                self:HandleCancelMoveItem(player, instanceId)
+            end)
         end
         
-        if not self.isMovingExistingItem then -- If state changed (e.g. item placed or cancelled)
-            if self.inputConnection_Move then self.inputConnection_Move:Disconnect(); self.inputConnection_Move = nil; end
-            if self.movementConnection_Move then self.movementConnection_Move:Disconnect(); self.movementConnection_Move = nil; end
-        end
-    end)
-end
-
--- NEW CLIENT FUNCTION: Cancel the current rotation workflow
-function PlacementManager:CancelRotationWorkflow()
-    if RunService:IsServer() then return end
-    if not self.isRotatingItem then return end
-
-    print("PlacementManager:CancelRotationWorkflow - Cancelling rotation operation.")
-
-    -- Hide rotation UI
-    if self.rotationControlsUI then
-        self.rotationControlsUI:HideInstructions()
-        -- Potentially destroy it if it's only used for one rotation session at a time
-        -- For now, just hiding. If a global :Destroy() method is added to PlacementManager,
-        -- then self.rotationControlsUI:Destroy() should be called there.
-    end
-
-    if self.itemToRotate then -- This is the previewItem during rotation
-        self.itemToRotate:Destroy()
-        self.itemToRotate = nil
-    end
-    self.isRotatingItem = false
-    self.itemBeingMovedInstance = nil -- Clear this as well, as rotation might have been initiated for a move
-    self.isTransitioningFromRotation = false
-
-    print("PlacementManager:CancelRotationWorkflow - Rotation workflow cancelled and cleaned up.")
-end
-
--- NEW: Client-side destroy method to clean up UI and connections
-function PlacementManager:Destroy()
-    if RunService:IsServer() then return end
-    print("PlacementManager: Destroy called on client instance.")
-
-    -- Cancel any ongoing operations
-    if self.isPlacing then self:ClearItemFromHand() end
-    if self.isMovingExistingItem then self:CancelMoveOperation() end
-    if self.isRotatingItem then self:CancelRotationWorkflow() end
-
-    -- Destroy RotationControlsUI
-    if self.rotationControlsUI then
-        self.rotationControlsUI:Destroy()
-        self.rotationControlsUI = nil
-        print("PlacementManager: Destroyed RotationControlsUI.")
-    end
-    
-    -- Disconnect any other persistent connections if they exist (example)
-    -- if self.someOtherConnection then self.someOtherConnection:Disconnect() end
-    
-    self.shared = nil -- Clear references
-    self.Constants = nil
-    self.remotes = {} -- Clear remotes cache
-    
-    print("PlacementManager: Client instance destroyed.")
-end
-
-function PlacementManager:ResetPlacementState()
-    print("PlacementManager:ResetPlacementState called") -- DEBUG
-    self.isPlacing = false
-    self.isMovingExistingItem = false
-    self.isRotatingItem = false
-    self.isTransitioningFromRotation = false
-
-    if self.previewItem then
-        self.previewItem:Destroy()
-        self.previewItem = nil
-    end
-    self.selectedItem = nil
-    -- self.itemBeingMovedInstance = nil -- Keep this to restore transparency if needed before nilling
-    self.itemToRotate = nil
-    self.currentMoveCost = 0
-    self.rotationCost = 0
-    self.currentPlacementAngleY = 0 
-    self.currentPlacementAngleX = 0 -- ADDED: Reset X-axis rotation
-    self.currentPlacementAngleZ = 0 -- ADDED: Reset Z-axis rotation
-    self.currentAngleY = 0 -- INITIALIZE self.currentAngleY HERE AS WELL
-    self.currentRotationInput = CFrame.new()
-    self.basePreviewCFrame = nil
-    self.confirmedPreviewRotation = nil -- Reset confirmed rotation
-
-    -- Restore original item transparency if it was being moved/rotated
-    if self.itemBeingMovedInstance_OriginalState and self.itemBeingMovedInstance_OriginalState.instance and self.itemBeingMovedInstance_OriginalState.instance.Parent then
-        local item = self.itemBeingMovedInstance_OriginalState.instance
-        if item:IsA("Model") then
-            for _, child in ipairs(item:GetDescendants()) do
-                if child:IsA("BasePart") or child:IsA("Decal") then
-                    child.Transparency = self.itemBeingMovedInstance_OriginalState.transparencies[child] or 0
-                end
-            end
-        elseif item:IsA("BasePart") then
-            item.Transparency = self.itemBeingMovedInstance_OriginalState.transparencies[item] or 0
-        end
-    end
-    self.itemBeingMovedInstance = nil -- Now safe to nil this out
-    self.itemBeingMovedInstance_OriginalState = nil -- ADDED
-    
-    -- Disconnect any active input listeners
-    if self.inputConnection then self.inputConnection:Disconnect(); self.inputConnection = nil; end
-    if self.movementConnection then self.movementConnection:Disconnect(); self.movementConnection = nil; end
-    if self.inputConnection_Move then self.inputConnection_Move:Disconnect(); self.inputConnection_Move = nil; end
-    if self.movementConnection_Move then self.movementConnection_Move:Disconnect(); self.movementConnection_Move = nil; end
-    if self.rotationInputBeganConnection then self.rotationInputBeganConnection:Disconnect(); self.rotationInputBeganConnection = nil; end
-    
-    -- Hide rotation UI if it was shown
-    if self.rotationControlsUI then
-        self.rotationControlsUI:HideInstructions() -- MODIFIED
-    end
-    
-    print("PlacementManager: All placement/move/rotate states and connections reset.")
-    -- ADDED PRINT STATEMENT FOR ANGLE VALUES AT END OF RESET
-    print(string.format("ResetPlacementState - EXITING - Angles X: %s, Y: %s, Z: %s", 
-        tostring(self.currentPlacementAngleX), 
-        tostring(self.currentPlacementAngleY), 
-        tostring(self.currentPlacementAngleZ)))
-
-    print("PlacementManager: All placement/move/rotate states and connections reset.") -- DEBUG
-end
-
--- (Client) Start the rotation workflow
--- This function is called when the player chooses to rotate an already placed item.
--- It makes the original item transparent, creates a preview, and sets up input for rotation.
--- After rotation is confirmed, it transitions to a placement mode for the rotated item.
-function PlacementManager:StartRotationWorkflow(itemInstance, cost)
-    if RunService:IsServer() then return false end
-    if not itemInstance or not itemInstance.Parent then
-        warn("PlacementManager:StartRotationWorkflow - Invalid itemInstance provided.")
-        return false
-    end
-    
-    -- Call ResetPlacementState at the beginning to ensure clean state
-    self:ResetPlacementState() -- ADDED
-
-    if self.isPlacing or self.isMovingExistingItem or self.isRotatingItem then -- Check again after reset
-        warn("PlacementManager:StartRotationWorkflow - Still in a placement/move/rotate operation after reset. Aborting.")
-        return false
-    end
-
-    local originalItemId = itemInstance:GetAttribute("itemId")
-    if not originalItemId then
-        warn("PlacementManager:StartRotationWorkflow - itemInstance is missing itemId attribute: " .. itemInstance.Name)
-        return false
-    end
-
-    print(string.format("PlacementManager:StartRotationWorkflow - Initiating for %s (itemId: %s), cost %s", itemInstance.Name, originalItemId, tostring(cost)))
-
-    self.isRotatingItem = true
-    self.itemBeingMovedInstance = itemInstance 
-    self.rotationCost = cost or 0
-    self.selectedItem = originalItemId 
-
-    -- Store original transparency and make item semi-transparent
-    self.itemBeingMovedInstance_OriginalState = {instance = itemInstance, transparencies = {}} -- MODIFIED
-    if self.itemBeingMovedInstance:IsA("Model") then
-        for _, child in ipairs(self.itemBeingMovedInstance:GetDescendants()) do
-            if child:IsA("BasePart") or child:IsA("Decal") then
-                self.itemBeingMovedInstance_OriginalState.transparencies[child] = child.Transparency -- STORE
-                child.Transparency = 0.85 
-            end
-        end
-    elseif self.itemBeingMovedInstance:IsA("BasePart") then
-        self.itemBeingMovedInstance_OriginalState.transparencies[self.itemBeingMovedInstance] = self.itemBeingMovedInstance.Transparency -- STORE
-        self.itemBeingMovedInstance.Transparency = 0.85
-    end
-
-    self.previewItem = self:CreatePreviewItem(originalItemId)
-    if not self.previewItem then
-        warn("PlacementManager:StartRotationWorkflow - Failed to create preview item for " .. originalItemId)
-        self:CancelRotationWorkflow() 
-        return false
-    end
-    self.itemToRotate = self.previewItem 
-
-    local initialCFrame = CFrame.new()
-    if self.itemBeingMovedInstance:IsA("Model") and self.itemBeingMovedInstance.PrimaryPart then
-        initialCFrame = self.itemBeingMovedInstance:GetPrimaryPartCFrame()
-    elseif self.itemBeingMovedInstance:IsA("BasePart") then
-        initialCFrame = self.itemBeingMovedInstance.CFrame
-    end
-    
-    if self.itemToRotate:IsA("Model") and self.itemToRotate.PrimaryPart then
-        self.itemToRotate:SetPrimaryPartCFrame(initialCFrame)
-    elseif self.itemToRotate:IsA("BasePart") then
-        self.itemToRotate.CFrame = initialCFrame
-    end
-    self.basePreviewCFrame = initialCFrame 
-    self.currentRotationInput = CFrame.new() 
-    self.currentPlacementAngleX = 0 -- ADDED
-    self.currentPlacementAngleZ = 0 -- ADDED
-
-    -- Show Rotation Controls UI
-    if self.rotationControlsUI then -- ADDED GUARD
-        print("PlacementManager:StartRotationWorkflow - Showing RotationControlsUI")
-        self.rotationControlsUI:ShowInstructions()
-    else
-        warn("PlacementManager:StartRotationWorkflow - self.rotationControlsUI is nil, cannot show instructions.")
-    end
-
-    local UserInputService = game:GetService("UserInputService")
-    
-    if self.rotationInputBeganConnection then self.rotationInputBeganConnection:Disconnect() end
-    self.rotationInputBeganConnection = UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-        if gameProcessedEvent then return end
-        if not self.isRotatingItem then return end
-
-        local CFrameRotationAmount = CFrame.Angles(0,0,0)
-        local rotated = false
-
-        if input.KeyCode == Enum.KeyCode.Q then 
-            CFrameRotationAmount = CFrame.Angles(0, self.rotationSensitivityKeys, 0)
-            rotated = true
-        elseif input.KeyCode == Enum.KeyCode.E then 
-            CFrameRotationAmount = CFrame.Angles(0, -self.rotationSensitivityKeys, 0)
-            rotated = true
-        elseif input.KeyCode == Enum.KeyCode.R then 
-            CFrameRotationAmount = CFrame.Angles(self.rotationSensitivityKeys, 0, 0)
-            rotated = true
-        elseif input.KeyCode == Enum.KeyCode.F then 
-            CFrameRotationAmount = CFrame.Angles(-self.rotationSensitivityKeys, 0, 0)
-            rotated = true
-        elseif input.KeyCode == Enum.KeyCode.Z then 
-            CFrameRotationAmount = CFrame.Angles(0, 0, self.rotationSensitivityKeys)
-            rotated = true
-        elseif input.KeyCode == Enum.KeyCode.X then 
-            CFrameRotationAmount = CFrame.Angles(0, 0, -self.rotationSensitivityKeys)
-            rotated = true
-        elseif input.UserInputType == Enum.UserInputType.MouseButton1 or input.KeyCode == Enum.KeyCode.Return then 
-            self:ConfirmRotationAndTransitionToPlacement()
-            return 
-        elseif input.UserInputType == Enum.UserInputType.MouseButton2 or input.KeyCode == Enum.KeyCode.Escape then 
-            self:CancelRotationWorkflow()
-            return 
+        if self.remotes.RequestRotateItem then
+            self.remotes.RequestRotateItem.OnServerEvent:Connect(function(player, instanceId, rotationDegrees)
+                print("PlacementManager: Received RequestRotateItem from", player.Name, "for instanceId:", instanceId, "rotation:", rotationDegrees)
+                self:HandleRotateItemRequest(player, instanceId, rotationDegrees)
+            end)
         end
 
-        if rotated and self.itemToRotate then
-            self.currentRotationInput = self.currentRotationInput * CFrameRotationAmount
-            self:_ApplyPreviewRotation()
-        end
-    end)
-
-    print("PlacementManager:StartRotationWorkflow - Rotation mode activated. Q/E for Yaw, R/F for Pitch, Z/X for Roll. LMB/Enter to confirm, RMB/Esc to cancel.")
-    return true
-end
-
--- (Client) Helper to apply the current accumulated rotation to the preview item
-function PlacementManager:_ApplyPreviewRotation()
-    if not self.itemToRotate or not self.basePreviewCFrame then return end
-
-    local finalCFrame = self.basePreviewCFrame * self.currentRotationInput
-    
-    if self.itemToRotate:IsA("Model") and self.itemToRotate.PrimaryPart then
-        self.itemToRotate:SetPrimaryPartCFrame(finalCFrame)
-    elseif self.itemToRotate:IsA("BasePart") then
-        self.itemToRotate.CFrame = finalCFrame
-    end
-end
-
--- (Client) Confirm rotation and transition to placement phase
-function PlacementManager:ConfirmRotationAndTransitionToPlacement()
-    if RunService:IsServer() then return end
-    if not self.isRotatingItem or not self.itemToRotate then 
-        warn("ConfirmRotationAndTransitionToPlacement: Not in rotating state or no item to rotate.")
-        return 
-    end
-
-    print("PlacementManager:ConfirmRotationAndTransitionToPlacement - Rotation confirmed.")
-
-    if self.rotationControlsUI then
-        self.rotationControlsUI:HideInstructions()
-    end
-
-    if self.rotationInputBeganConnection then self.rotationInputBeganConnection:Disconnect(); self.rotationInputBeganConnection = nil; end
-    
-    local confirmedRotationOnly = CFrame.new() 
-    if self.itemToRotate:IsA("Model") and self.itemToRotate.PrimaryPart then
-        confirmedRotationOnly = self.itemToRotate:GetPrimaryPartCFrame() - self.itemToRotate:GetPrimaryPartCFrame().Position
-    elseif self.itemToRotate:IsA("BasePart") then
-        confirmedRotationOnly = self.itemToRotate.CFrame - self.itemToRotate.CFrame.Position
-    end
-    self.confirmedPreviewRotation = confirmedRotationOnly -- STORED
-
-    self.isRotatingItem = false
-    self.isTransitioningFromRotation = true -- SET FLAG
-
-    self.isMovingExistingItem = true 
-    self.currentMoveCost = self.rotationCost 
-
-    -- Ensure original item is fully transparent while placing the rotated version
-    if self.itemBeingMovedInstance_OriginalState and self.itemBeingMovedInstance_OriginalState.instance and self.itemBeingMovedInstance_OriginalState.instance.Parent then -- Check if original state exists
-        local item = self.itemBeingMovedInstance_OriginalState.instance
-        if item:IsA("Model") then
-            for _, child in ipairs(item:GetDescendants()) do
-                if child:IsA("BasePart") or child:IsA("Decal") then
-                    child.Transparency = 1 -- MODIFIED: Make fully transparent
-                end
-            end
-        elseif item:IsA("BasePart") then
-            item.Transparency = 1 -- MODIFIED: Make fully transparent
-        end
-    elseif self.itemBeingMovedInstance and self.itemBeingMovedInstance.Parent then -- Fallback if original state wasn't stored
-         if self.itemBeingMovedInstance:IsA("Model") then
-            for _, child in ipairs(self.itemBeingMovedInstance:GetDescendants()) do
-                if child:IsA("BasePart") or child:IsA("Decal") then child.Transparency = 1 end
-            end
-        elseif self.itemBeingMovedInstance:IsA("BasePart") then
-            self.itemBeingMovedInstance.Transparency = 1
-        end
-    end
-    
-    print("PlacementManager:ConfirmRotation - Transitioning to move/placement phase with rotated item.")
-
-    if self.movementConnection_Move then self.movementConnection_Move:Disconnect(); self.movementConnection_Move = nil; end
-    self.movementConnection_Move = RunService.RenderStepped:Connect(function()
-        if not self.isMovingExistingItem or not self.previewItem then
-            if self.movementConnection_Move then
-                self.movementConnection_Move:Disconnect()
-                self.movementConnection_Move = nil
-            end
-            return
-        end
-        self:UpdatePlacementPreview() 
-    end)
-
-    local UserInputService = game:GetService("UserInputService")
-    if self.inputConnection_Move then self.inputConnection_Move:Disconnect(); self.inputConnection_Move = nil; end
-    self.inputConnection_Move = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.KeyCode == Enum.KeyCode.Return then 
-            if self.isMovingExistingItem and self.previewItem and self.itemBeingMovedInstance then
-                local targetCFrame
-                if self.previewItem:IsA("Model") and self.previewItem.PrimaryPart then
-                    targetCFrame = self.previewItem.PrimaryPart.CFrame
-                elseif self.previewItem:IsA("BasePart") then
-                    targetCFrame = self.previewItem.CFrame
-                else
-                    warn("PlacementManager:MoveAfterRotate - PreviewItem is neither Model nor BasePart.")
-                    self:ResetPlacementState() 
-                    return
-                end
-                
-                local instanceIdToMove = self.itemBeingMovedInstance:GetAttribute("instanceId")
-                if not instanceIdToMove then
-                     warn("PlacementManager:MoveAfterRotate - Original item to move is missing instanceId!")
-                     self:ResetPlacementState() 
-                     return
-                end
-
-                if self.remotes and self.remotes.RequestMoveItem then
-                    print(string.format("PlacementManager: Firing RequestMoveItem for %s to new CFrame %s, cost %s", instanceIdToMove, tostring(targetCFrame), tostring(self.currentMoveCost)))
-                    self.remotes.RequestMoveItem:FireServer(instanceIdToMove, targetCFrame, self.currentMoveCost)
-                else
-                    warn("PlacementManager: RequestMoveItem remote not found for MoveAfterRotate.")
-                end
-                self:ResetPlacementState() 
-            end
-        elseif input.UserInputType == Enum.UserInputType.MouseButton2 or input.KeyCode == Enum.KeyCode.Escape then 
-            if self.isMovingExistingItem then
-                self:ResetPlacementState()
-            end
-        elseif input.KeyCode == Enum.KeyCode.R then 
-            if self.isMovingExistingItem and self.previewItem then
-                 self.currentPlacementAngleY = (self.currentPlacementAngleY + 45) % 360
-                 self:UpdatePlacementPreview() 
-            end
+        if self.remotes.ConfirmRotation then
+             self.remotes.ConfirmRotation.OnServerEvent:Connect(function(player, itemId, position, finalAngleY)
+                print("PlacementManager: Received ConfirmRotation from", player.Name, "for item:", itemId, "angle:", finalAngleY)
+                -- This is where the item would actually be placed after rotation is confirmed.
+                -- The PlaceItem function already handles currentAngleY, so this might be redundant
+                -- or needs to integrate with a specific rotation workflow state.
+                -- For now, let's assume PlaceItem is called by client after rotation.
+             end)
         end
         
-        if not self.isMovingExistingItem and not self.isPlacing and not self.isRotatingItem then 
-            if self.inputConnection_Move then self.inputConnection_Move:Disconnect(); self.inputConnection_Move = nil; end
-            if self.movementConnection_Move then self.movementConnection_Move:Disconnect(); self.movementConnection_Move = nil; end
+        if self.remotes.CancelRotation then
+            self.remotes.CancelRotation.OnServerEvent:Connect(function(player)
+                print("PlacementManager: Received CancelRotation from", player.Name)
+                -- Server-side cleanup if any for a cancelled rotation
+            end)
         end
-    end)
+
+        if self.remotes.UpdateRotationInput then
+            self.remotes.UpdateRotationInput.OnServerEvent:Connect(function(player, rotationDelta)
+                 print("PlacementManager: Received UpdateRotationInput from", player.Name)
+                -- Server typically doesn't need live rotation updates for previews.
+                -- This might be for logging or server-side validation if strict checks are needed.
+            end)
+        end
+    end
+    print("PlacementManager: Remote event setup complete.")
 end
 
 -- (Client) Cancel the rotation workflow
 function PlacementManager:CancelRotationWorkflow()
     if RunService:IsServer() then return end
-    print("PlacementManager:CancelRotationWorkflow called")
-    self:ResetPlacementState() -- Centralized cleanup
+    if not self.isRotatingItem then return end
+
+    print("PlacementManager: Canceling rotation workflow.")
+
+    self.isRotatingItem = false
+
+    -- Disconnect rotation-specific input listeners
+    if self.rotationRenderSteppedConnection then
+        self.rotationRenderSteppedConnection:Disconnect()
+        self.rotationRenderSteppedConnection = nil
+    end
+    if self.rotationMouseConfirmConnection then
+        self.rotationMouseConfirmConnection:Disconnect()
+        self.rotationMouseConfirmConnection = nil
+    end
+    if self.rotationKeyboardConfirmConnection then
+        self.rotationKeyboardConfirmConnection:Disconnect()
+        self.rotationKeyboardConfirmConnection = nil
+    end
+    if self.rotationCancelConnection then
+        self.rotationCancelConnection:Disconnect()
+        self.rotationCancelConnection = nil
+    end
+    if self.rotationInputChangedConnection then
+        self.rotationInputChangedConnection:Disconnect()
+        self.rotationInputChangedConnection = nil
+    end
+    if self.rotationInputBeganConnection then
+        self.rotationInputBeganConnection:Disconnect()
+        self.rotationInputBeganConnection = nil
+    end
+
+    -- Restore preview item if it was changed (e.g., color)
+    if self.itemToRotate and self.itemToRotate:IsA("BasePart") then
+        -- Assuming original color/material was stored or can be reset
+        -- For simplicity, just ensure it's visible if it was made transparent
+        self.itemToRotate.Transparency = self.Constants.PLACEMENT.PREVIEW_TRANSPARENCY or 0.5
+    end
+    
+    -- If there was an item being moved, restore its preview to the last valid placement position
+    if self.isMovingExistingItem and self.itemBeingMovedInstance and self.previewItem then
+        print("PlacementManager: Restoring preview for moved item after rotation cancellation.")
+        -- Reset the preview item to its state before rotation started
+        self.previewItem.CFrame = self.basePreviewCFrame -- Restore pre-rotation CFrame
+        self:UpdatePlacementPreview(Players.LocalPlayer, Players.LocalPlayer:GetMouse()) -- Refresh preview based on mouse
+    elseif self.previewItem then
+        -- If it was a new item placement, simply destroy the preview or hide it
+        print("PlacementManager: Destroying preview item after new item rotation cancellation.")
+        self.previewItem:Destroy()
+        self.previewItem = nil
+    end
+
+    self.itemToRotate = nil
+    self.isPlacing = false -- Exit placing mode if rotation was part of initial placement
+
+    -- Hide Rotation UI
+    if self.rotationControlsUI and self.rotationControlsUI.SetVisible then
+        self.rotationControlsUI:SetVisible(false)
+    end
+    
+    -- Notify server if necessary (e.g., to unlock an item if rotation had a cost implication)
+    if self.remotes.CancelRotation then
+        self.remotes.CancelRotation:FireServer()
+    end
+
+    print("PlacementManager: Rotation workflow cancelled.")
 end
 
+-- NOTE: Duplicate UpdatePlacementPreview function removed to avoid conflicts
 
--- Function to find an item in the workspace by its instanceId attribute
-function PlacementManager:FindItemByInstanceId(instanceId)
-    if not instanceId then return nil end
+-- Client: Check for collision with other objects
+function PlacementManager:_CheckCollision(item)
+    if RunService:IsServer() then return false end
+    if not item then return false end
     
-    -- First check the server-side cache if available
-    if self.ItemsByInstanceId and self.ItemsByInstanceId[instanceId] then
-        return self.ItemsByInstanceId[instanceId]
+    -- Get the item's bounding box
+    local itemCFrame
+    local itemSize
+    
+    if item:IsA("Model") then
+        if item.PrimaryPart then
+            itemCFrame = item:GetPrimaryPartCFrame()
+            itemSize = item:GetExtentsSize()
+        else
+            -- Fallback for models without PrimaryPart
+            local parts = {}
+            for _, child in ipairs(item:GetChildren()) do
+                if child:IsA("BasePart") then
+                    table.insert(parts, child)
+                end
+            end
+            if #parts > 0 then
+                itemCFrame = parts[1].CFrame
+                itemSize = parts[1].Size
+            else
+                return false -- No parts to check
+            end
+        end
+    elseif item:IsA("BasePart") then
+        itemCFrame = item.CFrame
+        itemSize = item.Size
+    else
+        return false -- Unknown item type
     end
-
-    -- If not in cache or on client, search the PlacedItemsFolder
-    local placedItemsFolder = Workspace:FindFirstChild("World_Items")
-    if placedItemsFolder then
-        placedItemsFolder = placedItemsFolder:FindFirstChild("Placed")
+    
+    -- Create a slightly smaller region for overlap testing
+    local checkSize = itemSize * 0.9 -- Slightly smaller to avoid edge cases
+    local region = Region3.new(
+        itemCFrame.Position - checkSize/2,
+        itemCFrame.Position + checkSize/2
+    )
+    
+    -- Use raycasting for collision detection instead of ReadVoxels
+    local player = Players.LocalPlayer
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+    local filterInstances = {item}
+    if player and player.Character then
+        table.insert(filterInstances, player.Character)
     end
-
-    if placedItemsFolder then
-        for _, item in ipairs(placedItemsFolder:GetChildren()) do
-            local idAttr = item:GetAttribute("instanceId")
-            if idAttr == instanceId then
-                return item
+    -- Exclude other preview items
+    for _, child in ipairs(Workspace:GetChildren()) do
+        if child.Name:find("Preview_") or child:GetAttribute("is_preview") then
+            table.insert(filterInstances, child)
+        end
+    end
+    raycastParams.FilterDescendantsInstances = filterInstances
+    
+    -- Cast rays from the center of the item in multiple directions
+    local directions = {
+        Vector3.new(1, 0, 0), Vector3.new(-1, 0, 0),
+        Vector3.new(0, 1, 0), Vector3.new(0, -1, 0),
+        Vector3.new(0, 0, 1), Vector3.new(0, 0, -1)
+    }
+    
+    for _, direction in ipairs(directions) do
+        local rayResult = Workspace:Raycast(
+            itemCFrame.Position,
+            direction * (itemSize.Magnitude / 2 + 1),
+            raycastParams
+        )
+        
+        if rayResult then
+            -- Check if the hit part belongs to a placed item
+            local hitPart = rayResult.Instance
+            if hitPart and hitPart.Parent then
+                -- Check if this is a placed item (not terrain or static world objects)
+                if hitPart.Parent.Name:find("_7768610061_") or -- Player-placed items
+                   hitPart:GetAttribute("PlacedItem") or
+                   hitPart:GetAttribute("InstanceId") then
+                    return true, hitPart
+                end
             end
         end
     end
-    return nil -- Not found
-end
-
-function PlacementManager:GetItemData(itemId)
-    return self.shared and self.shared.Constants and self.shared.Constants.ITEM_DATA and self.shared.Constants.ITEM_DATA[itemId]
+    
+    return false
 end
 
 -- Client: Update preview visual feedback for collision detection
@@ -3792,6 +2946,380 @@ function PlacementManager:_UpdatePreviewCollisionFeedback(hasCollision, collidin
             highlight.FillTransparency = 0.5
             highlight.OutlineTransparency = 0
         end
+    end
+end
+
+-- Cache remote events on client-side
+function PlacementManager:CacheRemoteEvents()
+    if RunService:IsServer() then 
+        warn("PlacementManager: CacheRemoteEvents should only be called on client")
+        return false
+    end
+    
+    print("PlacementManager: Caching remote events --- MARKER ---")
+    
+    self.remotes = self.remotes or {} -- Ensure self.remotes is initialized
+    
+    local remotesFolder = ReplicatedStorage:WaitForChild("Remotes", 10)
+    if not remotesFolder then
+        warn("PlacementManager (Client): Remotes folder not found!")
+        return false
+    end
+    
+    print("PlacementManager: Remotes folder found immediately.")
+    
+    -- Helper function to get remote events with wait
+    local function getRemoteEvent(name)
+        local event = remotesFolder:FindFirstChild(name)
+        if event then
+            print("PlacementManager: Found remote event immediately:", name)
+            return event
+        else
+            print("PlacementManager: Waiting for remote event:", name)
+            local foundEvent = remotesFolder:WaitForChild(name, 5)
+            if foundEvent then
+                print("PlacementManager: Found remote event after wait:", name)
+                return foundEvent
+            else
+                warn("PlacementManager: Failed to find remote event:", name)
+                return nil
+            end
+        end
+    end
+    
+    -- Cache all expected remote events
+    local expectedEvents = {
+        "ItemPlaced", "ItemRecalled", "ItemUpdated", "ItemDeleted",
+        "RequestPlaceItem", "RequestRecallItem", "RequestMoveItem", 
+        "ConfirmMoveItem", "CancelMoveItem", "RequestRotateItem", 
+        "ConfirmRotation", "CancelRotation", "UpdateRotationInput"
+    }
+    
+    for _, eventName in ipairs(expectedEvents) do
+        local event = getRemoteEvent(eventName)
+        if event then
+            self.remotes[eventName] = event
+            print("PlacementManager: Successfully cached remote event:", eventName)
+        end
+    end
+    
+    -- Verify critical events
+    if not self.remotes.RequestPlaceItem then
+        warn("PlacementManager (Client): Critical RequestPlaceItem remote not found!")
+        return false
+    end
+    
+    print("PlacementManager: CacheRemoteEvents completed successfully")
+    return true
+end
+
+-- Reset placement state and clear any previews/hand items
+function PlacementManager:ResetPlacementState()
+    if RunService:IsServer() then return end
+    
+    print("PlacementManager: Resetting placement state")
+    
+    -- Clear placement state
+    self.isPlacing = false
+    self.selectedItem = nil
+    self.isMovingExistingItem = false
+    self.itemBeingMovedInstance = nil
+    self.currentMoveCost = 0
+    self.isTransitioningFromRotation = false
+    
+    -- Reset angles
+    self.currentPlacementAngleX = 0
+    self.currentPlacementAngleY = 0
+    self.currentPlacementAngleZ = 0
+    self.currentAngleY = 0
+    
+    -- Clear preview item
+    if self.previewItem then
+        self.previewItem:Destroy()
+        self.previewItem = nil
+    end
+    
+    -- Clear hand item
+    if self.handItem then
+        self.handItem:Destroy()
+        self.handItem = nil
+        self.handItemId = nil
+    end
+    
+    -- Disconnect any active movement connections
+    if self.movementConnections then
+        for _, connection in pairs(self.movementConnections) do
+            if connection then
+                connection:Disconnect()
+            end
+        end
+        self.movementConnections = {}
+    end
+    
+    -- Disconnect input connections
+    if self.inputConnections then
+        for _, connection in pairs(self.inputConnections) do
+            if connection then
+                connection:Disconnect()
+            end
+        end
+        self.inputConnections = {}
+    end
+    
+    -- Reset rotation state
+    self.isRotatingItem = false
+    self.itemToRotate = nil
+    self.rotationCost = 0
+    self.currentRotationInput = CFrame.new()
+    self.basePreviewCFrame = CFrame.new()
+    
+    -- Disconnect rotation connections
+    if self.rotationRenderSteppedConnection then
+        self.rotationRenderSteppedConnection:Disconnect()
+        self.rotationRenderSteppedConnection = nil
+    end
+    if self.rotationMouseConfirmConnection then
+        self.rotationMouseConfirmConnection:Disconnect()
+        self.rotationMouseConfirmConnection = nil
+    end
+    if self.rotationKeyboardConfirmConnection then
+        self.rotationKeyboardConfirmConnection:Disconnect()
+        self.rotationKeyboardConfirmConnection = nil
+    end
+    if self.rotationCancelConnection then
+        self.rotationCancelConnection:Disconnect()
+        self.rotationCancelConnection = nil
+    end
+    if self.rotationInputChangedConnection then
+        self.rotationInputChangedConnection:Disconnect()
+        self.rotationInputChangedConnection = nil
+    end
+    if self.rotationInputBeganConnection then
+        self.rotationInputBeganConnection:Disconnect()
+        self.rotationInputBeganConnection = nil
+    end
+    
+    -- Hide Rotation UI if it exists
+    if RotationControlsUI and RotationControlsUI.SetVisible then
+        RotationControlsUI:SetVisible(false)
+    end
+end
+
+-- Server: Handle rotation request for a placed item
+function PlacementManager:HandleRotateItemRequest(player, instanceId, rotationDegrees)
+    if RunService:IsClient() then return false end
+    
+    print("PlacementManager: HandleRotateItemRequest called for", instanceId, "rotation:", rotationDegrees)
+    
+    -- Find the placed item by instanceId
+    local placedItem = self:FindItemByInstanceId(instanceId)
+    if not placedItem then
+        warn("PlacementManager: Placed item not found with instanceId:", instanceId)
+        return false
+    end
+    
+    -- Check if player owns the item
+    local owner = placedItem:GetAttribute("owner") or placedItem:GetAttribute("playerId")
+    if owner ~= player.UserId then
+        warn("PlacementManager: Player", player.Name, "cannot rotate item owned by", owner)
+        return false
+    end
+    
+    print("PlacementManager: Rotating item", placedItem.Name, "to", rotationDegrees, "degrees for player", player.Name)
+    
+    -- Apply rotation to the item
+    local success = self:RotateItemToAngle(placedItem, rotationDegrees)
+    if success then
+        -- Update the stored rotation attribute
+        placedItem:SetAttribute("rotation", rotationDegrees)
+        placedItem:SetAttribute("lastModified", os.time())
+        
+        -- Notify client of successful rotation
+        if self.remotes.ItemUpdated then
+            local position = placedItem:IsA("Model") and placedItem.PrimaryPart and placedItem.PrimaryPart.Position or placedItem.Position
+            self.remotes.ItemUpdated:FireClient(player, instanceId, position, rotationDegrees)
+        end
+        
+        -- Save world data
+        task.spawn(function()
+            self:SaveWorldData()
+        end)
+        
+        print("✅ PlacementManager: Successfully rotated item", instanceId, "to", rotationDegrees, "degrees")
+        return true
+    else
+        warn("PlacementManager: Failed to rotate item", instanceId)
+        return false
+    end
+end
+
+-- Server: Rotate an item to a specific angle in degrees
+function PlacementManager:RotateItemToAngle(item, angleDegrees)
+    if RunService:IsClient() then return false end
+    if not item then return false end
+    
+    local angleRadians = math.rad(angleDegrees)
+    local success = false
+    
+    if item:IsA("Model") and item.PrimaryPart then
+        local currentPosition = item.PrimaryPart.Position
+        local newCFrame = CFrame.new(currentPosition) * CFrame.Angles(0, angleRadians, 0)
+        
+        local pcallSuccess, result = pcall(function()
+            item:SetPrimaryPartCFrame(newCFrame)
+        end)
+        
+        if pcallSuccess then
+            success = true
+            print("PlacementManager: Rotated model", item.Name, "to", angleDegrees, "degrees")
+        else
+            warn("PlacementManager: Error rotating model:", result)
+        end
+        
+    elseif item:IsA("BasePart") then
+        local currentPosition = item.Position
+        local newCFrame = CFrame.new(currentPosition) * CFrame.Angles(0, angleRadians, 0)
+        
+        local pcallSuccess, result = pcall(function()
+            item.CFrame = newCFrame
+        end)
+        
+        if pcallSuccess then
+            success = true
+            print("PlacementManager: Rotated part", item.Name, "to", angleDegrees, "degrees")
+        else
+            warn("PlacementManager: Error rotating part:", result)
+        end
+    else
+        warn("PlacementManager: Unknown item type for rotation:", item.ClassName)
+    end
+    
+    return success
+end
+
+-- Helper: Apply rotation to an item (client-side for previews) - Multi-axis support
+function PlacementManager:_ApplyRotationToItem(item, angleDegrees)
+    if RunService:IsServer() then return end
+    if not item then return end
+    
+    -- For backward compatibility, if only one angle is provided, apply it to Y-axis
+    local rotationX = self.currentPlacementRotationX or 0
+    local rotationY = angleDegrees or self.currentPlacementRotationY or self.currentPlacementRotation or 0
+    local rotationZ = self.currentPlacementRotationZ or 0
+    
+    self:_ApplyMultiAxisRotation(item, rotationX, rotationY, rotationZ)
+end
+
+-- Helper: Apply multi-axis rotation to an item
+function PlacementManager:_ApplyMultiAxisRotation(item, rotationX, rotationY, rotationZ)
+    if RunService:IsServer() then return end
+    if not item then return end
+    
+    local rotationXRad = math.rad(rotationX or 0)
+    local rotationYRad = math.rad(rotationY or 0) 
+    local rotationZRad = math.rad(rotationZ or 0)
+    
+    if item:IsA("Model") and item.PrimaryPart then
+        local currentPosition = item.PrimaryPart.Position
+        -- Apply rotation around all three axes (X=Pitch, Y=Yaw, Z=Roll)
+        local newCFrame = CFrame.new(currentPosition) * CFrame.Angles(rotationXRad, rotationYRad, rotationZRad)
+        item:SetPrimaryPartCFrame(newCFrame)
+    elseif item:IsA("BasePart") then
+        local currentPosition = item.Position
+        -- Apply rotation around all three axes (X=Pitch, Y=Yaw, Z=Roll)
+        local newCFrame = CFrame.new(currentPosition) * CFrame.Angles(rotationXRad, rotationYRad, rotationZRad)
+        item.CFrame = newCFrame
+    end
+    
+    print("🔄 Applied multi-axis rotation: X=" .. rotationX .. "°, Y=" .. rotationY .. "°, Z=" .. rotationZ .. "° to", item.Name)
+end
+
+-- Private: Direct rotation during placement (no UI) - Backward compatibility
+function PlacementManager:_DirectRotate(degrees)
+    if RunService:IsServer() then return end
+    if not self.isPlacing or not self.previewItem then return end
+    
+    -- Update Y-axis rotation for backward compatibility
+    self:_DirectRotateAxis("Y", degrees)
+end
+
+-- Private: Direct rotation on specific axis during placement (no UI)
+function PlacementManager:_DirectRotateAxis(axis, degrees)
+    if RunService:IsServer() then return end
+    if not self.isPlacing or not self.previewItem then return end
+    
+    -- Update rotation for specified axis
+    if axis == "X" then
+        self.currentPlacementRotationX = (self.currentPlacementRotationX or 0) + degrees
+        -- Normalize to -360 to 360 range for pitch
+        while self.currentPlacementRotationX >= 360 do
+            self.currentPlacementRotationX = self.currentPlacementRotationX - 360
+        end
+        while self.currentPlacementRotationX < -360 do
+            self.currentPlacementRotationX = self.currentPlacementRotationX + 360
+        end
+    elseif axis == "Y" then
+        self.currentPlacementRotationY = (self.currentPlacementRotationY or 0) + degrees
+        self.currentPlacementRotation = self.currentPlacementRotationY -- Backward compatibility
+        -- Normalize to 0-360 range for yaw
+        while self.currentPlacementRotationY >= 360 do
+            self.currentPlacementRotationY = self.currentPlacementRotationY - 360
+        end
+        while self.currentPlacementRotationY < 0 do
+            self.currentPlacementRotationY = self.currentPlacementRotationY + 360
+        end
+        self.currentPlacementRotation = self.currentPlacementRotationY
+    elseif axis == "Z" then
+        self.currentPlacementRotationZ = (self.currentPlacementRotationZ or 0) + degrees
+        -- Normalize to -360 to 360 range for roll
+        while self.currentPlacementRotationZ >= 360 do
+            self.currentPlacementRotationZ = self.currentPlacementRotationZ - 360
+        end
+        while self.currentPlacementRotationZ < -360 do
+            self.currentPlacementRotationZ = self.currentPlacementRotationZ + 360
+        end
+    end
+    
+    -- Apply rotation to preview item
+    self:_ApplyMultiAxisRotation(self.previewItem, 
+        self.currentPlacementRotationX or 0,
+        self.currentPlacementRotationY or 0, 
+        self.currentPlacementRotationZ or 0)
+    
+    print("🔄 Direct " .. axis .. "-axis rotation:", degrees, "degrees (Total: X=" .. (self.currentPlacementRotationX or 0) .. "°, Y=" .. (self.currentPlacementRotationY or 0) .. "°, Z=" .. (self.currentPlacementRotationZ or 0) .. "°)")
+end
+
+-- Private: Show rotation UI for current preview item (fine control)
+function PlacementManager:_ShowRotationUI()
+    if RunService:IsServer() then return end
+    if not self.isPlacing or not self.previewItem then return end
+    
+    print("🔄 PlacementManager: Showing fine rotation UI for preview item")
+    
+    local onRotationChanged = function(item, rotation)
+        -- Apply rotation to preview item in real-time
+        self:_ApplyRotationToItem(item, rotation)
+        self.currentPlacementRotation = rotation
+    end
+    
+    local onConfirm = function(item, finalRotation)
+        print("✅ PlacementManager: Rotation confirmed at", finalRotation, "degrees")
+        self.currentPlacementRotation = finalRotation
+        -- Continue with placement after rotation is confirmed
+    end
+    
+    local onCancel = function(item)
+        print("❌ PlacementManager: Rotation cancelled")
+        local originalRotation = self.currentPlacementRotation or 0
+        -- Reset item to current rotation (not 0)
+        if item then
+            self:_ApplyRotationToItem(item, originalRotation)
+        end
+    end
+    
+    -- Show the simple rotation UI
+    if self.simpleRotationUI then
+        self.simpleRotationUI:Show(self.previewItem, onRotationChanged, onConfirm, onCancel)
     end
 end
 

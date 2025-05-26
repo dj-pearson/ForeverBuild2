@@ -1,5 +1,5 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerStorage = game:GetService("ServerStorage")
+local _ReplicatedStorage = game:GetService("ReplicatedStorage")
+local _ServerStorage = game:GetService("ServerStorage")
 local Constants = require(script.Parent.Parent.Constants)
 
 local ItemManager = {}

@@ -5,8 +5,10 @@ local ServerScriptService = game:GetService("ServerScriptService")
 local RunService = game:GetService("RunService")
 
 -- Configuration
-local CHECK_INTERVAL_STUDIO = 30  -- Check every 30 seconds in Studio
+local CHECK_INTERVAL_STUDIO = 60   -- Check every 60 seconds in Studio (increased from 30)
 local CHECK_INTERVAL_PROD = 300    -- Check every 5 minutes in production
+local ENABLE_VERBOSE_LOGGING = false  -- Set to true for debug mode
+local ENABLE_PERIODIC_DISPLAY = false -- Set to true to show full model lists periodically
 
 -- Wait for the server to fully initialize
 wait(3)
@@ -40,12 +42,25 @@ ModelDisplayUtil:Initialize()
 local function runPeriodically()
     local isStudio = RunService:IsStudio()
     local interval = isStudio and CHECK_INTERVAL_STUDIO or CHECK_INTERVAL_PROD
+    local checkCount = 0
     
     while true do
-        if isStudio then
+        checkCount = checkCount + 1
+        
+        -- Only show verbose output if explicitly enabled
+        if isStudio and ENABLE_PERIODIC_DISPLAY and ENABLE_VERBOSE_LOGGING then
             print("\n=== PERIODIC MODEL DISPLAY ===")
             ModelDisplayUtil:DisplayModels(workspace.World_Items)
             print("=============================\n")
+        elseif isStudio and checkCount % 10 == 1 then -- Show summary every 10 checks
+            local worldItems = workspace:FindFirstChild("World_Items")
+            if worldItems then
+                local placed = worldItems:FindFirstChild("Placed")
+                local static = worldItems:FindFirstChild("Static") 
+                local placedCount = placed and #placed:GetChildren() or 0
+                local staticCount = static and #static:GetChildren() or 0
+                print("ModelDisplayRunner: Check #" .. checkCount .. " - Placed items: " .. placedCount .. ", Static items: " .. staticCount)
+            end
         end
         
         -- Always restore missing models regardless of environment
@@ -64,7 +79,9 @@ spawn(runPeriodically)
 -- Add a model restoration check on player join
 -- This helps ensure models are present when players join the game
 game:GetService("Players").PlayerAdded:Connect(function(player)
-    print("ModelDisplayRunner: Player joined, checking models: " .. player.Name)
+    if ENABLE_VERBOSE_LOGGING then
+        print("ModelDisplayRunner: Player joined, checking models: " .. player.Name)
+    end
     
     -- Wait a moment to let the player fully load in
     wait(2)
@@ -76,4 +93,4 @@ game:GetService("Players").PlayerAdded:Connect(function(player)
     end
 end)
 
-print("ModelDisplayRunner: Setup complete") 
+print("ModelDisplayRunner: Setup complete (Verbose logging: " .. tostring(ENABLE_VERBOSE_LOGGING) .. ", Periodic display: " .. tostring(ENABLE_PERIODIC_DISPLAY) .. ")") 

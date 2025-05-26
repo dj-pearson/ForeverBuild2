@@ -3,6 +3,11 @@
 
 local ModelDisplayUtil = {}
 
+-- Configuration
+local ENABLE_DETAILED_LOGGING = false -- Set to true for debug mode
+local MAX_ITEMS_TO_LOG = 50 -- Limit how many items to log in detail
+local LOG_ONLY_IMPORTANT = true -- Only log items with special attributes
+
 -- Constants
 local CHECK_INTERVAL = 10 -- How often to check for missing models (in seconds)
 local STATIC_MODELS_MAP = {} -- Maps model names to their original instances
@@ -19,10 +24,15 @@ function ModelDisplayUtil:DisplayModels(startFolder, indent)
     startFolder = startFolder or workspace
     
     local indentStr = string.rep("  ", indent)
-    print(indentStr .. "📁 " .. startFolder.Name .. " (" .. startFolder.ClassName .. ")")
+    
+    if ENABLE_DETAILED_LOGGING then
+        print(indentStr .. "📁 " .. startFolder.Name .. " (" .. startFolder.ClassName .. ")")
+    end
     
     -- Track models and their properties
     local models = {}
+    local totalItems = 0
+    local importantItems = 0
     
     -- Sort children by type and name
     local folders = {}
@@ -30,6 +40,7 @@ function ModelDisplayUtil:DisplayModels(startFolder, indent)
     local otherItems = {}
     
     for _, item in pairs(startFolder:GetChildren()) do
+        totalItems = totalItems + 1
         if item:IsA("Folder") then
             table.insert(folders, item)
         elseif item:IsA("Model") then
@@ -45,12 +56,20 @@ function ModelDisplayUtil:DisplayModels(startFolder, indent)
         self:DisplayModels(folder, indent + 1)
     end
     
-    -- Process models
+    -- Process models with smart logging
     table.sort(modelItems, function(a, b) return a.Name < b.Name end)
+    local loggedModels = 0
+    
     for _, model in ipairs(modelItems) do
         local attributes = ""
+        local hasImportantAttributes = false
+        
         for name, value in pairs(model:GetAttributes()) do
             attributes = attributes .. "[" .. name .. "=" .. tostring(value) .. "] "
+            if name:find("item") or name:find("price") or name:find("secondary") then
+                hasImportantAttributes = true
+                importantItems = importantItems + 1
+            end
         end
         
         local partCount = 0
@@ -68,18 +87,56 @@ function ModelDisplayUtil:DisplayModels(startFolder, indent)
             position = model:GetPivot().Position
         }
         
-        print(indentStr .. "  📋 " .. model.Name .. " (" .. partCount .. " parts) " .. attributes)
+        -- Only log if: detailed logging enabled, has important attributes, or under limit
+        local shouldLog = ENABLE_DETAILED_LOGGING or 
+                         (LOG_ONLY_IMPORTANT and hasImportantAttributes) or 
+                         loggedModels < MAX_ITEMS_TO_LOG
+        
+        if shouldLog then
+            print(indentStr .. "  📋 " .. model.Name .. " (" .. partCount .. " parts) " .. attributes)
+            loggedModels = loggedModels + 1
+        end
+        
         table.insert(models, modelInfo)
     end
     
-    -- Process other items
+    -- Process other items with smart logging
     table.sort(otherItems, function(a, b) return a.Name < b.Name end)
+    local loggedOthers = 0
+    local groupedOthers = {}
+    
     for _, item in ipairs(otherItems) do
         if item:IsA("BasePart") then
-            print(indentStr .. "  🧊 " .. item.Name .. " (" .. item.ClassName .. ")")
-        else
+            local className = item.ClassName
+            if not groupedOthers[className] then
+                groupedOthers[className] = {count = 0, examples = {}}
+            end
+            groupedOthers[className].count = groupedOthers[className].count + 1
+            if #groupedOthers[className].examples < 3 then
+                table.insert(groupedOthers[className].examples, item.Name)
+            end
+        elseif ENABLE_DETAILED_LOGGING and loggedOthers < MAX_ITEMS_TO_LOG then
             print(indentStr .. "  ❓ " .. item.Name .. " (" .. item.ClassName .. ")")
+            loggedOthers = loggedOthers + 1
         end
+    end
+    
+    -- Show grouped summary for parts
+    for className, info in pairs(groupedOthers) do
+        if info.count > 1 then
+            local examples = table.concat(info.examples, ", ")
+            if #info.examples < info.count then
+                examples = examples .. ", ..."
+            end
+            print(indentStr .. "  ▶ 🧊 " .. className .. " (" .. info.count .. " items): " .. examples)
+        elseif info.count == 1 then
+            print(indentStr .. "  🧊 " .. info.examples[1] .. " (" .. className .. ")")
+        end
+    end
+    
+    -- Summary for this folder
+    if not ENABLE_DETAILED_LOGGING and (totalItems > 20 or importantItems > 0) then
+        print(indentStr .. "📁 " .. startFolder.Name .. " - Total: " .. totalItems .. " items, Important: " .. importantItems .. " items")
     end
     
     return models
@@ -259,6 +316,17 @@ function ModelDisplayUtil:MonitorWorldItems()
     return STATIC_MODELS_MAP
 end
 
+-- Function to toggle logging modes
+function ModelDisplayUtil:SetLoggingMode(detailed, maxItems, onlyImportant)
+    ENABLE_DETAILED_LOGGING = detailed or false
+    MAX_ITEMS_TO_LOG = maxItems or 50
+    LOG_ONLY_IMPORTANT = onlyImportant ~= false -- Default to true
+    
+    print("ModelDisplayUtil: Logging mode updated - Detailed: " .. tostring(ENABLE_DETAILED_LOGGING) .. 
+          ", Max items: " .. MAX_ITEMS_TO_LOG .. 
+          ", Only important: " .. tostring(LOG_ONLY_IMPORTANT))
+end
+
 -- Initialize the utility
 function ModelDisplayUtil:Initialize()
     print("ModelDisplayUtil: Initializing...")
@@ -304,10 +372,32 @@ function ModelDisplayUtil:Initialize()
         return "Tracked models: " .. #TRACKED_MODELS .. ", Total restorations: " .. RESTORE_COUNT
     end
     
+    -- Create a command to control logging
+    local loggingCommand = Instance.new("BindableFunction")
+    loggingCommand.Name = "ModelDisplayLogging"
+    loggingCommand.Parent = game:GetService("ReplicatedStorage")
+    
+    loggingCommand.OnInvoke = function(mode)
+        if mode == "detailed" then
+            self:SetLoggingMode(true, 200, false)
+            return "Enabled detailed logging"
+        elseif mode == "quiet" then
+            self:SetLoggingMode(false, 10, true)
+            return "Enabled quiet mode"
+        elseif mode == "silent" then
+            self:SetLoggingMode(false, 0, true)
+            return "Enabled silent mode"
+        else
+            return "Current mode - Detailed: " .. tostring(ENABLE_DETAILED_LOGGING) .. 
+                   ", Max items: " .. MAX_ITEMS_TO_LOG .. 
+                   ", Only important: " .. tostring(LOG_ONLY_IMPORTANT)
+        end
+    end
+    
     -- Start monitoring world items
     self:MonitorWorldItems()
     
-    print("ModelDisplayUtil: Initialization complete")
+    print("ModelDisplayUtil: Initialization complete (Performance optimized)")
 end
 
 return ModelDisplayUtil 

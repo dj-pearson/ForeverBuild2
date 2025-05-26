@@ -137,7 +137,7 @@ function MovementManager:_UpdateItemPosition()
     -- Raycast to find new position
     local ray = camera:ViewportPointToRay(mouse.X, mouse.Y)
     local raycastParams = RaycastParams.new()
-    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+    raycastParams.FilterType = Enum.RaycastFilterType.Exclude -- Changed from Blacklist to Exclude
     raycastParams.FilterDescendantsInstances = {self.itemBeingMoved}
     
     local result = game.Workspace:Raycast(ray.Origin, ray.Direction * 1000, raycastParams)
@@ -407,7 +407,7 @@ function MovementManager:_HandleServerRecall(item, player)
     
     -- Add item back to player's inventory
     -- This would integrate with the inventory system
-    local itemId = item:GetAttribute("itemId") or item:GetAttribute("item") or item.Name
+    local _itemId = item:GetAttribute("itemId") or item:GetAttribute("item") or item.Name -- Prefixed with _
     
     -- Remove from world
     item:Destroy()
@@ -481,4 +481,4 @@ function MovementManager:GetMovementStatistics()
     }
 end
 
-return MovementManager 
+return MovementManager

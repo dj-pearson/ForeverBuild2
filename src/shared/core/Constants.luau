@@ -70,8 +70,8 @@ Constants.ITEM_PRICES = {
         ROBUX = 25 -- 25 Robux
     },
     RARE = {
-        INGAME = 100, -- 100 coins
-        ROBUX = 100 -- 100 Robux
+        INGAME = 200, -- 100 coins
+        ROBUX = 200 -- 100 Robux
     },
     EXCLUSIVE = {
         INGAME = 1000, -- 1000 coins
@@ -89,11 +89,17 @@ Constants.ITEM_PRICES = {
         INGAME = 0, -- 0 coins
         ROBUX = 0 -- 0 Robux
     },
+    LEVEL_4 = { -- ADDED NEW PRICE TIER
+        INGAME = 100, -- 100 coins
+        ROBUX = 100 -- 100 Robux
+    },
     LEVEL_3 = { -- ADDED NEW PRICE TIER
         INGAME = 75, -- 75 coins
         ROBUX = 75 -- 75 Robux
     }
 }
+
+Constants.ITEM_PRICING = Constants.ITEM_PRICES
 
 -- Pricing Configuration
 Constants.BASE_PRICES = {
