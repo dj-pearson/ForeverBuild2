@@ -967,23 +967,61 @@ function ItemInteractionClient:GetStoreItemPrice(item)
     return 5
 end
 
--- Helper function to get player coins
+-- Helper function to get player coins  
 function ItemInteractionClient:GetPlayerCoins()
-    -- Try currency manager first
-    if CurrencyManager and typeof(CurrencyManager.GetCoins) == "function" then
-        local coins = CurrencyManager:GetCoins()
-        if coins then return coins end
+    -- Method 1: Try the client-side CurrencyManager with GetPlayerCurrency
+    if CurrencyManager and typeof(CurrencyManager.GetPlayerCurrency) == "function" then
+        local coins = CurrencyManager:GetPlayerCurrency(player)
+        if coins and coins > 0 then 
+            print("ItemInteractionClient: Got coins from CurrencyManager.GetPlayerCurrency:", coins)
+            return coins 
+        end
     end
     
-    -- Fallback to leaderstats
+    -- Method 2: Try the client-side playerCurrency property
+    if CurrencyManager and CurrencyManager.playerCurrency then
+        local coins = CurrencyManager.playerCurrency
+        if coins and coins > 0 then 
+            print("ItemInteractionClient: Got coins from CurrencyManager.playerCurrency:", coins)
+            return coins 
+        end
+    end
+    
+    -- Method 3: Try calling GetMyBalance remote function
+    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+    if remotes then
+        local getMyBalanceFunc = remotes:FindFirstChild("GetMyBalance")
+        if getMyBalanceFunc and getMyBalanceFunc:IsA("RemoteFunction") then
+            local success, coins = pcall(function()
+                return getMyBalanceFunc:InvokeServer()
+            end)
+            if success and coins and coins > 0 then
+                print("ItemInteractionClient: Got coins from GetMyBalance remote:", coins)
+                return coins
+            end
+        end
+    end
+    
+    -- Method 4: Try global CurrencyUI if it exists 
+    if _G.CurrencyUI and _G.CurrencyUI.balance then
+        local coins = _G.CurrencyUI.balance
+        if coins and coins > 0 then
+            print("ItemInteractionClient: Got coins from _G.CurrencyUI.balance:", coins)
+            return coins
+        end
+    end
+    
+    -- Method 5: Fallback to leaderstats
     local leaderstats = player:FindFirstChild("leaderstats")
     if leaderstats then
         local coins = leaderstats:FindFirstChild("Coins") or leaderstats:FindFirstChild("Cash") or leaderstats:FindFirstChild("Money")
         if coins then
+            print("ItemInteractionClient: Got coins from leaderstats:", coins.Value)
             return coins.Value or 0
         end
     end
     
+    warn("ItemInteractionClient: Could not get player coins from any source, returning 0")
     return 0
 end
 
