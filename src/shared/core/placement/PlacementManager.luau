@@ -2643,14 +2643,14 @@ function PlacementManager:SetupRemoteEvents()
         local function getOrCreateRemoteEvent(name)
             local event = remotesFolder:FindFirstChild(name)
             if not event then
-                event = Instance.new("RemoteEvent")
-                event.Name = name
+            event = Instance.new("RemoteEvent")
+            event.Name = name
                 event.Parent = remotesFolder
                 print("PlacementManager: Created RemoteEvent:", name)
             end
-            return event
-        end
-        
+        return event
+    end
+    
         self.remotes.ItemPlaced = getOrCreateRemoteEvent("ItemPlaced")
         self.remotes.ItemRecalled = getOrCreateRemoteEvent("ItemRecalled")
         self.remotes.ItemUpdated = getOrCreateRemoteEvent("ItemUpdated")
@@ -2695,38 +2695,38 @@ function PlacementManager:SetupRemoteEvents()
         if self.remotes.RequestRecallItem then
             self.remotes.RequestRecallItem.OnServerEvent:Connect(function(player, instanceId)
                 print("PlacementManager: Received RequestRecallItem from", player.Name)
-                self:RecallItem(player, instanceId)
-            end)
-        end
-
+            self:RecallItem(player, instanceId)
+        end)
+    end
+    
         if self.remotes.RequestMoveItem then
             self.remotes.RequestMoveItem.OnServerEvent:Connect(function(player, instanceId)
                 print("PlacementManager: Received RequestMoveItem from", player.Name, "for instanceId:", instanceId)
                 self:HandleRequestMoveItem(player, instanceId)
-            end)
-        end
-
+        end)
+    end
+    
         if self.remotes.ConfirmMoveItem then
             self.remotes.ConfirmMoveItem.OnServerEvent:Connect(function(player, instanceId, newPosition, newRotationY)
                 print("PlacementManager: Received ConfirmMoveItem from", player.Name, "for instanceId:", instanceId)
                 self:HandleConfirmMoveItem(player, instanceId, newPosition, newRotationY)
-            end)
-        end
-
+        end)
+    end
+    
         if self.remotes.CancelMoveItem then
             self.remotes.CancelMoveItem.OnServerEvent:Connect(function(player, instanceId)
                 print("PlacementManager: Received CancelMoveItem from", player.Name, "for instanceId:", instanceId)
                 self:HandleCancelMoveItem(player, instanceId)
-            end)
-        end
-        
+        end)
+    end
+    
         if self.remotes.RequestRotateItem then
             self.remotes.RequestRotateItem.OnServerEvent:Connect(function(player, instanceId, rotationDegrees)
                 print("PlacementManager: Received RequestRotateItem from", player.Name, "for instanceId:", instanceId, "rotation:", rotationDegrees)
                 self:HandleRotateItemRequest(player, instanceId, rotationDegrees)
-            end)
-        end
-
+        end)
+    end
+    
         if self.remotes.ConfirmRotation then
              self.remotes.ConfirmRotation.OnServerEvent:Connect(function(player, itemId, position, finalAngleY)
                 print("PlacementManager: Received ConfirmRotation from", player.Name, "for item:", itemId, "angle:", finalAngleY)
@@ -2734,16 +2734,16 @@ function PlacementManager:SetupRemoteEvents()
                 -- The PlaceItem function already handles currentAngleY, so this might be redundant
                 -- or needs to integrate with a specific rotation workflow state.
                 -- For now, let's assume PlaceItem is called by client after rotation.
-             end)
-        end
-        
+        end)
+    end
+    
         if self.remotes.CancelRotation then
             self.remotes.CancelRotation.OnServerEvent:Connect(function(player)
                 print("PlacementManager: Received CancelRotation from", player.Name)
                 -- Server-side cleanup if any for a cancelled rotation
-            end)
-        end
-
+        end)
+    end
+    
         if self.remotes.UpdateRotationInput then
             self.remotes.UpdateRotationInput.OnServerEvent:Connect(function(player, rotationDelta)
                  print("PlacementManager: Received UpdateRotationInput from", player.Name)
@@ -2847,8 +2847,8 @@ function PlacementManager:_CheckCollision(item)
             for _, child in ipairs(item:GetChildren()) do
                 if child:IsA("BasePart") then
                     table.insert(parts, child)
-                end
-            end
+        end
+    end
             if #parts > 0 then
                 itemCFrame = parts[1].CFrame
                 itemSize = parts[1].Size
@@ -3000,9 +3000,9 @@ function PlacementManager:CacheRemoteEvents()
         if event then
             self.remotes[eventName] = event
             print("PlacementManager: Successfully cached remote event:", eventName)
-        end
     end
-    
+end
+
     -- Verify critical events
     if not self.remotes.RequestPlaceItem then
         warn("PlacementManager (Client): Critical RequestPlaceItem remote not found!")
