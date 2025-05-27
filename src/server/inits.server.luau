@@ -12,6 +12,16 @@ local Workspace = game:GetService("Workspace")
 
 print("Server initialization script starting...")
 
+-- Load the DisableDefaultLeaderboard script first to set up the hybrid leaderboard system
+local success, error = pcall(function()
+    require(script.Parent.DisableDefaultLeaderboard)
+end)
+if success then
+    print("DisableDefaultLeaderboard: Hybrid leaderboard system initialized")
+else
+    warn("DisableDefaultLeaderboard: Failed to initialize hybrid leaderboard system:", error)
+end
+
 -- Create Remotes folder if it doesn't exist
 local Remotes = ReplicatedStorage:FindFirstChild("Remotes")
 if not Remotes then
@@ -582,6 +592,37 @@ else
     warn("server.init: PlacementManager initialization failed or instance not returned correctly.")
     -- If placementManagerInstance was returned even on failure, assign it for potential debugging
     if placementManagerInstance then PlacementManager = placementManagerInstance end
+end
+
+-- ProgressionManager 
+if SharedModule.ProgressionManager and SharedModule.ProgressionManager.new then
+    local pmSuccess, pmResult = pcall(function()
+        return SharedModule.ProgressionManager.new()
+    end)
+    
+    if pmSuccess and pmResult then
+        ProgressionManager = pmResult
+        _G.ProgressionManager = ProgressionManager -- Make it globally accessible
+        print("server.init: Successfully created ProgressionManager instance")
+        
+        -- Initialize progression manager
+        if ProgressionManager.Initialize then
+            ProgressionManager:Initialize(SharedModule)
+        end
+    else
+        warn("server.init: Failed to create ProgressionManager instance:", pmResult)
+    end
+else
+    warn("server.init: ProgressionManager module not available in SharedModule")
+end
+
+-- Pass ProgressionManager to PlacementManager if both exist
+if PlacementManager and ProgressionManager then
+    PlacementManager.progressionManager = ProgressionManager
+    print("server.init: Connected ProgressionManager to PlacementManager")
+    
+    -- Setup console commands for development
+    ProgressionManager:SetupConsoleCommands()
 end
 
 -- InteractionManager

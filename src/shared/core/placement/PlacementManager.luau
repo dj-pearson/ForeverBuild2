@@ -722,6 +722,11 @@ function PlacementManager:PlaceItem(player, itemId, position, normal, rotationDa
         print("PlacementManager: Notified client of placed item:", normalizedItemId)
     end
     
+    -- Award XP for item placement
+    if self.progressionManager and self.progressionManager.OnItemPlaced then
+        self.progressionManager:OnItemPlaced(player, normalizedItemId)
+    end
+    
     -- Save world data after placement
     task.spawn(function()
         self:SaveWorldData()
