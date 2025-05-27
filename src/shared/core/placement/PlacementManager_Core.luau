@@ -14,6 +14,37 @@ local SimpleRotationUI = require(script.Parent.SimpleRotationUI)
 -- Import PlacementControlsUI for clear placement instructions
 local PlacementControlsUI = require(script.Parent.PlacementControlsUI)
 
+-- Import SecurityValidator for enterprise-level security
+local SecurityValidator
+local securityValidator
+local success, result = pcall(function()
+    return require(ReplicatedStorage.src.shared.security.SecurityValidator)
+end)
+if success then
+    SecurityValidator = result
+    securityValidator = SecurityValidator.new()
+    print("PlacementManager_Core: SecurityValidator loaded successfully")
+else
+    warn("PlacementManager_Core: Failed to load SecurityValidator:", result)
+end
+
+-- Import ExploitDetector for anti-exploit protection
+local ExploitDetector
+local exploitDetector
+if RunService:IsServer() then
+    local exploitSuccess, exploitResult = pcall(function()
+        return require(ReplicatedStorage.src.shared.security.ExploitDetector)
+    end)
+    if exploitSuccess then
+        ExploitDetector = exploitResult
+        exploitDetector = ExploitDetector.new()
+        exploitDetector:Initialize()
+        print("PlacementManager_Core: ExploitDetector loaded successfully")
+    else
+        warn("PlacementManager_Core: Failed to load ExploitDetector:", exploitResult)
+    end
+end
+
 -- Attempt to require RotationControlsUI (Client-Only)
 local RotationControlsUI
 if RunService:IsClient() then
@@ -191,6 +222,65 @@ end
 function PlacementManager_Core:PlaceItem(player, itemId, position, normal, rotationData, additionalAttributes)
     if RunService:IsClient() then return false end
     print("PlacementManager_Core: PlaceItem called by", player.Name, "for item", itemId)
+    
+    -- 🛡️ EXPLOIT DETECTION - Track placement action for anti-exploit monitoring
+    if exploitDetector then
+        exploitDetector:RecordAction(player, "PLACE_ITEM", {
+            itemId = itemId,
+            position = position,
+            timestamp = tick()
+        })
+    end
+    
+    -- 🔒 SECURITY VALIDATION - Enterprise-level input validation
+    if securityValidator then
+        -- Validate itemId as string
+        local itemValidation = securityValidator:ValidateString(itemId, "ItemId", {maxLength = 50})
+        if not itemValidation.success then
+            warn("🚨 SECURITY: Invalid itemId from", player.Name, ":", itemValidation.error)
+            return false, "Invalid item identifier"
+        end
+        
+        -- Validate position as Vector3
+        local positionValidation = securityValidator:ValidatePosition(position, player)
+        if not positionValidation.success then
+            warn("🚨 SECURITY: Invalid position from", player.Name, ":", positionValidation.error)
+            -- Record potential teleportation exploit
+            if exploitDetector then
+                exploitDetector:RecordViolation(player, "INVALID_INPUT", {
+                    reason = "Invalid placement position",
+                    position = position,
+                    error = positionValidation.error
+                })
+            end
+            return false, "Invalid placement position"
+        end
+        position = positionValidation.data.position
+        
+        -- Validate rotation data if provided
+        if rotationData then
+            local rotationValidation = securityValidator:ValidateRotation(rotationData)
+            if not rotationValidation.success then
+                warn("🚨 SECURITY: Invalid rotation from", player.Name, ":", rotationValidation.error)
+                return false, "Invalid rotation data"
+            end
+            rotationData = rotationValidation.data.rotation
+        end
+        
+        -- Validate additional attributes if provided
+        if additionalAttributes then
+            local attributeValidation = securityValidator:ValidateTable(additionalAttributes, "AdditionalAttributes", {maxDepth = 3})
+            if not attributeValidation.success then
+                warn("🚨 SECURITY: Invalid attributes from", player.Name, ":", attributeValidation.error)
+                return false, "Invalid item attributes"
+            end
+            additionalAttributes = attributeValidation.data.table
+        end
+        
+        print("✅ SECURITY: Placement validation passed for", player.Name, "placing", itemId)
+    else
+        warn("⚠️ SECURITY: SecurityValidator not available for placement validation")
+    end
     
     local normalizedItemId = itemId:gsub(" ", "_")
     local playerData = self:GetPlayerData(player)

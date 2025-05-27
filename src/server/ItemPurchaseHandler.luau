@@ -5,6 +5,21 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
 local DataStoreService = game:GetService("DataStoreService")
+local RunService = game:GetService("RunService")
+
+-- Import SecurityValidator for enterprise-level security
+local SecurityValidator
+local securityValidator
+local success, result = pcall(function()
+    return require(ReplicatedStorage.src.shared.security.SecurityValidator)
+end)
+if success then
+    SecurityValidator = result
+    securityValidator = SecurityValidator.new()
+    print("ItemPurchaseHandler: SecurityValidator loaded successfully")
+else
+    warn("ItemPurchaseHandler: Failed to load SecurityValidator:", result)
+end
 
 -- Setup data store for player data
 local playerDataStore = DataStoreService:GetDataStore("PlayerData_v1")
@@ -430,26 +445,85 @@ end
 
 -- Process in-game currency purchase
 function ItemPurchaseHandler:ProcessCurrencyPurchase(player, item, price)
+    -- 🔒 SECURITY VALIDATION - Enterprise-level currency transaction validation
+    if securityValidator then
+        -- Validate player
+        if not player or not player.Parent then
+            warn("🚨 SECURITY: Invalid player in currency purchase")
+            return false, "Invalid player"
+        end
+        
+        -- Validate item structure
+        if not item or typeof(item) ~= "table" then
+            warn("🚨 SECURITY: Invalid item structure from", player.Name)
+            return false, "Invalid item data"
+        end
+        
+        -- Validate item name
+        if not item.Name or typeof(item.Name) ~= "string" then
+            warn("🚨 SECURITY: Invalid item name from", player.Name)
+            return false, "Invalid item name"
+        end
+        
+        local itemNameValidation = securityValidator:ValidateString(item.Name, "ItemName", {maxLength = 100})
+        if not itemNameValidation.success then
+            warn("🚨 SECURITY: Invalid item name from", player.Name, ":", itemNameValidation.error)
+            return false, "Invalid item name format"
+        end
+        
+        -- Validate price structure and amount
+        local costInGameCurrency = 0
+        if typeof(price) == "table" and price.INGAME then
+            local currencyValidation = securityValidator:ValidateCurrency(price.INGAME, "INGAME", player)
+            if not currencyValidation.success then
+                warn("🚨 SECURITY: Invalid currency amount from", player.Name, ":", currencyValidation.error)
+                return false, "Invalid currency amount"
+            end
+            costInGameCurrency = currencyValidation.data.amount
+        elseif typeof(price) == "number" then
+            local currencyValidation = securityValidator:ValidateCurrency(price, "INGAME", player)
+            if not currencyValidation.success then
+                warn("🚨 SECURITY: Invalid price from", player.Name, ":", currencyValidation.error)
+                return false, "Invalid price"
+            end
+            costInGameCurrency = currencyValidation.data.amount
+        else
+            warn("🚨 SECURITY: Invalid price structure from", player.Name, "for item:", item.Name)
+            return false, "Invalid price structure"
+        end
+        
+        -- Additional security checks for suspicious transactions
+        if costInGameCurrency > 1000000 then -- Max 1M currency per transaction
+            warn("🚨 SECURITY: Excessive transaction amount from", player.Name, ":", costInGameCurrency)
+            return false, "Transaction amount too large"
+        end
+        
+        if costInGameCurrency <= 0 then
+            warn("🚨 SECURITY: Invalid transaction amount from", player.Name, ":", costInGameCurrency)
+            return false, "Invalid transaction amount"
+        end
+        
+        print("✅ SECURITY: Currency purchase validation passed for", player.Name, "item:", item.Name, "cost:", costInGameCurrency)
+    else
+        warn("⚠️ SECURITY: SecurityValidator not available - proceeding without validation")
+        
+        -- Fallback validation without SecurityValidator
+        if typeof(price) == "table" and price.INGAME then
+            costInGameCurrency = price.INGAME
+        elseif typeof(price) == "number" then
+            costInGameCurrency = price 
+        else
+            warn("[ItemPurchaseHandler] ProcessCurrencyPurchase: Invalid price structure for item:", item.Name, "Price data:", price)
+            return false, "Invalid item price data."
+        end
+    end
+
     local data = self:GetPlayerData(player)
     if not data then
         warn("[ItemPurchaseHandler] ProcessCurrencyPurchase: Failed to get player data for", player.Name)
         return false, "Failed to access player data"
     end
     
-    -- Assuming 'price' is the table like {INGAME = 5, ROBUX = 5} or just a number for Robux/other types
-    local costInGameCurrency = 0
-    if typeof(price) == "table" and price.INGAME then
-        costInGameCurrency = price.INGAME
-    elseif typeof(price) == "number" then
-        -- This case might be for Robux or a simplified price.
-        -- For now, we'll assume if it's a number, it's for the primary game currency.
-        -- This might need refinement if you have multiple currency types being processed by this function directly.
-        costInGameCurrency = price 
-    else
-        warn("[ItemPurchaseHandler] ProcessCurrencyPurchase: Invalid price structure for item:", item.Name, "Price data:", price)
-        return false, "Invalid item price data."
-    end
-
     -- Apply progression discount if ProgressionManager is available
     local originalPrice = costInGameCurrency
     local discountPercent = 0
