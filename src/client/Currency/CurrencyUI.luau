@@ -168,6 +168,18 @@ function CurrencyUI:Initialize()
     -- Set up event handling
     self:SetupEventHandling()
     
+    -- Initial level update
+    task.wait(1) -- Wait a moment for systems to initialize
+    self:UpdateLevelFromXP()
+    
+    -- Set up periodic level updates (every 10 seconds)
+    task.spawn(function()
+        while self.ui and self.ui.Parent do
+            task.wait(10)
+            self:UpdateLevelFromXP()
+        end
+    end)
+    
     -- Initial balance update
     -- self:UpdateBalance(Constants.CURRENCY.STARTING_COINS or 0)
 end
@@ -180,10 +192,10 @@ function CurrencyUI:CreateUI()
     screenGui.ResetOnSpawn = false
     screenGui.Parent = self.player:WaitForChild("PlayerGui")
     
-    -- Create main frame
+    -- Create main frame (expanded to fit level display)
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainFrame"
-    mainFrame.Size = UDim2.new(0, 220, 0, 56)
+    mainFrame.Size = UDim2.new(0, 220, 0, 76) -- Increased height to fit level
     mainFrame.Position = UDim2.new(1, -240, 0, 24) -- Top right, 24px from top/right
     mainFrame.BackgroundTransparency = 0
     mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -210,18 +222,44 @@ function CurrencyUI:CreateUI()
     coinIcon.Image = "rbxassetid://6034973115" -- Standard coin icon
     coinIcon.Parent = mainFrame
     
-    -- Create balance label
+    -- Create balance label (repositioned for level display)
     local balanceLabel = Instance.new("TextLabel")
     balanceLabel.Name = "BalanceLabel"
-    balanceLabel.Size = UDim2.new(0, 100, 1, 0)
-    balanceLabel.Position = UDim2.new(0, 56, 0, 0)
+    balanceLabel.Size = UDim2.new(0, 100, 0, 40) -- Fixed height for cash
+    balanceLabel.Position = UDim2.new(0, 56, 0, 2)
     balanceLabel.BackgroundTransparency = 1
     balanceLabel.TextColor3 = Color3.fromRGB(255, 223, 70)
-    balanceLabel.TextSize = 28
+    balanceLabel.TextSize = 24 -- Slightly smaller to fit level
     balanceLabel.Font = Enum.Font.GothamBold
     balanceLabel.Text = "..." -- Changed from "0"
     balanceLabel.TextXAlignment = Enum.TextXAlignment.Left
     balanceLabel.Parent = mainFrame
+    
+    -- Create level label (below balance)
+    local levelLabel = Instance.new("TextLabel")
+    levelLabel.Name = "LevelLabel"
+    levelLabel.Size = UDim2.new(0, 120, 0, 18) -- Slightly smaller for hint space
+    levelLabel.Position = UDim2.new(0, 56, 0, 40)
+    levelLabel.BackgroundTransparency = 1
+    levelLabel.TextColor3 = Color3.fromRGB(100, 149, 237) -- Blue color for level
+    levelLabel.TextSize = 16
+    levelLabel.Font = Enum.Font.Gotham
+    levelLabel.Text = "⭐ Level ..."
+    levelLabel.TextXAlignment = Enum.TextXAlignment.Left
+    levelLabel.Parent = mainFrame
+    
+    -- Create leaderboard hint (very small, below level)
+    local hintLabel = Instance.new("TextLabel")
+    hintLabel.Name = "HintLabel"
+    hintLabel.Size = UDim2.new(0, 120, 0, 12)
+    hintLabel.Position = UDim2.new(0, 56, 0, 58)
+    hintLabel.BackgroundTransparency = 1
+    hintLabel.TextColor3 = Color3.fromRGB(150, 150, 150) -- Gray color for hint
+    hintLabel.TextSize = 10
+    hintLabel.Font = Enum.Font.Gotham
+    hintLabel.Text = "Ctrl+L for leaderboards"
+    hintLabel.TextXAlignment = Enum.TextXAlignment.Left
+    hintLabel.Parent = mainFrame
     
     -- Create purchase button
     local purchaseButton = Instance.new("TextButton")
@@ -317,6 +355,44 @@ function CurrencyUI:UpdateBalance(balance)
     -- Update the display
     balanceLabel.Text = tostring(balance)
     print("💰 CLIENT UI UPDATED: Currency balance is now " .. balance)
+end
+
+-- Update level display
+function CurrencyUI:UpdateLevel(level)
+    -- Check if UI exists
+    if not self.ui or not self.ui:FindFirstChild("MainFrame") then
+        warn("CurrencyUI:UpdateLevel - UI not found!")
+        return
+    end
+    
+    -- Check if LevelLabel exists
+    local levelLabel = self.ui.MainFrame:FindFirstChild("LevelLabel")
+    if not levelLabel then
+        warn("CurrencyUI:UpdateLevel - LevelLabel not found!")
+        return
+    end
+    
+    -- Update the display
+    levelLabel.Text = "⭐ Level " .. tostring(level)
+    print("⭐ CLIENT UI UPDATED: Player level is now " .. level)
+end
+
+-- Update level from XP system
+function CurrencyUI:UpdateLevelFromXP()
+    -- Try to get level from XP system
+    local success, level = pcall(function()
+        local xpManager = _G.ForeverBuildSystems and _G.ForeverBuildSystems.XPManager
+        if xpManager and xpManager.GetPlayerLevel then
+            return xpManager:GetPlayerLevel(self.player)
+        end
+        return 1 -- Default level
+    end)
+    
+    if success and level then
+        self:UpdateLevel(level)
+    else
+        warn("CurrencyUI: Failed to get level from XP system")
+    end
 end
 
 -- Show purchase menu

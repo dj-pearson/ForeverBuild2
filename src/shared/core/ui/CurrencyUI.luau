@@ -104,6 +104,18 @@ function CurrencyUI:Initialize()
     
     self:SetupEventHandlers() -- This connects to UpdateBalance for future updates
 
+    -- Initial level update
+    task.wait(1) -- Wait a moment for systems to initialize
+    self:UpdateLevelFromXP()
+    
+    -- Set up periodic level updates (every 10 seconds)
+    task.spawn(function()
+        while self.ui and self.ui.Parent do
+            task.wait(10)
+            self:UpdateLevelFromXP()
+        end
+    end)
+
     -- NEW: Proactively request initial balance
     -- ReplicatedStorage and Constants are available as upvalues
 
@@ -143,10 +155,10 @@ function CurrencyUI:CreateUI()
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     screenGui.Parent = playerGui
 
-    -- Main frame for currency display
+    -- Main frame for currency display (expanded for level)
     local frame = Instance.new("Frame")
     frame.Name = "MainCurrencyFrame"
-    frame.Size = UDim2.new(0, 220, 0, 40) -- Slightly adjusted size
+    frame.Size = UDim2.new(0, 220, 0, 65) -- Increased height to fit level
     frame.Position = UDim2.new(0.5, -110, 0, 15) -- Top center, bit lower
     frame.BackgroundColor3 = getColor("BackgroundSecondary", Color3.fromRGB(44,44,46))
     frame.BorderSizePixel = 0
@@ -172,11 +184,11 @@ function CurrencyUI:CreateUI()
     icon.Image = "rbxassetid://6034973115" -- Placeholder coin icon
     icon.Parent = frame
 
-    -- Balance Text
+    -- Balance Text (repositioned for level)
     local balance = Instance.new("TextLabel")
     balance.Name = "BalanceText"
-    balance.Size = UDim2.new(1, -icon.Size.X.Offset - getMetric("PaddingMedium").Offset - 50, 1, 0) -- Fill available space minus icon and button
-    balance.Position = UDim2.new(0, icon.Size.X.Offset + getMetric("PaddingSmall").Offset, 0, 0)
+    balance.Size = UDim2.new(1, -icon.Size.X.Offset - getMetric("PaddingMedium").Offset - 50, 0, 22) -- Fixed height for currency
+    balance.Position = UDim2.new(0, icon.Size.X.Offset + getMetric("PaddingSmall").Offset, 0, 3)
     balance.BackgroundTransparency = 1
     balance.Font = getFont("BodyBold", Enum.Font.GothamBold)
     balance.TextSize = getFontSize("BodyBold", 16)
@@ -185,6 +197,34 @@ function CurrencyUI:CreateUI()
     balance.TextYAlignment = Enum.TextYAlignment.Center
     balance.Text = "0"
     balance.Parent = frame
+    
+    -- Level Text (below balance)
+    local levelText = Instance.new("TextLabel")
+    levelText.Name = "LevelText"
+    levelText.Size = UDim2.new(1, -icon.Size.X.Offset - getMetric("PaddingMedium").Offset - 50, 0, 18) -- Fixed height for level
+    levelText.Position = UDim2.new(0, icon.Size.X.Offset + getMetric("PaddingSmall").Offset, 0, 25)
+    levelText.BackgroundTransparency = 1
+    levelText.Font = getFont("Body", Enum.Font.Gotham)
+    levelText.TextSize = getFontSize("Body", 14)
+    levelText.TextColor3 = getColor("TextSecondary", Color3.fromRGB(150, 150, 150))
+    levelText.TextXAlignment = Enum.TextXAlignment.Left
+    levelText.TextYAlignment = Enum.TextYAlignment.Center
+    levelText.Text = "⭐ Level ..."
+    levelText.Parent = frame
+    
+    -- Leaderboard hint (small text at bottom)
+    local hintText = Instance.new("TextLabel")
+    hintText.Name = "HintText"
+    hintText.Size = UDim2.new(1, -icon.Size.X.Offset - getMetric("PaddingMedium").Offset - 50, 0, 12) -- Small height for hint
+    hintText.Position = UDim2.new(0, icon.Size.X.Offset + getMetric("PaddingSmall").Offset, 0, 43)
+    hintText.BackgroundTransparency = 1
+    hintText.Font = getFont("Caption", Enum.Font.Gotham)
+    hintText.TextSize = 10
+    hintText.TextColor3 = Color3.fromRGB(120, 120, 120)
+    hintText.TextXAlignment = Enum.TextXAlignment.Left
+    hintText.TextYAlignment = Enum.TextYAlignment.Center
+    hintText.Text = "Ctrl+L for leaderboards"
+    hintText.Parent = frame
 
     -- Purchase Button ("+")
     local purchaseBtn = Instance.new("TextButton")
@@ -246,6 +286,36 @@ function CurrencyUI:UpdateBalance(balance)
     
     balanceLabel.Text = tostring(balance)
     -- print("💰 SHARED UI UPDATED: Currency balance is now " .. balance) -- Keep for debug if needed
+end
+
+-- Update level display
+function CurrencyUI:UpdateLevel(level)
+    if not self.ui then warn("CurrencyUI:UpdateLevel - UI not found!") return end
+    local mainFrame = self.ui:FindFirstChild("MainCurrencyFrame")
+    if not mainFrame then warn("CurrencyUI:UpdateLevel - MainCurrencyFrame not found!") return end
+    local levelLabel = mainFrame:FindFirstChild("LevelText")
+    if not levelLabel then warn("CurrencyUI:UpdateLevel - LevelText label not found!") return end
+    
+    levelLabel.Text = "⭐ Level " .. tostring(level)
+    print("⭐ SHARED UI UPDATED: Player level is now " .. level)
+end
+
+-- Update level from XP system
+function CurrencyUI:UpdateLevelFromXP()
+    -- Try to get level from XP system
+    local success, level = pcall(function()
+        local xpManager = _G.ForeverBuildSystems and _G.ForeverBuildSystems.XPManager
+        if xpManager and xpManager.GetPlayerLevel then
+            return xpManager:GetPlayerLevel(Players.LocalPlayer)
+        end
+        return 1 -- Default level
+    end)
+    
+    if success and level then
+        self:UpdateLevel(level)
+    else
+        warn("CurrencyUI: Failed to get level from XP system")
+    end
 end
 
 -- Show purchase menu

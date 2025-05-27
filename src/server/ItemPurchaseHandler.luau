@@ -450,7 +450,21 @@ function ItemPurchaseHandler:ProcessCurrencyPurchase(player, item, price)
         return false, "Invalid item price data."
     end
 
-    print("[ItemPurchaseHandler] ProcessCurrencyPurchase - Player:", player.Name, "Item:", item.Name, "Price (INGAME):", costInGameCurrency, "Current Currency:", data.currency)
+    -- Apply progression discount if ProgressionManager is available
+    local originalPrice = costInGameCurrency
+    local discountPercent = 0
+    
+    if _G.ProgressionManager and _G.ProgressionManager.GetPlayerDiscount then
+        discountPercent = _G.ProgressionManager:GetPlayerDiscount(player)
+        if discountPercent > 0 then
+            local discountAmount = math.floor(costInGameCurrency * (discountPercent / 100))
+            costInGameCurrency = costInGameCurrency - discountAmount
+            print(string.format("[ItemPurchaseHandler] Applied %d%% progression discount to %s: %d -> %d (saved %d coins)", 
+                discountPercent, player.Name, originalPrice, costInGameCurrency, discountAmount))
+        end
+    end
+    
+    print("[ItemPurchaseHandler] ProcessCurrencyPurchase - Player:", player.Name, "Item:", item.Name, "Original Price:", originalPrice, "Final Price:", costInGameCurrency, "Discount:", discountPercent .. "%", "Current Currency:", data.currency)
     
     -- Check if player can afford the item
     if data.currency < costInGameCurrency then
@@ -471,7 +485,14 @@ function ItemPurchaseHandler:ProcessCurrencyPurchase(player, item, price)
     -- Update client UI with new balance
     self:UpdateClientBalance(player)
     
-    return true, "Successfully purchased " .. tostring(item.Name) .. " for " .. tostring(costInGameCurrency) .. " " .. tostring(Constants.CURRENCY.INGAME)
+    local successMessage = "Successfully purchased " .. tostring(item.Name) .. " for " .. tostring(costInGameCurrency) .. " " .. tostring(Constants.CURRENCY.INGAME)
+    if discountPercent > 0 then
+        successMessage = successMessage .. string.format(" (Level %d discount: %d%% off, saved %d coins)", 
+            _G.ProgressionManager and _G.ProgressionManager:GetPlayerProgression(player) and _G.ProgressionManager:GetPlayerProgression(player).level or 0,
+            discountPercent, 
+            originalPrice - costInGameCurrency)
+    end
+    return true, successMessage
 end
 
 -- Add a ProcessPurchase function that expects an itemId (string)

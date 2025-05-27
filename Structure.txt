@@ -1,289 +1,540 @@
+  08:51:59.419  > local function printTree(obj, indent)
+    indent = indent or ""
+    
+    -- Check if current object is a Folder or Model
+    if obj.ClassName == "Folder" then
+        print(indent .. obj.Name .. " (" .. obj.ClassName .. ")")
+        -- Continue traversing children of folders
+        for _, child in ipairs(obj:GetChildren()) do
+            printTree(child, indent .. "  ")
+        end
+    elseif obj.ClassName == "Model" then
+        print(indent .. obj.Name .. " (" .. obj.ClassName .. ")")
+        -- Don't traverse children of models (stop here)
+    else
+        -- For other objects, don't print but continue searching for folders/models
+        for _, child in ipairs(obj:GetChildren()) do
+            printTree(child, indent)
+        end
+    end
+end
 
--- Export the main function globally so it can be called with different parameters
-_G.scanGameStructure = scanGameStructure
+-- Print structure for all major services
+local services = {
+    game:GetService("Workspace"),
+    game:GetService("ReplicatedStorage"),
+    game:GetService("ServerScriptService"),
+    game:GetService("StarterGui"),
+    game:GetService("StarterPlayer"),
+    game:GetService("ServerStorage"),
+    game:GetService("Lighting"),
+    game:GetService("SoundService"),
+    game:GetService("ReplicatedFirst")
+}
 
--- Run with default depth of 3
-scanGameStructure(3)  -  Studio
-  08:14:42.798  === ROBLOX GAME STRUCTURE SCANNER ===  -  Edit
-  08:14:42.799  Generated: 2025-05-15 08:14:42  -  Edit
-  08:14:42.799  Game: Place1  -  Edit
-  08:14:42.799  Place ID: 103099385437670  -  Edit
-  08:14:42.799  Max Depth: 3  -  Edit
-  08:14:42.799  
+for _, service in ipairs(services) do
+    print("\n=== " .. service.Name .. " ===")
+    printTree(service)
+end  -  Studio
+  08:51:59.420  
 === Workspace ===  -  Edit
-  08:14:42.800  🌎 Workspace (Workspace)  -  Edit
-  08:14:42.800  │  -  Edit
-  08:14:42.800  ├─ 📁 Items (Folder)  -  Edit
-  08:14:42.800  │  ├─ 📁 Basic (Folder)  -  Edit
-  08:14:42.801  │  │  ├─ 📁 Glow (Folder)  -  Edit
-  08:14:42.801  │  │  ├─ 📋 Brick_Cube (Model) [item=basic]  -  Edit
-  08:14:42.802  │  │  ├─ 📋 Fabric_Cube (Model) [item=basic]  -  Edit
-  08:14:42.802  │  │  ├─ 📋 Fire_Cube (Model) [item=basic]  -  Edit
-  08:14:42.802  │  │  ├─ 📋 Glass_Cube (Model) [item=basic]  -  Edit
-  08:14:42.803  │  │  ├─ 📋 Grass_Cube (Model) [item=basic]  -  Edit
-  08:14:42.803  │  │  ├─ 📋 Stone_Cube (Model) [item=basic]  -  Edit
-  08:14:42.803  │  │  ├─ 📋 Water_Cube (Model) [item=basic]  -  Edit
-  08:14:42.803  │  │  └─ 📋 Wood_Cube (Model) [item=basic]  -  Edit
-  08:14:42.803  │  ├─ 📁 Exclusive (Folder)  -  Edit
-  08:14:42.803  │  ├─ 📁 Free_items (Folder)  -  Edit
-  08:14:42.803  │  ├─ 📁 Level_1 (Folder)  -  Edit
-  08:14:42.803  │  │  └─ 📋 Torch (Model)  -  Edit
-  08:14:42.804  │  ├─ 📁 Level_2 (Folder)  -  Edit
-  08:14:42.804  │  │  ├─ 📁 Teleport Portals (Folder)  -  Edit
-  08:14:42.804  │  │  └─ 📋 Gear (Model) [item=basic]  -  Edit
-  08:14:42.804  │  ├─ 📁 Random_Drop (Folder)  -  Edit
-  08:14:42.804  │  ├─ 📁 Rare (Folder)  -  Edit
-  08:14:42.804  │  └─ 📁 Weapons (Folder)  -  Edit
-  08:14:42.804  ├─ 📁 Main (Folder)  -  Edit
-  08:14:42.804  │  ├─ 🧊 Baseplate (Part)  -  Edit
-  08:14:42.805  │  │  └─ 🎨 Texture (Texture)  -  Edit
-  08:14:42.805  │  └─ 📋 Board (Model)  -  Edit
-  08:14:42.805  │     ├─ 🧊 Board (Part)  -  Edit
-  08:14:42.805  │     └─ ❓ SpawnLocation (SpawnLocation)  -  Edit
-  08:14:42.805  ├─ 📁 World_Items (Folder)  -  Edit
-  08:14:42.805  │  ├─ 📋 Classic House (Model)  -  Edit
-  08:14:42.805  │  │  └─ 📋 House (Model)  -  Edit
-  08:14:42.806  │  ├─ 📋 Level 2 House (Model)  -  Edit
-  08:14:42.807   ▶ │  │  ├─ 🎲 Meshes/RING! (MeshPart) (x66)  -  Edit
-  08:14:42.823   ▶ │  │  ├─ 🧊 Part (Part) (x153)  -  Edit
-  08:14:42.850  │  │  ├─ ❓ Wedge (WedgePart)  -  Edit
-  08:14:42.850  │  │  └─ ❓ Wedge (WedgePart)  -  Edit
-  08:14:42.850  │  ├─ 📋 Level 3 House (Model)  -  Edit
-  08:14:42.851   ▶ │  │  ├─ 📋 Model (Model) (x23)  -  Edit
-  08:14:42.855   ▶ │  │  ├─ 🧊 Part (Part) (x225)  -  Edit
-  08:14:42.903   ▶ │  │  ├─ 🧊 Smooth Block Model (Part) (x5)  -  Edit
-  08:14:42.906   ▶ │  │  ├─ 📋 Toilet (Model) (x2)  -  Edit
-  08:14:42.906   ▶ │  │  ├─ 🔗 Union (UnionOperation) (x9)  -  Edit
-  08:14:42.909   ▶ │  │  ├─ ❓ Wedge (WedgePart) (x8)  -  Edit
-  08:14:42.911  │  │  └─ ❓ Wedge (WedgePart)  -  Edit
-  08:14:42.911  │  ├─ 📋 Rare House (Model)  -  Edit
-  08:14:42.912   ▶ │  │  ├─ 📋 AMECO Ester (Model) (x2)  -  Edit
-  08:14:42.913  │  │  └─ 📋 House (Model)  -  Edit
-  08:14:42.915  │  ├─ 📋 Trampoline (Model)  -  Edit
-  08:14:42.915  │  │  ├─ 🔗 Trampoline (UnionOperation)  -  Edit
-  08:14:42.915  │  │  ├─ 🧊 TrampolineBouncyThing (Part)  -  Edit
-  08:14:42.916   ▶ │  │  ├─ 🔗 TrampolineLeg (UnionOperation) (x3)  -  Edit
-  08:14:42.916  │  │  └─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  08:14:42.917  │  └─ 📋 Trampoline (Model)  -  Edit
-  08:14:42.917  │     ├─ 🔗 Trampoline (UnionOperation)  -  Edit
-  08:14:42.917  │     ├─ 🧊 TrampolineBouncyThing (Part)  -  Edit
-  08:14:42.917   ▶ │     ├─ 🔗 TrampolineLeg (UnionOperation) (x3)  -  Edit
-  08:14:42.918  │     └─ 🔗 TrampolineLeg (UnionOperation)  -  Edit
-  08:14:42.918  ├─ 📷 Camera (Camera)  -  Edit
-  08:14:42.919  ├─ ❓ CornerWedge (CornerWedgePart)  -  Edit
-  08:14:42.919  ├─ 🏔️ Terrain (Terrain)  -  Edit
-  08:14:42.919  └─ 🔗 Triangle Wedge (UnionOperation)  -  Edit
-  08:14:42.923  
-📊 Workspace Statistics:  -  Edit
-  08:14:42.923     📁 Folders: 13  -  Edit
-  08:14:42.923     📋 Models: 222  -  Edit
-  08:14:42.924     🧊 Parts: 2291  -  Edit
-  08:14:42.924     📜 Scripts: 43  -  Edit
-  08:14:42.924     🖥️ GUIs: 28  -  Edit
-  08:14:42.925     ❓ Others: 2486  -  Edit
-  08:14:42.925     📊 Total: 5083  -  Edit
-  08:14:42.925  
-=== Players ===  -  Edit
-  08:14:42.925  👥 Players (Players)  -  Edit
-  08:14:42.925  │  -  Edit
-  08:14:42.925  └─ ❓ Xdjpearsonx (Player)  -  Edit
-  08:14:42.926     ├─ ❓ Backpack (Backpack)  -  Edit
-  08:14:42.926     └─ ❓ PlayerScripts (PlayerScripts)  -  Edit
-  08:14:42.926  
-📊 Players Statistics:  -  Edit
-  08:14:42.926     📁 Folders: 0  -  Edit
-  08:14:42.926     📋 Models: 0  -  Edit
-  08:14:42.926     🧊 Parts: 0  -  Edit
-  08:14:42.927     📜 Scripts: 0  -  Edit
-  08:14:42.927     🖥️ GUIs: 0  -  Edit
-  08:14:42.927     ❓ Others: 3  -  Edit
-  08:14:42.928     📊 Total: 3  -  Edit
-  08:14:42.928  
-=== ServerStorage ===  -  Edit
-  08:14:42.928  🗄️ ServerStorage (ServerStorage)  -  Edit
-  08:14:42.928  │  -  Edit
-  08:14:42.928  └─ (empty)  -  Edit
-  08:14:42.928  
-=== ServerScriptService ===  -  Edit
-  08:14:42.928  ⚙️ ServerScriptService (ServerScriptService)  -  Edit
-  08:14:42.929  │  -  Edit
-  08:14:42.929  └─ 📁 server (Folder)  -  Edit
-  08:14:42.929     ├─ 📁 Neon (Folder)  -  Edit
-  08:14:42.929     │  └─ 📜 NeonGlowManager (Script) [171 lines]  -  Edit
-  08:14:42.930     └─ 📜 init (Script) [337 lines]  -  Edit
-  08:14:42.930  
-📊 ServerScriptService Statistics:  -  Edit
-  08:14:42.930     📁 Folders: 2  -  Edit
-  08:14:42.930     📋 Models: 0  -  Edit
-  08:14:42.930     🧊 Parts: 0  -  Edit
-  08:14:42.930     📜 Scripts: 2  -  Edit
-  08:14:42.930     🖥️ GUIs: 0  -  Edit
-  08:14:42.931     ❓ Others: 0  -  Edit
-  08:14:42.931     📊 Total: 4  -  Edit
-  08:14:42.931  
+  08:51:59.421  Items (Folder)  -  Edit
+  08:51:59.421    Basic (Folder)  -  Edit
+  08:51:59.421      Glow (Folder)  -  Edit
+  08:51:59.421        Glow_Green_Cube (Model)  -  Edit
+  08:51:59.421        Glow_Blue_Cube (Model)  -  Edit
+  08:51:59.421        Glow_Yellow_Cube (Model)  -  Edit
+  08:51:59.421        Glow_White_Cube (Model)  -  Edit
+  08:51:59.422        Glow_Red_Cube (Model)  -  Edit
+  08:51:59.422        Glow_Purple_Cube (Model)  -  Edit
+  08:51:59.422      Corner_Wedge (Model)  -  Edit
+  08:51:59.422      Triangle_Wedge (Model)  -  Edit
+  08:51:59.422      Chair (Model)  -  Edit
+  08:51:59.422      Soccer_Ball (Model)  -  Edit
+  08:51:59.422      Basic Cubes (Folder)  -  Edit
+  08:51:59.422        Brick_Cube (Model)  -  Edit
+  08:51:59.422        Fabric_Cube (Model)  -  Edit
+  08:51:59.422        Fire_Cube (Model)  -  Edit
+  08:51:59.422        Glass_Cube (Model)  -  Edit
+  08:51:59.422        Grass_Cube (Model)  -  Edit
+  08:51:59.422        Stone_Cube (Model)  -  Edit
+  08:51:59.422        Water_Cube (Model)  -  Edit
+  08:51:59.422        Wood_Cube (Model)  -  Edit
+  08:51:59.423      Walls (Folder)  -  Edit
+  08:51:59.423        Grey (Folder)  -  Edit
+  08:51:59.423          Basic_Grey_Asphalt_Wall (Model)  -  Edit
+  08:51:59.423          Basic_Grey_Brick_Wall (Model)  -  Edit
+  08:51:59.423          Basic_Grey_Concrete_Wall (Model)  -  Edit
+  08:51:59.423          Basic_Grey_Diamond_Plate_Wall (Model)  -  Edit
+  08:51:59.423          Basic_Grey_ForceField_Wall (Model)  -  Edit
+  08:51:59.423          Basic_Grey_Glass_Wall (Model)  -  Edit
+  08:51:59.423   ▶         Basic_Grey_Granite_Wall (Model) (x2)  -  Edit
+  08:51:59.423          Basic_Grey_Neon_Wall (Model)  -  Edit
+  08:51:59.424          Basic_Grey_Pebble_Wall (Model)  -  Edit
+  08:51:59.424          Basic_Grey_Rubber_Wall (Model)  -  Edit
+  08:51:59.424          Basic_Grey_Slate_Wall (Model)  -  Edit
+  08:51:59.424   ▶         Basic_Grey_Wood_Wall (Model) (x2)  -  Edit
+  08:51:59.424        Black (Folder)  -  Edit
+  08:51:59.424          Basic_Black_Asphalt_Wall (Model)  -  Edit
+  08:51:59.424          Basic_Black_Brick_Wall (Model)  -  Edit
+  08:51:59.424          Basic_Black_Concrete_Wall (Model)  -  Edit
+  08:51:59.424          Basic_Black_Diamond_Plate_Wall (Model)  -  Edit
+  08:51:59.424          Basic_Black_ForceField_Wall (Model)  -  Edit
+  08:51:59.424          Basic_Black_Glass_Wall (Model)  -  Edit
+  08:51:59.424   ▶         Basic_Black_Granite_Wall (Model) (x2)  -  Edit
+  08:51:59.424          Basic_Black_Neon_Wall (Model)  -  Edit
+  08:51:59.424          Basic_Black_Pebble_Wall (Model)  -  Edit
+  08:51:59.424          Basic_Black_Rubber_Wall (Model)  -  Edit
+  08:51:59.424          Basic_Black_Slate_Wall (Model)  -  Edit
+  08:51:59.424   ▶         Basic_Black_Wood_Wall (Model) (x2)  -  Edit
+  08:51:59.425        Brown (Folder)  -  Edit
+  08:51:59.425          Basic_Brown_Asphalt_Wall (Model)  -  Edit
+  08:51:59.425          Basic_Brown_Brick_Wall (Model)  -  Edit
+  08:51:59.425          Basic_Brown_Concrete_Wall (Model)  -  Edit
+  08:51:59.425          Basic_Brown_Diamond_Plate_Wall (Model)  -  Edit
+  08:51:59.425          Basic_Brown_ForceField_Wall (Model)  -  Edit
+  08:51:59.425          Basic_Brown_Glass_Wall (Model)  -  Edit
+  08:51:59.425   ▶         Basic_Brown_Granite_Wall (Model) (x2)  -  Edit
+  08:51:59.425          Basic_Brown_Neon_Wall (Model)  -  Edit
+  08:51:59.425          Basic_Brown_Pebble_Wall (Model)  -  Edit
+  08:51:59.425          Basic_Brown_Rubber_Wall (Model)  -  Edit
+  08:51:59.425          Basic_Brown_Slate_Wall (Model)  -  Edit
+  08:51:59.426   ▶         Basic_Brown_Wood_Wall (Model) (x2)  -  Edit
+  08:51:59.426        Beige (Folder)  -  Edit
+  08:51:59.426          Basic_Grey_Asphalt_Wall (Model)  -  Edit
+  08:51:59.426          Basic_Grey_Brick_Wall (Model)  -  Edit
+  08:51:59.426          Basic_Grey_Concrete_Wall (Model)  -  Edit
+  08:51:59.426          Basic_Grey_Diamond_Plate_Wall (Model)  -  Edit
+  08:51:59.426          Basic_Grey_ForceField_Wall (Model)  -  Edit
+  08:51:59.426          Basic_Grey_Glass_Wall (Model)  -  Edit
+  08:51:59.426   ▶         Basic_Grey_Granite_Wall (Model) (x2)  -  Edit
+  08:51:59.426          Basic_Grey_Neon_Wall (Model)  -  Edit
+  08:51:59.426          Basic_Grey_Pebble_Wall (Model)  -  Edit
+  08:51:59.426          Basic_Grey_Rubber_Wall (Model)  -  Edit
+  08:51:59.426          Basic_Grey_Slate_Wall (Model)  -  Edit
+  08:51:59.427   ▶         Basic_Grey_Wood_Wall (Model) (x2)  -  Edit
+  08:51:59.427        Blue (Folder)  -  Edit
+  08:51:59.427          Basic_Blue_Asphalt_Wall (Model)  -  Edit
+  08:51:59.427          Basic_Blue_Brick_Wall (Model)  -  Edit
+  08:51:59.427          Basic_Blue_Concrete_Wall (Model)  -  Edit
+  08:51:59.427          Basic_Blue_Diamond_Plate_Wall (Model)  -  Edit
+  08:51:59.427          Basic_Blue_ForceField_Wall (Model)  -  Edit
+  08:51:59.427          Basic_Blue_Glass_Wall (Model)  -  Edit
+  08:51:59.427   ▶         Basic_Blue_Granite_Wall (Model) (x2)  -  Edit
+  08:51:59.427          Basic_Blue_Neon_Wall (Model)  -  Edit
+  08:51:59.427          Basic_Blue_Pebble_Wall (Model)  -  Edit
+  08:51:59.427          Basic_Blue_Rubber_Wall (Model)  -  Edit
+  08:51:59.427          Basic_Blue_Slate_Wall (Model)  -  Edit
+  08:51:59.427   ▶         Basic_Blue_Wood_Wall (Model) (x2)  -  Edit
+  08:51:59.428        Red (Folder)  -  Edit
+  08:51:59.428          Basic_Red_Asphalt_Wall (Model)  -  Edit
+  08:51:59.428          Basic_Red_Brick_Wall (Model)  -  Edit
+  08:51:59.428          Basic_Red_Concrete_Wall (Model)  -  Edit
+  08:51:59.428          Basic_Red_Diamond_Plate_Wall (Model)  -  Edit
+  08:51:59.428          Basic_Red_ForceField_Wall (Model)  -  Edit
+  08:51:59.428          Basic_Red_Glass_Wall (Model)  -  Edit
+  08:51:59.428   ▶         Basic_Red_Granite_Wall (Model) (x2)  -  Edit
+  08:51:59.428          Basic_Red_Neon_Wall (Model)  -  Edit
+  08:51:59.428          Basic_Red_Pebble_Wall (Model)  -  Edit
+  08:51:59.428          Basic_Red_Rubber_Wall (Model)  -  Edit
+  08:51:59.428          Basic_Red_Slate_Wall (Model)  -  Edit
+  08:51:59.428   ▶         Basic_Red_Wood_Wall (Model) (x2)  -  Edit
+  08:51:59.428      Basic_House_1 (Folder)  -  Edit
+  08:51:59.428        Back Door (Model)  -  Edit
+  08:51:59.429        Bathroom Fixtures (Model)  -  Edit
+  08:51:59.429        Cable Box (Model)  -  Edit
+  08:51:59.429        Bed (Model)  -  Edit
+  08:51:59.429        Chair (Model)  -  Edit
+  08:51:59.429        Credenza (Model)  -  Edit
+  08:51:59.429        Door (Model)  -  Edit
+  08:51:59.429        Dresser (Model)  -  Edit
+  08:51:59.429        Front Door (Model)  -  Edit
+  08:51:59.429        Nightstand (Model)  -  Edit
+  08:51:59.429        Record Player (Model)  -  Edit
+  08:51:59.429        Sofa (Model)  -  Edit
+  08:51:59.429        TV (Model)  -  Edit
+  08:51:59.429        Basic_Table_Chairs (Model)  -  Edit
+  08:51:59.429    Exclusive (Folder)  -  Edit
+  08:51:59.429      Helipack (Model)  -  Edit
+  08:51:59.429    Random_Drop (Folder)  -  Edit
+  08:51:59.429    Weapons (Folder)  -  Edit
+  08:51:59.429    Free_items (Folder)  -  Edit
+  08:51:59.429    Level_1 (Folder)  -  Edit
+  08:51:59.429      Torch (Model)  -  Edit
+  08:51:59.430      Level_1_Stairs (Model)  -  Edit
+  08:51:59.430      Gear (Model)  -  Edit
+  08:51:59.430    Level_2 (Folder)  -  Edit
+  08:51:59.430      Level_2 Candle (Model)  -  Edit
+  08:51:59.430    Level_3 (Folder)  -  Edit
+  08:51:59.430      Mailbox (Model)  -  Edit
+  08:51:59.430      Mantel (Model)  -  Edit
+  08:51:59.430      Mirror (Model)  -  Edit
+  08:51:59.430      Level_3 Decorative Mirror (Model)  -  Edit
+  08:51:59.430      Level_3 Nightstand (Model)  -  Edit
+  08:51:59.430      Level_3 Table Lamp (Model)  -  Edit
+  08:51:59.430    Level_4 (Folder)  -  Edit
+  08:51:59.430    Rare (Folder)  -  Edit
+  08:51:59.430      Traffic Cone (Model)  -  Edit
+  08:51:59.430      Rare_Blue_Sword (Model)  -  Edit
+  08:51:59.430      1920s chair (Model)  -  Edit
+  08:51:59.431      Rare_Flower_Pot (Model)  -  Edit
+  08:51:59.431      Rare_Floor_Lamp (Model)  -  Edit
+  08:51:59.431   ▶     Patio Chair (Model) (x2)  -  Edit
+  08:51:59.431      Lamp (Model)  -  Edit
+  08:51:59.431      Rare_Pine Tree (Model)  -  Edit
+  08:51:59.431      Rare_Alien (Model)  -  Edit
+  08:51:59.431      Rare_Egg (Model)  -  Edit
+  08:51:59.431      Rare_Ball (Model)  -  Edit
+  08:51:59.431  World_Items (Folder)  -  Edit
+  08:51:59.431    Static (Folder)  -  Edit
+  08:51:59.431      Teleport Portals (Folder)  -  Edit
+  08:51:59.431        PortalBlue (Model)  -  Edit
+  08:51:59.431        PortalRed (Model)  -  Edit
+  08:51:59.431      Level_3_House (Folder)  -  Edit
+  08:51:59.432        Tree (Model)  -  Edit
+  08:51:59.432        Model (Model)  -  Edit
+  08:51:59.432        Level_3 Toilet (Model)  -  Edit
+  08:51:59.432        Level_3 Sink (Model)  -  Edit
+  08:51:59.432        Model (Model)  -  Edit
+  08:51:59.432        Level_3 Seat (Model)  -  Edit
+  08:51:59.432   ▶       Model (Model) (x3)  -  Edit
+  08:51:59.434        Level_3 Toaster (Model)  -  Edit
+  08:51:59.434        Level_3 Mixer (Model)  -  Edit
+  08:51:59.434        Level_3 Round Table and Chairs (Model)  -  Edit
+  08:51:59.434        Level_3 Hanging Lights (Model)  -  Edit
+  08:51:59.434   ▶       Model (Model) (x106)  -  Edit
+  08:51:59.444        White_Wall_Light (Model)  -  Edit
+  08:51:59.444   ▶       Model (Model) (x5)  -  Edit
+  08:51:59.444        White_Door (Model)  -  Edit
+  08:51:59.444   ▶       Model (Model) (x2)  -  Edit
+  08:51:59.444        White_Ceiling_Light (Model)  -  Edit
+  08:51:59.444   ▶       Model (Model) (x2)  -  Edit
+  08:51:59.444        12_Pane_Window (Model)  -  Edit
+  08:51:59.445        Toilet (Model)  -  Edit
+  08:51:59.445        Sink (Model)  -  Edit
+  08:51:59.445        White_Door (Model)  -  Edit
+  08:51:59.445   ▶       Model (Model) (x10)  -  Edit
+  08:51:59.445      Basic_House (Folder)  -  Edit
+  08:51:59.445        Basic_House_1 (Folder)  -  Edit
+  08:51:59.445          Model (Model)  -  Edit
+  08:51:59.447          Bed (Model)  -  Edit
+  08:51:59.447          Nightstand (Model)  -  Edit
+  08:51:59.447   ▶         Model (Model) (x2)  -  Edit
+  08:51:59.447          Siding (Model)  -  Edit
+  08:51:59.447   ▶         Model (Model) (x2)  -  Edit
+  08:51:59.447          Door (Model)  -  Edit
+  08:51:59.447   ▶         Model (Model) (x4)  -  Edit
+  08:51:59.447          Nightstand (Model)  -  Edit
+  08:51:59.447          Dresser (Model)  -  Edit
+  08:51:59.447          Roof (Model)  -  Edit
+  08:51:59.447   ▶         Model (Model) (x2)  -  Edit
+  08:51:59.448          Door (Model)  -  Edit
+  08:51:59.448          Bed (Model)  -  Edit
+  08:51:59.448          Model (Model)  -  Edit
+  08:51:59.448          Dresser (Model)  -  Edit
+  08:51:59.448          Model (Model)  -  Edit
+  08:51:59.448        Basic_House_2 (Folder)  -  Edit
+  08:51:59.448          Basic_House (Model)  -  Edit
+  08:51:59.448      Level_1_House (Folder)  -  Edit
+  08:51:59.448        Level_1_House_1 (Folder)  -  Edit
+  08:51:59.448          Level_1 House (Model)  -  Edit
+  08:51:59.449        Level_1_House_2 (Folder)  -  Edit
+  08:51:59.449          Level_1 House (Model)  -  Edit
+  08:51:59.449      Level_2_House (Folder)  -  Edit
+  08:51:59.449        Model (Model)  -  Edit
+  08:51:59.449        Level_2 Lamp and Nightstand (Model)  -  Edit
+  08:51:59.449   ▶       Model (Model) (x2)  -  Edit
+  08:51:59.449   ▶       Hardware (Model) (x2)  -  Edit
+  08:51:59.449        Level_2 Kettle (Model)  -  Edit
+  08:51:59.449   ▶       Model (Model) (x2)  -  Edit
+  08:51:59.449        Level_2 Reindeer (Model)  -  Edit
+  08:51:59.450   ▶       Model (Model) (x11)  -  Edit
+  08:51:59.450        Candle (Model)  -  Edit
+  08:51:59.450        Model (Model)  -  Edit
+  08:51:59.450        Level_2 Bedroom Bed (Model)  -  Edit
+  08:51:59.450   ▶       Model (Model) (x2)  -  Edit
+  08:51:59.450        Candle (Model)  -  Edit
+  08:51:59.450   ▶       Model (Model) (x6)  -  Edit
+  08:51:59.451        Candle (Model)  -  Edit
+  08:51:59.451   ▶       Model (Model) (x16)  -  Edit
+  08:51:59.452        Candle (Model)  -  Edit
+  08:51:59.452   ▶       Model (Model) (x2)  -  Edit
+  08:51:59.452        fire (Model)  -  Edit
+  08:51:59.452        Level_2 Table and Chairs (Model)  -  Edit
+  08:51:59.452   ▶       Model (Model) (x3)  -  Edit
+  08:51:59.452        Level_2 Oven (Model)  -  Edit
+  08:51:59.452        Level_2 Indoor Plant (Model)  -  Edit
+  08:51:59.452        Level_2 Sink (Model)  -  Edit
+  08:51:59.452   ▶       Model (Model) (x7)  -  Edit
+  08:51:59.453        Candle (Model)  -  Edit
+  08:51:59.453   ▶       Model (Model) (x4)  -  Edit
+  08:51:59.453        Level_2 Dresser (Model)  -  Edit
+  08:51:59.453   ▶       Model (Model) (x4)  -  Edit
+  08:51:59.453        TableLamp (Model)  -  Edit
+  08:51:59.453        Level_2 Simple Art (Model)  -  Edit
+  08:51:59.453   ▶       Model (Model) (x4)  -  Edit
+  08:51:59.454        Level_2 Master Bed (Model)  -  Edit
+  08:51:59.454   ▶       Model (Model) (x4)  -  Edit
+  08:51:59.454        Level_2 Tall Indoor Plant (Model)  -  Edit
+  08:51:59.454   ▶       Model (Model) (x3)  -  Edit
+  08:51:59.454        Candle (Model)  -  Edit
+  08:51:59.454   ▶       Model (Model) (x3)  -  Edit
+  08:51:59.454        Level_2 Garland (Model)  -  Edit
+  08:51:59.454        Model (Model)  -  Edit
+  08:51:59.454        Level_2 Bedroom Chair (Model)  -  Edit
+  08:51:59.454        Level_2 Chair (Model)  -  Edit
+  08:51:59.455        Level_2 Sofa (Model)  -  Edit
+  08:51:59.455      Rare_House (Folder)  -  Edit
+  08:51:59.455        Rare House (Model)  -  Edit
+  08:51:59.455        Rare_House_2 (Model)  -  Edit
+  08:51:59.455        Gun Shop 2 (Model)  -  Edit
+  08:51:59.455        Treehouse (Model)  -  Edit
+  08:51:59.455        Furnished Mansion (Folder)  -  Edit
+  08:51:59.455          Pool (Model)  -  Edit
+  08:51:59.455          Model (Model)  -  Edit
+  08:51:59.455          Objects (Folder)  -  Edit
+  08:51:59.455   ▶           Model (Model) (x3)  -  Edit
+  08:51:59.455            Rare_Wood_Door (Model)  -  Edit
+  08:51:59.456   ▶           Model (Model) (x3)  -  Edit
+  08:51:59.456            Realistic Toilet (Model)  -  Edit
+  08:51:59.456   ▶           Model (Model) (x3)  -  Edit
+  08:51:59.456            Realistic Toilet (Model)  -  Edit
+  08:51:59.456   ▶           Model (Model) (x4)  -  Edit
+  08:51:59.457            Clock (Model)  -  Edit
+  08:51:59.457   ▶           Model (Model) (x31)  -  Edit
+  08:51:59.459            Rare_Hat_Rack (Model)  -  Edit
+  08:51:59.459   ▶           Model (Model) (x4)  -  Edit
+  08:51:59.459            Rare_Glass_Door (Model)  -  Edit
+  08:51:59.460            Rare_Single_Glass_Door (Model)  -  Edit
+  08:51:59.460            Rare_Glass_Table (Model)  -  Edit
+  08:51:59.460            Rare_Wood_Art (Model)  -  Edit
+  08:51:59.460            Rare_Kitchen_Table_Chairs (Model)  -  Edit
+  08:51:59.460   ▶           Model (Model) (x2)  -  Edit
+  08:51:59.460            Flat Screen TV (Model)  -  Edit
+  08:51:59.460   ▶           Model (Model) (x3)  -  Edit
+  08:51:59.460            Rare_Modern Two Seater Couch (Model)  -  Edit
+  08:51:59.460   ▶           Model (Model) (x3)  -  Edit
+  08:51:59.461            Dresser (Model)  -  Edit
+  08:51:59.461   ▶           Model (Model) (x8)  -  Edit
+  08:51:59.461            Rare_Glass_Window (Model)  -  Edit
+  08:51:59.461      Level_4 House (Folder)  -  Edit
+  08:51:59.461        Level_4 House (Model)  -  Edit
+  08:51:59.461      Fenced_Area (Folder)  -  Edit
+  08:51:59.461   ▶       Fence (Model) (x21)  -  Edit
+  08:51:59.463      Teleport Portals Secret (Folder)  -  Edit
+  08:51:59.463        PortalBlue (Model)  -  Edit
+  08:51:59.463        PortalRed (Model)  -  Edit
+  08:51:59.463    Placed (Folder)  -  Edit
+  08:51:59.463  Main (Folder)  -  Edit
+  08:51:59.463    Board (Model)  -  Edit
+  08:51:59.463    Roads (Folder)  -  Edit
+  08:51:59.463      Cobblestone_Roads (Folder)  -  Edit
+  08:51:59.463        L3 (Model)  -  Edit
+  08:51:59.463        L2 (Model)  -  Edit
+  08:51:59.463        L1 (Model)  -  Edit
+  08:51:59.463        L4 (Model)  -  Edit
+  08:51:59.463      Driving Roads (Folder)  -  Edit
+  08:51:59.463        1 (Folder)  -  Edit
+  08:51:59.463   ▶         Road (Model) (x6)  -  Edit
+  08:51:59.464          T Roads (Model)  -  Edit
+  08:51:59.464          Road (Model)  -  Edit
+  08:51:59.464        2 (Folder)  -  Edit
+  08:51:59.464   ▶         Road (Model) (x6)  -  Edit
+  08:51:59.465          T Roads (Model)  -  Edit
+  08:51:59.465        3 (Folder)  -  Edit
+  08:51:59.465   ▶         Road (Model) (x6)  -  Edit
+  08:51:59.465          T Roads (Model)  -  Edit
+  08:51:59.465          Road (Model)  -  Edit
+  08:51:59.465        4 (Folder)  -  Edit
+  08:51:59.465   ▶         Road (Model) (x6)  -  Edit
+  08:51:59.466          T Roads (Model)  -  Edit
+  08:51:59.466      House (Folder)  -  Edit
+  08:51:59.466      Road Turn (Model)  -  Edit
+  08:51:59.466    Fun_Objects (Folder)  -  Edit
+  08:51:59.466   ▶     Trampoline (Model) (x3)  -  Edit
+  08:51:59.466  Gravity Coil Giver (Model)  -  Edit
+  08:51:59.466  Flying_Carpet (Model)  -  Edit
+  08:51:59.467  House (Model)  -  Edit
+  08:51:59.467  Metal_Ladder (Model)  -  Edit
+  08:51:59.467  Platform Fence (Model)  -  Edit
+  08:51:59.467  
 === ReplicatedStorage ===  -  Edit
-  08:14:42.931  🔄 ReplicatedStorage (ReplicatedStorage)  -  Edit
-  08:14:42.931  │  -  Edit
-  08:14:42.932  └─ 📁 shared (Folder)  -  Edit
-  08:14:42.932     ├─ 📁 core (Folder)  -  Edit
-  08:14:42.932     │  ├─ 📁 economy (Folder)  -  Edit
-  08:14:42.932     │  ├─ 📁 interaction (Folder)  -  Edit
-  08:14:42.932     │  ├─ 📁 inventory (Folder)  -  Edit
-  08:14:42.932     │  ├─ 📁 placement (Folder)  -  Edit
-  08:14:42.933     │  ├─ 📁 ui (Folder)  -  Edit
-  08:14:42.933     │  ├─ 📄 Constants (ModuleScript)  -  Edit
-  08:14:42.933     │  ├─ 📄 GameManager (ModuleScript)  -  Edit
-  08:14:42.933     │  └─ 📄 LazyLoadModules (ModuleScript)  -  Edit
-  08:14:42.933     ├─ 📄 SharedModule (ModuleScript)  -  Edit
-  08:14:42.933     └─ 📄 init (ModuleScript)  -  Edit
-  08:14:42.933  
-📊 ReplicatedStorage Statistics:  -  Edit
-  08:14:42.934     📁 Folders: 7  -  Edit
-  08:14:42.934     📋 Models: 0  -  Edit
-  08:14:42.934     🧊 Parts: 0  -  Edit
-  08:14:42.935     📜 Scripts: 0  -  Edit
-  08:14:42.935     🖥️ GUIs: 0  -  Edit
-  08:14:42.935     ❓ Others: 14  -  Edit
-  08:14:42.935     📊 Total: 21  -  Edit
-  08:14:42.936  
-=== ReplicatedFirst ===  -  Edit
-  08:14:42.936  ❓ ReplicatedFirst (ReplicatedFirst)  -  Edit
-  08:14:42.936  │  -  Edit
-  08:14:42.936  └─ (empty)  -  Edit
-  08:14:42.936  
+  08:51:59.467  core (Folder)  -  Edit
+  08:51:59.467    economy (Folder)  -  Edit
+  08:51:59.467    interaction (Folder)  -  Edit
+  08:51:59.467    inventory (Folder)  -  Edit
+  08:51:59.467    placement (Folder)  -  Edit
+  08:51:59.467      modules (Folder)  -  Edit
+  08:51:59.467    ui (Folder)  -  Edit
+  08:51:59.467  optimization (Folder)  -  Edit
+  08:51:59.467  
+=== ServerScriptService ===  -  Edit
+  08:51:59.468  server (Folder)  -  Edit
+  08:51:59.468    admin (Folder)  -  Edit
+  08:51:59.468    interaction (Folder)  -  Edit
+  08:51:59.468    Neon (Folder)  -  Edit
+  08:51:59.468    temp (Folder)  -  Edit
+  08:51:59.468  
 === StarterGui ===  -  Edit
-  08:14:42.937  🖥️ StarterGui (StarterGui)  -  Edit
-  08:14:42.937  │  -  Edit
-  08:14:42.937  └─ 💻 StarterGui (LocalScript) [107 lines]  -  Edit
-  08:14:42.937  
-📊 StarterGui Statistics:  -  Edit
-  08:14:42.938     📁 Folders: 0  -  Edit
-  08:14:42.938     📋 Models: 0  -  Edit
-  08:14:42.938     🧊 Parts: 0  -  Edit
-  08:14:42.938     📜 Scripts: 1  -  Edit
-  08:14:42.938     🖥️ GUIs: 0  -  Edit
-  08:14:42.938     ❓ Others: 0  -  Edit
-  08:14:42.939     📊 Total: 1  -  Edit
-  08:14:42.939  
-=== StarterPack ===  -  Edit
-  08:14:42.939  🎒 StarterPack (StarterPack)  -  Edit
-  08:14:42.939  │  -  Edit
-  08:14:42.939  └─ (empty)  -  Edit
-  08:14:42.939  
+  08:51:59.468  
 === StarterPlayer ===  -  Edit
-  08:14:42.939  👤 StarterPlayer (StarterPlayer)  -  Edit
-  08:14:42.939  │  -  Edit
-  08:14:42.940  ├─ ❓ StarterCharacterScripts (StarterCharacterScripts)  -  Edit
-  08:14:42.940  └─ ❓ StarterPlayerScripts (StarterPlayerScripts)  -  Edit
-  08:14:42.940     └─ 📁 client (Folder)  -  Edit
-  08:14:42.940        ├─ 📁 Currency (Folder)  -  Edit
-  08:14:42.940        ├─ 📁 interaction (Folder)  -  Edit
-  08:14:42.941        ├─ 📄 client (ModuleScript)  -  Edit
-  08:14:42.941        ├─ 📄 client_core (ModuleScript)  -  Edit
-  08:14:42.941        └─ 💻 init (LocalScript) [120 lines]  -  Edit
-  08:14:42.941  
-📊 StarterPlayer Statistics:  -  Edit
-  08:14:42.941     📁 Folders: 3  -  Edit
-  08:14:42.942     📋 Models: 0  -  Edit
-  08:14:42.942     🧊 Parts: 0  -  Edit
-  08:14:42.942     📜 Scripts: 1  -  Edit
-  08:14:42.942     🖥️ GUIs: 0  -  Edit
-  08:14:42.942     ❓ Others: 9  -  Edit
-  08:14:42.942     📊 Total: 13  -  Edit
-  08:14:42.942  
-=== Teams ===  -  Edit
-  08:14:42.943  🏆 Teams (Teams)  -  Edit
-  08:14:42.943  │  -  Edit
-  08:14:42.943  └─ (empty)  -  Edit
-  08:14:42.943  
-=== SoundService ===  -  Edit
-  08:14:42.943  🎵 SoundService (SoundService)  -  Edit
-  08:14:42.943  │  -  Edit
-  08:14:42.944  └─ (empty)  -  Edit
-  08:14:42.944  
+  08:51:59.468  client (Folder)  -  Edit
+  08:51:59.468    Currency (Folder)  -  Edit
+  08:51:59.468    interaction (Folder)  -  Edit
+  08:51:59.468    Inventory (Folder)  -  Edit
+  08:51:59.468    placement (Folder)  -  Edit
+  08:51:59.468  
+=== ServerStorage ===  -  Edit
+  08:51:59.468  Items (Folder)  -  Edit
+  08:51:59.468    Basic (Folder)  -  Edit
+  08:51:59.468      Glow (Folder)  -  Edit
+  08:51:59.468        Glow_Green_Cube (Model)  -  Edit
+  08:51:59.468        Glow_Blue_Cube (Model)  -  Edit
+  08:51:59.469        Glow_Yellow_Cube (Model)  -  Edit
+  08:51:59.469        Glow_White_Cube (Model)  -  Edit
+  08:51:59.469        Glow_Red_Cube (Model)  -  Edit
+  08:51:59.469        Glow_Purple_Cube (Model)  -  Edit
+  08:51:59.469      Corner_Wedge (Model)  -  Edit
+  08:51:59.469      Triangle_Wedge (Model)  -  Edit
+  08:51:59.469      Chair (Model)  -  Edit
+  08:51:59.469      Soccer_Ball (Model)  -  Edit
+  08:51:59.469      Basic Cubes (Folder)  -  Edit
+  08:51:59.469        Brick_Cube (Model)  -  Edit
+  08:51:59.469        Fabric_Cube (Model)  -  Edit
+  08:51:59.469        Fire_Cube (Model)  -  Edit
+  08:51:59.469        Glass_Cube (Model)  -  Edit
+  08:51:59.469        Grass_Cube (Model)  -  Edit
+  08:51:59.469        Stone_Cube (Model)  -  Edit
+  08:51:59.469        Water_Cube (Model)  -  Edit
+  08:51:59.469        Wood_Cube (Model)  -  Edit
+  08:51:59.469      Walls (Folder)  -  Edit
+  08:51:59.470        Grey (Folder)  -  Edit
+  08:51:59.470          Basic_Grey_Asphalt_Wall (Model)  -  Edit
+  08:51:59.470          Basic_Grey_Brick_Wall (Model)  -  Edit
+  08:51:59.470          Basic_Grey_Concrete_Wall (Model)  -  Edit
+  08:51:59.470          Basic_Grey_Diamond_Plate_Wall (Model)  -  Edit
+  08:51:59.470          Basic_Grey_ForceField_Wall (Model)  -  Edit
+  08:51:59.470          Basic_Grey_Glass_Wall (Model)  -  Edit
+  08:51:59.470   ▶         Basic_Grey_Granite_Wall (Model) (x2)  -  Edit
+  08:51:59.470          Basic_Grey_Neon_Wall (Model)  -  Edit
+  08:51:59.470          Basic_Grey_Pebble_Wall (Model)  -  Edit
+  08:51:59.470          Basic_Grey_Rubber_Wall (Model)  -  Edit
+  08:51:59.470          Basic_Grey_Slate_Wall (Model)  -  Edit
+  08:51:59.470   ▶         Basic_Grey_Wood_Wall (Model) (x2)  -  Edit
+  08:51:59.470        Black (Folder)  -  Edit
+  08:51:59.471          Basic_Black_Asphalt_Wall (Model)  -  Edit
+  08:51:59.471          Basic_Black_Brick_Wall (Model)  -  Edit
+  08:51:59.471          Basic_Black_Concrete_Wall (Model)  -  Edit
+  08:51:59.471          Basic_Black_Diamond_Plate_Wall (Model)  -  Edit
+  08:51:59.471          Basic_Black_ForceField_Wall (Model)  -  Edit
+  08:51:59.471          Basic_Black_Glass_Wall (Model)  -  Edit
+  08:51:59.471   ▶         Basic_Black_Granite_Wall (Model) (x2)  -  Edit
+  08:51:59.471          Basic_Black_Neon_Wall (Model)  -  Edit
+  08:51:59.471          Basic_Black_Pebble_Wall (Model)  -  Edit
+  08:51:59.471          Basic_Black_Rubber_Wall (Model)  -  Edit
+  08:51:59.471          Basic_Black_Slate_Wall (Model)  -  Edit
+  08:51:59.471   ▶         Basic_Black_Wood_Wall (Model) (x2)  -  Edit
+  08:51:59.471        Brown (Folder)  -  Edit
+  08:51:59.471          Basic_Brown_Asphalt_Wall (Model)  -  Edit
+  08:51:59.471          Basic_Brown_Brick_Wall (Model)  -  Edit
+  08:51:59.471          Basic_Brown_Concrete_Wall (Model)  -  Edit
+  08:51:59.471          Basic_Brown_Diamond_Plate_Wall (Model)  -  Edit
+  08:51:59.471          Basic_Brown_ForceField_Wall (Model)  -  Edit
+  08:51:59.471          Basic_Brown_Glass_Wall (Model)  -  Edit
+  08:51:59.472   ▶         Basic_Brown_Granite_Wall (Model) (x2)  -  Edit
+  08:51:59.472          Basic_Brown_Neon_Wall (Model)  -  Edit
+  08:51:59.472          Basic_Brown_Pebble_Wall (Model)  -  Edit
+  08:51:59.472          Basic_Brown_Rubber_Wall (Model)  -  Edit
+  08:51:59.472          Basic_Brown_Slate_Wall (Model)  -  Edit
+  08:51:59.472   ▶         Basic_Brown_Wood_Wall (Model) (x2)  -  Edit
+  08:51:59.472        Beige (Folder)  -  Edit
+  08:51:59.472          Basic_Grey_Asphalt_Wall (Model)  -  Edit
+  08:51:59.472          Basic_Grey_Brick_Wall (Model)  -  Edit
+  08:51:59.472          Basic_Grey_Concrete_Wall (Model)  -  Edit
+  08:51:59.472          Basic_Grey_Diamond_Plate_Wall (Model)  -  Edit
+  08:51:59.472          Basic_Grey_ForceField_Wall (Model)  -  Edit
+  08:51:59.473          Basic_Grey_Glass_Wall (Model)  -  Edit
+  08:51:59.473   ▶         Basic_Grey_Granite_Wall (Model) (x2)  -  Edit
+  08:51:59.473          Basic_Grey_Neon_Wall (Model)  -  Edit
+  08:51:59.473          Basic_Grey_Pebble_Wall (Model)  -  Edit
+  08:51:59.473          Basic_Grey_Rubber_Wall (Model)  -  Edit
+  08:51:59.473          Basic_Grey_Slate_Wall (Model)  -  Edit
+  08:51:59.473   ▶         Basic_Grey_Wood_Wall (Model) (x2)  -  Edit
+  08:51:59.473        Blue (Folder)  -  Edit
+  08:51:59.473          Basic_Blue_Asphalt_Wall (Model)  -  Edit
+  08:51:59.473          Basic_Blue_Brick_Wall (Model)  -  Edit
+  08:51:59.473          Basic_Blue_Concrete_Wall (Model)  -  Edit
+  08:51:59.473          Basic_Blue_Diamond_Plate_Wall (Model)  -  Edit
+  08:51:59.473          Basic_Blue_ForceField_Wall (Model)  -  Edit
+  08:51:59.473          Basic_Blue_Glass_Wall (Model)  -  Edit
+  08:51:59.473   ▶         Basic_Blue_Granite_Wall (Model) (x2)  -  Edit
+  08:51:59.474          Basic_Blue_Neon_Wall (Model)  -  Edit
+  08:51:59.474          Basic_Blue_Pebble_Wall (Model)  -  Edit
+  08:51:59.474          Basic_Blue_Rubber_Wall (Model)  -  Edit
+  08:51:59.474          Basic_Blue_Slate_Wall (Model)  -  Edit
+  08:51:59.474   ▶         Basic_Blue_Wood_Wall (Model) (x2)  -  Edit
+  08:51:59.474        Red (Folder)  -  Edit
+  08:51:59.474          Basic_Red_Asphalt_Wall (Model)  -  Edit
+  08:51:59.474          Basic_Red_Brick_Wall (Model)  -  Edit
+  08:51:59.474          Basic_Red_Concrete_Wall (Model)  -  Edit
+  08:51:59.474          Basic_Red_Diamond_Plate_Wall (Model)  -  Edit
+  08:51:59.474          Basic_Red_ForceField_Wall (Model)  -  Edit
+  08:51:59.474          Basic_Red_Glass_Wall (Model)  -  Edit
+  08:51:59.474   ▶         Basic_Red_Granite_Wall (Model) (x2)  -  Edit
+  08:51:59.474          Basic_Red_Neon_Wall (Model)  -  Edit
+  08:51:59.474          Basic_Red_Pebble_Wall (Model)  -  Edit
+  08:51:59.474          Basic_Red_Rubber_Wall (Model)  -  Edit
+  08:51:59.475          Basic_Red_Slate_Wall (Model)  -  Edit
+  08:51:59.475   ▶         Basic_Red_Wood_Wall (Model) (x2)  -  Edit
+  08:51:59.475      Basic_House_1 (Folder)  -  Edit
+  08:51:59.475        Back Door (Model)  -  Edit
+  08:51:59.475        Bathroom Fixtures (Model)  -  Edit
+  08:51:59.475        Cable Box (Model)  -  Edit
+  08:51:59.475        Bed (Model)  -  Edit
+  08:51:59.475        Chair (Model)  -  Edit
+  08:51:59.475        Credenza (Model)  -  Edit
+  08:51:59.475        Door (Model)  -  Edit
+  08:51:59.475        Dresser (Model)  -  Edit
+  08:51:59.475        Front Door (Model)  -  Edit
+  08:51:59.475        Nightstand (Model)  -  Edit
+  08:51:59.475        Record Player (Model)  -  Edit
+  08:51:59.476        Sofa (Model)  -  Edit
+  08:51:59.476        TV (Model)  -  Edit
+  08:51:59.476        Basic_Table_Chairs (Model)  -  Edit
+  08:51:59.476    Exclusive (Folder)  -  Edit
+  08:51:59.476      Helipack (Model)  -  Edit
+  08:51:59.476    Random_Drop (Folder)  -  Edit
+  08:51:59.476    Weapons (Folder)  -  Edit
+  08:51:59.476    Free_items (Folder)  -  Edit
+  08:51:59.476    Level_1 (Folder)  -  Edit
+  08:51:59.476      Torch (Model)  -  Edit
+  08:51:59.476      Level_1_Stairs (Model)  -  Edit
+  08:51:59.476      Gear (Model)  -  Edit
+  08:51:59.476    Level_2 (Folder)  -  Edit
+  08:51:59.476      Level_2 Candle (Model)  -  Edit
+  08:51:59.476    Level_3 (Folder)  -  Edit
+  08:51:59.476      Mailbox (Model)  -  Edit
+  08:51:59.476      Mantel (Model)  -  Edit
+  08:51:59.477      Mirror (Model)  -  Edit
+  08:51:59.477      Level_3 Decorative Mirror (Model)  -  Edit
+  08:51:59.477      Level_3 Nightstand (Model)  -  Edit
+  08:51:59.477      Level_3 Table Lamp (Model)  -  Edit
+  08:51:59.477    Level_4 (Folder)  -  Edit
+  08:51:59.477    Rare (Folder)  -  Edit
+  08:51:59.477      Traffic Cone (Model)  -  Edit
+  08:51:59.477      Rare_Blue_Sword (Model)  -  Edit
+  08:51:59.477      1920s chair (Model)  -  Edit
+  08:51:59.477      Rare_Flower_Pot (Model)  -  Edit
+  08:51:59.477      Rare_Floor_Lamp (Model)  -  Edit
+  08:51:59.477   ▶     Patio Chair (Model) (x2)  -  Edit
+  08:51:59.477      Lamp (Model)  -  Edit
+  08:51:59.477      Rare_Pine Tree (Model)  -  Edit
+  08:51:59.478      Rare_Alien (Model)  -  Edit
+  08:51:59.478      Rare_Egg (Model)  -  Edit
+  08:51:59.478      Rare_Ball (Model)  -  Edit
+  08:51:59.478  
 === Lighting ===  -  Edit
-  08:14:42.944  💡 Lighting (Lighting)  -  Edit
-  08:14:42.944  │  -  Edit
-  08:14:42.945  ├─ ❓ Atmosphere (Atmosphere)  -  Edit
-  08:14:42.945  ├─ ❓ Bloom (BloomEffect)  -  Edit
-  08:14:42.945  ├─ ❓ DepthOfField (DepthOfFieldEffect)  -  Edit
-  08:14:42.946  ├─ ❓ Sky (Sky)  -  Edit
-  08:14:42.946  └─ ❓ SunRays (SunRaysEffect)  -  Edit
-  08:14:42.946  
-📊 Lighting Statistics:  -  Edit
-  08:14:42.946     📁 Folders: 0  -  Edit
-  08:14:42.946     📋 Models: 0  -  Edit
-  08:14:42.946     🧊 Parts: 0  -  Edit
-  08:14:42.947     📜 Scripts: 0  -  Edit
-  08:14:42.947     🖥️ GUIs: 0  -  Edit
-  08:14:42.947     ❓ Others: 5  -  Edit
-  08:14:42.947     📊 Total: 5  -  Edit
-  08:14:42.947  
-=== MaterialService ===  -  Edit
-  08:14:42.948  🏗️ MaterialService (MaterialService)  -  Edit
-  08:14:42.948  │  -  Edit
-  08:14:42.948  └─ (empty)  -  Edit
-  08:14:42.948  
-=== Chat ===  -  Edit
-  08:14:42.949  💬 Chat (Chat)  -  Edit
-  08:14:42.949  │  -  Edit
-  08:14:42.949  └─ (empty)  -  Edit
-  08:14:42.949  
-=== SCRIPT SUMMARY ===  -  Edit
-  08:14:42.955  Total Scripts Found: 47  -  Edit
-  08:14:42.955  
-Script Types:  -  Edit
-  08:14:42.955     Script: 45  -  Edit
-  08:14:42.955     LocalScript: 2  -  Edit
-  08:14:42.955  
-Script Statistics:  -  Edit
-  08:14:42.955     📜 Scripts with code: 30  -  Edit
-  08:14:42.956     📄 Empty scripts: 17  -  Edit
-  08:14:42.956     📏 Total lines of code: 1482  -  Edit
-  08:14:42.956     📈 Average lines per script: 31  -  Edit
-  08:14:42.956  
-=== DETAILED SCRIPT LIST ===  -  Edit
-  08:14:42.956  📜 Workspace.Items.Level_2.Teleport Portals.Script [25 lines]  -  Edit
-  08:14:42.956  📜 Workspace.Items.Level_2.Gear.Gear.Spinning Script [14 lines]  -  Edit
-  08:14:42.956   ▶ 📜 Workspace.World_Items.Trampoline.TrampolineBouncyThing.BouncePad [11 lines] (x2)  -  Edit
-  08:14:42.956   ▶ 📜 Workspace.World_Items.Level 3 House.Model.Model.Seat.Script [EMPTY] (x6)  -  Edit
-  08:14:42.958  📜 Workspace.World_Items.Level 3 House.Toilet.Flush.Script [EMPTY]  -  Edit
-  08:14:42.958  📜 Workspace.World_Items.Level 3 House.Toilet.Flush.ClickScript [EMPTY]  -  Edit
-  08:14:42.958  📜 Workspace.World_Items.Level 3 House.Toilet.ToiletSeat2.Script [EMPTY]  -  Edit
-  08:14:42.959  📜 Workspace.World_Items.Level 3 House.Toilet.ToiletSeat.Script [EMPTY]  -  Edit
-  08:14:42.959  📜 Workspace.World_Items.Level 3 House.Model.Seat.Script [EMPTY]  -  Edit
-  08:14:42.959  📜 Workspace.World_Items.Level 3 House.Toilet.Flush.Script [EMPTY]  -  Edit
-  08:14:42.959  📜 Workspace.World_Items.Level 3 House.Toilet.Flush.ClickScript [EMPTY]  -  Edit
-  08:14:42.959  📜 Workspace.World_Items.Level 3 House.Toilet.ToiletSeat2.Script [EMPTY]  -  Edit
-  08:14:42.959  📜 Workspace.World_Items.Level 3 House.Toilet.ToiletSeat.Script [EMPTY]  -  Edit
-  08:14:42.960   ▶ 📜 Workspace.World_Items.Level 3 House.Model.Seat.Script [EMPTY] (x2)  -  Edit
-  08:14:42.960  📜 Workspace.World_Items.Rare House.House.Cute Closet.#NBK || Adidas Cap.Delete if used for decoration [25 lines]  -  Edit
-  08:14:42.960  📜 Workspace.World_Items.Rare House.House.Cute Closet.#NBK || Adidas Cap.Thank you letter. [26 lines]  -  Edit
-  08:14:42.960  📜 Workspace.World_Items.Rare House.House.Cute Closet.#NBK || Rainbow Cap.Delete if used for decoration [25 lines]  -  Edit
-  08:14:42.961  📜 Workspace.World_Items.Rare House.House.Cute Closet.#NBK || Tommy Hilfiger Visor.Script [27 lines]  -  Edit
-  08:14:42.961  📜 Workspace.World_Items.Rare House.House.Cute Closet.nike cap.nike cap.HatHelperGuideGiverScript [72 lines]  -  Edit
-  08:14:42.961  📜 Workspace.World_Items.Rare House.House.Cute Closet.#NBK || Rose RND Cap.Delete if used for decoration [25 lines]  -  Edit
-  08:14:42.962  📜 Workspace.World_Items.Rare House.AMECO Ester.AMECOTouch.FanClick.Script [39 lines]  -  Edit
-  08:14:42.962  📜 Workspace.World_Items.Rare House.AMECO Ester.AMECOTouch.LightClick.Script [11 lines]  -  Edit
-  08:14:42.962  📜 Workspace.World_Items.Rare House.AMECO Ester.AMECOTouch.ReverseClick.Script [9 lines]  -  Edit
-  08:14:42.962  📜 Workspace.World_Items.Rare House.AMECO Ester.AMECOTouch.DemoMode [95 lines]  -  Edit
-  08:14:42.962  📜 Workspace.World_Items.Rare House.AMECO Ester.Fan.Light.LightScript [24 lines]  -  Edit
-  08:14:42.963  📜 Workspace.World_Items.Rare House.AMECO Ester.Fan.Motorset.Motor.SpeedScript [18 lines]  -  Edit
-  08:14:42.963  📜 Workspace.World_Items.Rare House.AMECO Ester.Fan.Motorset.WeldScript [46 lines]  -  Edit
-  08:14:42.963  📜 Workspace.World_Items.Rare House.AMECO Ester.Fan.Motorset.Script [1 lines]  -  Edit
-  08:14:42.963  📜 Workspace.World_Items.Rare House.AMECO Ester.AMECOTouch.FanClick.Script [39 lines]  -  Edit
-  08:14:42.964  📜 Workspace.World_Items.Rare House.AMECO Ester.AMECOTouch.LightClick.Script [11 lines]  -  Edit
-  08:14:42.964  📜 Workspace.World_Items.Rare House.AMECO Ester.AMECOTouch.ReverseClick.Script [9 lines]  -  Edit
-  08:14:42.964  📜 Workspace.World_Items.Rare House.AMECO Ester.AMECOTouch.DemoMode [95 lines]  -  Edit
-  08:14:42.964  📜 Workspace.World_Items.Rare House.AMECO Ester.Fan.Light.LightScript [24 lines]  -  Edit
-  08:14:42.964  📜 Workspace.World_Items.Rare House.AMECO Ester.Fan.Motorset.Motor.SpeedScript [18 lines]  -  Edit
-  08:14:42.965  📜 Workspace.World_Items.Rare House.AMECO Ester.Fan.Motorset.WeldScript [46 lines]  -  Edit
-  08:14:42.965  📜 Workspace.World_Items.Rare House.AMECO Ester.Fan.Motorset.Script [1 lines]  -  Edit
-  08:14:42.965  💻 StarterPlayer.StarterPlayerScripts.client.init [120 lines]  -  Edit
-  08:14:42.965  💻 StarterGui.StarterGui [107 lines]  -  Edit
-  08:14:42.966  📜 ServerScriptService.server.Neon.NeonGlowManager [171 lines]  -  Edit
-  08:14:42.966  📜 ServerScriptService.server.init [337 lines]  -  Edit
-  08:14:42.966  
-=== SCAN COMPLETE ===  -  Edit
-  08:14:42.966  Use 'scanGameStructure(depth)' to adjust max depth  -  Edit
-  08:14:42.967  Example: scanGameStructure(5) for deeper scanning  -  Edit
+  08:51:59.478  
+=== SoundService ===  -  Edit
+  08:51:59.478  
+=== ReplicatedFirst ===  -  Edit

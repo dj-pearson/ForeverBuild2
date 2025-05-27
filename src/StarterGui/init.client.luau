@@ -104,4 +104,21 @@ if currencyManager and currencyManager.Initialize then
     if not success then
         warn("Failed to initialize CurrencyManager:", error)
     end
+end
+
+-- Initialize Hybrid Leaderboard System (Client-side)
+local success, error = pcall(function()
+    local StarterGuiService = game:GetService("StarterGui")
+    
+    -- Disable the default Roblox leaderboard
+    StarterGuiService:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+    print("StarterGui.init: Default leaderboard disabled successfully")
+    
+    return true
+end)
+
+if success then
+    print("StarterGui.init: Hybrid leaderboard system initialized (enhanced CurrencyUI will show level)")
+else
+    warn("StarterGui.init: Failed to initialize hybrid leaderboard system:", error)
 end 

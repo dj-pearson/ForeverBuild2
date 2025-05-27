@@ -97,6 +97,25 @@ local modulePaths = {
     CurrencyManager = script.Parent.core and script.Parent.core:FindFirstChild("economy") and 
                       script.Parent.core.economy:FindFirstChild("CurrencyManager"),
     
+    -- Progression
+    ProgressionManager = script.Parent.core and script.Parent.core:FindFirstChild("ProgressionManager"),
+    
+    -- Building Tools
+    BuildingToolsManager = script.Parent.core and script.Parent.core:FindFirstChild("building") and 
+                          script.Parent.core.building:FindFirstChild("BuildingToolsManager"),
+    
+    -- Social/Leaderboard
+    LeaderboardManager = script.Parent.core and script.Parent.core:FindFirstChild("social") and 
+                        script.Parent.core.social:FindFirstChild("LeaderboardManager"),
+    SocialManager = script.Parent.core and script.Parent.core:FindFirstChild("social") and 
+                   script.Parent.core.social:FindFirstChild("SocialManager"),
+    
+    -- Blueprint System
+    BlueprintManager = script.Parent.core and script.Parent.core:FindFirstChild("blueprint") and 
+                      script.Parent.core.blueprint:FindFirstChild("BlueprintManager"),
+    BlueprintUI = script.Parent.core and script.Parent.core:FindFirstChild("blueprint") and 
+                 script.Parent.core.blueprint:FindFirstChild("BlueprintUI"),
+    
     -- UI
     PurchaseDialog = script.Parent.core and script.Parent.core:FindFirstChild("ui") and 
                      script.Parent.core.ui:FindFirstChild("PurchaseDialog"),
@@ -108,6 +127,10 @@ local modulePaths = {
                        script.Parent.core.ui:FindFirstChild("PlacedItemDialog"),
     RotationControlsUI = script.Parent.core and script.Parent.core:FindFirstChild("ui") and 
                        script.Parent.core.ui:FindFirstChild("RotationControlsUI"),
+    LeaderboardUI = script.Parent.core and script.Parent.core:FindFirstChild("ui") and 
+                   script.Parent.core.ui:FindFirstChild("LeaderboardUI"),
+    SocialUI = script.Parent.core and script.Parent.core:FindFirstChild("social") and 
+              script.Parent.core.social:FindFirstChild("SocialUI"),
     
     -- Utilities
     LazyLoadModules = script.Parent.core and script.Parent.core:FindFirstChild("LazyLoadModules")

@@ -93,7 +93,9 @@ local function safeInitialize(module, name)
         if typeof(module) == "table" and module.new then
             -- OOP style initialization
             local instance = module.new()
-            instance:Initialize()
+            if instance and instance.Initialize then
+                instance:Initialize()
+            end
             return instance
         elseif typeof(module) == "table" and module.Initialize then
             -- Functional style initialization
@@ -110,11 +112,23 @@ local function safeInitialize(module, name)
         return nil
     end
 
+    print("Successfully initialized " .. name)
     return result
 end
 
--- Initialize CurrencyUI only (other UIs are handled by client_core)
+-- Initialize CurrencyUI
 local currencyUI = safeInitialize(SharedModule.CurrencyUI, "CurrencyUI")
+
+-- Initialize ProgressionUI
+local progressionUI = safeInitialize(SharedModule.ProgressionUI, "ProgressionUI")
+if progressionUI then
+    -- Store globally for access by other systems
+    _G.ProgressionUI = progressionUI
+    
+    -- Request initial progression data from server
+    task.wait(2) -- Wait for server to be ready
+    progressionUI:RequestUpdate()
+end
 
 -- Initialize the new Interaction System
 -- DISABLED: Using new integrated BottomPurchasePopup system instead
@@ -746,3 +760,23 @@ task.spawn(function()
     task.wait(3)
     createDirectInventoryUI()
 end)
+
+-- Initialize BuildingToolsManager if available
+if SharedModuleInstance.BuildingToolsManager then
+    safeInitialize(SharedModuleInstance.BuildingToolsManager, "BuildingToolsManager", function(module)
+        local buildingTools = module.new()
+        if buildingTools and buildingTools.Initialize then
+            buildingTools:Initialize()
+            print("BuildingToolsManager initialized successfully")
+            
+            -- Store global reference for easy access
+            _G.BuildingTools = buildingTools
+            return true
+        end
+        return false
+    end)
+else
+    warn("BuildingToolsManager not found in SharedModule")
+end
+
+print("[inits.client] Client initialization complete")
