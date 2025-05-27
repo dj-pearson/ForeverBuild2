@@ -1,42 +1,43 @@
 -- InventorySystemWrapper.luau
--- Smart wrapper that routes to the best available inventory system
--- Provides backward compatibility while enabling migration to the new unified system
+-- Smart routing wrapper for the unified inventory system
+-- Now inherits from BaseSystemWrapper for consistency and better functionality
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 
--- Configuration: Set to true to use the new unified system
-local USE_UNIFIED_SYSTEM = true
+-- Import the standardized base wrapper and configuration
+local BaseSystemWrapper = require(ReplicatedStorage.src.shared.core.BaseSystemWrapper)
+local SystemConfig = require(ReplicatedStorage.src.shared.core.SystemConfig)
 
--- Simplified fallback strategy - only keep essential systems
-local FALLBACK_MODULES = {
-    {name = "InventoryManager", isUnified = true},
-    {name = "InventoryUI", isLegacy = true}, -- Keep as primary legacy fallback
-    -- Removed: Multiple conflicting inventory loaders and handlers
-}
-
-local InventorySystemWrapper = {}
+local InventorySystemWrapper = setmetatable({}, BaseSystemWrapper)
 InventorySystemWrapper.__index = InventorySystemWrapper
+
+-- Get inventory-specific configuration
+local INVENTORY_CONFIG = SystemConfig.Utils.GetSystemConfig("INVENTORY")
 
 -- Global instance for easy access
 local globalInstance = nil
 
+-- Create new inventory system wrapper instance
 function InventorySystemWrapper.new()
     if globalInstance then
         return globalInstance
     end
     
-    local self = setmetatable({}, InventorySystemWrapper)
+    local self = BaseSystemWrapper.new("InventorySystem", {
+        HEALTH_CHECK_INTERVAL = INVENTORY_CONFIG.HEALTH_CHECK_INTERVAL or 30,
+        DEBUG_MODE = SystemConfig.GLOBAL.DEBUG_MODE,
+        MAX_RETRY_ATTEMPTS = SystemConfig.GLOBAL.MAX_RETRY_ATTEMPTS,
+        RETRY_DELAY = SystemConfig.GLOBAL.RETRY_DELAY
+    })
     
-    -- Core properties
-    self.activeSystem = nil
-    self.systemType = "none"
-    self.isInitialized = false
-    self.player = Players.LocalPlayer
+    -- Set up inventory-specific metatable
+    setmetatable(self, InventorySystemWrapper)
     
-    -- Callbacks
-    self.OnItemSelected = nil
+    -- Inventory-specific properties
+    self.isVisible = false
+    self.currentInventory = {}
+    self.currentCurrency = 0
     
     -- Store as global instance
     globalInstance = self
@@ -44,253 +45,221 @@ function InventorySystemWrapper.new()
     return self
 end
 
-function InventorySystemWrapper:Initialize()
-    print("[InventorySystemWrapper] Initializing...")
+-- Load the primary inventory system (InventoryManager)
+function InventorySystemWrapper:LoadPrimarySystem()
+    local primarySystem = self:SafeRequire(script.Parent.InventoryManager, "InventoryManager")
     
-    if self.isInitialized then
-        print("[InventorySystemWrapper] Already initialized")
-        return true
-    end
-    
-    -- Try to load the best available system
-    local success = self:LoadBestSystem()
-    
-    if success then
-        self.isInitialized = true
-        print("[InventorySystemWrapper] Initialization complete using", self.systemType, "system")
-        return true
-    else
-        warn("[InventorySystemWrapper] Failed to initialize any inventory system")
-        return false
-    end
-end
-
-function InventorySystemWrapper:LoadBestSystem()
-    -- Try unified system first if enabled
-    if USE_UNIFIED_SYSTEM then
-        local success = self:TryLoadUnifiedSystem()
-        if success then
-            return true
-        end
-        print("[InventorySystemWrapper] Unified system failed, trying fallbacks...")
-    end
-    
-    -- Try legacy systems
-    for _, moduleInfo in ipairs(FALLBACK_MODULES) do
-        if moduleInfo.isLegacy then
-            local success = self:TryLoadLegacySystem(moduleInfo.name)
-            if success then
-                return true
+    if primarySystem and typeof(primarySystem.new) == "function" then
+        local instance = primarySystem.new()
+        if instance and instance.Initialize and instance:Initialize() then
+            self.systemState.primarySystem = instance
+            
+            -- Set up callbacks
+            if instance.OnItemSelected then
+                instance.OnItemSelected = function(itemName, itemData)
+                    self:OnItemSelected(itemName, itemData)
+                end
             end
+            
+            print("[InventorySystemWrapper] Primary InventoryManager loaded successfully")
+            return true
+        else
+            warn("[InventorySystemWrapper] Primary system initialization failed")
         end
     end
     
-    warn("[InventorySystemWrapper] No inventory systems could be loaded")
     return false
 end
 
-function InventorySystemWrapper:TryLoadUnifiedSystem()
-    local success, result = pcall(function()
-        -- Try to load from the new location
-        local inventoryManager = require(script.Parent.InventoryManager)
-        local instance = inventoryManager.new()
-        
-        if instance and instance.Initialize then
-            local initSuccess = instance:Initialize()
-            if initSuccess then
-                self.activeSystem = instance
-                self.systemType = "unified"
-                
-                -- Set up callbacks
-                instance.OnItemSelected = function(itemName, itemData)
-                    if self.OnItemSelected then
-                        self.OnItemSelected(itemName, itemData)
-                    end
-                end
-                
-                print("[InventorySystemWrapper] Successfully loaded unified InventoryManager")
-                return true
+-- Load fallback systems for backward compatibility
+function InventorySystemWrapper:LoadFallbackSystems()
+    local fallbacks = {}
+    
+    -- Load fallback systems based on configuration
+    for _, fallbackName in ipairs(INVENTORY_CONFIG.FALLBACK_SYSTEMS) do
+        if fallbackName == "InventoryUI" then
+            -- Try SharedModule InventoryUI
+            local sharedModule = self:SafeRequire(ReplicatedStorage:WaitForChild("shared", 5), "SharedModule")
+            if sharedModule and sharedModule.InventoryUI then
+                fallbacks.sharedInventoryUI = sharedModule.InventoryUI
+                print("[InventorySystemWrapper] Loaded SharedModule.InventoryUI fallback")
             end
         end
-        return false
-    end)
-    
-    if success and result then
-        return true
-    else
-        if result then
-            warn("[InventorySystemWrapper] Unified system error:", result)
-        end
-        return false
     end
+    
+    -- If no configured fallbacks work, try the minimal fallback
+    if self:CountTable(fallbacks) == 0 then
+        fallbacks.minimalFallback = self:CreateMinimalFallback()
+        print("[InventorySystemWrapper] Created minimal fallback system")
+    end
+    
+    self.systemState.fallbackSystems = fallbacks
+    print(string.format("[InventorySystemWrapper] Loaded %d fallback systems", self:CountTable(fallbacks)))
 end
 
-function InventorySystemWrapper:TryLoadLegacySystem(moduleName)
-    local success, result = pcall(function()
-        -- Try SharedModule first
-        local shared = ReplicatedStorage:FindFirstChild("shared")
-        if shared then
-            local sharedModule = require(shared)
-            if sharedModule and sharedModule[moduleName] then
-                local legacySystem = sharedModule[moduleName]
-                
-                -- Check if it's a functional module
-                if type(legacySystem) == "table" then
-                    -- Try to initialize if it has an Initialize method
-                    if legacySystem.Initialize and not legacySystem._isInitialized then
-                        legacySystem.Initialize()
-                        legacySystem._isInitialized = true
-                    end
-                    
-                    self.activeSystem = legacySystem
-                    self.systemType = "legacy_" .. moduleName
-                    
-                    -- Set up callbacks if supported
-                    if legacySystem.OnItemSelected ~= nil then
-                        legacySystem.OnItemSelected = function(itemName, itemData)
-                            if self.OnItemSelected then
-                                self.OnItemSelected(itemName, itemData)
-                            end
-                        end
-                    end
-                    
-                    print("[InventorySystemWrapper] Successfully loaded legacy system:", moduleName)
+-- Create minimal fallback system
+function InventorySystemWrapper:CreateMinimalFallback()
+    return {
+        new = function()
+            return {
+                Initialize = function(self)
+                    print("[MinimalInventorySystem] Minimal system active - limited functionality")
+                    self:ShowWarningNotification()
                     return true
+                end,
+                
+                Show = function(self)
+                    print("[MinimalInventorySystem] Show requested - minimal mode")
+                    self:ShowInventoryNotification("Inventory system is in minimal mode")
+                end,
+                
+                Hide = function(self)
+                    print("[MinimalInventorySystem] Hide requested")
+                end,
+                
+                Toggle = function(self)
+                    print("[MinimalInventorySystem] Toggle requested - minimal mode")
+                    self:ShowInventoryNotification("Inventory system is in minimal mode")
+                end,
+                
+                UpdateInventory = function(self, inventory, currency)
+                    print("[MinimalInventorySystem] Inventory updated:", #(inventory or {}), "items,", currency or 0, "currency")
+                end,
+                
+                Cleanup = function(self)
+                    print("[MinimalInventorySystem] Cleanup called")
+                end,
+                
+                ShowWarningNotification = function(self)
+                    local Players = game:GetService("Players")
+                    local player = Players.LocalPlayer
+                    local playerGui = player:FindFirstChild("PlayerGui")
+                    
+                    if playerGui then
+                        local screenGui = Instance.new("ScreenGui")
+                        screenGui.Name = "InventorySystemWarning"
+                        screenGui.ResetOnSpawn = false
+                        screenGui.Parent = playerGui
+                        
+                        local frame = Instance.new("Frame")
+                        frame.Size = UDim2.new(0, 400, 0, 100)
+                        frame.Position = UDim2.new(0.5, -200, 0, 120)
+                        frame.BackgroundColor3 = SystemConfig.UI_THEME.WARNING_COLOR
+                        frame.BorderSizePixel = 0
+                        frame.Parent = screenGui
+                        
+                        local corner = Instance.new("UICorner")
+                        corner.CornerRadius = UDim.new(0, 8)
+                        corner.Parent = frame
+                        
+                        local label = Instance.new("TextLabel")
+                        label.Size = UDim2.new(1, -20, 1, -20)
+                        label.Position = UDim2.new(0, 10, 0, 10)
+                        label.BackgroundTransparency = 1
+                        label.TextColor3 = SystemConfig.UI_THEME.TEXT_COLOR
+                        label.TextSize = 16
+                        label.Font = SystemConfig.UI_THEME.PRIMARY_FONT
+                        label.Text = "📦 Inventory System: Minimal Mode\nSome features may not work properly"
+                        label.TextWrapped = true
+                        label.Parent = frame
+                        
+                        -- Auto-hide after configured duration
+                        task.spawn(function()
+                            task.wait(10)
+                            if screenGui and screenGui.Parent then
+                                screenGui:Destroy()
+                            end
+                        end)
+                    end
+                end,
+                
+                ShowInventoryNotification = function(self, message)
+                    print("[MinimalInventorySystem]", message)
                 end
-            end
+            }
         end
-        
-        return false
-    end)
-    
-    if success and result then
-        return true
-    else
-        if result then
-            warn("[InventorySystemWrapper] Legacy system error for", moduleName .. ":", result)
-        end
-        return false
-    end
-end
-
--- Public API methods that route to the active system
-function InventorySystemWrapper:Show()
-    if not self.activeSystem then
-        warn("[InventorySystemWrapper] No active system to show")
-        return
-    end
-    
-    if self.activeSystem.Show then
-        self.activeSystem:Show()
-    elseif self.activeSystem.show then
-        self.activeSystem.show()
-    else
-        warn("[InventorySystemWrapper] Active system has no Show method")
-    end
-end
-
-function InventorySystemWrapper:Hide()
-    if not self.activeSystem then
-        return
-    end
-    
-    if self.activeSystem.Hide then
-        self.activeSystem:Hide()
-    elseif self.activeSystem.hide then
-        self.activeSystem.hide()
-    end
-end
-
-function InventorySystemWrapper:Toggle()
-    if not self.activeSystem then
-        warn("[InventorySystemWrapper] No active system to toggle")
-        return
-    end
-    
-    if self.activeSystem.Toggle then
-        self.activeSystem:Toggle()
-    elseif self.activeSystem.toggle then
-        self.activeSystem.toggle()
-    else
-        -- Fallback: try show/hide
-        if self.activeSystem.isVisible or (self.activeSystem._isVisible) then
-            self:Hide()
-        else
-            self:Show()
-        end
-    end
-end
-
-function InventorySystemWrapper:UpdateInventory(inventory, currency)
-    if not self.activeSystem then
-        return
-    end
-    
-    if self.activeSystem.UpdateInventory then
-        self.activeSystem:UpdateInventory(inventory, currency)
-    elseif self.activeSystem.updateInventory then
-        self.activeSystem.updateInventory(inventory, currency)
-    end
-end
-
-function InventorySystemWrapper:RefreshInventory()
-    if not self.activeSystem then
-        return
-    end
-    
-    if self.activeSystem.RefreshInventory then
-        self.activeSystem:RefreshInventory()
-    elseif self.activeSystem.refreshInventory then
-        self.activeSystem.refreshInventory()
-    end
-end
-
--- Utility function to check system health
-function InventorySystemWrapper.CheckSystemHealth()
-    local results = {
-        unifiedAvailable = false,
-        legacyAvailable = false,
-        recommendedAction = ""
     }
-    
-    -- Check unified system
-    local unifiedSuccess = pcall(function()
-        return require(script.Parent.InventoryManager)
-    end)
-    results.unifiedAvailable = unifiedSuccess
-    
-    -- Check legacy systems
-    local legacyCount = 0
-    for _, moduleInfo in ipairs(FALLBACK_MODULES) do
-        if moduleInfo.isLegacy then
-            local success = pcall(function()
-                local shared = ReplicatedStorage:FindFirstChild("shared")
-                if shared then
-                    local sharedModule = require(shared)
-                    return sharedModule and sharedModule[moduleInfo.name]
-                end
-                return false
-            end)
-            if success then
-                legacyCount = legacyCount + 1
-            end
-        end
-    end
-    results.legacyAvailable = legacyCount > 0
-    
-    -- Determine recommendation
-    if results.unifiedAvailable then
-        results.recommendedAction = "✅ Unified system available - optimal performance"
-    elseif results.legacyAvailable then
-        results.recommendedAction = "⚠️ Using legacy fallback - consider updating"
-    else
-        results.recommendedAction = "❌ No inventory systems available - check installation"
-    end
-    
-    return results
 end
 
--- Global functions for easy access
+-- Set up global API functions specific to inventory system
+function InventorySystemWrapper:SetupGlobalAPI()
+    -- Call parent setup first
+    BaseSystemWrapper.SetupGlobalAPI(self)
+    
+    -- Add inventory-specific API functions
+    self.globalAPI.ShowInventory = function()
+        return self:RouteCall("Show")
+    end
+    
+    self.globalAPI.HideInventory = function()
+        return self:RouteCall("Hide")
+    end
+    
+    self.globalAPI.ToggleInventory = function()
+        return self:RouteCall("Toggle")
+    end
+    
+    self.globalAPI.UpdateInventory = function(inventory, currency)
+        self.currentInventory = inventory or {}
+        self.currentCurrency = currency or 0
+        return self:RouteCall("UpdateInventory", inventory, currency)
+    end
+    
+    self.globalAPI.GetCurrentInventory = function()
+        return self.currentInventory, self.currentCurrency
+    end
+    
+    self.globalAPI.IsVisible = function()
+        return self.isVisible
+    end
+    
+    print("[InventorySystemWrapper] Inventory-specific global API configured")
+end
+
+-- Check if primary system is healthy (inventory-specific checks)
+function InventorySystemWrapper:CheckPrimarySystemHealth()
+    if not self.systemState.primarySystem then
+        return false
+    end
+    
+    -- Check if the system is still active
+    if self.systemState.primarySystem.isActive == false then
+        return false
+    end
+    
+    -- Check if the player still exists
+    local player = Players.LocalPlayer
+    if not player then
+        return false
+    end
+    
+    -- Check if the system's UI is still accessible
+    if player:FindFirstChild("PlayerGui") then
+        local inventoryUI = player.PlayerGui:FindFirstChild("InventoryUI")
+        -- It's okay if UI doesn't exist yet, but if it exists it should be functional
+        if inventoryUI and not inventoryUI.Parent then
+            return false
+        end
+    end
+    
+    return true
+end
+
+-- Inventory-specific callback handling
+function InventorySystemWrapper:OnItemSelected(itemName, itemData)
+    if self.config.DEBUG_MODE then
+        print("[InventorySystemWrapper] Item selected:", itemName, itemData)
+    end
+    
+    -- Could add global item selection handling here
+end
+
+-- Global functions for easy access (backward compatibility)
+function InventorySystemWrapper.Initialize()
+    local instance = InventorySystemWrapper.GetGlobalInstance()
+    return instance:Initialize()
+end
+
 function InventorySystemWrapper.GetGlobalInstance()
     if not globalInstance then
         globalInstance = InventorySystemWrapper.new()
@@ -301,58 +270,58 @@ end
 
 function InventorySystemWrapper.ShowInventory()
     local instance = InventorySystemWrapper.GetGlobalInstance()
-    instance:Show()
+    return instance.globalAPI.ShowInventory()
 end
 
 function InventorySystemWrapper.HideInventory()
     local instance = InventorySystemWrapper.GetGlobalInstance()
-    instance:Hide()
+    return instance.globalAPI.HideInventory()
 end
 
 function InventorySystemWrapper.ToggleInventory()
     local instance = InventorySystemWrapper.GetGlobalInstance()
-    instance:Toggle()
+    return instance.globalAPI.ToggleInventory()
 end
 
-function InventorySystemWrapper.UpdateGlobalInventory(inventory, currency)
+function InventorySystemWrapper.UpdateInventory(inventory, currency)
     local instance = InventorySystemWrapper.GetGlobalInstance()
-    instance:UpdateInventory(inventory, currency)
+    return instance.globalAPI.UpdateInventory(inventory, currency)
 end
 
-function InventorySystemWrapper.SetGlobalItemSelectedCallback(callback)
+function InventorySystemWrapper.GetCurrentInventory()
     local instance = InventorySystemWrapper.GetGlobalInstance()
-    instance.OnItemSelected = callback
+    return instance.globalAPI.GetCurrentInventory()
 end
 
--- Debug function
-function InventorySystemWrapper.DebugInfo()
+function InventorySystemWrapper.IsVisible()
     local instance = InventorySystemWrapper.GetGlobalInstance()
-    local health = InventorySystemWrapper.CheckSystemHealth()
-    
-    print("=== Inventory System Debug Info ===")
-    print("Wrapper initialized:", instance.isInitialized)
-    print("Active system type:", instance.systemType)
-    print("Active system:", instance.activeSystem ~= nil and "loaded" or "none")
-    print("Unified available:", health.unifiedAvailable)
-    print("Legacy available:", health.legacyAvailable)
-    print("Recommendation:", health.recommendedAction)
-    print("=====================================")
+    return instance.globalAPI.IsVisible()
+end
+
+function InventorySystemWrapper.GetSystemStatus()
+    local instance = InventorySystemWrapper.GetGlobalInstance()
+    return instance:GetSystemStatus()
+end
+
+-- Utility function to check system health
+function InventorySystemWrapper.CheckSystemHealth()
+    local instance = InventorySystemWrapper.GetGlobalInstance()
+    local status = instance:GetSystemStatus()
     
     return {
-        initialized = instance.isInitialized,
-        systemType = instance.systemType,
-        hasActiveSystem = instance.activeSystem ~= nil,
-        health = health
+        unifiedAvailable = status.activeSystem == "primary",
+        legacyAvailable = status.availableSystems.fallbacks > 0,
+        healthStatus = status.healthStatus,
+        activeSystem = status.activeSystem,
+        currentItems = #instance.currentInventory,
+        currentCurrency = instance.currentCurrency,
+        recommendedAction = status.healthStatus == "failed" and "Restart required" or "System operational"
     }
 end
 
--- Auto-initialize if in client environment
-if RunService:IsClient() then
-    task.spawn(function()
-        task.wait(1) -- Give other systems time to load
-        local instance = InventorySystemWrapper.GetGlobalInstance()
-        print("[InventorySystemWrapper] Auto-initialized with system type:", instance.systemType)
-    end)
-end
+-- Backward compatibility aliases
+InventorySystemWrapper.Show = InventorySystemWrapper.ShowInventory
+InventorySystemWrapper.Hide = InventorySystemWrapper.HideInventory
+InventorySystemWrapper.Toggle = InventorySystemWrapper.ToggleInventory
 
 return InventorySystemWrapper 

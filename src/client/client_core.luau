@@ -652,48 +652,29 @@ local clientModule = {
         end
     end,
     ShowCurrencyPurchaseMenu = function()
-        -- Try the new unified currency system first
-        local success = pcall(function()
-            local CurrencySystemWrapper = require(ReplicatedStorage.src.client.Currency.CurrencySystemWrapper)
-            CurrencySystemWrapper.ShowGlobalPurchaseMenu()
-            print("Using new unified CurrencySystemWrapper")
-            return true
-        end)
-        
-        if not success then
-            -- Fall back to SharedModule CurrencyUI
-            if SharedModule and SharedModule.CurrencyUI and SharedModule.CurrencyUI.ShowPurchaseMenu then
-                print("Using SharedModule.CurrencyUI.ShowPurchaseMenu")
-                SharedModule.CurrencyUI.ShowPurchaseMenu()
-            elseif CurrencyUIModule and CurrencyUIModule.ShowPurchaseMenu then
-                print("Using CurrencyUIModule.ShowPurchaseMenu")
-                CurrencyUIModule.ShowPurchaseMenu()
-            else
-                warn("CurrencyUI not ready or ShowPurchaseMenu method missing for ShowCurrencyPurchaseMenu API call in client_core.luau.")
-            end
-        end
+        -- Use the new unified currency system with automatic fallbacks
+        local CurrencySystemWrapper = require(ReplicatedStorage.src.client.Currency.CurrencySystemWrapper)
+        CurrencySystemWrapper.ShowGlobalPurchaseMenu()
     end,
     UpdateCurrency = function(balance)
-        -- Try the new unified currency system first
-        local success = pcall(function()
-            local CurrencySystemWrapper = require(ReplicatedStorage.src.client.Currency.CurrencySystemWrapper)
-            CurrencySystemWrapper.UpdateGlobalBalance(balance)
-            print("Using new unified CurrencySystemWrapper for balance update")
-            return true
-        end)
-        
-        if not success then
-            -- Fall back to SharedModule CurrencyUI
-            if SharedModule and SharedModule.CurrencyUI and SharedModule.CurrencyUI.UpdateBalance then
-                print("Using SharedModule.CurrencyUI.UpdateBalance")
-                SharedModule.CurrencyUI.UpdateBalance(balance)
-            elseif CurrencyUIModule and CurrencyUIModule.UpdateBalance then
-                print("Using CurrencyUIModule.UpdateBalance")
-                CurrencyUIModule.UpdateBalance(balance)
-            else
-                warn("CurrencyUI not ready or UpdateBalance method missing for UpdateCurrency API call in client_core.luau.")
-            end
-        end
+        -- Use the new unified currency system with automatic fallbacks
+        local CurrencySystemWrapper = require(ReplicatedStorage.src.client.Currency.CurrencySystemWrapper)
+        CurrencySystemWrapper.UpdateGlobalBalance(balance)
+    end,
+    ShowInteractionUI = function(item)
+        -- Use the new unified interaction system with automatic fallbacks
+        local InteractionSystemWrapper = require(ReplicatedStorage.src.client.interaction.InteractionSystemWrapper)
+        InteractionSystemWrapper.ShowInteractionUI(item)
+    end,
+    HideInteractionUI = function()
+        -- Use the new unified interaction system with automatic fallbacks
+        local InteractionSystemWrapper = require(ReplicatedStorage.src.client.interaction.InteractionSystemWrapper)
+        InteractionSystemWrapper.HideInteractionUI()
+    end,
+    GetInteractionSystemStatus = function()
+        -- Get status of the interaction system
+        local InteractionSystemWrapper = require(ReplicatedStorage.src.client.interaction.InteractionSystemWrapper)
+        return InteractionSystemWrapper.GetSystemStatus()
     end
 }
 
