@@ -142,9 +142,11 @@ if localScriptInstance then
         print("[InteractionSystem] Found interaction folder: " .. interactionFolder:GetFullName())
           -- Try loading the main interaction module first, then fallbacks if needed
         local moduleScripts = {
-            {name = "ItemInteractionClient", isEmergency = false}, -- Use our new interaction client
-            {name = "InteractionSystemModule", isEmergency = false}, -- Fallback to original module
-            {name = "InteractionSystemModule_enhanced", isEmergency = false}, -- Enhanced as backup
+            {name = "InteractionSystemWrapper", isUnified = true}, -- Use our new unified wrapper
+            {name = "InteractionManager", isUnified = true}, -- Direct unified system
+            {name = "ItemInteractionClient", isLegacy = true}, -- Legacy system
+            {name = "InteractionSystemModule", isLegacy = true}, -- Original fallback
+            {name = "InteractionSystemModule_enhanced", isLegacy = true}, -- Enhanced backup
             {name = "InteractionSystemModule_emergency", isEmergency = true} -- Last resort
         }
         
@@ -164,6 +166,10 @@ if localScriptInstance then
                     
                     if moduleInfo.isEmergency then
                         notifyPlayer("Emergency interaction system activated.", false)
+                    elseif moduleInfo.isUnified then
+                        notifyPlayer("Unified interaction system loaded.", false)
+                    elseif moduleInfo.isLegacy then
+                        notifyPlayer("Legacy interaction system loaded.", false)
                     end
                     
                     break
@@ -609,29 +615,39 @@ end
 local clientModule = {
     GetGameManager = function() return GameManager end,
     ShowInventory = function()
-        -- Check if InventoryUI is available in SharedModule
-        if SharedModule and SharedModule.InventoryUI and SharedModule.InventoryUI.Toggle then
-            print("Using SharedModule.InventoryUI.Toggle")
-            SharedModule.InventoryUI.Toggle()
-        -- Fall back to the old module reference if it exists
-        elseif InventoryUIModule and InventoryUIModule.Show then
-            print("Using InventoryUIModule.Show")
-            InventoryUIModule.Show()
-        else
-            -- Try to fetch inventory data even if UI module is missing
-            if GetInventoryFunc then
-                local success, result = pcall(function()
-                    return GetInventoryFunc:InvokeServer()
-                end)
-                
-                if success and result then
-                    print("InventoryUIModule not available, but data was retrieved successfully")
-                    print("Retrieved " .. (result.inventory and #result.inventory or 0) .. " inventory items and " .. (result.currency or 0) .. " currency")
-                else
-                    warn("InventoryUIModule not ready and failed to get inventory data:", result)
-                end
+        -- Try the new unified inventory system first
+        local success = pcall(function()
+            local InventorySystemWrapper = require(ReplicatedStorage.src.client.inventory.InventorySystemWrapper)
+            InventorySystemWrapper.ToggleInventory()
+            print("Using new unified InventorySystemWrapper")
+            return true
+        end)
+        
+        if not success then
+            -- Fall back to SharedModule InventoryUI
+            if SharedModule and SharedModule.InventoryUI and SharedModule.InventoryUI.Toggle then
+                print("Using SharedModule.InventoryUI.Toggle")
+                SharedModule.InventoryUI.Toggle()
+            -- Fall back to the old module reference if it exists
+            elseif InventoryUIModule and InventoryUIModule.Show then
+                print("Using InventoryUIModule.Show")
+                InventoryUIModule.Show()
             else
-                warn("InventoryUIModule not ready or Show method missing for ShowInventory API call in client_core.luau.")
+                -- Try to fetch inventory data even if UI module is missing
+                if GetInventoryFunc then
+                    local dataSuccess, result = pcall(function()
+                        return GetInventoryFunc:InvokeServer()
+                    end)
+                    
+                    if dataSuccess and result then
+                        print("InventoryUIModule not available, but data was retrieved successfully")
+                        print("Retrieved " .. (result.inventory and #result.inventory or 0) .. " inventory items and " .. (result.currency or 0) .. " currency")
+                    else
+                        warn("InventoryUIModule not ready and failed to get inventory data:", result)
+                    end
+                else
+                    warn("InventoryUIModule not ready or Show method missing for ShowInventory API call in client_core.luau.")
+                end
             end
         end
     end

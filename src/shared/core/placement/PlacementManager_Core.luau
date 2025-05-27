@@ -75,6 +75,7 @@ function PlacementManager_Core.new(sharedModule)
     }
     
     if RunService:IsClient() then
+        -- CLIENT-ONLY INITIALIZATION
         self.previewItem = nil
         self.isPlacing = false
         self.selectedItem = nil
@@ -109,6 +110,7 @@ function PlacementManager_Core.new(sharedModule)
         print("--- PLACEMENT MANAGER CORE CLIENT CONSTRUCTOR REACHED ---")
         self:CacheRemoteEvents()
     else
+        -- SERVER-ONLY INITIALIZATION
         local success_uid, result_uid = pcall(function() -- Renamed variables to avoid conflict
             return require(game:GetService("ServerScriptService").server.UniqueItemIdAssigner)
         end)
@@ -702,29 +704,123 @@ function PlacementManager_Core:ClearItemFromHand()
     self.isPlacing=false; self.selectedItem=nil; self.currentPlacementRotation=nil
 end
 
-function PlacementManager_Core:SetupRemoteEvents() -- Simplified server part
+function PlacementManager_Core:SetupRemoteEvents()
     self.remotes = self.remotes or {}
+    
     if RunService:IsClient() then
-        local remotesFolder = ReplicatedStorage:WaitForChild("Remotes", 10); if not remotesFolder then return end
-        local function getEv(name) return remotesFolder:WaitForChild(name,5) end
-        self.remotes.ItemPlaced=getEv("ItemPlaced"); self.remotes.ItemRecalled=getEv("ItemRecalled"); self.remotes.ItemUpdated=getEv("ItemUpdated"); self.remotes.ItemDeleted=getEv("ItemDeleted")
-        self.remotes.RequestPlaceItem=getEv("RequestPlaceItem"); self.remotes.RequestRecallItem=getEv("RequestRecallItem"); self.remotes.RequestMoveItem=getEv("RequestMoveItem")
-        self.remotes.ConfirmMoveItem=getEv("ConfirmMoveItem"); self.remotes.CancelMoveItem=getEv("CancelMoveItem"); self.remotes.RequestRotateItem=getEv("RequestRotateItem")
-        self.remotes.ConfirmRotation=getEv("ConfirmRotation"); self.remotes.CancelRotation=getEv("CancelRotation"); self.remotes.UpdateRotationInput=getEv("UpdateRotationInput")
-    else
-        local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes"); if not remotesFolder then remotesFolder=Instance.new("Folder");remotesFolder.Name="Remotes";remotesFolder.Parent=ReplicatedStorage end
-        local function getOrCrEv(name) local ev=remotesFolder:FindFirstChild(name); if not ev then ev=Instance.new("RemoteEvent");ev.Name=name;ev.Parent=remotesFolder end return ev end
-        self.remotes.ItemPlaced=getOrCrEv("ItemPlaced"); self.remotes.ItemRecalled=getOrCrEv("ItemRecalled"); self.remotes.ItemUpdated=getOrCrEv("ItemUpdated"); self.remotes.ItemDeleted=getOrCrEv("ItemDeleted")
-        self.remotes.RequestPlaceItem=getOrCrEv("RequestPlaceItem"); self.remotes.RequestRecallItem=getOrCrEv("RequestRecallItem"); self.remotes.RequestMoveItem=getOrCrEv("RequestMoveItem")
-        self.remotes.ConfirmMoveItem=getOrCrEv("ConfirmMoveItem"); self.remotes.CancelMoveItem=getOrCrEv("CancelMoveItem"); self.remotes.RequestRotateItem=getOrCrEv("RequestRotateItem")
-        self.remotes.ConfirmRotation=getOrCrEv("ConfirmRotation"); self.remotes.CancelRotation=getOrCrEv("CancelRotation"); self.remotes.UpdateRotationInput=getOrCrEv("UpdateRotationInput")
+        -- CLIENT: Wait for and cache remote events
+        local remotesFolder = ReplicatedStorage:WaitForChild("Remotes", 10)
+        if not remotesFolder then 
+            warn("PlacementManager_Core: Remotes folder not found on client")
+            return 
+        end
         
-        if self.remotes.RequestPlaceItem then self.remotes.RequestPlaceItem.OnServerEvent:Connect(function(p,id,pos,norm,rotD) local finalRot; if typeof(rotD)=="table" then finalRot=rotD elseif typeof(rotD)=="number" then finalRot={X=0,Y=rotD,Z=0} else finalRot={X=0,Y=0,Z=0} end; self:PlaceItem(p,id,pos,norm,finalRot) end) end
-        if self.remotes.RequestRecallItem then self.remotes.RequestRecallItem.OnServerEvent:Connect(function(p,id) self:RecallItem(p,id) end) end -- Placeholder for RecallItem, which will be moved
-        if self.remotes.RequestMoveItem then self.remotes.RequestMoveItem.OnServerEvent:Connect(function(p,id) self:HandleRequestMoveItem(p,id) end) end
-        if self.remotes.ConfirmMoveItem then self.remotes.ConfirmMoveItem.OnServerEvent:Connect(function(p,id,newP,newRotY) self:HandleConfirmMoveItem(p,id,newP,newRotY) end) end
-        if self.remotes.CancelMoveItem then self.remotes.CancelMoveItem.OnServerEvent:Connect(function(p,id) self:HandleCancelMoveItem(p,id) end) end
-        if self.remotes.RequestRotateItem then self.remotes.RequestRotateItem.OnServerEvent:Connect(function(p,id,rotDeg) self:HandleRotateItemRequest(p,id,rotDeg) end) end
+        local function getEv(name) 
+            local event = remotesFolder:WaitForChild(name, 5)
+            if not event then warn("PlacementManager_Core: Failed to find remote event:", name) end
+            return event
+        end
+        
+        self.remotes.ItemPlaced = getEv("ItemPlaced")
+        self.remotes.ItemRecalled = getEv("ItemRecalled")
+        self.remotes.ItemUpdated = getEv("ItemUpdated")
+        self.remotes.ItemDeleted = getEv("ItemDeleted")
+        self.remotes.RequestPlaceItem = getEv("RequestPlaceItem")
+        self.remotes.RequestRecallItem = getEv("RequestRecallItem")
+        self.remotes.RequestMoveItem = getEv("RequestMoveItem")
+        self.remotes.ConfirmMoveItem = getEv("ConfirmMoveItem")
+        self.remotes.CancelMoveItem = getEv("CancelMoveItem")
+        self.remotes.RequestRotateItem = getEv("RequestRotateItem")
+        self.remotes.ConfirmRotation = getEv("ConfirmRotation")
+        self.remotes.CancelRotation = getEv("CancelRotation")
+        self.remotes.UpdateRotationInput = getEv("UpdateRotationInput")
+        
+        print("PlacementManager_Core: Client remote events cached")
+    else
+        -- SERVER: Create remote events and connect handlers
+        local remotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
+        if not remotesFolder then 
+            remotesFolder = Instance.new("Folder")
+            remotesFolder.Name = "Remotes"
+            remotesFolder.Parent = ReplicatedStorage
+        end
+        
+        local function getOrCreateEvent(name) 
+            local ev = remotesFolder:FindFirstChild(name)
+            if not ev then 
+                ev = Instance.new("RemoteEvent")
+                ev.Name = name
+                ev.Parent = remotesFolder
+                print("PlacementManager_Core: Created remote event:", name)
+            end
+            return ev
+        end
+        
+        self.remotes.ItemPlaced = getOrCreateEvent("ItemPlaced")
+        self.remotes.ItemRecalled = getOrCreateEvent("ItemRecalled")
+        self.remotes.ItemUpdated = getOrCreateEvent("ItemUpdated")
+        self.remotes.ItemDeleted = getOrCreateEvent("ItemDeleted")
+        self.remotes.RequestPlaceItem = getOrCreateEvent("RequestPlaceItem")
+        self.remotes.RequestRecallItem = getOrCreateEvent("RequestRecallItem")
+        self.remotes.RequestMoveItem = getOrCreateEvent("RequestMoveItem")
+        self.remotes.ConfirmMoveItem = getOrCreateEvent("ConfirmMoveItem")
+        self.remotes.CancelMoveItem = getOrCreateEvent("CancelMoveItem")
+        self.remotes.RequestRotateItem = getOrCreateEvent("RequestRotateItem")
+        self.remotes.ConfirmRotation = getOrCreateEvent("ConfirmRotation")
+        self.remotes.CancelRotation = getOrCreateEvent("CancelRotation")
+        self.remotes.UpdateRotationInput = getOrCreateEvent("UpdateRotationInput")
+        
+        -- Connect server event handlers
+        self:_ConnectServerEventHandlers()
+        
+        print("PlacementManager_Core: Server remote events setup complete")
+    end
+end
+
+function PlacementManager_Core:_ConnectServerEventHandlers()
+    -- Separate method for server event handler connections
+    if self.remotes.RequestPlaceItem then 
+        self.remotes.RequestPlaceItem.OnServerEvent:Connect(function(player, itemId, position, normal, rotationData) 
+            local finalRot
+            if typeof(rotationData) == "table" then 
+                finalRot = rotationData 
+            elseif typeof(rotationData) == "number" then 
+                finalRot = {X = 0, Y = rotationData, Z = 0} 
+            else 
+                finalRot = {X = 0, Y = 0, Z = 0} 
+            end
+            self:PlaceItem(player, itemId, position, normal, finalRot) 
+        end) 
+    end
+    
+    if self.remotes.RequestRecallItem then 
+        self.remotes.RequestRecallItem.OnServerEvent:Connect(function(player, instanceId) 
+            self:RecallItem(player, instanceId) 
+        end) 
+    end
+    
+    if self.remotes.RequestMoveItem then 
+        self.remotes.RequestMoveItem.OnServerEvent:Connect(function(player, instanceId) 
+            self:HandleRequestMoveItem(player, instanceId) 
+        end) 
+    end
+    
+    if self.remotes.ConfirmMoveItem then 
+        self.remotes.ConfirmMoveItem.OnServerEvent:Connect(function(player, instanceId, newPosition, newRotationY) 
+            self:HandleConfirmMoveItem(player, instanceId, newPosition, newRotationY) 
+        end) 
+    end
+    
+    if self.remotes.CancelMoveItem then 
+        self.remotes.CancelMoveItem.OnServerEvent:Connect(function(player, instanceId) 
+            self:HandleCancelMoveItem(player, instanceId) 
+        end) 
+    end
+    
+    if self.remotes.RequestRotateItem then 
+        self.remotes.RequestRotateItem.OnServerEvent:Connect(function(player, instanceId, rotationDegrees) 
+            self:HandleRotateItemRequest(player, instanceId, rotationDegrees) 
+        end) 
     end
 end
 
