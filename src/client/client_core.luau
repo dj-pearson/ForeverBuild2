@@ -615,41 +615,29 @@ end
 local clientModule = {
     GetGameManager = function() return GameManager end,
     ShowInventory = function()
-        -- Try the new unified inventory system first
-        local success = pcall(function()
-            local InventorySystemWrapper = require(ReplicatedStorage.src.client.inventory.InventorySystemWrapper)
-            InventorySystemWrapper.ToggleInventory()
-            print("Using new unified InventorySystemWrapper")
-            return true
-        end)
-        
-        if not success then
-            -- Fall back to SharedModule InventoryUI
-            if SharedModule and SharedModule.InventoryUI and SharedModule.InventoryUI.Toggle then
-                print("Using SharedModule.InventoryUI.Toggle")
-                SharedModule.InventoryUI.Toggle()
-            -- Fall back to the old module reference if it exists
-            elseif InventoryUIModule and InventoryUIModule.Show then
-                print("Using InventoryUIModule.Show")
-                InventoryUIModule.Show()
-            else
-                -- Try to fetch inventory data even if UI module is missing
-                if GetInventoryFunc then
-                    local dataSuccess, result = pcall(function()
-                        return GetInventoryFunc:InvokeServer()
-                    end)
-                    
-                    if dataSuccess and result then
-                        print("InventoryUIModule not available, but data was retrieved successfully")
-                        print("Retrieved " .. (result.inventory and #result.inventory or 0) .. " inventory items and " .. (result.currency or 0) .. " currency")
-                    else
-                        warn("InventoryUIModule not ready and failed to get inventory data:", result)
-                    end
-                else
-                    warn("InventoryUIModule not ready or Show method missing for ShowInventory API call in client_core.luau.")
-                end
-            end
-        end
+        -- Use the new unified inventory system with automatic fallbacks
+        local InventorySystemWrapper = require(ReplicatedStorage.src.client.Inventory.InventorySystemWrapper)
+        InventorySystemWrapper.ShowInventory()
+    end,
+    HideInventory = function()
+        -- Use the new unified inventory system with automatic fallbacks
+        local InventorySystemWrapper = require(ReplicatedStorage.src.client.Inventory.InventorySystemWrapper)
+        InventorySystemWrapper.HideInventory()
+    end,
+    ToggleInventory = function()
+        -- Use the new unified inventory system with automatic fallbacks
+        local InventorySystemWrapper = require(ReplicatedStorage.src.client.Inventory.InventorySystemWrapper)
+        InventorySystemWrapper.ToggleInventory()
+    end,
+    UpdateInventory = function(inventory, currency)
+        -- Use the new unified inventory system with automatic fallbacks
+        local InventorySystemWrapper = require(ReplicatedStorage.src.client.Inventory.InventorySystemWrapper)
+        InventorySystemWrapper.UpdateInventory(inventory, currency)
+    end,
+    GetInventorySystemStatus = function()
+        -- Get status of the inventory system
+        local InventorySystemWrapper = require(ReplicatedStorage.src.client.Inventory.InventorySystemWrapper)
+        return InventorySystemWrapper.GetSystemStatus()
     end,
     ShowCurrencyPurchaseMenu = function()
         -- Use the new unified currency system with automatic fallbacks
@@ -675,6 +663,41 @@ local clientModule = {
         -- Get status of the interaction system
         local InteractionSystemWrapper = require(ReplicatedStorage.src.client.interaction.InteractionSystemWrapper)
         return InteractionSystemWrapper.GetSystemStatus()
+    end,
+    StartPlacing = function(itemId)
+        -- Use the new unified placement system with automatic fallbacks
+        local PlacementSystemWrapper = require(ReplicatedStorage.src.shared.core.placement.PlacementSystemWrapper)
+        PlacementSystemWrapper.StartPlacing(itemId)
+    end,
+    StopPlacing = function()
+        -- Use the new unified placement system with automatic fallbacks
+        local PlacementSystemWrapper = require(ReplicatedStorage.src.shared.core.placement.PlacementSystemWrapper)
+        PlacementSystemWrapper.StopPlacing()
+    end,
+    PlaceItem = function(player, itemId, position, rotation)
+        -- Use the new unified placement system with automatic fallbacks
+        local PlacementSystemWrapper = require(ReplicatedStorage.src.shared.core.placement.PlacementSystemWrapper)
+        return PlacementSystemWrapper.PlaceItem(player, itemId, position, rotation)
+    end,
+    GetItemTemplate = function(itemId)
+        -- Use the new unified placement system with automatic fallbacks
+        local PlacementSystemWrapper = require(ReplicatedStorage.src.shared.core.placement.PlacementSystemWrapper)
+        return PlacementSystemWrapper.GetItemTemplate(itemId)
+    end,
+    ShowItemInHand = function(itemId)
+        -- Use the new unified placement system with automatic fallbacks
+        local PlacementSystemWrapper = require(ReplicatedStorage.src.shared.core.placement.PlacementSystemWrapper)
+        PlacementSystemWrapper.ShowItemInHand(itemId)
+    end,
+    HideItemInHand = function()
+        -- Use the new unified placement system with automatic fallbacks
+        local PlacementSystemWrapper = require(ReplicatedStorage.src.shared.core.placement.PlacementSystemWrapper)
+        PlacementSystemWrapper.HideItemInHand()
+    end,
+    GetPlacementSystemStatus = function()
+        -- Get status of the placement system
+        local PlacementSystemWrapper = require(ReplicatedStorage.src.shared.core.placement.PlacementSystemWrapper)
+        return PlacementSystemWrapper.GetSystemStatus()
     end
 }
 

@@ -98,6 +98,10 @@ SystemConfig.INVENTORY = {
 
 -- Placement system configuration
 SystemConfig.PLACEMENT = {
+    -- System hierarchy
+    PRIMARY_SYSTEM = "PlacementCore",
+    FALLBACK_SYSTEMS = {"PlacementManager_Core"},
+    
     -- System settings
     MAX_PLACEMENT_DISTANCE = 20,
     PLACEMENT_GRID_SIZE = 1,
@@ -124,6 +128,10 @@ SystemConfig.PLACEMENT = {
 
 -- Data management configuration
 SystemConfig.DATA = {
+    -- System hierarchy
+    PRIMARY_SYSTEM = "DataBackupSystem",
+    FALLBACK_SYSTEMS = {"SystemManager", "GameHealthMonitor"},
+    
     -- Backup settings
     BACKUP_INTERVAL = 300, -- 5 minutes
     MAX_BACKUP_VERSIONS = 10,
