@@ -10,7 +10,7 @@ local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
 
 -- CRITICAL FIX: Use the correct path to Constants
-local Constants = require(script.Parent.Parent.Constants) -- Reverted to direct path
+local Constants = require(game.ReplicatedStorage.shared.core.Constants) -- Fixed to absolute path
 
 -- Import the client version was causing errors - restore original functionality
 local success, ClientCurrencyUI = true, nil -- Just to keep the existing code structure

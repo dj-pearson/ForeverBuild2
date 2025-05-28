@@ -36,18 +36,26 @@ task.spawn(function()
     local remotes = ReplicatedStorage:FindFirstChild("Remotes")
     if remotes then
         local updateBalanceEvent = remotes:FindFirstChild("UpdateBalance")
-        if updateBalanceEvent then
-            print("LeaderboardServer: Found UpdateBalance event, hooking into currency changes")
+        if updateBalanceEvent and updateBalanceEvent:IsA("RemoteEvent") then
+            print("LeaderboardServer: Found UpdateBalance event, creating currency tracking system")
             
-            -- Monitor currency updates and update leaderboard
-            local originalFire = updateBalanceEvent.FireClient
-            updateBalanceEvent.FireClient = function(self, player, balance)
-                -- Update leaderboard with new balance
-                leaderboardManager:UpdatePlayerStat(player, "Cash", balance)
-                
-                -- Call original function
-                return originalFire(self, player, balance)
-            end
+            -- Create a system to track currency updates
+            -- We'll monitor when the currency manager updates balance and sync it
+            task.spawn(function()
+                while true do
+                    task.wait(5) -- Check every 5 seconds
+                    
+                    -- Get current currency from currency manager for all players
+                    if _G.CurrencyManager then
+                        for _, player in ipairs(Players:GetPlayers()) do
+                            local balance = _G.CurrencyManager:GetPlayerBalance(player)
+                            if balance then
+                                leaderboardManager:UpdatePlayerStat(player, "Cash", balance)
+                            end
+                        end
+                    end
+                end
+            end)
         end
         
         -- Hook into progression updates

@@ -1,6 +1,6 @@
 local _ReplicatedStorage = game:GetService("ReplicatedStorage")
 local _ServerStorage = game:GetService("ServerStorage")
-local Constants = require(script.Parent.Parent.Constants)
+local Constants = require(game.ReplicatedStorage.shared.core.Constants)
 
 local ItemManager = {}
 ItemManager.__index = ItemManager

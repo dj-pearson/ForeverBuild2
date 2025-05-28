@@ -5,19 +5,19 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 -- Import all critical systems
-local PlacementTracker = require(script.Parent.PlacementTracker)
-local ConflictResolver = require(script.Parent.ConflictResolver)
-local ModerationSystem = require(script.Parent.ModerationSystem)
-local AnalyticsSystem = require(script.Parent.AnalyticsSystem)
-local DataBackupSystem = require(script.Parent.DataBackupSystem)
-local AntiExploitSystem = require(script.Parent.AntiExploitSystem)
-local AdminToolsSystem = require(script.Parent.AdminToolsSystem)
-local GameHealthMonitor = require(script.Parent.GameHealthMonitor)
-local ProductionConfig = require(script.Parent.ProductionConfig)
+local PlacementTracker = require(game.ServerScriptService.server.PlacementTracker)
+local ConflictResolver = require(game.ServerScriptService.server.ConflictResolver)
+local ModerationSystem = require(game.ServerScriptService.server.ModerationSystem)
+local AnalyticsSystem = require(game.ServerScriptService.server.AnalyticsSystem)
+local DataBackupSystem = require(game.ServerScriptService.server.DataBackupSystem)
+local AntiExploitSystem = require(game.ServerScriptService.server.AntiExploitSystem)
+local AdminToolsSystem = require(game.ServerScriptService.server.AdminToolsSystem)
+local GameHealthMonitor = require(game.ServerScriptService.server.GameHealthMonitor)
+local ProductionConfig = require(game.ServerScriptService.server.ProductionConfig)
 
-local ObjectStreaming = require(script.Parent.Parent.shared.optimization.ObjectStreaming)
-local ObjectPooling = require(script.Parent.Parent.shared.optimization.ObjectPooling)
-local MemoryManager = require(script.Parent.Parent.shared.optimization.MemoryManager)
+local ObjectStreaming = require(game.ReplicatedStorage.shared.optimization.ObjectStreaming)
+local ObjectPooling = require(game.ReplicatedStorage.shared.optimization.ObjectPooling)
+local MemoryManager = require(game.ReplicatedStorage.shared.optimization.MemoryManager)
 
 local SystemManager = {}
 SystemManager.__index = SystemManager

@@ -6,7 +6,7 @@ local MarketplaceService = game:GetService("MarketplaceService")
 
 local IS_SERVER = RunService:IsServer()
 
-local Constants = require(script.Parent.Parent.Constants)
+local Constants = require(game.ReplicatedStorage.shared.core.Constants)
 
 local CurrencyManager = {}
 CurrencyManager.__index = CurrencyManager
@@ -479,6 +479,11 @@ function CurrencyManager:GetPlayerCurrency(player)
         -- Client implementation
         return self.playerCurrency or 0
     end
+end
+
+-- Add GetPlayerBalance method for LeaderboardManager compatibility
+function CurrencyManager:GetPlayerBalance(player)
+    return self:GetPlayerCurrency(player)
 end
 
 return CurrencyManager

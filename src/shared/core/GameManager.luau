@@ -2,7 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local RunService = game:GetService("RunService")
 
-local Constants = require(script.Parent.Constants)
+local Constants = require(game.ReplicatedStorage.shared.core.Constants)
 
 -- Determine if we're on the server
 local IS_SERVER = RunService:IsServer()

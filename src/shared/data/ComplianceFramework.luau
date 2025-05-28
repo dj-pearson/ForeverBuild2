@@ -27,8 +27,8 @@ local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 
 -- Dependencies
-local Logger = require(script.Parent.Parent.monitoring.Logger)
-local AuditLogger = require(script.Parent.Parent.security.AuditLogger)
+local Logger = require(game.ReplicatedStorage.shared.monitoring.Logger)
+local AuditLogger = require(game.ReplicatedStorage.shared.security.AuditLogger)
 
 -- Configuration
 local CONFIG = {

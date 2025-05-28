@@ -6,8 +6,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
 -- Import the standardized base wrapper and configuration
-local BaseSystemWrapper = require(ReplicatedStorage.src.shared.core.BaseSystemWrapper)
-local SystemConfig = require(ReplicatedStorage.src.shared.core.SystemConfig)
+local BaseSystemWrapper = require(game.ReplicatedStorage.shared.core.BaseSystemWrapper)
+local SystemConfig = require(game.ReplicatedStorage.shared.core.SystemConfig)
 
 local InteractionSystemWrapper = setmetatable({}, BaseSystemWrapper)
 InteractionSystemWrapper.__index = InteractionSystemWrapper
@@ -42,7 +42,7 @@ end
 
 -- Load the primary interaction system (InteractionManager)
 function InteractionSystemWrapper:LoadPrimarySystem()
-    local primarySystem = self:SafeRequire(script.Parent.InteractionManager, "InteractionManager")
+    local primarySystem = self:SafeRequire(game.StarterPlayer.StarterPlayerScripts.client.interaction.InteractionManager, "InteractionManager")
     
     if primarySystem and typeof(primarySystem.new) == "function" then
         local instance = primarySystem.new()
@@ -65,7 +65,7 @@ function InteractionSystemWrapper:LoadFallbackSystems()
     -- Load fallback systems based on configuration
     for _, fallbackName in ipairs(INTERACTION_CONFIG.FALLBACK_SYSTEMS) do
         if fallbackName == "ItemInteractionClient" then
-            local itemInteractionClient = self:SafeRequire(script.Parent.ItemInteractionClient, "ItemInteractionClient")
+            local itemInteractionClient = self:SafeRequire(game.StarterPlayer.StarterPlayerScripts.client.interaction.ItemInteractionClient, "ItemInteractionClient")
             if itemInteractionClient then
                 fallbacks.itemInteractionClient = itemInteractionClient
                 print("[InteractionSystemWrapper] Loaded ItemInteractionClient fallback")

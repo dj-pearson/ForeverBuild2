@@ -2,7 +2,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
-local Constants = require(script.Parent.Parent.Constants)
+local Constants = require(game.ReplicatedStorage.shared.core.Constants)
 
 local PlacedItemDialog = {}
 

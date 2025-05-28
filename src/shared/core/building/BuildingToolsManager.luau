@@ -303,7 +303,7 @@ function BuildingToolsManager:CreateGridSection(parent)
     local gridToggle = self:CreateToggleButton(section, "🌐 Show Grid", "Display grid visualization", 0)
     gridToggle.MouseButton1Click:Connect(function()
         self:ToggleGridVisualization()
-        gridToggle.BackgroundColor3 = self.gridVisualization.Visible and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(60, 60, 60)
+        gridToggle.BackgroundColor3 = self.gridVisible and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(60, 60, 60)
     end)
 end
 
@@ -490,7 +490,7 @@ function BuildingToolsManager:SetupGridVisualization()
     gridFolder.Parent = workspace
     
     self.gridVisualization = gridFolder
-    self.gridVisualization.Visible = false
+    self.gridVisible = false -- Use a custom property instead of .Visible
     
     print("BuildingToolsManager: Grid visualization setup")
 end
@@ -551,15 +551,20 @@ end
 -- Toggle grid visualization
 function BuildingToolsManager:ToggleGridVisualization()
     if self.gridVisualization then
-        self.gridVisualization.Visible = not self.gridVisualization.Visible
-        print("BuildingToolsManager: Grid visualization", self.gridVisualization.Visible and "shown" or "hidden")
+        self.gridVisible = not self.gridVisible
+        if self.gridVisible then
+            self:UpdateGridVisualization()
+        else
+            self.gridVisualization:ClearAllChildren()
+        end
+        print("BuildingToolsManager: Grid visualization", self.gridVisible and "shown" or "hidden")
     end
 end
 
 -- Show grid visualization
 function BuildingToolsManager:ShowGridVisualization()
     if self.gridVisualization then
-        self.gridVisualization.Visible = true
+        self.gridVisible = true
         self:UpdateGridVisualization()
     end
 end
@@ -567,13 +572,14 @@ end
 -- Hide grid visualization
 function BuildingToolsManager:HideGridVisualization()
     if self.gridVisualization then
-        self.gridVisualization.Visible = false
+        self.gridVisible = false
+        self.gridVisualization:ClearAllChildren()
     end
 end
 
 -- Update grid visualization
 function BuildingToolsManager:UpdateGridVisualization()
-    if not self.gridVisualization or not self.gridVisualization.Visible then return end
+    if not self.gridVisualization or not self.gridVisible then return end
     
     -- Clear existing grid
     self.gridVisualization:ClearAllChildren()

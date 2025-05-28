@@ -27,7 +27,7 @@ local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
 -- Dependencies
-local Logger = require(script.Parent.Parent.monitoring.Logger)
+local Logger = require(game.ReplicatedStorage.shared.monitoring.Logger)
 
 -- Configuration
 local CONFIG = {

@@ -14,7 +14,7 @@ print("Server initialization script starting...")
 
 -- Load the DisableDefaultLeaderboard script first to set up the hybrid leaderboard system
 local success, error = pcall(function()
-    require(script.Parent.DisableDefaultLeaderboard)
+    require(game.ServerScriptService.server.DisableDefaultLeaderboard)
 end)
 if success then
     print("DisableDefaultLeaderboard: Hybrid leaderboard system initialized")

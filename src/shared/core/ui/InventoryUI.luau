@@ -3,7 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 
-local Constants = require(script.Parent.Parent.Constants)
+local Constants = require(game.ReplicatedStorage.shared.core.Constants)
 
 local InventoryUI = {}
 InventoryUI._isVisible = false -- Tracks visibility state

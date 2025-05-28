@@ -8,12 +8,12 @@ local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
 -- Import our modules
-local ItemTemplateManager = require(script.Parent.modules.ItemTemplateManager)
-local PreviewManager = require(script.Parent.modules.PreviewManager)
-local PlacementValidator = require(script.Parent.modules.PlacementValidator)
-local ItemDataManager = require(script.Parent.modules.ItemDataManager)
-local RemoteEventManager = require(script.Parent.modules.RemoteEventManager)
-local MovementManager = require(script.Parent.modules.MovementManager)
+local ItemTemplateManager = require(game.ReplicatedStorage.shared.core.placement.modules.ItemTemplateManager)
+local PreviewManager = require(game.ReplicatedStorage.shared.core.placement.modules.PreviewManager)
+local PlacementValidator = require(game.ReplicatedStorage.shared.core.placement.modules.PlacementValidator)
+local ItemDataManager = require(game.ReplicatedStorage.shared.core.placement.modules.ItemDataManager)
+local RemoteEventManager = require(game.ReplicatedStorage.shared.core.placement.modules.RemoteEventManager)
+local MovementManager = require(game.ReplicatedStorage.shared.core.placement.modules.MovementManager)
 
 local PlacementCore = {}
 PlacementCore.__index = PlacementCore

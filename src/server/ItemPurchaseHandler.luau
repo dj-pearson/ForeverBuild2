@@ -11,7 +11,7 @@ local RunService = game:GetService("RunService")
 local SecurityValidator
 local securityValidator
 local success, result = pcall(function()
-    return require(ReplicatedStorage.src.shared.security.SecurityValidator)
+    return require(game.ReplicatedStorage.shared.security.SecurityValidator)
 end)
 if success then
     SecurityValidator = result

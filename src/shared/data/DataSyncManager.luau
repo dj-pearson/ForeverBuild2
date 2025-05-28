@@ -28,8 +28,8 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 
 -- Dependencies
-local Logger = require(script.Parent.Parent.monitoring.Logger)
-local DataIntegrityValidator = require(script.Parent.DataIntegrityValidator)
+local Logger = require(game.ReplicatedStorage.shared.monitoring.Logger)
+local DataIntegrityValidator = require(game.ReplicatedStorage.shared.data.DataIntegrityValidator)
 
 -- Configuration
 local CONFIG = {

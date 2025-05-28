@@ -13,7 +13,7 @@ local SecurityValidator
 local securityValidator
 if RunService:IsClient() then
     local success, result = pcall(function()
-        return require(ReplicatedStorage.src.shared.security.SecurityValidator)
+        return require(game.ReplicatedStorage.shared.security.SecurityValidator)
     end)
     if success then
         SecurityValidator = result

@@ -30,7 +30,7 @@ local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Dependencies
-local PerformanceMonitor = require(script.Parent.Parent.Parent.shared.monitoring.PerformanceMonitor)
+local PerformanceMonitor = require(game.ReplicatedStorage.shared.monitoring.PerformanceMonitor)
 
 -- Configuration
 local CONFIG = {

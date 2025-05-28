@@ -1,7 +1,7 @@
 local SharedModule = {}
 
-local core = script.Parent:FindFirstChild("src") and script.Parent.src:FindFirstChild("shared") and script.Parent.src.shared:FindFirstChild("core")
-if not core then error("[SharedModule] Missing 'core' folder under src/shared") end
+local core = script.Parent:FindFirstChild("core")
+if not core then error("[SharedModule] Missing 'core' folder under shared") end
 
 local function tryRequire(moduleScript, name)
     print("[SharedModule] Attempting to require " .. name)

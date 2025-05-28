@@ -12,7 +12,7 @@ local PlacementManager
 if USE_MODULAR_SYSTEM then
     -- Use the new modular PlacementCore system
     local success, result = pcall(function()
-        return require(script.PlacementCore)
+        return require(game.ReplicatedStorage.shared.core.placement.PlacementCore)
     end)
     
     if success then
@@ -20,12 +20,12 @@ if USE_MODULAR_SYSTEM then
         print("PlacementManager: Using modular PlacementCore system")
     else
         warn("PlacementManager: Failed to load modular system, falling back to Core:", result)
-        PlacementManager = require(script.PlacementManager_Core)
+        PlacementManager = require(game.ReplicatedStorage.shared.core.placement.PlacementManager_Core)
     end
 else
     -- Use the legacy monolithic system
     local success, result = pcall(function()
-        return require(script.PlacementManager_Core)
+        return require(game.ReplicatedStorage.shared.core.placement.PlacementManager_Core)
     end)
     
     if success then

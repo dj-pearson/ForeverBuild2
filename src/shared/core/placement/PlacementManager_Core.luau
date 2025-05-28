@@ -7,18 +7,18 @@ local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 
 -- Import utility functions
-local PlacementUtils = require(script.Parent.Placement_Utils)
+local PlacementUtils = require(game.ReplicatedStorage.shared.core.placement.Placement_Utils)
 
 -- Import SimpleRotationUI for cross-platform rotation
-local SimpleRotationUI = require(script.Parent.SimpleRotationUI)
+local SimpleRotationUI = require(game.ReplicatedStorage.shared.core.placement.SimpleRotationUI)
 -- Import PlacementControlsUI for clear placement instructions
-local PlacementControlsUI = require(script.Parent.PlacementControlsUI)
+local PlacementControlsUI = require(game.ReplicatedStorage.shared.core.placement.PlacementControlsUI)
 
 -- Import SecurityValidator for enterprise-level security
 local SecurityValidator
 local securityValidator
 local success, result = pcall(function()
-    return require(ReplicatedStorage.src.shared.security.SecurityValidator)
+    return require(game.ReplicatedStorage.shared.security.SecurityValidator)
 end)
 if success then
     SecurityValidator = result
@@ -33,12 +33,11 @@ local ExploitDetector
 local exploitDetector
 if RunService:IsServer() then
     local exploitSuccess, exploitResult = pcall(function()
-        return require(ReplicatedStorage.src.shared.security.ExploitDetector)
+        return require(game.ReplicatedStorage.shared.security.ExploitDetector)
     end)
     if exploitSuccess then
         ExploitDetector = exploitResult
         exploitDetector = ExploitDetector.new()
-        exploitDetector:Initialize()
         print("PlacementManager_Core: ExploitDetector loaded successfully")
     else
         warn("PlacementManager_Core: Failed to load ExploitDetector:", exploitResult)
@@ -49,7 +48,7 @@ end
 local RotationControlsUI
 if RunService:IsClient() then
     local successRotationUI, resultRotationUI = pcall(function()
-        return require(script.Parent.Parent.ui.RotationControlsUI)
+        return require(game.ReplicatedStorage.shared.core.ui.RotationControlsUI)
     end)
     if successRotationUI then
         RotationControlsUI = resultRotationUI
