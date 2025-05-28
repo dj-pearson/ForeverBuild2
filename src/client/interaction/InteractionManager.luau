@@ -8,6 +8,22 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+-- Import SecurityValidator for enterprise-level security
+local SecurityValidator
+local securityValidator
+if RunService:IsClient() then
+    local success, result = pcall(function()
+        return require(ReplicatedStorage.src.shared.security.SecurityValidator)
+    end)
+    if success then
+        SecurityValidator = result
+        securityValidator = SecurityValidator.new()
+        print("InteractionManager: SecurityValidator loaded successfully")
+    else
+        warn("InteractionManager: Failed to load SecurityValidator:", result)
+    end
+end
+
 -- Safe SharedModule loading with comprehensive fallbacks
 local SharedModule
 local Constants
@@ -476,9 +492,51 @@ function InteractionManager:DetermineInteractionType(instance)
 end
 
 function InteractionManager:HandlePurchase(targetData)
+    -- 🔒 SECURITY VALIDATION - Enterprise-level purchase validation
+    if securityValidator then
+        -- Validate targetData structure
+        if not targetData or typeof(targetData) ~= "table" then
+            warn("🚨 SECURITY: Invalid targetData in HandlePurchase")
+            self:ShowNotification("Invalid purchase request")
+            return
+        end
+        
+        -- Validate instance
+        if not targetData.instance or not targetData.instance.Parent then
+            warn("🚨 SECURITY: Invalid instance in HandlePurchase")
+            self:ShowNotification("Invalid item for purchase")
+            return
+        end
+        
+        -- Validate targetData.id
+        if targetData.id then
+            local idValidation = securityValidator:ValidateString(targetData.id, "TargetId", {maxLength = 100})
+            if not idValidation.success then
+                warn("🚨 SECURITY: Invalid target ID in HandlePurchase:", idValidation.error)
+                self:ShowNotification("Invalid item identifier")
+                return
+            end
+        end
+        
+        print("✅ SECURITY: Purchase validation passed for", targetData.id or "unknown")
+    else
+        warn("⚠️ SECURITY: SecurityValidator not available for purchase validation")
+    end
+
     local instance = targetData.instance
     local price = instance:GetAttribute("Price") or instance:GetAttribute("priceIngame") or 50
     local itemName = instance.Name:gsub("_", " ")
+    
+    -- Additional security: Validate price
+    if securityValidator then
+        local priceValidation = securityValidator:ValidateCurrency(price, "INGAME", self.player)
+        if not priceValidation.success then
+            warn("🚨 SECURITY: Invalid price in HandlePurchase:", priceValidation.error)
+            self:ShowNotification("Invalid item price")
+            return
+        end
+        price = priceValidation.data.amount
+    end
     
     -- Use the BottomPurchasePopup if available
     local BottomPurchasePopup = self:TryRequireModule("BottomPurchasePopup")
@@ -498,6 +556,28 @@ function InteractionManager:HandlePurchase(targetData)
 end
 
 function InteractionManager:HandlePickup(targetData)
+    -- 🔒 SECURITY VALIDATION - Enterprise-level pickup validation
+    if securityValidator then
+        -- Validate targetData
+        if not targetData or typeof(targetData) ~= "table" then
+            warn("🚨 SECURITY: Invalid targetData in HandlePickup")
+            self:ShowNotification("Invalid pickup request")
+            return
+        end
+        
+        -- Validate targetData.id
+        if targetData.id then
+            local idValidation = securityValidator:ValidateString(targetData.id, "PickupId", {maxLength = 100})
+            if not idValidation.success then
+                warn("🚨 SECURITY: Invalid pickup ID:", idValidation.error)
+                self:ShowNotification("Invalid item for pickup")
+                return
+            end
+        end
+        
+        print("✅ SECURITY: Pickup validation passed for", targetData.id or "unknown")
+    end
+
     if self.remotes.CollectItem then
         local success = self.remotes.CollectItem:InvokeServer(targetData.id)
         if success then
@@ -512,6 +592,28 @@ function InteractionManager:HandlePickup(targetData)
 end
 
 function InteractionManager:HandleUse(targetData)
+    -- 🔒 SECURITY VALIDATION - Enterprise-level use validation
+    if securityValidator then
+        -- Validate targetData
+        if not targetData or typeof(targetData) ~= "table" then
+            warn("🚨 SECURITY: Invalid targetData in HandleUse")
+            self:ShowNotification("Invalid use request")
+            return
+        end
+        
+        -- Validate targetData.id
+        if targetData.id then
+            local idValidation = securityValidator:ValidateString(targetData.id, "UseId", {maxLength = 100})
+            if not idValidation.success then
+                warn("🚨 SECURITY: Invalid use ID:", idValidation.error)
+                self:ShowNotification("Invalid item for use")
+                return
+            end
+        end
+        
+        print("✅ SECURITY: Use validation passed for", targetData.id or "unknown")
+    end
+
     if self.remotes.UseItem then
         local success, message = self.remotes.UseItem:InvokeServer(targetData.id)
         self:ShowNotification(message or (success and "Used " .. targetData.id or "Cannot use item"))
@@ -535,6 +637,43 @@ function InteractionManager:HandleGenericInteraction(targetData)
 end
 
 function InteractionManager:ExecutePurchase(itemId, currencyType)
+    -- 🔒 SECURITY VALIDATION - Enterprise-level purchase execution validation
+    if securityValidator then
+        -- Validate itemId
+        if not itemId or typeof(itemId) ~= "string" then
+            warn("🚨 SECURITY: Invalid itemId in ExecutePurchase")
+            self:ShowNotification("Invalid purchase item")
+            return
+        end
+        
+        local itemIdValidation = securityValidator:ValidateString(itemId, "PurchaseItemId", {maxLength = 100})
+        if not itemIdValidation.success then
+            warn("🚨 SECURITY: Invalid purchase itemId:", itemIdValidation.error)
+            self:ShowNotification("Invalid item for purchase")
+            return
+        end
+        
+        -- Validate currencyType
+        if currencyType then
+            local currencyTypeValidation = securityValidator:ValidateString(currencyType, "CurrencyType", {maxLength = 20})
+            if not currencyTypeValidation.success then
+                warn("🚨 SECURITY: Invalid currency type:", currencyTypeValidation.error)
+                self:ShowNotification("Invalid currency type")
+                return
+            end
+            
+            -- Ensure currency type is from allowed list
+            local allowedCurrencies = {"INGAME", "ROBUX", "COINS", "GEMS"}
+            if not table.find(allowedCurrencies, currencyType) then
+                warn("🚨 SECURITY: Unauthorized currency type:", currencyType)
+                self:ShowNotification("Unauthorized currency type")
+                return
+            end
+        end
+        
+        print("✅ SECURITY: Purchase execution validation passed for", itemId, "with currency", currencyType or "default")
+    end
+
     if self.remotes.PurchaseItem then
         self.remotes.PurchaseItem:FireServer(itemId, 1, currencyType)
         self:ShowNotification("Purchase request sent")

@@ -8,6 +8,39 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
+-- Import SecurityValidator for enterprise-level security
+local SecurityValidator
+local securityValidator
+if RunService:IsClient() then
+    local success, result = pcall(function()
+        return require(ReplicatedStorage.src.shared.security.SecurityValidator)
+    end)
+    if success then
+        SecurityValidator = result
+        securityValidator = SecurityValidator.new()
+        print("InventoryManager: SecurityValidator loaded successfully")
+    else
+        warn("InventoryManager: Failed to load SecurityValidator:", result)
+    end
+end
+
+-- Import RateLimiter for enterprise-level rate limiting
+local RateLimiter
+local rateLimiter
+if RunService:IsClient() then
+    local success, result = pcall(function()
+        return require(ReplicatedStorage.src.shared.security.RateLimiter)
+    end)
+    if success then
+        RateLimiter = result
+        rateLimiter = RateLimiter.new()
+        rateLimiter:Initialize()
+        print("InventoryManager: RateLimiter loaded successfully")
+    else
+        warn("InventoryManager: Failed to load RateLimiter:", result)
+    end
+end
+
 -- Safe SharedModule loading with comprehensive fallbacks
 local SharedModule
 local Constants
@@ -752,6 +785,74 @@ function InventoryManager:UpdateInventoryDisplay()
 end
 
 function InventoryManager:OnItemClicked(itemName, itemData)
+    -- 🚫 RATE LIMITING - Enterprise-level click rate limiting
+    if rateLimiter then
+        local allowed, reason = rateLimiter:CheckRateLimit(self.player, "OnItemClicked", {
+            itemName = itemName,
+            timestamp = tick()
+        })
+        
+        if not allowed then
+            warn("🚫 RATE LIMIT: OnItemClicked blocked for", self.player.Name, ":", reason)
+            self:ShowNotification("Too many clicks! " .. reason)
+            return
+        end
+    end
+
+    -- 🔒 SECURITY VALIDATION - Enterprise-level inventory validation
+    if securityValidator then
+        -- Validate itemName
+        if not itemName or typeof(itemName) ~= "string" then
+            warn("🚨 SECURITY: Invalid itemName in OnItemClicked")
+            self:ShowNotification("Invalid item name")
+            return
+        end
+        
+        local nameValidation = securityValidator:ValidateString(itemName, "ItemName", {maxLength = 100})
+        if not nameValidation.success then
+            warn("🚨 SECURITY: Invalid item name format in OnItemClicked:", nameValidation.error)
+            self:ShowNotification("Invalid item name format")
+            return
+        end
+        
+        -- Validate itemData structure
+        if itemData and typeof(itemData) ~= "table" then
+            warn("🚨 SECURITY: Invalid itemData structure in OnItemClicked")
+            self:ShowNotification("Invalid item data")
+            return
+        end
+        
+        -- Validate itemData fields if present
+        if itemData then
+            for key, value in pairs(itemData) do
+                if key == "id" or key == "name" or key == "displayName" then
+                    if typeof(value) ~= "string" then
+                        warn("🚨 SECURITY: Invalid string field in itemData:", key)
+                        self:ShowNotification("Invalid item data")
+                        return
+                    end
+                end
+            end
+        end
+        
+        -- Validate quantity/count
+        if itemData.count and typeof(itemData.count) ~= "number" then
+            warn("🚨 SECURITY: Invalid item count in OnItemClicked")
+            self:ShowNotification("Invalid item count")
+            return
+        end
+        
+        if itemData.count and (itemData.count < 0 or itemData.count > 10000) then
+            warn("🚨 SECURITY: Item count out of range in OnItemClicked:", itemData.count)
+            self:ShowNotification("Item count out of range")
+            return
+        end
+        
+        print("✅ SECURITY: Item click validation passed for", itemName)
+    else
+        warn("⚠️ SECURITY: SecurityValidator not available for inventory validation")
+    end
+
     print("[InventoryManager] Item clicked:", itemName)
     
     -- Hide inventory
@@ -769,6 +870,20 @@ function InventoryManager:OnItemClicked(itemName, itemData)
 end
 
 function InventoryManager:RefreshInventory()
+    -- 🚫 RATE LIMITING - Enterprise-level inventory refresh rate limiting
+    if rateLimiter then
+        local allowed, reason = rateLimiter:CheckRateLimit(self.player, "GetInventory", {
+            action = "refresh",
+            timestamp = tick()
+        })
+        
+        if not allowed then
+            warn("🚫 RATE LIMIT: RefreshInventory blocked for", self.player.Name, ":", reason)
+            self:ShowNotification("Refreshing too fast! " .. reason)
+            return
+        end
+    end
+
     if not self.remotes.GetInventory then
         warn("[InventoryManager] GetInventory remote not available")
         return
@@ -814,6 +929,66 @@ function InventoryManager:UpdateInventory(inventory, currency)
 end
 
 function InventoryManager:OnItemAdded(itemData)
+    -- 🚫 RATE LIMITING - Enterprise-level item addition rate limiting
+    if rateLimiter then
+        local allowed, reason = rateLimiter:CheckRateLimit(self.player, "OnItemAdded", {
+            itemId = itemData and itemData.id,
+            timestamp = tick()
+        })
+        
+        if not allowed then
+            warn("🚫 RATE LIMIT: OnItemAdded blocked for", self.player.Name, ":", reason)
+            self:ShowNotification("Too many item additions! " .. reason)
+            return
+        end
+    end
+
+    -- 🔒 SECURITY VALIDATION - Enterprise-level item addition validation
+    if securityValidator then
+        -- Validate itemData structure
+        if not itemData or typeof(itemData) ~= "table" then
+            warn("🚨 SECURITY: Invalid itemData in OnItemAdded")
+            return
+        end
+        
+        -- Validate item ID
+        if not itemData.id or typeof(itemData.id) ~= "string" then
+            warn("🚨 SECURITY: Invalid item ID in OnItemAdded")
+            return
+        end
+        
+        local idValidation = securityValidator:ValidateString(itemData.id, "ItemId", {maxLength = 100})
+        if not idValidation.success then
+            warn("🚨 SECURITY: Invalid item ID format in OnItemAdded:", idValidation.error)
+            return
+        end
+        
+        -- Validate quantity
+        if itemData.quantity then
+            if typeof(itemData.quantity) ~= "number" then
+                warn("🚨 SECURITY: Invalid quantity type in OnItemAdded")
+                return
+            end
+            
+            if itemData.quantity < 0 or itemData.quantity > 10000 then
+                warn("🚨 SECURITY: Quantity out of range in OnItemAdded:", itemData.quantity)
+                return
+            end
+        end
+        
+        -- Check inventory size limits
+        local currentItemCount = self:CountTable(self.inventoryData)
+        if currentItemCount >= (Constants.GAME.MAX_INVENTORY_SLOTS or 50) then
+            warn("🚨 SECURITY: Inventory full, cannot add item")
+            self:ShowNotification("Inventory full")
+            return
+        end
+        
+        print("✅ SECURITY: Item addition validation passed for", itemData.id)
+    else
+        warn("⚠️ SECURITY: SecurityValidator not available for item addition validation")
+    end
+
     print("[InventoryManager] Item added to inventory:", itemData.id)
     
     -- Add to local data
